@@ -53,9 +53,10 @@ struct RendererConfiguration {
     // Optional ordered post-final passes; shared ownership, one renderer lifecycle each.
     std::vector<std::shared_ptr<pipeline::OverlayPass>> overlays;
     std::shared_ptr<pipeline::RTAmbientOcclusion> ambientOcclusion; // Null selects disabled public default.
-    std::shared_ptr<pipeline::RTGlobalIllumination> globalIllumination;
-    IndirectLightingMode indirectLighting = IndirectLightingMode::AmbientOcclusion;
-    std::shared_ptr<pipeline::RTReflections> reflections;
+    std::shared_ptr<pipeline::RTGlobalIllumination> globalIllumination; // Null selects enabled public default.
+    // Default configuration requests GI and enabled default GI/reflection passes.
+    IndirectLightingMode indirectLighting = IndirectLightingMode::GlobalIllumination;
+    std::shared_ptr<pipeline::RTReflections> reflections; // Null selects enabled public default.
     std::shared_ptr<pipeline::TemporalAccumulator> temporal;
     std::shared_ptr<pipeline::DenoiseFilter> denoise;
     std::shared_ptr<pipeline::FinalProcessor> finalProcessor; // Optional post-tone-map AA, before overlays.
@@ -97,6 +98,30 @@ class BG2E_API Renderer {
     virtual void update(const FrameContext& frame) = 0;
     virtual void record(const FrameContext& frame) = 0;
     virtual void cleanup() = 0;
+
+    // Optional scene-average seam. Implementations return an output-sized,
+    // single-level RGBA16F image with Sampled/TransferSrc/TransferDst usage,
+    // retaining its contents until completion and stopped slot reuse. recordFinal
+    // consumes that format once on the same updated slot, without scene work.
+    virtual bool supportsLinearRecording() const
+    {
+        return false;
+    }
+    virtual std::shared_ptr<gpu::Image> recordLinear(const FrameContext& /* frame */)
+    {
+        throw std::logic_error("Renderer does not expose linear scene samples");
+    }
+    virtual void recordFinal(const FrameContext& /* frame */, gpu::Image& /* linearColor */)
+    {
+        throw std::logic_error("Renderer does not expose final-only conversion");
+    }
+    // Stable non-jittered scene/camera/resource/history identity after update.
+    // In-place resource content edits require explicit history invalidation.
+    virtual std::vector<uint8_t> sceneFingerprint() const
+    {
+        throw std::logic_error("Renderer does not expose frozen-scene identity");
+    }
+
     // Application mutation/camera-cut boundary; no scene ownership in editing utilities.
     virtual void invalidateHistories()
     {

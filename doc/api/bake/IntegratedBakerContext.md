@@ -164,3 +164,26 @@ selection overlays or private renderer queues.
 See the [manual lifecycle fixture](../../../tests/bake/integrated/README.md),
 [UV surface contract](UvSurfacePass.md), and
 [M04-03 implementation handoff](../../../docs/render_to_draw/plan/milestone_04_lightmaps/integrated-context.md).
+
+## Shipped synchronous completion recipe
+
+The tutorial uses one context slot, with a strictly increasing serial across
+sequential targets. From prepareFrame before window acquisition it runs:
+
+```cpp
+const uint64_t serial = ++_serial;
+_engine->device()->immediateSubmit([&](bg2e::gpu::CommandBuffer* command)
+{
+    bg2e::bake::BakeFrame frame{*command, 0, serial, _context->sourceGeneration()};
+    _context->prepareFrame(frame);
+    _baker->record(frame);
+});
+_context->completeFrame(0, serial);
+```
+
+This is an excerpt inside the initialized SceneDelegate from
+[tutorial 12](../../tutorials/draw/12_lightmaps.md), not a standalone program.
+Only successful return from immediateSubmit establishes completion here. If it
+throws, do not call completeFrame as though submission succeeded; the example
+releases baker/context through their draining failure path. Retain all completed
+results and cached pixels before material adoption, then retire the context.

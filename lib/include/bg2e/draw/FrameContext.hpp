@@ -31,18 +31,19 @@ namespace draw {
 class Engine;
 
 // Per-frame work context. All references are borrowed for the current
-// operation only. The color target is the retained scene image; the scene
-// does not necessarily render directly into the acquired presentation image.
+// operation only. Windowed execution uses a retained scene image rather than
+// the presentation drawable; offscreen execution uses its acquired color image.
 struct FrameContext {
     Engine& engine;
     gpu::CommandBuffer& commandBuffer;
     gpu::Image& colorTarget;
     gpu::Size2D extent;
-    uint64_t frameNumber = 0; // Presentation sequence; retained for existing delegates.
+    uint64_t frameNumber = 0; // Window presentation sequence, or headless scene submission sequence.
     uint32_t frameSlot = 0;
     float deltaSeconds = 0.0f;
     // Zero-based scene submission sequence; UI-only/paused presentations do not
-    // advance it. Borrowed while recording; increments after successful submit.
+    // advance it. Borrowed while recording; increments after successful submit
+    // (after confirmed completion in synchronous offscreen execution).
     uint64_t sceneFrameNumber = 0;
     // Active elapsed time since the last submitted scene, in seconds; paused
     // time is excluded. deltaSeconds retains the existing presentation delta.

@@ -31,7 +31,7 @@ void main()
     submeshIndex = inSubmesh;
 
     // Same convention as the UV surface pass: the engine's negative-height
-    // viewport maps v=1 to the top image row.
+    // Vulkan viewport maps v=0 to the top image row.
     vec2 uvInv = vec2(inUv.x, 1.0 - inUv.y);
     gl_Position = vec4(uvInv * 2.0 - 1.0, 0.0, 1.0);
 }

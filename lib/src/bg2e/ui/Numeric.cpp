@@ -132,6 +132,32 @@ bool Numeric::sliderDouble(
 
 bool Numeric::drag(
     const std::string& label,
+    double* value,
+    float speed,
+    bool sameLine)
+{
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::DragScalar(label.c_str(), ImGuiDataType_Double, value, speed);
+}
+
+bool Numeric::drag(
+    const std::string& label,
+    uint32_t* value,
+    float speed,
+    bool sameLine)
+{
+    if (sameLine)
+    {
+        ImGui::SameLine();
+    }
+    return ImGui::DragScalar(label.c_str(), ImGuiDataType_U32, value, speed);
+}
+
+bool Numeric::drag(
+    const std::string& label,
     float* value,
     float speed,
     float min,

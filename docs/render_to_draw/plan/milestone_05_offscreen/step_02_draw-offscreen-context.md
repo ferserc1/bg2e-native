@@ -54,3 +54,33 @@ resources. See [overlay lifecycle](../milestone_02_manipulation/overlays.md).
 Own a real completed-slot/serial sequence with stopped initialize/cleanup and ordered submissions, independent of a surface. Existing SMAA process(Device) is reusable, but does not create the windowless Engine/context. Keep Device and all borrowed signal/environment owners alive; no UI-only sequence increments.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M05-01 public delegate contract
+
+Implement the selected `app::OffscreenApplication::init` overload using
+`DrawOffscreenApplicationConfig` and `DrawOffscreenApplicationDelegate` from
+`<bg2e/app/DrawOffscreenApplicationDelegate.hpp>`. Call `initConfig` before
+allocation; initialize the typed delegate only after draw Engine and generic
+OffscreenSurface exist; then call `initScene`, resize/update/render, completed-frame
+notification and cleanup in a failure-safe order. `render(FrameContext const&)`
+receives borrowed command/image references valid only during recording. Honor
+`continueRendering()` without manufacturing a scene sample. M05-01 selected and
+validated the mode/configuration; this step replaces its temporary run diagnostic
+with actual windowless execution. `createDepthImage` and `EngineConfig` formats
+control the GPU surface.
+
+
+## Implementation handoff
+
+M05-01 accepted by project lead continuation; M05-02 now delivers the actual
+headless Engine overload, generic surface/slot access, synchronous application
+execution and public DefaultOffscreenApplicationDelegate. See
+[headless-execution.md](headless-execution.md) for exact API/ownership/error/time
+contracts and [manual probe](../../../../tests/draw/offscreen/README.md) for checks
+owned by the lead. Existing native GPU surfaces required no modifications.
+
+Static source/style/link checks only; no builds, fixture, shader or GPU runs.
+The driver renders ordinary per-frame output, not an averaged image. M05-03 must
+add the pre-final linear accumulation seam and active settings import. Delivery
+awaits lead validation before M05-03; no later product step is started.

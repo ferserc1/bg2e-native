@@ -1,96 +1,47 @@
 # OffscreenSurface
 
-**Header:** `<bg2e/gpu/OffscreenSurface.hpp>`
-**Namespace:** `bg2e::gpu`
+Header: `<bg2e/gpu/OffscreenSurface.hpp>`. Namespace: `bg2e::gpu`.
 
-```cpp
-class BG2E_API OffscreenSurface : public Surface {
-public:
-    OffscreenSurface(uint32_t width, uint32_t height);
+`OffscreenSurface` derives virtually from `Surface`. Its constructor is
+`explicit OffscreenSurface(const Size2D& size)` and `isOffscreen()` returns true.
+The base records the requested size and delegates resource lifecycle to the native
+surface. Construction alone does not create usable GPU targets or imply validity.
 
-    bool isOffscreen() const override { return true; }
-    bool isValid()     const override { return true; }
-    uint32_t width()   const override;
-    uint32_t height()  const override;
-};
-```
+Obtain a surface from `Backend::createOffscreenSurface(instance, size)` and follow
+the [GPU initialization workflow](index.md#offscreen-rendering). Device creation
+creates the configured render target; current Vulkan and Metal implementations
+report valid only while their color image exists and is valid. For managed scene
+execution, [draw Engine](../draw/Engine.md#headless-initialization) owns that setup.
 
-Concrete surface for headless/offscreen rendering. No `create()` call is
-needed; the surface is valid immediately after construction.
+## Targets and frames
 
----
+The current native implementations expose one color image and one in-flight slot;
+`colorImage(0)` is borrowed and `depthImage()` may be null when depth is omitted.
+Formats are inherited Surface configuration. `beginFrame()` acquires the slot
+and waits for its previous tracked submissions. Record commands against the
+acquired frame and call `present(command)` to associate the offscreen frame with
+submission tracking. This does not present to an OS window. `endFrame(frame)`
+requires a submitted acquired frame and advances bookkeeping; it does not itself
+wait for the newly submitted work to finish.
 
-## Constructor
+The [OffscreenApplication](../app/OffscreenApplication.md) driver uses synchronous
+`Device::immediateSubmit`, so its callbacks are after completion. Custom GPU code
+must establish its own completion before readback, target reuse or destruction.
+Offscreen color should use a useful image layout such as TransferSrc for export;
+do not transition it to Present merely because the method is named present.
 
-### `OffscreenSurface(uint32_t width, uint32_t height)`
+## Native implementations and recreation
 
-| Parameter | Type       | Description               |
-|-----------|------------|---------------------------|
-| `width`   | `uint32_t` | Surface width in pixels.  |
-| `height`  | `uint32_t` | Surface height in pixels. |
+`gpu::vk::OffscreenSurface` and `gpu::metal::OffscreenSurface` implement target
+creation, validity, frame acquisition/tracking, resize and release. Their headers
+are `<bg2e/gpu/vk/OffscreenSurface.hpp>` and
+`<bg2e/gpu/metal/OffscreenSurface.hpp>`; ordinary clients use the abstract API.
+`cleanup()` releases render targets. Resize/release coordinates device/frame
+completion before replacing shared owners and changes surface generation. Keep
+background producers stopped across those boundaries and refetch borrowed images
+and views after recreation. The fixed-size application job does not expose resize
+as a mid-accumulation operation.
 
----
-
-## Methods
-
-### `bool isOffscreen() const override`
-
-Always returns `true`.
-
-### `bool isValid() const override`
-
-Always returns `true` (offscreen surfaces are always valid).
-
-### `uint32_t width() const override`
-
-Returns the width set in the constructor.
-
-### `uint32_t height() const override`
-
-Returns the height set in the constructor.
-
----
-
-## vk::OffscreenSurface
-
-**Header:** `<bg2e/gpu/vk/OffscreenSurface.hpp>`
-**Namespace:** `bg2e::gpu::vk`
-**Inherits:** `gpu::OffscreenSurface`
-
-```cpp
-class OffscreenSurface : public gpu::OffscreenSurface {
-public:
-    OffscreenSurface(uint32_t width, uint32_t height)
-        : gpu::OffscreenSurface(width, height) {}
-};
-```
-
-Thin Vulkan subclass. No additional methods or properties.
-
----
-
-## metal::OffscreenSurface
-
-**Header:** `<bg2e/gpu/metal/OffscreenSurface.hpp>`
-**Namespace:** `bg2e::gpu::metal`
-**Inherits:** `gpu::OffscreenSurface`
-
-```cpp
-class OffscreenSurface : public gpu::OffscreenSurface {
-public:
-    OffscreenSurface(uint32_t width, uint32_t height)
-        : gpu::OffscreenSurface(width, height) {}
-};
-```
-
-Thin Metal subclass. No additional methods or properties.
-
-
-## Completion and recreation lifecycle
-
-Acquisition waits tracked submissions occupying the reused resource slot;
-endFrame requires a submitted acquired frame and advances bookkeeping without
-waiting for its just-submitted work. Resize/release coordinates global waiting
-before destroying shared targets and changes surface generation when targets
-are recreated. Producers must remain coordinated throughout that operation.
-See [submission tracking and waitIdle](Submission_tracking_and_waitIdle.md).
+See [Surface](Surface.md), [SurfaceFrame](SurfaceFrame.md),
+[Image readback](Image.md#completed-image-readback) and
+[submission tracking](Submission_tracking_and_waitIdle.md).

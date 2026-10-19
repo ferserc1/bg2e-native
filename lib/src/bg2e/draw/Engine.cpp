@@ -23,6 +23,7 @@
 #include <bg2e/gpu/PhysicalDevice.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
+#include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/CleanupManager.hpp>
 
 #include <bg2e/gpu/Factory.hpp>
@@ -40,7 +41,7 @@ struct Engine::Impl {
     gpu::Instance* instance = nullptr;          // Non-owning (shared with Backend)
     std::unique_ptr<gpu::PhysicalDevice> physicalDevice;
     std::unique_ptr<gpu::Device> device;
-    std::unique_ptr<gpu::WindowSurface> surface;
+    std::unique_ptr<gpu::Surface> surface;
     std::unique_ptr<gpu::CleanupManager> cleanupManager;
     EngineConfig config;
     bool initialized = false;
@@ -84,13 +85,30 @@ Engine::~Engine()
 
 void Engine::init(SDL_Window* window, gpu::Backend& backend, const EngineConfig& config)
 {
-    if (_impl->initialized || _impl->instanceCreationStarted || _impl->cleaning)
-    {
-        throw std::logic_error("draw::Engine is already initialized or changing lifecycle state.");
-    }
     if (!window)
     {
         throw std::invalid_argument("draw::Engine::init requires an SDL window.");
+    }
+    initialize(window, {}, backend, config, false);
+}
+
+void Engine::init(gpu::Size2D extent, gpu::Backend& backend, const EngineConfig& config)
+{
+    if (extent.isZero() || !gpu::pixelFormatBytes(config.colorFormat) || gpu::isDepthFormat(config.colorFormat) ||
+        gpu::isUnsignedIntegerFormat(config.colorFormat) || gpu::isSignedIntegerFormat(config.colorFormat) ||
+        (config.depthFormat != gpu::PixelFormat::Undefined && !gpu::isDepthFormat(config.depthFormat)))
+    {
+        throw std::invalid_argument("draw::Engine offscreen extent or color/depth formats are invalid.");
+    }
+    initialize(nullptr, extent, backend, config, true);
+}
+
+void Engine::initialize(SDL_Window* window, gpu::Size2D extent, gpu::Backend& backend,
+    const EngineConfig& config, bool offscreen)
+{
+    if (_impl->initialized || _impl->instanceCreationStarted || _impl->cleaning)
+    {
+        throw std::logic_error("draw::Engine is already initialized or changing lifecycle state.");
     }
     if (backend.backendType() != config.backend)
     {
@@ -117,12 +135,19 @@ void Engine::init(SDL_Window* window, gpu::Backend& backend, const EngineConfig&
         _impl->instanceCreationStarted = true;
         _impl->instance->setApplicationName(config.applicationName);
         _impl->instance->enableDebugMode(config.debug);
-        _impl->instance->create(window);
-
-        _impl->surface = backend.createWindowSurface(_impl->instance, config.colorFormat, config.depthFormat);
+        if (offscreen)
+        {
+            _impl->instance->create();
+            _impl->surface = backend.createOffscreenSurface(_impl->instance, extent, config.colorFormat, config.depthFormat);
+        }
+        else
+        {
+            _impl->instance->create(window);
+            _impl->surface = backend.createWindowSurface(_impl->instance, config.colorFormat, config.depthFormat);
+        }
         if (!_impl->surface)
         {
-            throw std::runtime_error("Draw backend returned no WindowSurface.");
+            throw std::runtime_error("Draw backend returned no rendering surface.");
         }
         _impl->physicalDevice = backend.createPhysicalDevice();
         if (!_impl->physicalDevice)
@@ -282,11 +307,31 @@ gpu::Device* Engine::device() const
 
 gpu::WindowSurface* Engine::surface() const
 {
+    return dynamic_cast<gpu::WindowSurface*>(renderSurface());
+}
+
+gpu::Surface* Engine::renderSurface() const
+{
     if (!_impl->initialized)
     {
         throw std::logic_error("draw::Engine is not initialized.");
     }
     return _impl->surface.get();
+}
+
+gpu::OffscreenSurface* Engine::offscreenSurface() const
+{
+    return dynamic_cast<gpu::OffscreenSurface*>(renderSurface());
+}
+
+uint32_t Engine::frameSlotCount() const
+{
+    const auto count = renderSurface()->inFlightFrames();
+    if (!count)
+    {
+        throw std::logic_error("Draw surface exposes no frame slots.");
+    }
+    return count;
 }
 
 gpu::CleanupManager& Engine::cleanupManager()

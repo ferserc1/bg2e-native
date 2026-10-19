@@ -14,10 +14,12 @@ separate realization stage.
 
 `loadScene(path, drawEngine)` realizes supported references synchronously using
 that context. Production Engine overloads remain distinct. `loadDrawableObj(path,
-drawEngine)` reuses CPU geometry parsing but does not load MTL resources.
+drawEngine)` reuses CPU geometry parsing and imports supported MTL maps/settings.
 `loadDrawableBg2(path, drawEngine)` realizes supported geometry/material resources.
-Complete glTF/resource-save/GPU-export/editor import workflows have not migrated
-to draw. Raw preservation is broader than typed component construction.
+[Complete draw resource IO](DrawResourceIO.md) adds static glTF import, native
+GPU-only HDR/mip archives and transactional scene/model publication. It requires
+an explicit draw Engine and remains separate from reference-only saving. Raw
+preservation is broader than typed component construction.
 
 Stop scene/GPU producers for realization or replacement, retain Engine/device
 until resources are released, and use the matching DrawableComponent mode.

@@ -79,7 +79,7 @@ not make an entirely unmapped mesh a usable bake target.
 
 The modifier rasterizes output triangle centers at the actual atlas resolution
 into a chart-owner grid. Signed edge cross-products determine inclusion; a cell
-claimed by two different chart IDs rejects the atlas. This check detects
+claimed by two different chart IDs produces a warning without rejecting the atlas. This check detects
 cross-chart texel collisions at that resolution, not every continuous overlap
 within a chart. The public validator provides the separate geometric test.
 
@@ -111,8 +111,11 @@ If all are excluded, validation returns `DegenerateTriangle`. On success,
 The overlap broad phase sorts triangles by minimum U and scans candidates until
 minimum U reaches the current triangle's maximum U; disjoint V bounds are
 excluded. The narrow phase uses Sutherland–Hodgman clipping against the other
-triangle's three half-planes. A shoelace-area computation rejects intersections
-larger than `1e-12`. Shared edges and vertices have zero intersection area and
+triangle's three half-planes, using the same zero boundary for classification and
+intersection. Polygon area is accumulated relative to its first vertex to avoid
+cancellation. Strict validation rejects intersections larger than `1e-12`;
+the `UvAtlasOverlapPolicy::Warn` overload used by bakers records them in `warning`
+and continues, preserving area and coverage statistics. Shared edges and vertices have zero intersection area and
 are allowed. Sorting reduces candidate work but the worst case remains quadratic.
 
 `coverage` is a separate estimate: triangle-center rasterization into a fixed
@@ -130,8 +133,16 @@ accepted if valid.
 ```cpp
 bg2e::geo::GenerateUv2AtlasModifier atlas(mesh.get(), {1024, 8});
 atlas.apply();
-auto check = bg2e::geo::UvAtlasValidator::validate(*mesh, 1);
-if (!check.valid) throw std::runtime_error(check.message);
+auto check = bg2e::geo::UvAtlasValidator::validate(*mesh, 1,
+    bg2e::geo::UvAtlasOverlapPolicy::Warn);
+if (!check.valid)
+{
+    throw std::runtime_error(check.message);
+}
+if (!check.warning.empty())
+{
+    std::clog << "Warning: " << check.warning << '\n';
+}
 // GPU-load only after this CPU operation in a standalone workflow.
 ```
 

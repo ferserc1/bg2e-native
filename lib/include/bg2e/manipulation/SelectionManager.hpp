@@ -323,6 +323,7 @@ class BG2E_API SelectionManager {
     // Transform gizmo manipulation / input capture state.
     bool _transformManipulationEnabled = true;
     bool _capturing = false;
+    bool _leftPressed = false;
     int _mouseDownX = 0;
     int _mouseDownY = 0;
     std::vector<std::shared_ptr<SelectionItem>> _selectedItems;

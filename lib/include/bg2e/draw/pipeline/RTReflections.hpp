@@ -25,7 +25,7 @@
 namespace bg2e::draw::pipeline {
 using RTReflectionQuality = RTAOQuality;
 struct RTReflectionSettings {
-    bool enabled = false, useBlueNoise = true, useShadows = true;
+    bool enabled = true, useBlueNoise = true, useShadows = true;
     RTReflectionQuality quality = RTReflectionQuality::High;
     uint32_t sampleCount = 6, shadowSamples = 1;
     float bias = 0.02f, maxDistance = 50, maxRoughness = 0.75f, roughnessSpread = 1;

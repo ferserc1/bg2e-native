@@ -20,8 +20,9 @@ Current sources to inspect: [lib/include/bg2e/gpu/Image.hpp](../../../../lib/inc
 
 1. Reuse existing synchronous gpu::Image::readPixels for one initialized color mip/layer (TransferSrc, tight raw-format bytes; Metal staging padding is stripped). readPixelsRGBA8 is limited to R8G8B8A8_UNORM, not BGRA/sRGB/HDR conversion. Add only missing GPU primitives; keep conversion, orientation, color-domain/alpha and encoding decisions explicit above staging.
 2. Use DB low-level image writers after host data is ready. Keep native Vulkan/Metal staging implementation inside GPU and accumulated-result/encoding policy in draw/app.
-3. Validate output orientation/color domain/alpha and error paths, including unwritable destination, unsupported output options and cleanup after failure.
-4. Compare the headless scene with equivalent interactive configuration and record differences caused by animation/overlay/accumulation policy rather than hide them.
+3. Validate RGBA byte count before encoding. Write to a PNG-suffixed temporary path, decode the encoded file and verify dimensions and exact RGBA bytes before publishing the final path; remove the temporary file on failure and refuse pre-existing final/temporary outputs.
+4. The backend readback copies rows in image order; the current Vulkan viewport uses a negative-height viewport from the upper edge and Metal uses its upper-origin viewport. The PNG writer keeps that top-to-bottom row order, adds no color conversion and preserves the read alpha. Independently inspect asymmetric scene content/orientation on each available backend.
+5. Compare a one-sample headless render with equivalent interactive renderer/camera/scene settings and presentation overlays disabled. Record that camera/light animation and editor UI/selection/gizmos are absent; N greater than one averages completed linear-HDR samples before the final color/SMAA pass.
 
 M02's picking and viewpoint utilities use their own synchronous RGBA8/D32
 readbacks; they do not supply the completed output image or its encoding policy.
@@ -32,7 +33,8 @@ export. See [M02 review](../milestone_02_manipulation/review.md).
 ## Verification and exit conditions
 
 - Independent image inspection verifies file format/dimensions, orientation and content after completion on available backends.
-- A failed export has a nonzero result and releases GPU resources; concurrent/queued work is not retired before completion.
+- Encoded PNG round-trip verifies exact dimensions and RGBA bytes; failed write/verification leaves no temporary output and returns nonzero.
+- An unwritable destination fails without publishing an image; concurrent/queued work is not retired before completion.
 
 Delegate compilation and applicable runtime checks to the project lead; perform relevant nonexecuting static checks yourself. After delivering this step or its correction, update progress to `awaiting_project_lead` and stop. Their instruction to continue accepts the preceding delivery as compiled/checked without failures; record that basis without inventing test/backend details. Follow the [execution protocol](../execution-protocol.md).
 
@@ -65,3 +67,29 @@ See [output implementation](../milestone_04_lightmaps/accumulation-output.md).
 Validate raw RGBA32F transfer length and explicit conversion before generic DB encoding. Bake LightmapPixels is linear RGB, row zero UV-v=0; RGB8 GI exposure is a bake CPU conversion policy, not a universal scene-tone-map policy. Test marked UV2 RGB maps through the updated RGBA16F G-buffer and preserve custom-layer format validation.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+## M05-03 concrete integration
+
+Use [implemented accumulation/settings](accumulation-settings.md). Populate
+DrawOffscreenApplicationConfig.frames, graphicsConfig, optional
+internalExtentOverride or scaleOverride in initConfig; the app owns validation,
+strict parsing, stopped live import and the exact completed-sample driver.
+DefaultOffscreenApplicationDelegate owns the renderer and averaging; do not add
+another loop, EMA or final-color average. Extend its catalog for example-owned
+lightPose IDs or report rejection/explicit skip diagnostics. Disable frame-based
+animation for the default frozen scene. Export/read only when hasResult() is true
+inside the last didRenderFrame callback, while its surface/device remain alive.
+Early callbacks are per-sample notifications with no exportable accumulated result.
+Exactly N scene submissions plus one final-only conversion are intentional;
+readback/upload/helper submissions do not add scene samples. N=1 still converts
+once. Account for the reference CPU/readback cost in performance descriptions.
+
+
+## M05-04 scene CLI handoff
+
+The registered target is `draw_offscreen_application`; it writes exactly
+`<output-dir>/scene.png`, creates the directory before GPU startup, rejects an
+existing output and reports a nonzero failure. The completed surface is explicit
+R8G8B8A8_UNORM and is read synchronously in the last completed callback before
+engine teardown. M05-05 still owns validation of row orientation/content and an
+independent inspection of the encoded PNG on supported platforms.

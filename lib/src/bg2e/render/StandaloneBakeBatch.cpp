@@ -31,6 +31,7 @@
 #include <limits>
 #include <stdexcept>
 #include <utility>
+#include <iostream>
 
 namespace bg2e::render {
 namespace {
@@ -127,10 +128,14 @@ void generateUv2Atlas(
     {
         throw std::runtime_error(error.what());
     }
-    const auto validation = geo::UvAtlasValidator::validate(*mesh, 1);
+    const auto validation = geo::UvAtlasValidator::validate(*mesh, 1, geo::UvAtlasOverlapPolicy::Warn);
     if (!validation.valid)
     {
         throw std::runtime_error("generated UV2 atlas is unusable: " + validation.message);
+    }
+    if (!validation.warning.empty())
+    {
+        std::clog << "Warning: generated UV2 atlas: " << validation.warning << '\n';
     }
 }
 
@@ -208,7 +213,7 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
         }
 
         const auto mesh = drawable->mesh();
-        const auto validation = geo::UvAtlasValidator::validate(*mesh, 1);
+        const auto validation = geo::UvAtlasValidator::validate(*mesh, 1, geo::UvAtlasOverlapPolicy::Warn);
         if (!validation.valid)
         {
             result.skippedTargets.push_back({target.outputIdentity, validation.message});
@@ -217,6 +222,10 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(
                 onWarning(result.skippedTargets.back());
             }
             continue;
+        }
+        if (!validation.warning.empty())
+        {
+            std::clog << "Warning: target '" << target.outputIdentity << "': " << validation.warning << '\n';
         }
         validTargets.push_back({&target, std::move(drawable)});
     }

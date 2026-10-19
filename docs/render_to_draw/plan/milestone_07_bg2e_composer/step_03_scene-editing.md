@@ -87,3 +87,36 @@ protect an async import or document swap.
 Reuse actual visible settings ownership and synchronized light/material/transform controls. Persist requested values separately from availability/status; remap document light targets and mark unsaved state. Invalidate scene/job/renderer generations appropriately when nodes/resources or output profiles change; direct in-place uploads require explicit history notification.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+
+## M06-03 guarded tool baseline
+
+Reuse [actual editor tool contracts](../milestone_06_model_edit/editor-tools.md):
+DrawMaterialEditor document guards, stopped sampler edits retaining GPU pixels,
+explicit indirect interpretation and completion-retired previews. Scene/property
+mutations still need application weak membership/generation guards, dirty/history
+notifications on partial failure and tool invalidation before retirement. Shared
+input now tracks scene-owned drags; do not recreate native texture registration or
+assume generic immediate ComponentInspector mutations are safe. Composer light
+limits must follow its own product policy rather than copying the editor's five.
+
+
+## M06-04 camera framing handoff
+
+The draw model editor provides world-bounds framing plus synchronous, explicitly
+requested scored view analysis using `utils::ViewpointAnalyzer(draw::Engine*)`,
+`bestSample`, the current vertical FOV and `applyViewpointToOrbitCamera`.
+Candidate ID arrays are interpreted through the same analyzer's
+`analyzedSubmeshes()` table. Analysis is a stopped GPU action, not a UI draw or
+background job; failed/empty/stale results leave the prior camera pose in place.
+Composer may adopt these helpers, but must preserve its own stable target, camera
+projection and job/scene ownership contracts. See M06
+[implementation record](../milestone_06_model_edit/viewpoint-camera.md).
+
+The M06 technical review confirms `DrawMaterialEditor` owns queued material
+patches and weak renderer/resource checks, while its application caller owns the
+document-generation guard, dirty state, history resets and graph-level mutation.
+Reuse the widget and typed selection API; Composer still implements scene-tree,
+multi-node selection/edit policy and safe graph transactions. `ViewpointAnalyzer`
+borrows draw Engine/resources and runs synchronously with producers stopped, so
+scene scope and UI responsiveness remain Composer responsibilities.

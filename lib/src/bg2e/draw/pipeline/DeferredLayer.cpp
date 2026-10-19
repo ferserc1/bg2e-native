@@ -37,9 +37,9 @@ void imageBindings(gpu::PipelineLayoutDescription& layout, uint32_t set, uint32_
 
 uint32_t slots(Engine& engine, uint32_t count)
 {
-    if (count == 0 && engine.surface())
+    if (count == 0)
     {
-        count = engine.surface()->inFlightFrames();
+        count = engine.frameSlotCount();
     }
     if (count == 0)
     {

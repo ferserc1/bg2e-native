@@ -252,6 +252,10 @@ bool SelectionManager::mouseButtonDown(scene::Scene* scene, int button, int x, i
 {
     _mouseDownX = x;
     _mouseDownY = y;
+    if (button == 0)
+    {
+        _leftPressed = true;
+    }
 
     // Only attempt a transform-handle interaction with the left button, when
     // manipulation is enabled and a transform gizmo is currently visible.
@@ -301,6 +305,15 @@ bool SelectionManager::mouseMove(scene::Scene* scene, int x, int y)
 
 bool SelectionManager::mouseButtonUp(scene::Scene* scene, int button, int x, int y, bool additive)
 {
+    const bool clickAllowed = _leftPressed;
+    if (button == 0)
+    {
+        _leftPressed = false;
+    }
+    if (_capturing && button != 0)
+    {
+        return false;
+    }
     if (_capturing)
     {
         if (auto node = GizmoComponent::currentTransformNode())
@@ -316,7 +329,7 @@ bool SelectionManager::mouseButtonUp(scene::Scene* scene, int button, int x, int
 
     // Click selection only if the press did not move, so dragging the camera
     // does not select.
-    if (button == 0 && x == _mouseDownX && y == _mouseDownY)
+    if (button == 0 && clickAllowed && x == _mouseDownX && y == _mouseDownY)
     {
         bg2e_log_debug << "Additive: " << additive << bg2e_log_end;
         pick(scene, x, y, additive);
@@ -377,6 +390,18 @@ bool SelectionManager::pickObject(
 
 void SelectionManager::deselect()
 {
+    _leftPressed = false;
+    if (_capturing)
+    {
+        if (auto node = GizmoComponent::currentTransformNode())
+        {
+            if (auto gizmo = node->getComponent<GizmoComponent>())
+            {
+                gizmo->endTransform();
+            }
+        }
+        _capturing = false;
+    }
     for (const auto& item : _selectedItems)
     {
         if (auto node = item->node.lock())

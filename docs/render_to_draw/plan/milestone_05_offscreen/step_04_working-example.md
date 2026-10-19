@@ -10,6 +10,7 @@
 - `examples/draw/13_offscreen_application/src/main.cpp`
 - `examples/draw/13_offscreen_application/CMakeLists.txt`
 - `examples/CMakeLists.txt`
+- `examples/draw/13_offscreen_application/README.md`
 
 Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
 
@@ -38,3 +39,46 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-15 source scene
 
 Use examples/draw/10_deferred_renderer and [working-example.md](../milestone_01_deferred_renderer/working-example.md) as the actual scene/material/settings baseline. Its window/retained presentation and FSR SDK context do not fulfill offscreen initialization, accumulated scene sampling or file export. Reuse resources/settings while implementing those responsibilities here.
+
+
+## M05-02 integration baseline
+
+Use OffscreenApplication's typed draw delegate overload and the public non-template
+DefaultOffscreenApplicationDelegate. Reuse its existing renderer/setScene/createScene
+and generation lifecycle. Do not construct an SDL window, call MainLoop or clone
+the frame driver into the CLI. timeStepSeconds=0 is the driver default; M05-03
+supplies actual exact averaging rather than treating repeated ordinary frames as
+an accumulated result. See [execution contract](headless-execution.md).
+
+## M05-03 concrete integration
+
+Use [implemented accumulation/settings](accumulation-settings.md). Populate
+DrawOffscreenApplicationConfig.frames, graphicsConfig, optional
+internalExtentOverride or scaleOverride in initConfig; the app owns validation,
+strict parsing, stopped live import and the exact completed-sample driver.
+DefaultOffscreenApplicationDelegate owns the renderer and averaging; do not add
+another loop, EMA or final-color average. Extend its catalog for example-owned
+lightPose IDs or report rejection/explicit skip diagnostics. Disable frame-based
+animation for the default frozen scene. Export/read only when hasResult() is true
+inside the last didRenderFrame callback, while its surface/device remain alive.
+Early callbacks are per-sample notifications with no exportable accumulated result.
+Exactly N scene submissions plus one final-only conversion are intentional;
+readback/upload/helper submissions do not add scene samples. N=1 still converts
+once. Account for the reference CPU/readback cost in performance descriptions.
+
+
+## M05-03 delivered API and implementation handoff
+
+The CLI uses `DefaultOffscreenApplicationDelegate` with `RendererDeferred`,
+`config.frames`, `graphicsConfig`, and explicit fixed-size or scale override.
+The initial import occurs at init's stopped prepareFrame boundary. Set the output
+surface to R8G8B8A8_UNORM for the current `Image::readPixelsRGBA8`/DB PNG path.
+Read and write exactly once, from the last `didRenderFrame` where `hasResult()` is
+true. Refuse an existing named output instead of overwriting. No additional GPU
+render loop or frame scheduler belongs here.
+
+The live UI catalog binds scene nodes by random identifiers. This example does
+not invent name-based remapping for `lightPose/<id>` entries; the default settings
+policy rejects these unknown IDs. `--skip-unknown-settings` opts into explicit
+skipping and reports each skipped property. Matched renderer/effect targets from
+the UI export still import. See [M05-03 contracts](accumulation-settings.md).

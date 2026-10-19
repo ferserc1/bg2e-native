@@ -33,6 +33,7 @@ including vertices not referenced by an index.
 | `valid` | `true` if validation succeeded. |
 | `error` | A `UvAtlasError` code; `None` indicates success. |
 | `message` | Failure diagnostic; empty on success. |
+| `warning` | Nonfatal overlap diagnostic with the `Warn` policy; `valid` remains true and `error` remains `None`. |
 | `submeshIndex` | Submesh associated with an error, where available; overlap errors report the lower submesh index. |
 | `triangleIndex` | Triangle index for the reported candidate, where available; for overlaps it comes from the first U-sorted candidate and may not correspond to the lower `submeshIndex`. |
 | `vertexIndex` | Vertex associated with a coordinate error, where available. |
@@ -59,15 +60,26 @@ coordinate equality is not treated as evidence of a missing atlas.
 
 ```cpp
 static UvAtlasValidation validate(const Mesh& mesh, uint32_t uvSet);
+static UvAtlasValidation validate(const Mesh& mesh, uint32_t uvSet,
+    UvAtlasOverlapPolicy overlapPolicy);
 ```
 
 Invalid layouts are returned as reports rather than validation exceptions.
 Positive-area/overlap thresholds are `1e-12` in normalized UV area. `coverage`
 is estimated on a fixed 512×512 center-sampling grid, independently of bake
-resolution. Metrics remain default on an overlap failure rather than reporting
+resolution. In strict mode metrics remain default on an overlap failure rather than reporting
 partial area. Range counts must be divisible by three; the implementation does
 not explicitly check `firstIndex % 3`. The modifier has a stricter ordered,
 contiguous-range input rule than this validator.
+
+The two-argument overload retains strict validation. Bakers and previews use
+`UvAtlasOverlapPolicy::Warn`: overlapping triangles remain usable, metrics are
+computed for the whole mesh and `warning` identifies the first conflicting pair.
+Invalid indices, nonfinite/out-of-range UVs and other structural failures remain
+errors. Overlap does not abort UV2 replacement or baking, even when the resulting
+lightmap can overwrite texels belonging to another triangle. Intersection clipping
+uses a consistent zero boundary and translated polygon area to reduce numerical
+artifacts on thin triangles and shared edges.
 
 Sources: [header](../../../lib/include/bg2e/geo/UvAtlasValidator.hpp),
 [implementation](../../../lib/src/bg2e/geo/UvAtlasValidator.cpp).

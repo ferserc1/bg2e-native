@@ -25,7 +25,7 @@
 namespace bg2e::draw::pipeline {
 using RTGIQuality = RTAOQuality;
 struct RTGISettings {
-    bool enabled = false, useBlueNoise = true, useShadows = true;
+    bool enabled = true, useBlueNoise = true, useShadows = true;
     RTGIQuality quality = RTGIQuality::High;
     uint32_t sampleCount = 4, bounceCount = 2, shadowSamples = 1;
     float bias = 0.0017f, maxDistance = 100;

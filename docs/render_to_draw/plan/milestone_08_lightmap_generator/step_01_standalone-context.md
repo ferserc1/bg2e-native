@@ -45,7 +45,7 @@ Read [upscaling.md](../milestone_01_deferred_renderer/upscaling.md). Reuse live 
 
 ## M01-16 reviewed baseline
 
-M01 draw::Engine is still window-only, so this step requires the actual M05 generic/offscreen context, not an existing nonexistent headless Engine overload. Use public environment snapshots/collections and M03-selected surface/material addressing. Do not instantiate RendererDeferred to access private targets or reinterpret FSR context state as bake accumulation. See [M01 review](../milestone_01_deferred_renderer/review.md).
+At the original M01 review, draw::Engine had no offscreen overload. M05-02 now provides the actual headless context; use its generic surface/slot access and lifetime rules. Do not instantiate RendererDeferred to access private targets or reinterpret FSR/camera accumulation as bake accumulation. Use public environment snapshots/collections and M03-selected surface/material addressing. See [M01 review](../milestone_01_deferred_renderer/review.md).
 
 ## M03-01 tracing checkpoint dependency
 
@@ -90,3 +90,43 @@ See [integrated execution](../milestone_04_lightmaps/integrated-context.md).
 Reuse LightmapBakeExecutor, UvTemporalAccumulator and LightmapCompositionPass as isolated public recording/output owners. IntegratedBakerContext remains draw-Engine/window-lifecycle-bound and serial; its example's synchronous submission is not a headless initializer. M05 must deliver genuine windowless ownership first. Keep explicit per-job completion/abandonment, immutable source/environment ownership and required-capability failures; do not create RendererDeferred to borrow private state.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+
+## M05-02 windowless context availability
+
+The [headless Engine overload](../milestone_05_offscreen/headless-execution.md)
+now initializes Instance/OffscreenSurface/Device without a window or UI. Use its
+generic surface/slot access and stopped ownership boundaries directly where useful;
+StandaloneBakerContext still needs its own bake job/configuration/lifecycle and
+must not instantiate DefaultOffscreenApplicationDelegate/RendererDeferred merely
+to borrow rendering internals. The camera-frame application driver is not a UV
+bake scheduler or batch writer. Factory-owned Backend leases reject competing
+executions; a shared active Instance may not be initialized or cleaned twice.
+
+## M05-03 settings and accumulation boundary
+
+[Headless settings/scene averaging](../milestone_05_offscreen/accumulation-settings.md)
+now defines direct live import, explicit-document persistence bypass, resolution
+overrides and unknown-ID diagnostics/catalog extensions. Reuse those settings
+semantics for standalone setup. The default scene delegate's frames count and
+CPU linear camera-image average are not UV update counts/coverage/confidence;
+keep the public bake scheduler and UvTemporalAccumulator independent.
+
+
+## M05 camera-image versus bake-job boundary
+
+M05's public headless `OffscreenApplication` owns a serial scene-frame driver and
+`DefaultOffscreenApplicationDelegate` optionally owns exact-N camera accumulation.
+The M05 example's RGBA8 PNG is only its completed camera output. `StandaloneBakerContext`
+still needs independent scene/baker generations, preparation/update/cleanup,
+required-effect capability validation and job-level output ownership. Reuse the
+headless Engine/context API and GPU completion discipline; do not use
+`config.frames`, FrameAccumulator, or camera PNG readback as UV samples/coverage.
+
+The [M06 review](../milestone_06_model_edit/review.md) confirms the integrated
+context borrows an initialized draw Engine and is bound to windowed frame slots,
+one live baker and one in-flight bake frame. It is not the standalone context.
+Reuse public `LightmapBakeExecutor`, `UvTemporalAccumulator` and composition
+primitives where their contracts fit, then implement a separate headless scheduler
+with its own scene/job generations, completion/abandonment, required-effect
+validation and cleanup while the Device remains alive.

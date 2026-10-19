@@ -85,6 +85,9 @@ class BG2E_API SettingsCatalog {
     SettingsResult validate(const std::vector<SettingChange>& changes) const;
     SettingsResult apply(const std::vector<SettingChange>& changes);
     // Exact any contract, finite numeric components, ranges and enum identities.
+    static bool isDebugSetting(const SettingDescriptor& descriptor);
+    static bool isGraphicsSetting(const SettingDescriptor& descriptor);
+
     static void validateValue(const reflection::PropertyInfo& property, const std::any& value);
   private:
     friend class SettingsCodec;

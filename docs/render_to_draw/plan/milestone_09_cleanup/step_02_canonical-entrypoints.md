@@ -25,6 +25,18 @@ Current sources to inspect: [lib/include/bg2e/app/Application.hpp](../../../../l
 3. Remove obsolete app targets/source from supported builds; keep the requested apps/draw products as canonical source locations unless a deliberate relocation is recorded and all paths revised.
 4. Finalize executable/app identifiers, preference/config identities and installed resource names. No legacy API forwarding is added to keep old applications running.
 
+## M05 offscreen execution migration
+
+The current offscreen application has two explicit init paths: the original
+production-render delegate path and the experimental draw delegate path. M05
+keeps ProductionRender as the default; it has not promoted draw. M09-02 must
+make supported `OffscreenApplication` entry points select draw, preserve explicit
+backend settings and migrate the new scene CLI to the canonical draw delegate,
+then remove the old execution branch after M09-01's accepted manifest. Preserve
+headless no-window/no-UI behavior, exact completed-frame callbacks and public
+output contract while changing the default; no permanent experimental opt-in or
+legacy compatibility shim remains in the M09 final product.
+
 ## Verification and exit conditions
 
 - All supported windowed/headless/new application targets start through draw defaults and explicit backend override still works.

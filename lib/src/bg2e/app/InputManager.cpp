@@ -58,7 +58,7 @@ void InputManager::keyUp(const KeyEvent& event)
 void InputManager::mouseMove(int x, int y)
 {
     ImGuiIO& io = ImGui::GetIO();
-    if (_delegate.get() && !io.WantCaptureMouse)
+    if (_delegate && (!io.WantCaptureMouse || _sceneMouseButtons || _delegate->mouseInputCaptured()))
     {
         _delegate->mouseMove(x, y);
     }
@@ -67,16 +67,23 @@ void InputManager::mouseMove(int x, int y)
 void InputManager::mouseButtonDown(int button, int x, int y)
 {
     ImGuiIO& io = ImGui::GetIO();
-    if (_delegate.get() && !io.WantCaptureMouse)
+    if (_delegate && !io.WantCaptureMouse)
     {
+        if (button >= 0 && button < 32)
+        {
+            _sceneMouseButtons |= uint32_t(1) << button;
+        }
         _delegate->mouseButtonDown(button, x, y);
     }
 }
 
 void InputManager::mouseButtonUp(int button, int x, int y)
 {
-    ImGuiIO& io = ImGui::GetIO();
-    if (_delegate.get() && !io.WantCaptureMouse)
+    const uint32_t bit = button >= 0 && button < 32 ? uint32_t(1) << button : 0;
+    const bool scenePress = (_sceneMouseButtons & bit) != 0;
+    _sceneMouseButtons &= ~bit;
+    // A UI-owned press must never become a scene click on release outside UI.
+    if (_delegate && scenePress)
     {
         _delegate->mouseButtonUp(button, x, y);
     }

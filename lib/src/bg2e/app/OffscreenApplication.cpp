@@ -18,19 +18,55 @@
 
 #include <bg2e/app/OffscreenApplication.hpp>
 #include <bg2e/render/vulkan/all.hpp>
+#include <bg2e/draw/Engine.hpp>
+#include <bg2e/gpu/Factory.hpp>
+#include <bg2e/gpu/Backend.hpp>
+#include <bg2e/gpu/Device.hpp>
+#include <bg2e/gpu/OffscreenSurface.hpp>
+#include <bg2e/gpu/SurfaceFrame.hpp>
+#include <bg2e/gpu/CleanupManager.hpp>
 
 #include <chrono>
+#include <cmath>
+#include <exception>
+#include <limits>
+#include <stdexcept>
+#include <utility>
 
 namespace bg2e::app {
+
+OffscreenApplication::OffscreenApplication() = default;
+
+OffscreenApplication::~OffscreenApplication()
+{
+    try
+    {
+        cleanupDraw();
+    }
+    catch (...)
+    {
+        // Explicit run/cleanup reports errors; destruction cannot throw.
+    }
+}
 
 void OffscreenApplication::init(
     int argc, char** argv,
     const std::string& appId,
     std::shared_ptr<OffscreenApplicationDelegate> delegate)
 {
-    _delegate = delegate;
-    _appId = appId;
+    if (_initialized || _initializing || _drawRunning || _drawCleaning)
+    {
+        throw std::logic_error("OffscreenApplication::init(): this application is already initialized");
+    }
+    if (!delegate)
+    {
+        throw std::invalid_argument("OffscreenApplication::init(): production delegate must not be null");
+    }
 
+    _delegate = std::move(delegate);
+    _drawDelegate.reset();
+    _executionMode = OffscreenExecutionMode::ProductionRender;
+    _appId = appId;
     _delegate->initConfig(argc, argv, _config);
 
     _engine = std::make_unique<render::Engine>();
@@ -90,13 +126,102 @@ void OffscreenApplication::init(
                                    });
     _engine->descriptorSetAllocator().initPool();
     _delegate->initScene();
+    _initialized = true;
+}
+
+void OffscreenApplication::init(
+    int argc, char** argv,
+    const std::string& appId,
+    std::shared_ptr<DrawOffscreenApplicationDelegate> delegate)
+{
+    if (_initialized || _initializing || _drawRunning || _drawCleaning)
+    {
+        throw std::logic_error("OffscreenApplication::init(): this application is already initialized");
+    }
+    if (!delegate)
+    {
+        throw std::invalid_argument("OffscreenApplication::init(): draw delegate must not be null");
+    }
+
+    _initializing = true;
+    try
+    {
+        DrawOffscreenApplicationConfig config;
+        delegate->initConfig(argc, argv, config);
+        if (config.frames == 0 || config.frames > 1048576 ||
+            (config.internalExtentOverride && config.internalExtentOverride->isZero()) ||
+            (config.internalExtentOverride && config.scaleOverride) ||
+            (config.scaleOverride && (!std::isfinite(*config.scaleOverride) || *config.scaleOverride < 0.25f || *config.scaleOverride > 1.0f)) ||
+            config.extent.isZero() || !std::isfinite(config.timeStepSeconds) || config.timeStepSeconds < 0.0f ||
+            !gpu::pixelFormatBytes(config.engine.colorFormat) || gpu::isDepthFormat(config.engine.colorFormat) ||
+            gpu::isUnsignedIntegerFormat(config.engine.colorFormat) || gpu::isSignedIntegerFormat(config.engine.colorFormat) ||
+            (config.createDepthImage && !gpu::isDepthFormat(config.engine.depthFormat)))
+        {
+            throw std::invalid_argument("Offscreen draw extent, sample count, overrides, time step or target formats are invalid");
+        }
+        if (!config.createDepthImage)
+        {
+            config.engine.depthFormat = gpu::PixelFormat::Undefined;
+        }
+        if (config.engine.applicationName.empty())
+        {
+            config.engine.applicationName = appId;
+        }
+        if (!config.graphicsConfig.empty())
+        {
+            config.graphicsDocument = draw::SettingsCodec::readFile(config.graphicsConfig);
+        }
+        delegate->configure(config);
+        _drawDelegate = std::move(delegate);
+        _delegate.reset();
+        _drawConfig = std::move(config);
+        _executionMode = OffscreenExecutionMode::ExperimentalDraw;
+        _appId = appId;
+        auto backend = gpu::Factory::acquireBackend(_drawConfig.engine.backend);
+        _drawEngine = std::make_unique<draw::Engine>();
+        _drawEngine->init(_drawConfig.extent, *backend, _drawConfig.engine);
+        _drawEngineReady = true;
+        _drawDelegateInitialized = true; // Covers partial initialization callbacks.
+        _drawDelegate->init(_drawEngine.get(), _drawEngine->offscreenSurface());
+        _drawDelegate->initScene();
+        _drawDelegate->resize(_drawConfig.extent);
+        _drawDelegate->prepareFrame();
+        _initialized = true;
+        _initializing = false;
+    }
+    catch (...)
+    {
+        const auto error = std::current_exception();
+        try
+        {
+            cleanupDraw();
+        }
+        catch (...)
+        {
+        }
+        _initializing = false;
+        std::rethrow_exception(error);
+    }
+}
+
+OffscreenExecutionMode OffscreenApplication::executionMode() const
+{
+    return _executionMode;
 }
 
 int OffscreenApplication::run()
 {
-    if (!_engine)
+    if (!_initialized)
     {
         throw std::runtime_error("OffscreenApplication::run(): the application is not initialized");
+    }
+    if (_executionMode == OffscreenExecutionMode::ExperimentalDraw)
+    {
+        return runDraw();
+    }
+    if (!_engine)
+    {
+        throw std::runtime_error("OffscreenApplication::run(): the production engine is not initialized");
     }
 
     VkDevice device = _engine->device().handle();
@@ -189,10 +314,176 @@ int OffscreenApplication::run()
     return 0;
 }
 
+int OffscreenApplication::runDraw()
+{
+    if (_drawRunning || _drawCleaning || _initializing || !_drawEngineReady || !_drawDelegateInitialized)
+    {
+        throw std::logic_error("Offscreen draw execution is not ready or is already running");
+    }
+    _drawRunning = true;
+    try
+    {
+        auto* device = _drawEngine->device();
+        auto* surface = _drawEngine->offscreenSurface();
+        uint64_t completed = 0;
+        while (_drawDelegate->continueRendering())
+        {
+            if (completed == std::numeric_limits<uint64_t>::max())
+            {
+                throw std::overflow_error("Offscreen scene frame sequence exhausted");
+            }
+            _drawDelegate->prepareFrame();
+            const float delta = completed == 0 ? 0.0f : _drawConfig.timeStepSeconds;
+            _drawDelegate->update(delta, completed);
+            if (!_drawDelegate->continueRendering())
+            {
+                break;
+            }
+            auto frame = surface->beginFrame(); // Waits for completed-slot reuse.
+            if (!frame || !frame->isValid() || !frame->colorImage() ||
+                frame->colorImage()->size() != _drawConfig.extent ||
+                frame->colorImage()->pixelFormat() != _drawConfig.engine.colorFormat)
+            {
+                throw std::runtime_error("Offscreen draw acquired an invalid frame");
+            }
+            const auto slot = surface->currentFrameIndex();
+            if (slot >= _drawEngine->frameSlotCount())
+            {
+                throw std::runtime_error("Offscreen draw frame slot is invalid");
+            }
+            const auto start = std::chrono::steady_clock::now();
+            device->immediateSubmit([&](gpu::CommandBuffer* command)
+            {
+                auto* color = frame->colorImage();
+                command->transition(color, gpu::ImageLayout::ColorAttachment);
+                command->beginRendering(color);
+                command->clearColor(0, {0.0f, 0.0f, 0.0f, 1.0f});
+                command->endRendering();
+                command->transition(color, gpu::ImageLayout::ColorAttachment);
+                draw::FrameContext context{*_drawEngine, *command, *color, color->size(),
+                    completed, slot, delta, completed, delta};
+                _drawDelegate->render(context);
+                if (command->hasActiveScope())
+                {
+                    throw std::logic_error("Offscreen draw delegate left an active command scope");
+                }
+                command->transition(color, gpu::ImageLayout::TransferSrc);
+                // Offscreen present associates completion; it never presents to a window.
+                surface->present(command);
+            });
+            // immediateSubmit returns only after this scene submission completes.
+            _drawDelegate->completeFrame(completed);
+            if (_drawDelegate->needsResolve())
+            {
+                device->immediateSubmit([&](gpu::CommandBuffer* command)
+                {
+                    auto* color = frame->colorImage();
+                    draw::FrameContext context{*_drawEngine, *command, *color, color->size(),
+                        completed, slot, delta, completed, delta};
+                    _drawDelegate->resolveFrame(context);
+                    if (command->hasActiveScope())
+                    {
+                        throw std::logic_error("Offscreen final conversion left an active command scope");
+                    }
+                    command->transition(color, gpu::ImageLayout::TransferSrc);
+                    surface->present(command);
+                });
+                _drawDelegate->completeResolve();
+            }
+            surface->endFrame(frame.get());
+            const double elapsedMs = std::chrono::duration<double, std::milli>(
+                std::chrono::steady_clock::now() - start).count();
+            const auto frameNumber = completed++;
+            _drawEngine->cleanupManager().flushDeferred();
+            _drawDelegate->didRenderFrame(frameNumber, elapsedMs);
+        }
+        _drawDelegate->finish();
+        cleanupDraw();
+        _drawRunning = false;
+        return 0;
+    }
+    catch (...)
+    {
+        const auto error = std::current_exception();
+        try
+        {
+            cleanupDraw();
+        }
+        catch (...)
+        {
+        }
+        _drawRunning = false;
+        std::rethrow_exception(error);
+    }
+}
+
+void OffscreenApplication::cleanupDraw()
+{
+    if (_drawCleaning || !_drawEngine)
+    {
+        return;
+    }
+    _drawCleaning = true;
+    _initialized = false;
+    std::exception_ptr error;
+    const auto attempt = [&error](auto&& operation)
+    {
+        try
+        {
+            operation();
+        }
+        catch (...)
+        {
+            if (!error)
+            {
+                error = std::current_exception();
+            }
+        }
+    };
+    if (_drawEngineReady)
+    {
+        attempt([&]
+        {
+            _drawEngine->device()->waitIdle();
+        });
+    }
+    if (_drawDelegateInitialized)
+    {
+        _drawDelegateInitialized = false;
+        attempt([&]
+        {
+            _drawDelegate->cleanup();
+        });
+    }
+    _drawEngineReady = false;
+    attempt([&]
+    {
+        _drawEngine->cleanup();
+    });
+    _drawEngine.reset();
+    _drawCleaning = false;
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
+}
+
 void OffscreenApplication::cleanup()
 {
-    _delegate->cleanup();
-    _engine->cleanup();
+    if (_executionMode == OffscreenExecutionMode::ExperimentalDraw)
+    {
+        cleanupDraw();
+        return;
+    }
+    if (_delegate)
+    {
+        _delegate->cleanup();
+    }
+    if (_engine)
+    {
+        _engine->cleanup();
+    }
+    _initialized = false;
 }
 
 }

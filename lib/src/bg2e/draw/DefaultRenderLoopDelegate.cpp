@@ -18,7 +18,7 @@
 
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/gpu/Device.hpp>
-#include <bg2e/gpu/WindowSurface.hpp>
+#include <bg2e/gpu/Surface.hpp>
 #include <bg2e/scene/Node.hpp>
 
 #include <exception>
@@ -241,6 +241,7 @@ void DefaultRenderLoopDelegate::enqueueRendererUpdate(uint64_t generation,
     _updates.push_back({generation, std::move(operation), std::move(stale)});
     requestSceneFrame();
 }
+
 void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
 {
     if (updates.empty())
@@ -263,6 +264,7 @@ void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
         }
     }
 }
+
 void DefaultRenderLoopDelegate::prepareFrame()
 {
     if (!_engine || !_sceneReady)
@@ -321,6 +323,18 @@ void DefaultRenderLoopDelegate::prepareFrame()
     requestSceneFrame();
 }
 
+void DefaultRenderLoopDelegate::setInternalExtent(gpu::Size2D extent)
+{
+    if ((extent.width == 0) != (extent.height == 0))
+    {
+        throw std::invalid_argument("Internal extent must have both dimensions or follow output");
+    }
+    _followOutputExtent = extent.isZero();
+    _fixedInternalExtent = extent;
+    _initialConfiguration.internalExtent = extent;
+    reconfigureRenderer();
+}
+
 void DefaultRenderLoopDelegate::reconfigureRenderer()
 {
     if (!_rendererInitialized)
@@ -338,6 +352,7 @@ void DefaultRenderLoopDelegate::reconfigureRenderer()
         requestSceneFrame();
     }
 }
+
 void DefaultRenderLoopDelegate::surfaceChanged(gpu::Size2D extent, gpu::PixelFormat format)
 {
     if (!_engine || !_sceneReady || extent.isZero() || format == gpu::PixelFormat::Undefined || gpu::isDepthFormat(format))
@@ -378,7 +393,7 @@ void DefaultRenderLoopDelegate::resize(gpu::Size2D extent)
     {
         throw std::logic_error("Default draw delegate is not initialized");
     }
-    surfaceChanged(extent, _engine->surface()->colorFormat());
+    surfaceChanged(extent, _engine->renderSurface()->colorFormat());
 }
 
 void DefaultRenderLoopDelegate::update(const FrameContext& frame)

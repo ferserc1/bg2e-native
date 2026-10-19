@@ -81,17 +81,25 @@ x_{fb}=Wu,\qquad
 
 Consequently the first framebuffer row is near `v=0`, and row `j` has center
 `v=(j+0.5)/H`; column `i` has center `u=(i+0.5)/W`. Both the explicit shader
-V inversion and the negative viewport height must be considered. Source comments
-say that `v=1` is at the top, but the executed expressions compose as shown above.
-Readback copies rows directly; it does not apply a CPU UV inversion. The preview
-shader uses the same mapping, making the preview and surface rasterization agree.
+V inversion and the negative viewport height must be considered. Readback copies
+rows directly; it does not apply a CPU UV inversion. The preview shader uses the
+same mapping, making the preview and surface rasterization agree.
+
+The Metal UV surface vertex shader uses the same clip-space position
+`(2u-1, 1-2v)`. Metal's top-left framebuffer viewport maps clip `+Y` to row zero,
+so it also places UV `v=0` on the first row. Metal image readback copies from
+texture origin `(0,0)` in row order, matching Vulkan's image-to-buffer copy.
+Composition and dilation are compute shaders addressed by integer `(x,y)` and do
+not swap rows. The resulting tightly packed pixels therefore keep `v=0` first
+on both backends; the output writer passes those rows to the image encoder without
+an additional vertical flip.
 
 Sources: [viewport helper](../../../lib/src/bg2e/render/vulkan/macros/graphics.cpp),
 [surface shader](../../../shaders/src/glsl/uv_surface.vert.glsl),
 [preview shader](../../../shaders/src/glsl/uv_map_preview.vert.glsl),
 [readback](../../../lib/src/bg2e/render/UvTemporalAccumulator.cpp).
-This orientation follows the source expressions; it has not been established
-by a new runtime render test.
+This orientation follows the source expressions and backend viewport/readback
+implementations. It has not been established by a new runtime render test.
 
 ## From a covered texel back to the surface
 
@@ -165,9 +173,10 @@ Sources: [profile/pipeline](../../../lib/src/bg2e/render/UvSurfacePass.cpp),
 No camera depth ordering can choose which surface should own an overlapping UV
 texel. With depth and blending disabled, overlapping triangles would overwrite
 one another according to drawing; that is not a valid surface parameterization.
-`LightmapBaker::validateTarget()` therefore requires the CPU atlas validator
-before creating the pass. Shared chart edges are allowed, while overlapping
-positive-area interiors are rejected. Collapsed triangles cover no texels.
+`LightmapBaker::validateTarget()` uses the CPU atlas validator before creating the
+pass, retaining structural errors but treating positive-area overlaps as warnings.
+All triangles remain eligible for baking despite the potential for overwritten
+texels. Shared chart edges are allowed. Collapsed triangles cover no texels.
 The UV rasterizer itself is not an overlap validator.
 
 The internal `UvSurfacePass::Diagnostic` returns extent plus UInt32 submesh-ID

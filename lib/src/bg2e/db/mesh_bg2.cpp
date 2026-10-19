@@ -226,13 +226,8 @@ std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPli
             Bg2ioSize readResult = bg2io_readInteger(&it, &block);
             if (readResult < 0)
             {
-                // End of buffer reached without an explicit End block. This
-                // happens with truncated or malformed bg2 files. On error
-                // bg2io_readInteger leaves both the iterator and 'block'
-                // untouched, so without this guard the loop would spin
-                // forever. Treat it as an End block to finalize the current
-                // poly list and exit cleanly.
-                block = bg2io_End;
+                // Never publish a partial model from a truncated polylist.
+                throw std::runtime_error("Truncated BG2 polylist data");
             }
             switch (block)
             {
@@ -341,7 +336,7 @@ std::vector<Bg2Plist> readPolyList(Bg2ioBufferIterator& it, uint32_t numberOfPli
 
     if (readedPlist != numberOfPlist)
     {
-        std::cout << "Warning: inconsistent number of polyList readed in bg2 file" << std::endl;
+        throw std::runtime_error("Inconsistent BG2 polylist count");
     }
     return result;
 }
@@ -364,7 +359,6 @@ Bg2FileData readBg2File(Bg2ioBuffer* buffer, const std::filesystem::path& filePa
         throw std::runtime_error("Error creating bg2 buffer");
     }
 
-    std::vector<uint8_t> bytes(fileSize);
     fileStream.read(reinterpret_cast<char*>(buffer->mem), buffer->length);
 
     Bg2ioBufferIterator it = BG2IO_ITERATOR(buffer);
@@ -376,16 +370,35 @@ Bg2FileData readBg2File(Bg2ioBuffer* buffer, const std::filesystem::path& filePa
     Bg2FileData result;
     parseJoints(joints, result);
     result.polyLists = readPolyList(it, numberOfPlist);
+    std::vector<bool> used(materials.size(), false);
     for (auto& plist : result.polyLists)
     {
-        for (auto& mat : materials)
+        std::optional<size_t> first;
+        std::optional<size_t> selected;
+        for (size_t i = 0; i < materials.size(); ++i)
         {
-            if (mat.name() == plist.matName)
+            if (materials[i].name() == plist.matName)
             {
-                plist.material = mat;
-                break;
+                if (!first)
+                {
+                    first = i;
+                }
+                if (!used[i])
+                {
+                    selected = i;
+                    break;
+                }
             }
         }
+        // Repeated per-submesh definitions retain their independent edits;
+        // a file with one shared material can still reference it many times.
+        selected = selected ? selected : first;
+        if (!selected)
+        {
+            throw std::runtime_error("BG2 references a missing material: " + plist.matName);
+        }
+        plist.material = materials[*selected];
+        used[*selected] = true;
     }
 
     fileStream.close();
@@ -395,8 +408,13 @@ Bg2FileData readBg2File(Bg2ioBuffer* buffer, const std::filesystem::path& filePa
 Bg2Mesh* loadMeshBg2(const std::filesystem::path& filePath)
 {
     Bg2ioBuffer buffer = BG2IO_BUFFER_INIT;
+    auto release = [](Bg2ioBuffer* value)
+    {
+        bg2io_freeBuffer(value);
+    };
+    std::unique_ptr<Bg2ioBuffer, decltype(release)> bufferOwner(&buffer, release);
     auto fileData = readBg2File(&buffer, filePath);
-    auto result = new Bg2Mesh();
+    auto result = std::make_unique<Bg2Mesh>();
     result->mesh = std::make_shared<bg2e::geo::Mesh>();
     result->inputJoint = std::move(fileData.inputJoint);
     result->outputJoint = std::move(fileData.outputJoint);
@@ -408,8 +426,13 @@ Bg2Mesh* loadMeshBg2(const std::filesystem::path& filePath)
     {
         for (auto index : plist.index)
         {
-            auto i3 = index * 3;
-            auto i2 = index * 2;
+            const auto i3 = size_t(index) * 3;
+            const auto i2 = size_t(index) * 2;
+            if (i3 + 2 >= plist.positions.size() || i3 + 2 >= plist.normals.size() ||
+                i2 + 1 >= plist.texCoord0.size() || (!plist.texCoord1.empty() && i2 + 1 >= plist.texCoord1.size()))
+            {
+                throw std::runtime_error("Invalid BG2 vertex/normal/UV index");
+            }
             auto position = glm::vec3{plist.positions[i3], plist.positions[i3 + 1], plist.positions[i3 + 2]};
             auto normal = glm::vec3{plist.normals[i3], plist.normals[i3 + 1], plist.normals[i3 + 2]};
             // Important: flip Y UV coord
@@ -422,14 +445,14 @@ Bg2Mesh* loadMeshBg2(const std::filesystem::path& filePath)
         }
         result->mesh->submeshes.push_back({submeshOffset, submeshCount});
         result->materials.push_back(plist.material);
+        result->submeshNames.push_back(plist.plistName);
         submeshOffset = currentIndex;
         submeshCount = 0;
     }
     geo::GenTangentsModifier<geo::Mesh> tangentGenerator(result->mesh.get());
     tangentGenerator.apply();
 
-    bg2io_freeBuffer(&buffer);
-    return result;
+    return result.release();
 }
 
 Bg2Mesh* loadMeshBg2(const std::filesystem::path& filePath, const std::string& fileName)
@@ -443,7 +466,8 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh* mesh)
 {
     auto basePath = filePath;
     basePath.remove_filename();
-    Bg2File* file = bg2io_createBg2File();
+    std::unique_ptr<Bg2File, decltype(&bg2io_freeBg2File)> owner(bg2io_createBg2File(), &bg2io_freeBg2File);
+    auto* file = owner.get();
     file->header.endianess = 0;
     file->header.majorVersion = 1;
     file->header.minorVersion = 2;
@@ -473,7 +497,6 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh* mesh)
         file->jointData = static_cast<char*>(std::malloc(serializedJoints.size() + 1));
         if (!file->jointData)
         {
-            bg2io_freeBg2File(file);
             throw std::bad_alloc();
         }
         std::memcpy(file->jointData, serializedJoints.c_str(), serializedJoints.size() + 1);
@@ -535,9 +558,10 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh* mesh)
         {
             material.setName("material" + std::to_string(submeshIndex));
         }
-        plist->name = new char[material.name().size() + 1];
-        std::strncpy(plist->name, material.name().c_str(), material.name().size());
-        plist->name[material.name().size()] = '\0';
+        const auto& submeshName = mesh->submeshNames.empty() ? material.name() : mesh->submeshNames.at(submeshIndex);
+        plist->name = new char[submeshName.size() + 1];
+        std::strncpy(plist->name, submeshName.c_str(), submeshName.size());
+        plist->name[submeshName.size()] = '\0';
         plist->matName = new char[material.name().size() + 1];
         std::strncpy(plist->matName, material.name().c_str(), material.name().size());
         plist->matName[material.name().size()] = '\0';
@@ -569,7 +593,7 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh* mesh)
         std::filesystem::path srcTexture = t->imageFilePath();
         auto fileName = srcTexture.filename();
         auto dstTexture = basePath;
-        dstTexture += fileName;
+        dstTexture /= fileName;
         if (srcTexture != dstTexture)
         {
             std::filesystem::copy(srcTexture, dstTexture, std::filesystem::copy_options::overwrite_existing);
@@ -577,13 +601,20 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh* mesh)
     }
 
     Bg2ioBuffer outBuffer = BG2IO_BUFFER_INIT;
+    auto releaseBuffer = [](Bg2ioBuffer* buffer)
+    {
+        bg2io_freeBuffer(buffer);
+    };
+    std::unique_ptr<Bg2ioBuffer, decltype(releaseBuffer)> bufferOwner(&outBuffer, releaseBuffer);
     int error = bg2io_writeFileToBuffer(file, &outBuffer);
     if (error != BG2IO_NO_ERROR)
     {
         throw std::runtime_error("Error writting bg2 file buffer.");
     }
 
-    std::ofstream outFile(filePath, std::ios::binary);
+    std::ofstream outFile;
+    outFile.exceptions(std::ios::failbit | std::ios::badbit);
+    outFile.open(filePath, std::ios::binary);
     if (!outFile.is_open())
     {
         throw std::runtime_error("Could not open bg2 file to write.");
@@ -592,7 +623,6 @@ void storeMeshBg2(const std::filesystem::path& filePath, Bg2Mesh* mesh)
     outFile.write(reinterpret_cast<char*>(outBuffer.mem), outBuffer.actualLength);
 
     outFile.close();
-    bg2io_freeBg2File(file);
 }
 
 void storeMeshBg2(const std::filesystem::path& filePath, const std::string& fileName, Bg2Mesh* mesh)
@@ -617,7 +647,7 @@ std::shared_ptr<draw::Drawable> loadDrawableBg2(const std::filesystem::path& fil
     {
         const auto& material = model->materials[i];
         result->setMaterial(material, i);
-        result->setSubmeshName(material.name(), i);
+        result->setSubmeshName(model->submeshNames.at(i), i);
         result->setSubmeshGroupName(material.groupName(), i);
         result->setSubmeshVisibility(material.visible(), i);
     }

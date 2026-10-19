@@ -1,0 +1,125 @@
+# Complete draw resource IO
+
+Include `<bg2e/db/scene.hpp>`, `<bg2e/db/scene_bg2.hpp>`,
+`<bg2e/db/scene_gltf.hpp>` and `<bg2e/db/mesh_obj.hpp>`, or `<bg2e/db/all.hpp>`.
+These explicit `draw::Engine&` operations are synchronous. Stop frame recording
+and background submissions before calling them, and keep the Engine alive until
+all loaded objects and textures have been released. The editor executes ordinary
+IO in `prepareFrame`, before frame acquisition; its close callback also runs
+between frames and drains the device before saving.
+
+## Loading
+
+- `loadSceneBg2(path, engine, progress)` returns a model Node with its draw
+  drawable, identity Transform, input/output chain joints and resolved source.
+- `loadDrawableObj(path, engine, onTextureLoaded)` returns a realized draw
+  drawable. The common tinyobj geometry reader triangulates faces, generates
+  absent normals/tangents and groups consecutive faces by shape and material.
+  MTL files resolve relative to the OBJ; texture references resolve relative to
+  each MTL. Diffuse/alpha, metalness, roughness (or an Ns approximation), normal,
+  ambient and emission maps populate the engine's six material slots. Names,
+  groups, scales and clamp addressing are retained. Separate opacity maps,
+  height-to-normal conversion, texture offsets and turbulence require conversion
+  before import and raise an error. A missing MTL raises an error.
+- `loadGltf(path, engine, progress)` returns an owning shared Node. The same
+  cgltf parser serves the existing production overload. It imports the selected
+  scene's static mesh hierarchy, local matrices, two UV sets, PBR color and
+  metallic/roughness maps, normal/AO/emission maps, alpha mode and sampler settings.
+  Embedded images use the importer's temporary image cache. Materials follow the
+  engine's scalar emission model, rather than a separate RGB emission color.
+  The draw importer rejects skins/animations, morph targets, cameras/lights,
+  non-triangle primitives, unrepresentable material extensions, colored emission
+  factors, normal/AO strengths and UV offset/rotation. Indexed positions, normals
+  and UV0 are required by the shared parser. Convert unsupported features before
+  import; this is a static model importer, not a general glTF transcoder.
+- `loadScene(path, engine, progress)` builds the registered typed graph and calls
+  its virtual draw `loadResources`. BG2/VWGLB and OBJ Drawable references are
+  realized with that context. Import a glTF hierarchy through `loadGltf` first,
+  then save it as a scene. A hierarchy cannot be represented by one Drawable
+  resource reference. Production and draw resources cannot be mixed implicitly.
+
+Callbacks report synchronous parsing/resource work. OBJ texture counts are
+estimated during scene realization and may increase as resources are discovered.
+Schema-only and raw IO remain [separate operations](SceneReferences.md): neither
+requires a device nor exports any referenced image.
+
+## Saving a complete resource generation
+
+```cpp
+bg2e::db::saveScene(root.get(), engine, outputDirectory / "model.json");
+bg2e::db::storeDrawableBg2(outputDirectory / "model.bg2", engine, modelNode.get());
+```
+
+The output directory must already exist. Export requires realized drawables owned
+by the supplied Engine and no unresolved pending texture updates. It snapshots live material attributes and each actual GPU
+texture, including a GPU-only baked map with an empty source path. Every image
+layer/mip is read in its native format into a `.bg2tex` sidecar; format, HDR values
+and authored mips survive without gamma conversion or mip regeneration. Images
+must support TransferSrc and have initialized color subresources. Unsupported
+readback fails the transaction instead of falling back to an old source file.
+
+Sampler settings, color interpretation, UV sets/scales/channels/inversion and
+`IndirectTextureMode` travel in material JSON. The AO slot retains linear RGB
+bakedGI/bakedAO semantics. BG2 stores independent submesh names, material names,
+groups and visibility; repeated named material definitions retain separate edits.
+Drawable transforms are baked into exported geometry, while scene Node transforms
+remain in the graph. Tangents are regenerated on BG2 reload. Input/output joint
+values accompany model resources and scene components.
+
+Scene export calls each component's virtual `serializeReferences`, preserving
+custom fields implemented by that hook. Registered schema creators and draw
+`loadResources` remain authoritative when loading. Unsupported serializers throw;
+raw document IO is the route for preserving unregistered representations. Custom
+components with external resource types must provide their own resource export
+contract. Environment source images are copied without re-encoding. Runtime
+editor fixtures should set `ignoreSerialization`; ignored Drawables are not
+exported. Temporary Drawable paths are exchanged and restored without allocation,
+including on a serialization failure. Live texture settings are not modified.
+
+Ignored runtime editor helpers do not block single-model export. BG2 alone
+accepts one enabled, non-steady model node with an identity Node
+Transform and only Drawable/Transform/chain-joint components. Use a scene document
+for hierarchies, non-identity Node transforms, node flags or custom components.
+The standalone model's display name follows its output filename; scenes preserve
+Node and drawable display names separately from generated resource filenames.
+
+A unique staging directory is created beside the destination. Resource sidecars
+receive unique generation names and are linked into the destination without
+replacement. The main model/scene file is replaced last using an atomic filesystem
+rename (MoveFileEx on Windows). Failure removes this transaction's new sidecars
+and staging directory, preserving an existing main file and its resources. The
+filesystem must support hard links and same-filesystem atomic replacement. This
+is publication atomicity, not a power-loss durability guarantee. Old generations
+remain on disk: export deliberately does not delete possibly shared resources.
+Keep the main file and its generated sidecars together when moving a document.
+
+`.bg2tex` is a draw resource format; production texture loaders do not decode it.
+Existing production DB overloads remain available for their own formats. Do not
+feed a draw resource generation to a production renderer expecting PNG/HDR paths.
+
+## Native texture archive version 1
+
+`<bg2e/db/texture_archive.hpp>` exposes `readTextureArchive(path)` as CPU IO and
+`writeTextureArchive(path, image)` as synchronous GPU readback plus encoding.
+The reader does not create a device. The format begins with eight ASCII bytes
+`BG2TEX01`, followed by five little-endian uint32 values: PixelFormat, ImageType,
+width, height and explicit mip count. For each array layer, then each mip, it stores
+a little-endian uint64 byte length followed by tightly packed native texels.
+Image2D has one layer and Cubemap six. Depth, unknown formats/types, invalid
+sizes/mips, truncated payloads and trailing data are rejected. Version 1 uses the
+current GPU enum numeric values; changing those assignments requires a new
+archive version. Native texels currently require a little-endian host.
+
+The [manual resource probe](../../../tests/draw/resource_io/README.md) checks
+GPU-only HDR/mip/metadata round-trip and rollback. Compilation, backend execution
+and editor interaction validation are project-lead tasks; no execution evidence
+is implied by these source contracts.
+
+## Model editor bake integration
+
+The draw model editor automatically applies completed bake output from a temporary
+filesystem texture (linear PNG for RGB8, native archive for float output). Complete
+save snapshots that applied GPU image into final native sidecars, preserving the
+linear UV2 baked-AO/GI material metadata. A saved model does not depend on the
+original temporary path. Reference-only serialization is not a replacement for
+this resource materialization. See the [editor workflow](../../tutorials/draw/model_edit.md).

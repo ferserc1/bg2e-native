@@ -137,3 +137,12 @@ for scheduling details and the asynchronous-work contract.
 See [MainLoop, render, draw and gpu](../../architecture/MainLoop_render_draw_gpu.md)
 for source excerpts, execution strategies, ownership, frame flow, UI integration,
 asynchronous work and synchronization boundaries.
+
+## Windowless draw jobs
+
+The typed [OffscreenApplication](OffscreenApplication.md) overload accepts
+DrawOffscreenApplicationDelegate. Its default scene bridge performs exactly N
+completed linear camera samples before one final conversion and completed-output
+callback. The [offscreen scene CLI](../../apps/draw_offscreen_application.md)
+exports a verified PNG without window/UI initialization. Backend selection and
+explicit draw execution are separate choices; production render remains supported.

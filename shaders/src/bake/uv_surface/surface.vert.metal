@@ -31,6 +31,8 @@ vertex Varyings vertMain(uint index [[vertex_id]],
 {
     UvVertex item = vertices[index];
     Varyings out;
+    // Match Vulkan: Metal's top-left viewport maps clip +Y to row zero, so v=0
+    // is the first framebuffer row for the UV surface bake.
     out.position = float4(item.uv.x*2.0-1.0,1.0-item.uv.y*2.0,0.0,1.0);
     out.worldPosition = (transform.model*item.position).xyz;
     float3x3 normalMatrix(transform.normal[0].xyz,transform.normal[1].xyz,transform.normal[2].xyz);

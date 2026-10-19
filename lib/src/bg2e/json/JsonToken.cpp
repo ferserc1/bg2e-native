@@ -82,17 +82,107 @@ JsonToken JsonTokenizer::getToken()
     {
         token.type = JsonTokenType::String;
         token.value = "";
-        while (stream->get(c) && c != '"')
+        auto hex4 = [&]()
         {
-            token.value += c;
+            uint32_t value = 0;
+            for (int i = 0; i < 4; ++i)
+            {
+                if (!stream->get(c))
+                {
+                    throw std::logic_error("Truncated JSON Unicode escape");
+                }
+                const int digit = c >= '0' && c <= '9' ? c - '0' :
+                    c >= 'a' && c <= 'f' ? c - 'a' + 10 : c >= 'A' && c <= 'F' ? c - 'A' + 10 : -1;
+                if (digit < 0)
+                {
+                    throw std::logic_error("Invalid JSON Unicode escape");
+                }
+                value = (value << 4) | static_cast<uint32_t>(digit);
+            }
+            return value;
+        };
+        bool closed = false;
+        while (stream->get(c))
+        {
+            if (c == '"')
+            {
+                closed = true;
+                break;
+            }
+            if (static_cast<unsigned char>(c) < 0x20)
+            {
+                throw std::logic_error("Unescaped JSON control character");
+            }
+            if (c != '\\')
+            {
+                token.value += c;
+                continue;
+            }
+            if (!stream->get(c))
+            {
+                throw std::logic_error("Truncated JSON escape");
+            }
+            switch (c)
+            {
+            case '"': case '\\': case '/': token.value += c; break;
+            case 'b': token.value += '\b'; break;
+            case 'f': token.value += '\f'; break;
+            case 'n': token.value += '\n'; break;
+            case 'r': token.value += '\r'; break;
+            case 't': token.value += '\t'; break;
+            case 'u':
+            {
+                uint32_t code = hex4();
+                if (code >= 0xD800 && code <= 0xDBFF)
+                {
+                    if (!stream->get(c) || c != '\\' || !stream->get(c) || c != 'u')
+                    {
+                        throw std::logic_error("Missing JSON low surrogate");
+                    }
+                    const auto low = hex4();
+                    if (low < 0xDC00 || low > 0xDFFF)
+                    {
+                        throw std::logic_error("Invalid JSON low surrogate");
+                    }
+                    code = 0x10000 + ((code - 0xD800) << 10) + low - 0xDC00;
+                }
+                else if (code >= 0xDC00 && code <= 0xDFFF)
+                {
+                    throw std::logic_error("Unpaired JSON low surrogate");
+                }
+                if (code < 0x80)
+                {
+                    token.value += static_cast<char>(code);
+                }
+                else
+                {
+                    if (code >= 0x10000)
+                    {
+                        token.value += static_cast<char>(0xF0 | (code >> 18));
+                        token.value += static_cast<char>(0x80 | ((code >> 12) & 63));
+                    }
+                    else if (code >= 0x800)
+                    {
+                        token.value += static_cast<char>(0xE0 | (code >> 12));
+                    }
+                    else
+                    {
+                        token.value += static_cast<char>(0xC0 | (code >> 6));
+                    }
+                    if (code >= 0x800)
+                    {
+                        token.value += static_cast<char>(0x80 | ((code >> 6) & 63));
+                    }
+                    token.value += static_cast<char>(0x80 | (code & 63));
+                }
+                break;
+            }
+            default: throw std::logic_error("Invalid JSON escape");
+            }
         }
-        if (c != '"')
+        if (!closed)
         {
-            // Reached the end of the stream without a closing quote. Without
-            // this guard the loop would spin forever (a failed get() leaves
-            // 'c' unchanged), which is exactly what happens when a corrupt or
-            // over-read buffer feeds an unterminated string to the tokenizer.
-            throw std::logic_error("Unterminated string while reading JSON token");
+            throw std::logic_error("Unterminated JSON string");
         }
     }
     else if (c == '{')

@@ -35,6 +35,8 @@
 #include <random>
 #include <unordered_map>
 #include <unordered_set>
+#include <type_traits>
+#include <bg2e/draw/Drawable.hpp>
 
 #define CGLTF_IMPLEMENTATION
 #include <cgltf.h>
@@ -352,6 +354,23 @@ static base::MaterialAttributes materialAttributes(
     if (material)
     {
         result.setRefractionFactor(0.001f);
+        result.setIsUnlit(material->unlit);
+        if (auto texture = textureFromView(material->occlusion_texture, images, base::Color::TypeLinear))
+        {
+            result.setAoTexture(texture);
+            result.setAoUVSet(textureUVSet(material->occlusion_texture, primitive));
+            result.setAoScale(textureUVScale(material->occlusion_texture));
+            result.setAoChannel(0);
+        }
+        const auto emission = material->emissive_factor;
+        result.setLightEmission(emission[0]);
+        if (auto texture = textureFromView(material->emissive_texture, images, base::Color::TypeSRGB))
+        {
+            result.setLightEmissionTexture(texture);
+            result.setLightEmissionUVSet(textureUVSet(material->emissive_texture, primitive));
+            result.setLightEmissionScale(textureUVScale(material->emissive_texture));
+        }
+
 
         // glTF defines transparency through alphaMode. BLEND uses alpha
         // compositing; MASK stays in the opaque queue and uses alpha test.
@@ -554,12 +573,13 @@ static glm::mat4 nodeTransform(const cgltf_node* node)
     return glm::translate(glm::mat4(1.0f), T) * glm::mat4_cast(R) * glm::scale(glm::mat4(1.0f), S);
 }
 
+template<class DrawableT>
 scene::Node* createSceneTree(
     const cgltf_data* data,
     const cgltf_node* gltfNode,
-    const std::vector<std::shared_ptr<scene::Drawable>>& drawables)
+    const std::vector<std::shared_ptr<DrawableT>>& drawables)
 {
-    auto node = new scene::Node();
+    auto node = std::make_unique<scene::Node>();
     if (gltfNode->name)
     {
         node->setName(gltfNode->name);
@@ -584,17 +604,74 @@ scene::Node* createSceneTree(
         node->addChild(childNode);
     }
 
-    return node;
+    return node.release();
 }
 }
 
-extern BG2E_API bg2e::scene::Node* loadGltf(
+template<class DrawableT, class EngineT>
+static scene::Node* loadGltfImpl(
     const std::filesystem::path& filePath,
-    render::Engine* engine,
+    EngineT* engine,
     scene::SceneProgressCallback onProgress)
 {
     std::unique_ptr<cgltf_data, decltype(&cgltf_free)> data(gltf::loadGltfFile(filePath), &cgltf_free);
     gltf::TemporaryImages temporaryImages(filePath, data.get());
+    if constexpr (std::is_same_v<DrawableT, draw::Drawable>)
+    {
+        if (data->skins_count || data->animations_count)
+        {
+            throw std::invalid_argument("Animated/skinned glTF requires an animation importer");
+        }
+        for (cgltf_size n = 0; n < data->nodes_count; ++n)
+        {
+            if (data->nodes[n].camera || data->nodes[n].light)
+            {
+                throw std::invalid_argument("glTF camera/light import is not supported by the model importer");
+            }
+        }
+        for (cgltf_size m = 0; m < data->meshes_count; ++m)
+        {
+            for (cgltf_size p = 0; p < data->meshes[m].primitives_count; ++p)
+            {
+                const auto& primitive = data->meshes[m].primitives[p];
+                if (primitive.type != cgltf_primitive_type_triangles || primitive.targets_count)
+                {
+                    throw std::invalid_argument("glTF model import requires triangles without morph targets");
+                }
+                const auto* material = primitive.material;
+                if (!material)
+                {
+                    continue;
+                }
+                if (material->has_pbr_specular_glossiness || material->has_clearcoat || material->has_transmission ||
+                    material->has_volume || material->has_sheen || material->has_specular || material->has_iridescence ||
+                    material->has_anisotropy || material->has_emissive_strength ||
+                    material->emissive_factor[0] != material->emissive_factor[1] ||
+                    material->emissive_factor[0] != material->emissive_factor[2] ||
+                    (material->occlusion_texture.texture && material->occlusion_texture.scale != 1))
+                {
+                    throw std::invalid_argument("glTF material extension/emission/AO strength requires conversion before import");
+                }
+                auto validateView = [](const cgltf_texture_view& view)
+                {
+                    if (view.has_transform && (view.transform.offset[0] != 0 ||
+                        view.transform.offset[1] != 0 || view.transform.rotation != 0))
+                    {
+                        throw std::invalid_argument("glTF UV offsets/rotation require conversion before import");
+                    }
+                };
+                validateView(material->pbr_metallic_roughness.base_color_texture);
+                validateView(material->pbr_metallic_roughness.metallic_roughness_texture);
+                validateView(material->normal_texture);
+                validateView(material->occlusion_texture);
+                validateView(material->emissive_texture);
+                if (material->normal_texture.texture && material->normal_texture.scale != 1)
+                {
+                    throw std::invalid_argument("glTF normal strength requires conversion before import");
+                }
+            }
+        }
+    }
 
     std::unordered_set<const cgltf_image*> referencedImages;
     for (cgltf_size m = 0; m < data->meshes_count; ++m)
@@ -619,6 +696,8 @@ extern BG2E_API bg2e::scene::Node* loadGltf(
                 collect(material->pbr_metallic_roughness.metallic_roughness_texture);
             }
             collect(material->normal_texture);
+            collect(material->occlusion_texture);
+            collect(material->emissive_texture);
         }
     }
     const int total = static_cast<int>(referencedImages.size() + data->meshes_count);
@@ -658,13 +737,13 @@ extern BG2E_API bg2e::scene::Node* loadGltf(
     }
 
     // Load drawables
-    std::vector<std::shared_ptr<bg2e::scene::Drawable>> drawables;
+    std::vector<std::shared_ptr<DrawableT>> drawables;
 
     size_t meshNameIndex = 0;
     size_t meshIdx = 0;
     for (auto& mesh : meshes)
     {
-        auto drw = std::make_shared<bg2e::scene::Drawable>();
+        auto drw = std::make_shared<DrawableT>();
 
         if (data->meshes[meshIdx].name)
         {
@@ -704,9 +783,13 @@ extern BG2E_API bg2e::scene::Node* loadGltf(
     }
 
     // Load scene nodes
-    auto result = new scene::Node();
+    auto result = std::make_unique<scene::Node>(filePath.stem().string());
 
-    const cgltf_scene* scene = data->scene;
+    const cgltf_scene* scene = data->scene ? data->scene : (data->scenes_count ? &data->scenes[0] : nullptr);
+    if (!scene)
+    {
+        throw std::runtime_error("glTF contains no scene");
+    }
     for (cgltf_size i = 0; i < scene->nodes_count; ++i)
     {
         const cgltf_node* gltfRootNode = scene->nodes[i];
@@ -715,7 +798,25 @@ extern BG2E_API bg2e::scene::Node* loadGltf(
 
     temporaryImages.commit();
 
-    return result;
+    return result.release();
+}
+
+scene::Node* loadGltf(const std::filesystem::path& filePath, render::Engine* engine,
+    scene::SceneProgressCallback onProgress)
+{
+    return loadGltfImpl<scene::Drawable>(filePath, engine, std::move(onProgress));
+}
+
+std::shared_ptr<scene::Node> loadGltf(const std::filesystem::path& filePath, draw::Engine& engine,
+    scene::SceneProgressCallback onProgress)
+{
+    return std::shared_ptr<scene::Node>(loadGltfImpl<draw::Drawable>(filePath, &engine, std::move(onProgress)));
+}
+
+std::shared_ptr<scene::Node> loadGltf(const std::filesystem::path& basePath, const std::string& fileName,
+    draw::Engine& engine, scene::SceneProgressCallback onProgress)
+{
+    return loadGltf(basePath / fileName, engine, std::move(onProgress));
 }
 
 extern BG2E_API bg2e::scene::Node* loadGltf(

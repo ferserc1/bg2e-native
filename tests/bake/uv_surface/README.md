@@ -5,7 +5,8 @@ The project lead compiles engine and native shaders before running:
 
 - `bg2e::bake::tests::runUvSurfaceCpuProbe()`: no GPU; shared-edge chart connectivity,
   duplicate seam/material partition, deindex ranges, invalid indices, nonfinite UVs,
-  positive-area overlap and invalid normals.
+  nonfatal positive-area overlap and invalid normals. Overlapping triangles must
+  remain in the packed mesh; only structural/coordinate/geometry errors reject it.
 - `bg2e::bake::tests::runUvSurfaceGpuProbe(engine, shaderRoot)`: stopped initialized
   Engine, deployed bake/uv_surface libraries. Required unavailable formats/kernels
   throw (not a passing or skipped numerical test). 33x17 asymmetric UV rectangle,

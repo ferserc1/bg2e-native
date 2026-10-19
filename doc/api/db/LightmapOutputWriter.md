@@ -7,6 +7,11 @@ Plans a complete batch's outputs before baking, then writes a completed target's
 RGB image and optional `.bg2` copy. Non-copyable; move construction/assignment
 are `noexcept`. Private state owns plans and sidecar-commit tracking.
 
+This writer consumes the production render bake types. The experimental
+[bake output](../bake/LightmapOutput.md) is a retained image plus typed CPU pixels;
+it does not yet have this batch/model-copy writer. Mode metadata and GPU-only
+texture ownership alone cannot produce a reloadable saved model.
+
 ## Types
 
 | Type/field | Meaning |

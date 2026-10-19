@@ -13,6 +13,15 @@ and active GI/reflection defaults, is **accepted by project lead continuation
 instruction**. Backend/scenario coverage for that acceptance is not specified.
 This review remains awaiting lead acceptance. M03 is not closed until M03-11.
 
+## Later default-policy amendment
+
+On 2026-10-19 the project lead changed the global renderer startup policy:
+`RendererConfiguration` now selects GI and default RTGI/reflection settings are
+enabled. This replaces the example-specific/default-disabled distinction described
+in the historical table below, without changing explicit configuration or native
+availability behavior. The updated source and maintained API/app/tutorial pages
+are recorded in the [M03 summary amendment](summary.md#default-renderer-policy-amendment-project-lead-direction-2026-10-19).
+
 ## Source-to-contract comparison
 
 | Planned area | Actual source and contract | Classification / consequence |

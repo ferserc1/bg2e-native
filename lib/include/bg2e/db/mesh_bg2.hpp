@@ -46,6 +46,7 @@ namespace db {
 struct Bg2Mesh {
     std::shared_ptr<bg2e::geo::MeshPNUUT> mesh;
     std::vector<bg2e::base::MaterialAttributes> materials;
+    std::vector<std::string> submeshNames;
     std::optional<bg2e::base::LinkJoint> inputJoint;
     std::optional<bg2e::base::LinkJoint> outputJoint;
 };
@@ -81,6 +82,10 @@ extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     const std::filesystem::path& basePath,
     const std::string& fileName,
     bg2e::render::Engine* engine);
+
+// Complete native-resource snapshot for one realized draw model node.
+extern BG2E_API void storeDrawableBg2(const std::filesystem::path& path,
+    draw::Engine& engine, scene::Node* node);
 
 extern BG2E_API uint32_t countMeshTextures(const std::filesystem::path& filePath);
 

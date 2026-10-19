@@ -56,8 +56,9 @@ by the project lead. A separately reported transparency issue remains explicitly
 deferred; transparency implementation is not a claim of complete runtime acceptance.
 Public AO/GI/reflection tracing, effect histories, spatial filtering and manipulation
 are available. [Integrated bake](../bake/index.md) now supplies completed RGB UV2
-maps through [explicit material modes](BakedIndirectMaps.md). Windowless draw
-application execution and standalone baking are not delivered. See [advanced lighting](../../architecture/draw_advanced_lighting.md).
+maps through [explicit material modes](BakedIndirectMaps.md). [Windowless draw frame execution](../app/OffscreenApplication.md#experimental-draw-execution)
+and [exact camera-image averaging](DefaultOffscreenApplicationDelegate.md)
+are available; standalone bake scheduling remains a separate product. See [advanced lighting](../../architecture/draw_advanced_lighting.md).
 
 ## Public extension contracts
 
@@ -94,12 +95,14 @@ See [DenoiseFilter](DenoiseFilter.md) for reusable scalar/HDR bilateral filterin
 
 RendererConfiguration appends shared ambientOcclusion, globalIllumination,
 reflections, temporal, denoise and finalProcessor components; matching renderer
-accessors return their actual live owners. Null tracing components create disabled
-public defaults. Null temporal creates enabled maxFrames=32; null denoise creates
-enabled radius=2. Indirect mode defaults to AmbientOcclusion, but the AO component
-must also be enabled. Reflection activation is independent. A null finalProcessor
-adds no extra final processing. The manipulation example explicitly selects GI
-and enables GI/reflections; these are not global renderer defaults.
+accessors return their actual live owners. With no explicit configuration, indirect
+lighting selects GlobalIllumination and the renderer-created GI and reflection
+passes are enabled. These are requested defaults: available/status and the selected
+lighting graph still determine whether native effects can run. Unsupported effects
+preserve the request and use the renderer's documented fallback. Injecting a pass
+or setting its enabled flag/mode explicitly overrides the relevant default. Null
+temporal creates enabled maxFrames=32; null denoise creates enabled radius=2. A null
+finalProcessor adds no extra final processing.
 
 Compatible components are initialized/cleaned with the renderer lifecycle; injected
 shaderRoot/interface/prefix must match the native ABI. Callers can substitute
@@ -115,3 +118,20 @@ SDK history; resetUpscaler remains a forwarding compatibility hook.
 [FinalProcessor/SMAAProcessor](SMAAProcessor.md) runs only after current final color,
 once per rendered frame, before overlays/UI. See [signal/quality/surface contracts](../../architecture/draw_advanced_lighting.md)
 and [settings](Settings.md) for actual modes/diagnostic IDs.
+
+## Public linear/final split
+
+Renderer::supportsLinearRecording is optional and true for RendererDeferred.
+recordLinear(frame) records the fully composed/reconstructed output-sized linear
+RGBA16F image and returns its retained slot owner; complete submission before
+readback/reuse. recordFinal(frame, linearImage) consumes that format on the same
+updated slot/serial and records final color, optional FinalProcessor and overlays.
+Ordinary record(frame) calls both, preserving normal per-frame behavior. Duplicate
+linear/final recording rejects. sceneFingerprint() exposes a non-jittered scene,
+camera/resource/history identity for frozen jobs; opaque in-place GPU writes need
+explicit invalidation. The headless default excludes overlays and runs final
+conversion once on the exact N-sample mean using
+[pipeline::FrameAccumulator](FrameAccumulator.md).
+Its reference implementation sums on the CPU in double precision and resolves
+back to RGBA16F once. See [the default offscreen job contract](DefaultOffscreenApplicationDelegate.md)
+and [accumulation architecture](../../architecture/draw_offscreen_rendering.md).

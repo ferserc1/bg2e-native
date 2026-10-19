@@ -150,6 +150,20 @@ std::any SettingsCatalog::read(const SettingHandle& handle) const
     validateValue(p, value);
     return value;
 }
+bool SettingsCatalog::isDebugSetting(const SettingDescriptor& descriptor)
+{
+    const auto& category = descriptor.property.metadata.category;
+    return category == "Debug" || category == "Diagnostics" || category == "Capabilities";
+}
+
+bool SettingsCatalog::isGraphicsSetting(const SettingDescriptor& descriptor)
+{
+    const auto& id = descriptor.handle.component;
+    return !isDebugSetting(descriptor) && id != "skybox" &&
+        !id.starts_with("environment") && !id.starts_with("light/") &&
+        descriptor.property.name != "environmentError";
+}
+
 void SettingsCatalog::validateValue(const reflection::PropertyInfo& p, const std::any& value)
 {
     using T = reflection::PropertyType;

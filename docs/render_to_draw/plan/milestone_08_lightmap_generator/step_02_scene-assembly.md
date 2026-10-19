@@ -6,6 +6,11 @@
 
 ## Scope and deliverable
 
+Preserve M06's nonfatal UV2 overlap policy: validation for baking uses
+`UvAtlasOverlapPolicy::Warn`, reports diagnostics and never skips/aborts a target
+solely for overlapping triangle interiors or chart collisions. Retain structural
+and finite-coordinate/geometry checks.
+
 - `lib/include/bg2e/render/StandaloneBakeSceneAssembler.hpp`
 - `lib/src/bg2e/render/StandaloneBakeSceneAssembler.cpp`
 - `lib/include/bg2e/bake/StandaloneBakeSceneAssembler.hpp`

@@ -22,8 +22,28 @@ Existing application and deployment instructions point to correct supported targ
 Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.
 
 
+## M05 offscreen CLI source-of-truth
+
+M05's current interim product is `draw_offscreen_application`, with a typed draw
+`OffscreenApplication` overload, explicit backend/settings/resolution/frame
+options, final R8G8B8A8_UNORM output, exact linear camera accumulation and a
+verified no-clobber PNG. Its readback is synchronous and full-subresource; no
+HDR/BGRA/sRGB conversion is supplied by `readPixelsRGBA8`. This is not M06/M07
+complete scene/resource export or M08 batch output. At M10 audit the final
+canonical executable name and docs after M09, settings precedence, exact requested
+sample count, output dimensions/format, failure/overwrite behavior and bundled
+resources against the final source; don't assume the interim target name survives.
+
+
 ## M04-07 reviewed implementation requirement
 
 Audit both draw and bake native library build/install/bundle refresh paths. Include the missing-metallib regression and check the final installed source/target names after M09. Saved sampler metadata for a GPU-only image is not complete model/batch output; trace real file materialization to the accepted M06/M08 implementations.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+M06's source-level package review confirms `draw_model_edit` uses `bundle_app_sdl`
+and the recursive distribution collector installs registered apps, runtime
+dependencies, shaders and assets. It records no native package launch or feature
+parity execution. Use the [M06 product validation record](../milestone_06_model_edit/product-validation.md)
+as an outstanding evidence list, then replace interim target/resource names only
+after checking the final M09 source and native installed layout.

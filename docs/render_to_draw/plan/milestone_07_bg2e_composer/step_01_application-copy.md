@@ -40,3 +40,26 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## M01-13 renderer settings integration
 
 Read [upscaling.md](../milestone_01_deferred_renderer/upscaling.md). Import/export the live resolution/upscaler catalog using stable implementation identifiers and existing SettingsCodec. Reuse queued pre-acquire resize/rebind/reset behavior; preserve external implementation injection and SDK/backend/hardware status.
+
+
+## M06-01 startup conventions to reuse
+
+The model editor baseline uses a separate `draw_model_edit` target, typed
+MainLoop EngineConfig execution, a unique app ID and a distinct draw preference
+scope. Its AppDelegate retains the scene stage, EditorUi holds a weak delegate,
+and the live settings facade connects before first renderer attachment. Reuse
+that ownership/identity/resource-helper pattern with composer-specific names;
+consult the [M06 review](../milestone_06_model_edit/review.md) for actual IO,
+draw-clone, widgets, Workspace building blocks, input, viewpoint and integrated
+bake services. The startup fixture
+and application-inventory are not reusable complete scene import/bake services.
+
+## M07-01 delivery
+
+Created `apps/draw/bg2e_composer` and registered `draw_bg2e_composer` using the
+shared SDL bundle helper. App-owned M06 orchestration uses namespace
+`bg2e_composer`, independent app/bundle/preferences/environment identities and an
+initial editable Scene group. Engine services are reused unchanged. See the
+[actual workflow/dependency inventory and lead checks](application-inventory.md).
+The baseline does not claim Composer import/server/tree/multi-job parity. No
+compilation or runtime checks were executed; lead validation remains pending.

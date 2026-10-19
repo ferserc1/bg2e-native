@@ -15,7 +15,9 @@ supported and is not deprecated.
 MainLoop's config overload constructs the private draw adapter; applications do
 not initialize Factory or expose GraphicsExecution. UI initialization supports
 Vulkan and Metal using private adapters. The loop supplies retained color; RendererDeferred owns its internal depth/G-buffer graph.
-OffscreenApplication and production resource-dependent UI retain their render contracts. Per-object persistent resource rings replace a central transient frame
+[OffscreenApplication](../app/OffscreenApplication.md) retains its production
+overload and adds a typed draw path. Production resource-dependent UI retains
+its separate render contracts. Per-object persistent resource rings replace a central transient frame
 resource allocation contract.
 
 See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_render_draw_gpu.md),
@@ -41,3 +43,11 @@ See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_r
 [Integrated bake](../bake/index.md) supplies actual UV2 AO/GI maps independently
 of a camera renderer. [BakedIndirectMaps](BakedIndirectMaps.md) documents AO-slot
 mode metadata, live/stored adoption and the updated HDR G-buffer format.
+
+## Accumulated headless output
+
+- [DefaultOffscreenApplicationDelegate](DefaultOffscreenApplicationDelegate.md):
+  renderer/scene owner, settings precedence and exact completed samples.
+- [FrameAccumulator](FrameAccumulator.md): synchronous CPU double linear mean
+  over completed RGBA16F samples, final upload and count validation.
+- [Offscreen scene tutorial](../../tutorials/draw/13_offscreen_application.md).

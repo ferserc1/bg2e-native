@@ -91,3 +91,15 @@ Use [denoise.md](denoise.md): RendererDeferred injects/exposes DenoiseFilter and
 tutorials and app/build guidance cumulatively through M03. This is the last step
 in the ordered table; M03-10 is the accepted technical review. Await M03-11 lead
 acceptance before entering M04-01; no additional M03 implementation is scheduled.
+
+## Default renderer policy amendment (project lead direction, 2026-10-19)
+
+The project lead later requested enabled GI mode and enabled reflections as the
+global renderer defaults, including `draw_model_edit`. `RendererConfiguration`
+now defaults to `GlobalIllumination`; default `RTGISettings` and
+`RTReflectionSettings` are enabled. Explicit pass/settings/configuration still
+override these values, and runtime availability/fallback remain separate from the
+requested defaults. This supersedes only the earlier disabled-default policy;
+the original M03 implementation history is preserved in its review and progress
+record. See [current RTGI API](../../../../doc/api/draw/RTGlobalIllumination.md)
+and [current reflection API](../../../../doc/api/draw/RTReflections.md).

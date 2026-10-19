@@ -34,9 +34,10 @@ under `bg2e::render`.
 Graphics settings opens beside Deferred scene at startup; the scene window's
 Graphics settings button reopens it. Expand Renderer for indirect mode, Global
 illumination for Enabled, and Reflections for its independent Enabled toggle.
-Deferred starts with tracing disabled, resolution policy disabled/1.0, FSR/SMAA
-disabled. GI requires both mode and enabled. Inspect available/status and graph
-selection before interpreting unchanged output as an active effect. Pause camera
+With no explicit renderer settings, Deferred now starts in GI mode with GI and
+reflections requested enabled. Its resolution policy remains disabled/1.0, and
+FSR/SMAA are disabled. Inspect available/status and graph selection before
+interpreting unchanged output as an active effect. Pause camera
 and light animation to examine convergence. [Settings](../api/draw/Settings.md)
 lists diagnostic signals, exact target IDs and explicit preference/JSON behavior.
 

@@ -172,9 +172,9 @@ void UserInterface::init(render::Engine* engine)
 
 void UserInterface::init(draw::Engine* engine)
 {
-    if (!engine)
+    if (!engine || !engine->surface())
     {
-        throw std::invalid_argument("UI requires a draw Engine.");
+        throw std::invalid_argument("UI requires a windowed draw Engine.");
     }
     if (_impl->context || ImGui::GetCurrentContext())
     {

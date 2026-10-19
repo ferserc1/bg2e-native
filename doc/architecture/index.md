@@ -5,5 +5,8 @@
 
 - [Draw advanced lighting](draw_advanced_lighting.md): native capability split, public surfaces/signals, histories/filtering and ownership.
 
-- [Integrated draw/bake lightmaps](../tutorials/draw/12_lightmaps.md): sample/result
+- [Integrated draw/bake lightmaps](draw_integrated_lightmaps.md): sample/result
   lifecycle, UV2 replacement and explicit RGB indirect material adoption.
+
+- [Headless draw and camera accumulation](draw_offscreen_rendering.md): context
+  ownership, exact completed samples, final-only conversion and PNG policy.

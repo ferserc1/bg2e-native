@@ -54,3 +54,8 @@ pending-step requirements supersede assumptions that M04 already implements a
 headless scheduler, batch writer, full GPU-only resource export or camera-image
 averaging. Continuation acceptance does not establish hardware-specific numeric,
 performance or exported-file evidence. Preserve production references until M09.
+
+
+## M05 source-of-truth handoff
+
+At final audit, reconcile the surviving canonical offscreen executable and app docs with post-M09 source. The M05 interim contract includes exact requested camera samples, settings precedence, synchronous typed readback and verified no-clobber PNG output; do not extend that claim to full scene/resource or bake-batch export.

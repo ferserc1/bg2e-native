@@ -83,9 +83,12 @@ Access the active registry through `MainLoop::shortcuts()`.
 
 | Symbol | Header | Description |
 |--------|--------|-------------|
-| [`OffscreenApplicationConfig`](OffscreenApplication.md#configuration) | `OffscreenApplication.hpp` | Fixed target dimensions, attachments, and color format. |
+| [`OffscreenApplicationConfig`](OffscreenApplication.md#production-configuration-and-delegate) | `OffscreenApplication.hpp` | Fixed target dimensions, attachments, and color format. |
 | `OffscreenApplicationDelegate` | `OffscreenApplication.hpp` | Offscreen initialization, frame, render, completion, and cleanup callbacks. |
-| [`OffscreenApplication`](OffscreenApplication.md) | `OffscreenApplication.hpp` | Engine and fixed-image lifecycle without a window or swapchain. |
+| [`OffscreenApplication`](OffscreenApplication.md) | `OffscreenApplication.hpp` | Typed production/draw Engine and fixed-image lifecycle without a window. |
+| `DrawOffscreenApplicationConfig` | `DrawOffscreenApplicationDelegate.hpp` | Backend, output, exact-N default job, fixed time and headless import/override policy. |
+| `DrawOffscreenApplicationDelegate` | `DrawOffscreenApplicationDelegate.hpp` | Native-free recording/completion/resolve lifecycle; custom continuation. |
+| `OffscreenExecutionMode` | `OffscreenExecution.hpp` | ProductionRender or ExperimentalDraw, selected by the init overload. |
 
 ## Standalone tools
 

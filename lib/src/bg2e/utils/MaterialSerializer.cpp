@@ -20,6 +20,7 @@
 #include <bg2e/json/JsonParser.hpp>
 #include <bg2e/json/NodeReader.hpp>
 #include <stdexcept>
+#include <memory>
 
 namespace bg2e::utils {
 
@@ -98,7 +99,7 @@ bool parseMaterial(
     {
         result.setVisible(*value);
     }
-    if (auto value = reader.getBool("isUnlit"))
+    if (auto value = reader.getBool("isUnlit").has_value() ? reader.getBool("isUnlit") : reader.getBool("unlit"))
     {
         result.setIsUnlit(*value);
     }
@@ -115,7 +116,34 @@ bool parseMaterial(
     const auto texture = [&](const char* key) -> base::Texture*
     {
         auto file = reader.getString(key);
-        return file ? getTexture(basePath, *file) : nullptr;
+        if (!file)
+        {
+            return nullptr;
+        }
+        auto value = std::unique_ptr<base::Texture>(getTexture(basePath, *file));
+        if (auto settings = reader.getObject(std::string(key) + "Settings"))
+        {
+            const auto mag = settings->getInteger<uint32_t>("mag").value_or(value->magFilter());
+            const auto min = settings->getInteger<uint32_t>("min").value_or(value->minFilter());
+            const auto u = settings->getInteger<uint32_t>("u").value_or(value->addressModeU());
+            const auto v = settings->getInteger<uint32_t>("v").value_or(value->addressModeV());
+            const auto w = settings->getInteger<uint32_t>("w").value_or(value->addressModeW());
+            const auto color = settings->getInteger<uint32_t>("color").value_or(value->colorType());
+            if (mag > 1 || min > 1 || u > 3 || v > 3 || w > 3 || (color != 1 && color != 2))
+            {
+                throw std::invalid_argument("Invalid serialized texture settings");
+            }
+            value->setMagFilter(static_cast<base::Texture::Filter>(mag));
+            value->setMinFilter(static_cast<base::Texture::Filter>(min));
+            value->setAddressMode(static_cast<base::Texture::AddressMode>(u),
+                static_cast<base::Texture::AddressMode>(v), static_cast<base::Texture::AddressMode>(w));
+            value->setColorType(static_cast<base::Color::Type>(color));
+            value->setUseMipmaps(settings->getBool("mipmaps").value_or(value->useMipmaps()));
+            value->setMinLod(settings->getNumber("minLod").value_or(value->minLod()));
+            value->setMaxLod(settings->getNumber("maxLod").value_or(value->maxLod()));
+            value->setMipLodBias(settings->getNumber("bias").value_or(value->mipLodBias()));
+        }
+        return value.release();
     };
     const auto scale = [&](const char* key)
     {
@@ -159,6 +187,14 @@ bool parseMaterial(
         result.setNormalTexture(value);
         result.setNormalScale(scale("normalScale"));
         result.setNormalUVSet(index("normalUV"));
+    }
+    if (auto value = reader.getBool("metalnessInvert"))
+    {
+        result.setMetalnessInvert(*value);
+    }
+    if (auto value = reader.getBool("roughnessInvert"))
+    {
+        result.setRoughnessInvert(*value);
     }
     if (auto value = reader.getColor("fresnelTint"))
     {
@@ -266,7 +302,7 @@ std::string MaterialSerializer::serializeMaterial(
         {"alphaCutoff", JSON(mat.alphaCutoff())},
         {"isSolid", JSON(mat.isSolid())},
         {"visible", JSON(mat.visible())},
-        {"unlit", JSON(mat.isUnlit())},
+        {"isUnlit", JSON(mat.isUnlit())},
     });
     auto& obj = matJson->objectValue();
 
@@ -369,6 +405,29 @@ std::string MaterialSerializer::serializeMaterial(
         obj["lightEmissionTexture"] = JSON(fileName.string());
         addUniqueTexture(mat.lightEmissionTexture(), uniqueTextures);
     }
+
+    const auto settings = [&](const char* key, const std::shared_ptr<base::Texture>& texture)
+    {
+        if (texture)
+        {
+            obj[std::string(key) + "Settings"] = JSON(JsonObject{
+                {"mag", JSON(static_cast<uint32_t>(texture->magFilter()))},
+                {"min", JSON(static_cast<uint32_t>(texture->minFilter()))},
+                {"u", JSON(static_cast<uint32_t>(texture->addressModeU()))},
+                {"v", JSON(static_cast<uint32_t>(texture->addressModeV()))},
+                {"w", JSON(static_cast<uint32_t>(texture->addressModeW()))},
+                {"color", JSON(static_cast<uint32_t>(texture->colorType()))},
+                {"mipmaps", JSON(texture->useMipmaps())},
+                {"minLod", JSON(texture->minLod())}, {"maxLod", JSON(texture->maxLod())},
+                {"bias", JSON(texture->mipLodBias())}});
+        }
+    };
+    settings("albedoTexture", mat.albedoTexture());
+    settings("metalnessTexture", mat.metalnessTexture());
+    settings("roughnessTexture", mat.roughnessTexture());
+    settings("normalTexture", mat.normalTexture());
+    settings("ambientOcclussion", mat.aoTexture());
+    settings("lightEmissionTexture", mat.lightEmissionTexture());
 
     return matJson->serialize();
 }

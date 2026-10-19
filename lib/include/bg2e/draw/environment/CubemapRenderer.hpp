@@ -25,6 +25,7 @@
 #include <bg2e/gpu/ResourceSet.hpp>
 
 #include <filesystem>
+#include <bg2e/base/Color.hpp>
 
 namespace bg2e::draw::environment {
 enum class GenerationKind
@@ -39,6 +40,11 @@ struct GenerationSettings {
     std::filesystem::path shaderRoot;
     std::string vertexShader = "draw/environment/fullscreen";
     std::string fragmentShader; // Empty selects the generation kind's shader.
+
+    // Linear RGB colors for ProceduralSky; alpha is ignored.
+    base::Color skyHorizonColor{0.55f, 0.65f, 0.8f};
+    base::Color skyZenithColor{0.06f, 0.22f, 0.6f};
+    base::Color groundColor{0.04f, 0.035f, 0.025f};
 };
 
 // Public GPU-only generation service and EnvironmentPass implementation.

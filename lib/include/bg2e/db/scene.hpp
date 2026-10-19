@@ -62,6 +62,11 @@ extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
     bg2e::render::Engine& engine,
     bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
+// Complete resource snapshot. Call at a stopped submission boundary. Unique
+// sidecars are published first and the main document is replaced atomically last.
+extern BG2E_API void saveScene(scene::Node* root, draw::Engine& engine,
+    const std::filesystem::path& path, scene::SceneProgressCallback progress = nullptr);
+
 // Writes to the supplied path without imposing scene-directory naming rules.
 // Throws on output-open, write, or close failure.
 extern BG2E_API void saveScene(

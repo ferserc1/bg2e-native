@@ -63,6 +63,36 @@ void EnvironmentComponent::setEnvironmentImage(const std::string& img)
     _imgHash = std::hash<std::string>{}(img);
 }
 
+void EnvironmentComponent::setSkyHorizonColor(const base::Color& color)
+{
+    if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
+        color.r < 0 || color.r > 1 || color.g < 0 || color.g > 1 || color.b < 0 || color.b > 1)
+    {
+        throw std::invalid_argument("Environment colors must have finite linear RGB values in [0, 1]");
+    }
+    _skyHorizonColor = base::Color(color.r, color.g, color.b);
+}
+
+void EnvironmentComponent::setSkyZenithColor(const base::Color& color)
+{
+    if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
+        color.r < 0 || color.r > 1 || color.g < 0 || color.g > 1 || color.b < 0 || color.b > 1)
+    {
+        throw std::invalid_argument("Environment colors must have finite linear RGB values in [0, 1]");
+    }
+    _skyZenithColor = base::Color(color.r, color.g, color.b);
+}
+
+void EnvironmentComponent::setGroundColor(const base::Color& color)
+{
+    if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
+        color.r < 0 || color.r > 1 || color.g < 0 || color.g > 1 || color.b < 0 || color.b > 1)
+    {
+        throw std::invalid_argument("Environment colors must have finite linear RGB values in [0, 1]");
+    }
+    _groundColor = base::Color(color.r, color.g, color.b);
+}
+
 void EnvironmentComponent::setSkyboxBlur(float blur)
 {
     if (!std::isfinite(blur) || blur < 0 || blur > 1)
@@ -81,6 +111,9 @@ void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData,
 {
     deserializeCommon(jsonData);
     json::ObjectReader reader(jsonData);
+    setSkyHorizonColor(reader.getColor("skyHorizonColor").value_or(base::Color{0.55f, 0.65f, 0.8f}));
+    setSkyZenithColor(reader.getColor("skyZenithColor").value_or(base::Color{0.06f, 0.22f, 0.6f}));
+    setGroundColor(reader.getColor("groundColor").value_or(base::Color{0.04f, 0.035f, 0.025f}));
     setSkyboxBlur(float(reader.getNumber("skyboxBlur").value_or(0.0)));
     setSkyboxVisible(reader.getBool("skyboxVisible").value_or(true));
     if (auto textureName = reader.getString("equirectangularTexture"))
@@ -117,13 +150,16 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
     using namespace bg2e::json;
     auto compData = Component::serialize(basePath);
     JsonObject& obj = compData->objectValue();
+    obj["skyHorizonColor"] = JSON(_skyHorizonColor);
+    obj["skyZenithColor"] = JSON(_skyZenithColor);
+    obj["groundColor"] = JSON(_groundColor);
     obj["skyboxBlur"] = JSON(_skyboxBlur);
     obj["skyboxVisible"] = JSON(_skyboxVisible);
     std::filesystem::path dstFilePath = basePath;
     std::filesystem::path srcFilePath = _environmentImage;
     auto fileName = srcFilePath.filename();
     dstFilePath += fileName;
-    if (srcFilePath != dstFilePath)
+    if (!srcFilePath.empty() && srcFilePath != dstFilePath)
     {
         std::filesystem::copy(srcFilePath, dstFilePath, std::filesystem::copy_options::overwrite_existing);
     }
@@ -143,6 +179,9 @@ std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::files
 std::shared_ptr<json::JsonNode> EnvironmentComponent::serializeReferences(const std::filesystem::path& basePath)
 {
     auto result = Component::serialize(basePath);
+    result->objectValue()["skyHorizonColor"] = json::JSON(_skyHorizonColor);
+    result->objectValue()["skyZenithColor"] = json::JSON(_skyZenithColor);
+    result->objectValue()["groundColor"] = json::JSON(_groundColor);
     result->objectValue()["skyboxBlur"] = json::JSON(_skyboxBlur);
     result->objectValue()["skyboxVisible"] = json::JSON(_skyboxVisible);
     if (!_environmentImage.empty())

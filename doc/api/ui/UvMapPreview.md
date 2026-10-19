@@ -10,7 +10,7 @@ draw Engine overload.
 
 `UvMapPreview` is an embeddable immediate-mode widget that displays a CPU
 mesh's UV layout and validation result. It offers UV1/UV2 controls, shows
-coverage or an error message, and uses `render::UvMapPreviewRenderer` plus the
+coverage, nonfatal overlap warnings or a structural error message, and uses `render::UvMapPreviewRenderer` plus the
 existing `TextureWidgets` path to display the generated Vulkan image.
 
 ```cpp

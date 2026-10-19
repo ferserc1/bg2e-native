@@ -89,3 +89,8 @@ pending-step requirements supersede assumptions that M04 already implements a
 headless scheduler, batch writer, full GPU-only resource export or camera-image
 averaging. Continuation acceptance does not establish hardware-specific numeric,
 performance or exported-file evidence. Preserve production references until M09.
+
+
+## M05 headless reuse boundary
+
+The generic draw Engine/offscreen surface and serial completed-frame lifecycle are implemented in M05. Reuse them where appropriate for windowless ownership, but M08 still supplies standalone bake job state, scene assembly, UV-specific sampling/coverage, typed LightmapPixels and complete-batch preflight/publication. The M05 exact-N camera average and verified RGBA8 PNG are separate products and do not establish bake batch semantics.

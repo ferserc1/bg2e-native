@@ -20,6 +20,8 @@ public:
 
     static bool drag(const std::string& label, float* value, float speed = 0.1f, float min = 0.f, float max = 0.f, bool sameLine = false);
     static bool drag(const std::string& label, int*   value, float speed = 1.0f, int   min = 0,   int   max = 0,   bool sameLine = false);
+    static bool drag(const std::string& label, double* value, float speed = 0.1f, bool sameLine = false);
+    static bool drag(const std::string& label, uint32_t* value, float speed = 1.0f, bool sameLine = false);
 };
 ```
 
@@ -58,6 +60,9 @@ arrow-stepping, editable text).
 - `slider` clamps the value to `[min, max]`.
 - `drag` follows the ImGui convention: `min == max == 0` means **unclamped**;
   otherwise the value is bounded. `speed` is the per-pixel step.
+- Drag fields also accept direct keyboard entry with Ctrl+click or double-click.
+  The double and unsigned overloads operate in native precision without an
+  application-specified range; unsigned values remain in the `uint32_t` domain.
 - `sliderDouble()` is implemented as a `float` slider (reinterpret cast
   internally) — usable but bounded to float precision while editing.
 

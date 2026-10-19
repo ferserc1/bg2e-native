@@ -1371,13 +1371,13 @@ if (ui::Button::button("Graphics settings"))
 }
 ```
 
-Both examples show the window initially. Expand Renderer > Indirect lighting to
-select GI and Global illumination > Enabled to activate it. Reflections > Enabled
-is independent. Check available/status and selected graph; stored requests may
-remain enabled when hardware/shaders are unavailable. GI requires Vulkan native
-pipeline support or Metal query support plus indexed tables/HDR formats; FSR is
-not a prerequisite. Renderer-created tracing defaults are disabled; manipulation
-explicitly enables GI/reflections, while deferred leaves them disabled. Both inject
+Both examples show the window initially. A default renderer already selects GI
+and requests enabled GI and reflections; use Renderer > Indirect lighting and the
+effect Enabled controls to change those choices explicitly. Check available/status
+and selected graph; stored requests may remain enabled when hardware/shaders are
+unavailable. GI requires Vulkan native pipeline support or Metal query support plus
+indexed tables/HDR formats; FSR is not a prerequisite. Both examples use renderer
+defaults unless their own configuration explicitly overrides them. They inject
 disabled FSR and SMAA; fallback stays ordinary resampling. Manipulation's initial
 scale is 0.7; deferred's resolution policy is disabled/1.0.
 

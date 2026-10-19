@@ -51,3 +51,8 @@ that transitional path is described explicitly in [material integration](output_
 
 Public signatures and validation rules are in the [render API](../../api/render/reference.md),
 [geometry API](../../api/geo/reference.md), and [CLI guide](../../apps/lightmap_generator/index.md).
+
+For the separate draw/bake data flow, raw-sample versus composed-output ordering,
+explicit indirect modes and precision boundaries, read
+[integrated draw lightmaps](../draw_integrated_lightmaps.md). The production
+diagram and scalar-AO export discussion above describe render, not draw.

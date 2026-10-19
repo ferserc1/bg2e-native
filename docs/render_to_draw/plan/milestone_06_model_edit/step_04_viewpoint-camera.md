@@ -43,3 +43,43 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M07 adopts these helpers for composed scene/model framing; final documentation distinguishes neutral utility policy from its graphics measurement dependencies.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M06-01 camera baseline
+
+StageScene now uses one node containing transform, OrbitCameraComponent and camera,
+with left orbit/right pan/wheel zoom. Its reset is a fixed pose (15/30 degree
+rotation, distance 8) queued through AppDelegate; it is not ViewpointAnalyzer.
+Add the actual best-view/model framing here, preserving the single-node pose
+contract and the [inventory](application-inventory.md) camera-control requirements.
+
+
+## M06-03 concrete stage/tool baseline
+
+Use [the editor tool handoff](editor-tools.md). StageScene now owns a Scene catalog
+with the same-node editor camera and a separate Document root. AppDelegate queues
+input/picking/manipulation before acquisition, converts logical pointer coordinates
+to the camera viewport, and guards edits with document generation plus weak target
+membership. The environment panel exposes stopped stage camera intrinsics; fixed
+reset still uses an orbit pose. Neither feature supplies automatic bounds framing
+or viewpoint analysis. Add analysis/framing to these owners and queue/revalidate
+its result without changing document/renderer state on failed or empty analysis.
+
+## M06-04 delivered implementation
+
+Implemented in `apps/draw/model_edit`: `StageScene::frameNode` frames world bounds
+using the active camera's narrower horizontal/vertical FOV; the toolbar and
+properties panel expose **Frame selection** and **Analyze best view**. Analysis
+uses the draw `utils::ViewpointAnalyzer` on the selected document node or document
+root, with 72 candidates at up to 48 pixels per longest image dimension, preserving the active viewport aspect, and current vertical FOV. It runs as a queued
+stopped renderer update after `waitIdle`, then applies only a visible best candidate
+through `applyViewpointToOrbitCamera`. Pixel counts use that analyzer's 1-based
+`analyzedSubmeshes()` table. Weak target/delegate, renderer generation, document
+generation and document membership are checked before execution. Candidate count,
+winning index/score, coverage and three top submeshes are displayed. Empty/error
+analysis leaves the prior pose unchanged. StageScene owns analyzer resources and
+releases them before draw scene teardown.
+
+Implementation evidence and project-lead checks are recorded in
+[viewpoint-camera.md](viewpoint-camera.md). Static checks are not compiler or
+runtime verification; the exit conditions above remain for project-lead validation.

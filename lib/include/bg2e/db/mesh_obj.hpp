@@ -27,6 +27,7 @@
 #include <bg2e/render/Engine.hpp>
 
 #include <filesystem>
+#include <functional>
 #include <iostream>
 #include <fstream>
 
@@ -75,9 +76,10 @@ MeshT* loadMeshObj(const std::filesystem::path& filePath)
     return loadMeshObj<MeshT>(stream);
 }
 
-// CPU parsing is reused; the OBJ subset loads geometry, not MTL resources.
+// Reuses CPU geometry parsing and imports MTL resources for the draw context.
 extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableObj(
-    const std::filesystem::path& filePath, draw::Engine& engine);
+    const std::filesystem::path& filePath, draw::Engine& engine,
+    std::function<void()> onTextureLoaded = nullptr);
 extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableObj(
     const std::filesystem::path& basePath, const std::string& fileName, draw::Engine& engine);
 

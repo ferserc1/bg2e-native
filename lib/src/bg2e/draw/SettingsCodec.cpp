@@ -569,13 +569,18 @@ std::shared_ptr<Node> SettingsCodec::serialize(const SettingsCatalog& catalog)
         json::JsonObject properties;
         for (const auto& p : target.type.properties)
         {
-            if (p.isReadOnly() || (target.available && !target.available(p.name)))
+            if (!SettingsCatalog::isGraphicsSetting(catalog.describe(catalog.handle(target.id, p.name))) ||
+                p.isReadOnly() || (target.available && !target.available(p.name)))
             {
                 continue;
             }
             properties[p.name] = json::JSON(json::JsonObject{
                 {"type", json::JSON(typeName(storageType(p)))},
                 {"value", encode(p, catalog.read(catalog.handle(target.id, p.name)))}});
+        }
+        if (properties.empty())
+        {
+            continue;
         }
         components.push_back(json::JSON(json::JsonObject{{"id", json::JSON(target.id)},
             {"type", json::JSON(target.type.typeName)}, {"properties", json::JSON(std::move(properties))}}));
@@ -644,6 +649,12 @@ SettingsImport SettingsCodec::validate(const Node& document, const SettingsCatal
                 {
                     plan._result.issues.push_back({property ? "unavailable_property" : "unknown_property", id + "/" + key,
                         "Setting is not available on the active object", policy == UnknownSettingPolicy::Reject});
+                    continue;
+                }
+                if (!SettingsCatalog::isGraphicsSetting(catalog.describe(catalog.handle(id, key))))
+                {
+                    plan._result.issues.push_back({"non_graphics_setting", id + "/" + key,
+                        "Scene and diagnostic values are never restored as graphics preferences", false});
                     continue;
                 }
                 if (tag != typeName(storageType(*property)))

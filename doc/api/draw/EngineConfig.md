@@ -4,8 +4,8 @@
 **Namespace:** `bg2e::draw`
 
 An aggregate configuration for experimental draw execution. The backend field
-selects the low-level GPU API; the MainLoop run overload selects the high-level
-framework.
+selects the low-level GPU API; the MainLoop run or typed OffscreenApplication
+init overload selects the high-level framework.
 
 | Field | Type | Default |
 |-------|------|---------|
@@ -35,3 +35,12 @@ the surface may own depth resources.
 
 See [framework scope and maturity](index.md#production-and-experimental-frameworks)
 for the distinction between render and draw.
+
+The [draw offscreen path](../app/OffscreenApplication.md#experimental-draw-execution)
+uses the same backend/name/debug/format values with an appId fallback. Omitting
+surface depth selects Undefined. It owns an OffscreenSurface and needs no SDL
+video driver; formats and backend support still require actual device creation.
+
+For RGBA8 PNG readback, explicitly request R8G8B8A8_UNORM as the
+[offscreen example](../../apps/draw_offscreen_application.md) does.
+`Image::readPixelsRGBA8` does not convert the default BGRA target to RGBA.

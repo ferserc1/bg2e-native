@@ -188,3 +188,38 @@ Call `cleanup()` before the engine is destroyed. `onChanged()` lets the app
 reset application-owned histories; the deferred renderer's upscaler reset is
 handled automatically. A pending/error status is available through
 `pending()` and `error()`.
+
+## Baked indirect material ownership
+
+Draw materials can mark their AO slot with
+[IndirectTextureMode](../draw/BakedIndirectMaps.md). Keep stored material metadata
+and the live GPU slot consistent when adopting a completed lightmap. The
+integrated example handles this explicitly; the general material editor does
+not become a bake scheduler or image exporter. Source edits invalidate bake
+generations at a stopped boundary. Retain unbaked originals if restart must
+regenerate independent UV2 and materials.
+
+
+## Draw editor document guards and indirect/sampler controls
+
+`DrawMaterialEditor::setEditGuard(std::function<bool()>)` lets an application
+capture its current document generation. The guard runs before queued work;
+rebinding it cancels earlier pending bindings. It complements the renderer,
+selection identity, current-scene membership and weak lifetime checks. The draw
+model editor rebinds on document/selection changes and uses `onChanged` to mark
+dirty state and reset histories, including partial failures.
+
+`queueTextureSettings(slot, edit)` applies a stopped callback to each target's
+independent base settings, retaining that target's authored image/mips. The UI
+exposes color, filters, U/V addressing, mip sampling and bias. It does not replace
+other targets' source paths or untouched settings with the first displayed value.
+`queueIndirectMode(mode)` requires an assigned map for baked AO/GI, retains/clones
+actual GPU pixels, sets linear interpretation and UV set 1, and updates stored and
+live attributes. Selecting an ordinary AO image deliberately resets baked mode;
+clearing the AO slot resets it too. Missing maps or UV changes never implicitly
+turn on baked interpretation. `queuePatch(modifier, ordinaryAo = false)` remains
+source-compatible; ordinaryAo requests the explicit AO reset after application.
+
+The [draw editor guide](../../apps/draw_model_edit.md) explains the actual
+application integration. Generic production ComponentInspector/DrawableEditor
+remain separate; these APIs do not certify arbitrary immediate component mutation.

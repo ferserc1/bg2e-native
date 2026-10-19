@@ -73,3 +73,8 @@ pending-step requirements supersede assumptions that M04 already implements a
 headless scheduler, batch writer, full GPU-only resource export or camera-image
 averaging. Continuation acceptance does not establish hardware-specific numeric,
 performance or exported-file evidence. Preserve production references until M09.
+
+
+## M05 migration inventory
+
+M05 retains both production and experimental draw OffscreenApplication init paths; production remains the default. The registered draw_offscreen_application and tests/draw/offscreen are interim draw products alongside production examples. M09 must migrate and preserve the accepted headless behavior, remove temporary execution-selection branches and retire old offscreen products only under the accepted manifest and parity checks.

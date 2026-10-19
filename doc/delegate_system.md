@@ -219,3 +219,13 @@ It is a powerful structure for building tools, editors, visualization software, 
 The separate [draw renderer lifecycle](api/draw/RendererDeferred.md) and [live settings contract](api/draw/Settings.md)
 cover deferred scene ownership, public injection and queued safe changes.
 Production render behavior described above remains supported.
+
+## Experimental headless delegates
+
+The windowed production examples above retain their render/input/UI contracts.
+Windowless draw uses [OffscreenApplication](api/app/OffscreenApplication.md) and
+its typed DrawOffscreenApplicationDelegate instead of the interactive three-delegate
+loop. [DefaultOffscreenApplicationDelegate](api/draw/DefaultOffscreenApplicationDelegate.md)
+reuses renderer/scene ownership, adds exact completed camera accumulation and
+excludes editor overlays. Export only after the last GPU-complete callback. See
+the [offscreen tutorial](tutorials/draw/13_offscreen_application.md).

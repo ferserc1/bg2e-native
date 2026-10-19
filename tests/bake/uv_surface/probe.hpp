@@ -92,10 +92,10 @@ inline void runUvSurfaceCpuProbe()
     });
     invalid = mesh;
     invalid.indices = {0,1,2,0,1,2};
-    reject([&]
+    if (buildUvSurfaceMesh(invalid).vertices.size() != 6)
     {
-        buildUvSurfaceMesh(invalid);
-    });
+        throw std::runtime_error("Overlapping UV triangles must remain packable for baking");
+    }
     invalid = mesh;
     invalid.vertices[0].normal = glm::vec3(0);
     reject([&]

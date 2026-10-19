@@ -23,6 +23,7 @@
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/db/mesh_obj.hpp>
+#include <algorithm>
 #include <bg2e/gpu/Device.hpp>
 
 #include <iostream>
@@ -34,6 +35,7 @@ DrawableComponent::ExecutionMode DrawableComponent::executionMode() const
 {
     return _drawDrawable ? ExecutionMode::Draw : _drawable ? ExecutionMode::Production : ExecutionMode::Uninitialized;
 }
+
 std::shared_ptr<bg2e::draw::Drawable> DrawableComponent::drawDrawable()
 {
     if (_drawable)
@@ -50,6 +52,7 @@ std::shared_ptr<const bg2e::draw::Drawable> DrawableComponent::drawDrawable() co
     }
     return _drawDrawable;
 }
+
 void DrawableComponent::setDrawable(std::shared_ptr<bg2e::draw::Drawable> drw)
 {
     if (_drawable)
@@ -67,6 +70,7 @@ void DrawableComponent::setDrawable(std::shared_ptr<bg2e::draw::Drawable> drw)
     }
     _drawDrawable = std::move(drw);
 }
+
 void DrawableComponent::clearDrawable()
 {
     // Production callers retain their existing safe-update synchronization rule.
@@ -133,6 +137,7 @@ std::shared_ptr<Component> DrawableComponent::clone() const
     }
 
     copy->_resourcePath = _resourcePath;
+    copy->_resourceName = _resourceName;
     copy->_priority = _priority;
     copy->_ignoreSerialization = _ignoreSerialization;
     return copy;
@@ -166,6 +171,7 @@ void DrawableComponent::deserialize(std::shared_ptr<json::JsonNode> data, const 
     }
     deserializeCommon(data);
     json::ObjectReader reader(data);
+    _resourceName = reader.getString("resourceName");
     if (auto path = reader.getString("path"))
     {
         if (path->empty())
@@ -203,6 +209,14 @@ std::shared_ptr<json::JsonNode> DrawableComponent::serializeReferences(const std
     auto result = Component::serialize(basePath);
     const auto base = basePath.empty() ? std::filesystem::current_path() : std::filesystem::absolute(basePath);
     const auto relative = _resourcePath.lexically_relative(base.lexically_normal());
+    if (_drawDrawable)
+    {
+        result->objectValue()["resourceName"] = json::JSON(_drawDrawable->name());
+    }
+    else if (_resourceName)
+    {
+        result->objectValue()["resourceName"] = json::JSON(*_resourceName);
+    }
     result->objectValue()["path"] = json::JSON((relative.empty() ? _resourcePath : relative).generic_string());
     return result;
 }
@@ -229,6 +243,7 @@ void DrawableComponent::loadResources(bg2e::draw::Engine& engine, SceneLoadProgr
     {
         if (progress)
         {
+            progress->total = std::max(progress->total, progress->loaded + 1);
             if (progress->callback)
             {
                 progress->callback("texture", progress->loaded, progress->total);
@@ -236,17 +251,21 @@ void DrawableComponent::loadResources(bg2e::draw::Engine& engine, SceneLoadProgr
             ++progress->loaded;
         }
     };
-    if (_resourcePath.extension() == ".bg2")
+    if (_resourcePath.extension() == ".bg2" || _resourcePath.extension() == ".vwglb")
     {
         setDrawable(db::loadDrawableBg2(_resourcePath, engine, onTextureLoaded));
     }
     else if (_resourcePath.extension() == ".obj")
     {
-        setDrawable(db::loadDrawableObj(_resourcePath, engine));
+        setDrawable(db::loadDrawableObj(_resourcePath, engine, onTextureLoaded));
     }
     else
     {
         throw std::invalid_argument("Unsupported draw resource: " + _resourcePath.string());
+    }
+    if (_resourceName)
+    {
+        _drawDrawable->setName(*_resourceName);
     }
 }
 
@@ -276,6 +295,7 @@ void DrawableComponent::deserializeWithProgress(
     {
         if (progress)
         {
+            progress->total = std::max(progress->total, progress->loaded + 1);
             if (progress->callback)
             {
                 progress->callback("texture", progress->loaded, progress->total);

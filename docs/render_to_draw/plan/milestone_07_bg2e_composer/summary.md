@@ -10,6 +10,17 @@ imports. MaterialModifier owns neither dirty state nor baker/history invalidatio
 the composer coordinates queued changes, redraw/reset, save state and job validity.
 See [M02 review](../milestone_02_manipulation/review.md).
 
+The [M06 review](../milestone_06_model_edit/review.md) is the current source-level
+contract for reusable model-editor services. Reuse complete draw IO, independent
+draw clones, DrawMaterialEditor, Workspace building blocks, typed selection,
+guarded edit patterns and the draw viewpoint analyzer. Composer still owns scene
+tree/reflected graph edits, dirty/history policy, import request/scene generations,
+server orchestration and multi-target bake identity. IntegratedBakerContext borrows
+an initialized draw Engine and allows one live baker plus one in-flight frame; it
+does not supply composer import services or standalone batch scheduling. M06
+runtime/package evidence remains unspecified; keep production regression gates
+through M08.
+
 ## Working product
 
 A runnable `apps/draw/bg2e_composer` reproduces scene composition/editing/import/baking through draw and the new DB/settings/tools APIs. The production composer stays operational through M08 as a behavior reference.
@@ -85,3 +96,16 @@ pending-step requirements supersede assumptions that M04 already implements a
 headless scheduler, batch writer, full GPU-only resource export or camera-image
 averaging. Continuation acceptance does not establish hardware-specific numeric,
 performance or exported-file evidence. Preserve production references until M09.
+
+
+## M05 camera export dependency
+
+M05's headless driver owns exact completed camera frames and its default delegate can average linear camera samples. The example exports only one R8G8B8A8_UNORM PNG. M07 scene/resource saves and bake jobs must retain independent scene generations, GPU-only texture materialization, UV sample coverage and complete-save semantics; the camera accumulator/PNG path is not a replacement.
+
+## M07-01 implementation handoff
+
+The separate target and draw editing foundation now exist. The
+[application inventory](application-inventory.md) maps production workflows to
+actual reused services and M07-02–06 gaps; it is the implementation baseline for
+subsequent steps. The legacy Composer remains unchanged. Lead launch/backend
+validation is pending; no Composer-wide feature parity is claimed by M07-01.

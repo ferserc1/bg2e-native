@@ -135,6 +135,9 @@ The public validator does not infer UV2 provenance. A copied UV1 channel is
 accepted if it already passes the usable-atlas rules. Use
 [`geo::UvAtlasValidator`](api/geo/UvAtlasValidator.md) to check finite
 in-range coordinates, triangle area, overlaps, indices, and submesh ranges.
+Bakers select `UvAtlasOverlapPolicy::Warn`: overlaps emit diagnostics and never
+abort atlas generation or baking, even if triangles overwrite shared texels.
+Other malformed geometry/coordinate errors remain fatal.
 
 The baker dilates each island into its empty UV gutter on the GPU after every
 accumulation update. Both `image()` and `readPixels()` use the dilated result.
@@ -204,3 +207,13 @@ A dedicated RGB illumination channel in the material model remains future work.
 Current exports use the scalar AO property; the deferred shader path already
 contains RGB sampling through that same texture, but this is not a separate
 material channel. See [material integration and limits](architecture/lightmaps/output_and_materials.md).
+
+## Experimental integrated draw workflow
+
+The [integrated architecture](architecture/draw_integrated_lightmaps.md) describes
+the delivered draw/bake path. Its exact completed raw updates are averaged before
+final composition and chart-safe dilation. Explicit bakedAO/bakedGI material modes
+use linear RGB UV2 through the AO slot; a separate scalar AO map cannot coexist
+in that slot. The production export workflow above does not export draw GPU-only
+results. Follow [tutorial 12](tutorials/draw/12_lightmaps.md) for source construction
+and [draw_lightmaps](apps/draw_lightmaps.md) for controls and deployment.

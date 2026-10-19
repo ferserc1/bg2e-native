@@ -363,15 +363,15 @@ bool Vector::mat4(
     scale.z = glm::length(glm::vec3(value[2]));
 
     bool changed = false;
-    if (vec3(("Position##" + label).c_str(), pos))
+    if (dragVec3(("Position##" + label).c_str(), pos))
     {
         changed = true;
     }
-    if (vec3(("Rotation##" + label).c_str(), eulerDeg))
+    if (dragVec3(("Rotation##" + label).c_str(), eulerDeg, 0.5f))
     {
         changed = true;
     }
-    if (vec3(("Scale##" + label).c_str(), scale))
+    if (dragVec3(("Scale##" + label).c_str(), scale))
     {
         changed = true;
     }

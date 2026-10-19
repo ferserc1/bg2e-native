@@ -4,8 +4,8 @@ This page documents the existing production `bg2e::render` workflow. The experim
 [draw advanced-lighting API](architecture/draw_advanced_lighting.md) has separate
 public components, settings, signals and ownership. The experimental [integrated bake API](api/bake/index.md) and
 [lightmap tutorial](tutorials/draw/12_lightmaps.md) now cover UV2 generation,
-completed RGB maps and draw material adoption. Standalone draw baking and
-windowless application orchestration remain separate pending products. Retain
+completed RGB maps and draw material adoption. Standalone draw baking remains separate. [Windowless draw camera export](apps/draw_offscreen_application.md)
+now provides its own completed-sample lifecycle and encoded output. Retain
 this production guide for current production editors and CLI applications.
 
 This document describes the deferred rendering pipeline implemented by

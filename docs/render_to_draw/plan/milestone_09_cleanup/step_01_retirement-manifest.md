@@ -39,6 +39,19 @@ M09-02–M09-06 execute this manifest; M10 uses its source-to-document mapping a
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
 
+## M05 coexistence and surviving-product inventory
+
+M05 adds `ExperimentalDraw` as an explicit `OffscreenApplication::init` overload;
+the original production-render overload remains and is still the default execution
+mode. M05-04 registers `draw_offscreen_application` alongside the existing
+production examples, and M05-05 adds RGBA8 PNG export in that app. The app is an
+accepted interim product, not evidence that supported entry points have already
+switched to draw. Inventory both overload branches, draw Engine/offscreen surface,
+the new target/resources and `tests/draw/offscreen` in M09-01. M09 must retain or
+migrate the requested headless product before retiring production paths, while
+removing the temporary experimental selector and making draw canonical under the
+accepted M09 plan. M05's camera PNG does not replace full scene/resource IO.
+
 ## M01-16 reviewed baseline
 
 Include actual dual DrawableComponent accessors/mode tags, production scene visitors/scene::vk, ComponentFactoryRegistry/DB overloads, strong production versus weak draw TextureCache maps, legacy TextureWidgets native public members, UserInterfaceDelegate production init, application execution branches, manual tests/gpu/tests/draw probes, templates and paired shader deployment. A matching filename does not prove a replacement is implemented or accepted. See [M01 review](../milestone_01_deferred_renderer/review.md).
@@ -78,3 +91,13 @@ AA or denoised histories as bake averages. Runtime checks remain lead-owned.
 Keep lib/third_party/iryku_smaa/AreaTex.h and SearchTex.h with original licenses: draw SMAA consumes them. Inventory draw/lib tracing, temporal, denoise and SMAA native profiles plus manual fixtures before deleting production shader/build/package entries; legacy shadow capacity degradation is not advanced table parity.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+## M06 model-editor coexistence inventory
+
+The [M06 review](../milestone_06_model_edit/review.md) adds the complete
+`apps/model_edit/` and `apps/draw/model_edit/` workflows, draw/production DB and
+UI overload pairs, `DrawMaterialEditor`, `Uv2SafeReload::regenerateDraw`, integrated
+baker ownership, viewpoint helper and `draw_model_edit` bundle/package resources
+to the source inventory. Preserve both applications and their settings identities
+through M08. M06-06 runtime/package evidence remains unspecified; do not treat the
+source-level package rules as proof that production parity gates passed.

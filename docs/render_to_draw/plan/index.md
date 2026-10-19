@@ -83,5 +83,15 @@ Each milestone documentation step updates the canonical maintained pages for the
 The [implemented M04 review](milestone_04_lightmaps/review.md) records integrated
 baking, explicit RGB UV2 material adoption, CPU UV diagnostics and corrected
 paired bake shader deployment, with validation provenance and pending impacts.
-M04-07 delivery is followed by M04-08 cumulative documentation; M05 is not yet
-started. Use [progress](progress.md) for the active acceptance/next-step pointer.
+That review was followed by M04-08 cumulative documentation. Use
+[progress](progress.md) for the active acceptance/next-step pointer.
+
+
+## M05 review and documentation handoff
+
+[Actual M05 contracts](milestone_05_offscreen/review.md) and
+[cumulative documentation coverage](milestone_05_offscreen/documentation.md) record
+windowless draw ownership, exact camera samples, settings precedence and completed
+PNG export. M05-07 documentation is delivered awaiting lead acceptance; M06-01 is
+the next required step after that closure. Production render coexistence and
+independent UV-bake/batch ownership remain explicit.

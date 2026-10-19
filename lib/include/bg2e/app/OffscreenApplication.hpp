@@ -20,6 +20,8 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/render/Engine.hpp>
+#include <bg2e/app/DrawOffscreenApplicationDelegate.hpp>
+#include <bg2e/app/OffscreenExecution.hpp>
 
 #include <string>
 #include <memory>
@@ -225,20 +227,45 @@ class OffscreenApplicationDelegate {
 
 class BG2E_API OffscreenApplication {
   public:
+    OffscreenApplication();
+    ~OffscreenApplication();
+    OffscreenApplication(const OffscreenApplication&) = delete;
+    OffscreenApplication& operator=(const OffscreenApplication&) = delete;
+
     void init(
         int argc, char** argv,
         const std::string& appId,
         std::shared_ptr<OffscreenApplicationDelegate> delegate);
 
+    void init(
+        int argc, char** argv,
+        const std::string& appId,
+        std::shared_ptr<DrawOffscreenApplicationDelegate> delegate);
+
+    OffscreenExecutionMode executionMode() const;
+
     int run();
 
   protected:
     void cleanup();
+    void cleanupDraw();
+
+    int runDraw();
 
     OffscreenApplicationConfig _config;
     std::string _appId;
 
     std::shared_ptr<OffscreenApplicationDelegate> _delegate;
+    std::shared_ptr<DrawOffscreenApplicationDelegate> _drawDelegate;
+    DrawOffscreenApplicationConfig _drawConfig;
+    OffscreenExecutionMode _executionMode = OffscreenExecutionMode::ProductionRender;
+    bool _initialized = false;
+    bool _drawDelegateInitialized = false;
+    bool _drawEngineReady = false;
+    bool _initializing = false;
+    bool _drawRunning = false;
+    bool _drawCleaning = false;
+    std::unique_ptr<draw::Engine> _drawEngine;
 
     std::unique_ptr<render::Engine> _engine;
 

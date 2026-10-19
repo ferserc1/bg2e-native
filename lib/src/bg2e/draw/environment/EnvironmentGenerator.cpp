@@ -200,6 +200,37 @@ bool EnvironmentGenerator::synchronize(const scene::EnvironmentComponent* compon
 {
     const std::filesystem::path path = component && !component->environmentImage().empty()
         ? std::filesystem::absolute(component->environmentImage()).lexically_normal() : std::filesystem::path{};
+    if (_configuration.defaultSky)
+    {
+        auto& settings = _configuration.defaultSky->settings();
+        const auto skyHorizonColor = component ? component->skyHorizonColor() : base::Color{0.55f, 0.65f, 0.8f};
+        if (settings.skyHorizonColor.r != skyHorizonColor.r || settings.skyHorizonColor.g != skyHorizonColor.g || settings.skyHorizonColor.b != skyHorizonColor.b)
+        {
+            settings.skyHorizonColor = skyHorizonColor;
+            if (path.empty())
+            {
+                _rebuildRequested = true;
+            }
+        }
+        const auto skyZenithColor = component ? component->skyZenithColor() : base::Color{0.06f, 0.22f, 0.6f};
+        if (settings.skyZenithColor.r != skyZenithColor.r || settings.skyZenithColor.g != skyZenithColor.g || settings.skyZenithColor.b != skyZenithColor.b)
+        {
+            settings.skyZenithColor = skyZenithColor;
+            if (path.empty())
+            {
+                _rebuildRequested = true;
+            }
+        }
+        const auto groundColor = component ? component->groundColor() : base::Color{0.04f, 0.035f, 0.025f};
+        if (settings.groundColor.r != groundColor.r || settings.groundColor.g != groundColor.g || settings.groundColor.b != groundColor.b)
+        {
+            settings.groundColor = groundColor;
+            if (path.empty())
+            {
+                _rebuildRequested = true;
+            }
+        }
+    }
     bool changed = _rebuildRequested || !_resources || !_pathSource || _sourcePath != path;
     if (changed)
     {

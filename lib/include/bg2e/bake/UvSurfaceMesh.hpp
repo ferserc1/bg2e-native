@@ -36,8 +36,9 @@ struct UvSurfaceMesh {
     std::vector<geo::Submesh> ranges; // firstIndex/indexCount are firstVertex/vertexCount.
     uint32_t chartCount = 0;
 };
-// Pure CPU validation/packing of texCoord1. Nonzero-area UV overlaps/ranges are
-// rejected by geo::UvAtlasValidator. Zero-area UV faces cover nothing and are skipped.
+// Pure CPU validation/packing of texCoord1. UV overlaps produce a warning and
+// remain drawable; malformed ranges/coordinates are rejected. Zero-area UV faces
+// cover nothing and are skipped.
 // Charts join shared source vertex-index edges within a submesh, not across
 // duplicated seam vertices/material/transform boundaries. This is conservative.
 BG2E_API UvSurfaceMesh buildUvSurfaceMesh(const geo::Mesh& mesh);

@@ -43,6 +43,12 @@ enum class UvAtlasError
     OverlappingTriangles
 };
 
+enum class UvAtlasOverlapPolicy
+{
+    Reject,
+    Warn
+};
+
 struct UvAtlasValidation {
     bool valid = false;
     UvAtlasError error = UvAtlasError::None;
@@ -53,11 +59,13 @@ struct UvAtlasValidation {
     uint32_t triangleCount = 0; // Total validated triangles
     float mappedArea = 0.0f;    // Sum of absolute UV triangle areas; may exceed 1 when triangles overlap
     float coverage = 0.0f;      // Unique fraction of the unit square covered by the UV map
+    std::string warning;       // Nonfatal overlap diagnostic under Warn policy.
 };
 
 // Usable-atlas test for a standard mesh UV set (0 = UV1 / texCoord0,
 // 1 = UV2 / texCoord1). Rejects non-finite or out-of-range coordinates,
-// overlapping positive-area triangles and invalid index/submesh ranges.
+// invalid index/submesh ranges. Positive-area overlaps reject in strict mode;
+// Warn mode keeps valid=true and reports them separately without discarding stats.
 // Zero-area mapped triangles cover no texels and are ignored by the overlap
 // and coverage checks; a map without any positive-area triangle is rejected.
 // Shared edges and vertices are allowed.
@@ -66,6 +74,8 @@ struct UvAtlasValidation {
 class BG2E_API UvAtlasValidator {
   public:
     static UvAtlasValidation validate(const Mesh& mesh, uint32_t uvSet);
+    static UvAtlasValidation validate(const Mesh& mesh, uint32_t uvSet,
+        UvAtlasOverlapPolicy overlapPolicy);
 };
 
 }

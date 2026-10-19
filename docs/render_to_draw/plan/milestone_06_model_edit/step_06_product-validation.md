@@ -34,3 +34,14 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M07 scope should be adapted to actual shared editor widgets/services; M09 product-removal gate relies on this acceptance evidence.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+
+## M06-01 parity baseline
+
+Use [application-inventory.md](application-inventory.md) as the feature acceptance
+matrix and reconcile every pending row, not just startup. The interim target is
+`draw_model_edit`, app ID `org.bg2e.apps.draw.model-edit`, preference scope
+`draw.model_edit.graphics`; production `model_edit` retains its original identity.
+The M06-01 procedural cube is an explicit fixture and is not evidence of a loaded,
+edited or savable document. Confirm open/import/save/dirty state, tools, environment,
+viewpoint and UV/bake behaviors after their implementing steps before parity claims.

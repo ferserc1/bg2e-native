@@ -373,6 +373,34 @@ static void testValidator()
                     "overlapping UV1 map rejected as UV1");
 
     {
+        const auto mesh = makeDoubleQuad(true);
+        const auto result = geo::UvAtlasValidator::validate(mesh, 1, geo::UvAtlasOverlapPolicy::Warn);
+        check(result.valid && result.error == geo::UvAtlasError::None && !result.warning.empty(),
+              "bake policy accepts overlapping UV2 with a separate warning");
+        check(result.triangleCount == 4 && std::abs(result.mappedArea - 2.0f) < 1e-5f &&
+                  std::abs(result.coverage - 1.0f) < 1e-5f,
+              "warning policy preserves all triangles and unique coverage statistics");
+
+        auto malformed = mesh;
+        malformed.indices.back() = static_cast<uint32_t>(malformed.vertices.size());
+        const auto invalid = geo::UvAtlasValidator::validate(malformed, 1, geo::UvAtlasOverlapPolicy::Warn);
+        check(!invalid.valid && invalid.error == geo::UvAtlasError::IndexOutOfRange,
+              "overlap warning does not suppress malformed geometry errors");
+    }
+
+    {
+        auto mesh = makeTwoSubmeshQuad();
+        for (auto& vertex : mesh.vertices)
+        {
+            vertex.texCoord1.x = 0.5f + vertex.texCoord1.x * 0.000001f;
+            vertex.texCoord1.y = 0.5f + vertex.texCoord1.y * 0.25f;
+        }
+        const auto result = geo::UvAtlasValidator::validate(mesh, 1);
+        check(result.valid && result.warning.empty() && result.mappedArea > 0.0f,
+              "thin triangles sharing a diagonal do not create a false overlap");
+    }
+
+    {
         auto mesh = makeTwoSubmeshQuad();
         for (auto& vertex : mesh.vertices)
         {

@@ -60,3 +60,26 @@ platforms; they are not a claim of universal Linux portability or signed macOS d
 References:
 - https://cmake.org/cmake/help/latest/module/InstallRequiredSystemLibraries.html
 - https://cmake.org/cmake/help/latest/command/install.html#installing-runtime-dependencies
+
+## Experimental draw/bake shader resources
+
+The engine also installs the paired native `shaders/draw` and `shaders/bake`
+trees through the RuntimeShaders component. Preserve their relative paths in
+packages and precompiled-library projects; stage filenames are not globally
+unique. The paired aggregate compiles both source trees and application resource
+refresh copies both even on shader-only rebuilds. On macOS the active bundle must
+contain `bake/uv_surface/surface.vert.metallib`; Vulkan uses the matching `.spv`.
+After updating an older checkout with missing bake registration, reload CMake
+and rebuild the application, then use its refreshed bundle. See
+[shader deployment](../doc/api/gpu/ShaderLibraries.md#engine-paired-drawbake-deployment)
+and [draw_lightmaps](../doc/apps/draw_lightmaps.md#build-and-resources). These
+resource rules do not provide a standalone draw bake scheduler or image exporter.
+
+The [draw offscreen CLI](../doc/apps/draw_offscreen_application.md#build-and-resources)
+is registered as `draw_offscreen_application` using the standard example resource
+helper. Keep native draw shaders, scene assets and platform runtime libraries
+with its executable/bundle. It writes one completed camera PNG; the common resource
+packaging helper does not itself implement scene-image export or standalone bake
+batch output. Packaging/install/standalone coverage remains subject to the actual
+selected script component and target configuration; registration alone does not
+establish that every distribution variant contains the example.

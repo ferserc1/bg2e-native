@@ -42,11 +42,13 @@ class BG2E_API InputManager {
 
     inline void setDelegate(std::shared_ptr<InputDelegate> delegate)
     {
+        _sceneMouseButtons = 0;
         _delegate = delegate;
     }
 
   protected:
     std::shared_ptr<InputDelegate> _delegate;
+    uint32_t _sceneMouseButtons = 0;
 };
 
 }

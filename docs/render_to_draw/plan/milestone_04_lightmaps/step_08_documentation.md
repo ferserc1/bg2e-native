@@ -44,3 +44,12 @@ Do not teach standalone/batch/image-export or offscreen camera averaging as
 implemented. Record the per-page source mapping, retained/updated/displaced page
 dispositions, snippet/link/style checks and lead-only runtime evidence in
 documentation.md. M05 begins only after this documentation delivery is accepted.
+
+
+## Delivery
+
+Implemented on 2026-10-18; see [coverage and checks](documentation.md) and the
+appended [review handoff](review.md#m04-08-documentation-handoff-2026-10-18).
+Existing canonical tutorial retained and checked against the actual example;
+missing raw-executor/conceptual coverage added. Awaiting project lead acceptance;
+next is M05-01 under the usual continuation convention.

@@ -32,8 +32,9 @@ formats with transfer usages; authored roughness mips must not be regenerated.
 Odd mip dimensions halve with floor and a minimum of one.
 
 Exact `copyImage` selects equal-format/equal-extent subresources. D16_UNORM and
-D32_SFLOAT exact depth copies are supported; packed depth-stencil, depth upload
-and depth readback are not. Vulkan filtered blit checks native capabilities;
+D32_SFLOAT exact depth copies are supported; packed depth-stencil copies and
+depth uploads are unsupported. Typed initialized D32_SFLOAT readback is available through
+`readPixelsDepth32`. Vulkan filtered blit checks native capabilities;
 Metal exact-copy convenience rejects scaling. `readPixels(bytes, range, finalLayout)`
 synchronously returns one tight native-format color mip/layer, removes row
 padding and restores the requested layout. It is not asynchronous selection

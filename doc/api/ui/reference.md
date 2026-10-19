@@ -633,3 +633,13 @@ bake/UV diagnostic images through the draw UI session. Use
 inspection and rebind images after geometry/resolution/session changes. Production
 UvMapPreview remains a separate render-compatible widget. Clear draw preview
 handles before UI/Engine teardown; no ImGui/native type enters application code.
+
+## Draw model editor controls
+
+[GraphicsSettingsWindow and RendererDebugWidget](GraphicsSettingsWindow.md) share
+the live queued settings facade, with graphics persistence and session-only debug
+controls separated. [ReflectionWidget](Reflection_Widgets.md) can render only a
+TransformComponent or LightComponent without inspecting the complete node. Its
+unbounded numeric/vector fields support dragging and direct keyboard entry.
+The [model editor tutorial](../../tutorials/draw/model_edit.md) combines these with
+Workspace, DrawMaterialEditor and BakeLightmapPreview in the delivered application.

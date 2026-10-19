@@ -192,6 +192,31 @@ void JsonNode::printNode(int indentationLevel)
     std::cout << toString(indentationLevel);
 }
 
+static std::string quoteJsonString(const std::string& text)
+{
+    static constexpr char Hex[] = "0123456789abcdef";
+    std::string result = "\"";
+    for (unsigned char c : text)
+    {
+        if (c == '"' || c == '\\')
+        {
+            result += '\\';
+            result += static_cast<char>(c);
+        }
+        else if (c < 0x20)
+        {
+            result += "\\u00";
+            result += Hex[c >> 4];
+            result += Hex[c & 15];
+        }
+        else
+        {
+            result += static_cast<char>(c);
+        }
+    }
+    return result + "\"";
+}
+
 std::string JsonNode::toString(int indentationLevel)
 {
     std::string indentation = std::string(indentationLevel * 2, ' ');
@@ -201,7 +226,7 @@ std::string JsonNode::toString(int indentationLevel)
     switch (type)
     {
     case Type::String:
-        outputString += "\"" + _stringValue + "\"";
+        outputString += quoteJsonString(_stringValue);
         break;
     case Type::Number:
         outputString += std::format("{}", _numberValue);
@@ -253,7 +278,7 @@ std::string JsonNode::toString(int indentationLevel)
                 outputString += "\n";
             }
             emptyObject = false;
-            outputString += innerIndentation + "\"" + i->first + "\" : ";
+            outputString += innerIndentation + quoteJsonString(i->first) + " : ";
             outputString += i->second->toString(indentationLevel + 1);
             JsonObject::iterator next = i;
             next++;
@@ -278,7 +303,7 @@ std::string JsonNode::serialize()
     switch (type)
     {
     case Type::String:
-        outputString += "\"" + _stringValue + "\"";
+        outputString += quoteJsonString(_stringValue);
         break;
     case Type::Number:
         outputString += std::format("{}", _numberValue);
@@ -310,7 +335,7 @@ std::string JsonNode::serialize()
         for (JsonObject::iterator i = (_objectValue).begin();
              i != (_objectValue).end(); ++i)
         {
-            outputString += "\"" + i->first + "\":";
+            outputString += quoteJsonString(i->first) + ":";
             outputString += i->second->serialize();
             JsonObject::iterator next = i;
             next++;

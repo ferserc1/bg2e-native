@@ -89,3 +89,13 @@ limits and corrected paired bake deployment. Corrected M04-06 is accepted by
 project lead continuation with backend/scenario coverage unspecified. The review
 updates concrete pending M05–M10 requirements and leaves M04-08 cumulative
 documentation as the next required step; it does not close M04 or start M05.
+
+
+## M04-08 documentation delivery
+
+The [coverage inventory](documentation.md) reconciles the canonical maintained
+bake, material, preview, tutorial, application, architecture and deployment pages
+through actual M04 implementation. M04-07 is accepted by project lead continuation.
+Documentation is delivered awaiting acceptance; continuation closes this milestone
+and selects M05-01. Source-consistent documentation does not add backend numeric,
+performance or exported-file evidence. No M05 work is implemented here.

@@ -763,10 +763,29 @@ renderer. DrawableComponent provides typed production/draw resource access;
 GraphicsSettingsWindow uses the live draw facade. See the current
 [renderer reference](../api/draw/RendererDeferred.md). Earlier abbreviated base
 delegate excerpts omit its prepareFrame/surfaceChanged hooks.
-OffscreenApplication uses render. There is no automatic multi-context backend
+[OffscreenApplication](../api/app/OffscreenApplication.md) retains its production
+render overload and adds a typed draw overload owning a serial windowless job.
+The [headless architecture](draw_offscreen_rendering.md) covers exact camera
+samples, final-only conversion and completed readback outside MainLoop. There is no automatic multi-context backend
 management or UI thread. Multiple layers currently call waitIdle during cleanup
 and resize (MainLoop, coordinator/UI, Engine/surface); these overlapping drains
 are conservative lifecycle boundaries. They are not present after every ordinary submission.
 
 See [app API](../api/app/index.md), [draw API](../api/draw/index.md),
 [gpu API](../api/gpu/index.md) and the [example](../../examples/draw/README.md).
+
+## Model editor integration through M06
+
+The [draw model editor](../apps/draw_model_edit.md) owns document generations,
+dirty state, stopped edit queues and integrated bake scheduling above Engine.
+Workspace composes its docked panels; only utility/settings/debug windows float.
+Scene lighting editors use component reflection on temporary clones, then queue
+mutation of the checked live target. Graphics preferences exclude scene and debug
+properties; RendererDebugWidget shares the facade for nonpersistent diagnostics.
+
+Completed baking writes a temporary texture and automatically updates live and
+CPU material definitions. A separately retained completed image keeps the preview
+alive after baker invalidation. Complete resource export publishes native texture
+sidecars independently of temporary files. The document graph is the bake root;
+editor floor, stage light and camera are fixtures outside that graph. Composer and
+standalone batch orchestration are not supplied by this application integration.

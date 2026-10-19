@@ -84,7 +84,7 @@ void UvMapPreview::updatePreview()
 {
     // Release the descriptor before render() replaces the sampled image
     _imageWidget.clearTexture();
-    _validation = geo::UvAtlasValidator::validate(*_mesh, _uvSet);
+    _validation = geo::UvAtlasValidator::validate(*_mesh, _uvSet, geo::UvAtlasOverlapPolicy::Warn);
     _renderer->render(*_mesh, _uvSet);
     // Non-owning handle: _renderer outlives the widget texture reference
     // (cleanup() clears _imageWidget before _renderer is destroyed)
@@ -118,6 +118,10 @@ void UvMapPreview::draw()
     if (_validation.valid)
     {
         Text::text("Valid atlas - coverage: " + std::to_string(_validation.coverage * 100.0f) + " %");
+        if (!_validation.warning.empty())
+        {
+            Text::text("Warning: " + _validation.warning);
+        }
     }
     else
     {

@@ -8,15 +8,15 @@ This is the execution record for all implementation chats. The **Next step to im
 
 | Field | Value |
 |---|---|
-| Workflow state | `in_progress` |
-| Current milestone | M04 — Integrated lightmap generation in bake |
-| Active step | M04-08 — Cumulative implementation documentation |
-| Last implemented step | M04-07 — Review M04 reusable maps |
-| Last accepted step | M04-07 technical review — accepted by project lead continuation; backend/scenario coverage not specified |
-| Awaiting project lead validation | None — M04-08 in progress |
-| Next step to implement | [M04-08 — Cumulative implementation documentation](milestone_04_lightmaps/step_08_documentation.md) |
-| Next action | `resume` |
-| Condition before starting | None — project lead continuation accepted M04-07 and selected documentation. |
+| Workflow state | `awaiting_project_lead` |
+| Current milestone | M07 — Experimental bg2e_composer application |
+| Active step | None — M07-01 delivered |
+| Last implemented step | M07-01 — Application inventory and copy |
+| Last accepted step | M06-08 — accepted by project lead continuation instruction |
+| Awaiting project lead validation | M07-01 application startup and inventory |
+| Next step to implement | [M07-02 — Complete scene graph IO, factories and independent cloning](milestone_07_bg2e_composer/step_02_scene-io-cloning.md) |
+| Next action | `wait_for_project_lead` |
+| Condition before starting | Project lead acceptance of M07-01; backend/package coverage remains unspecified. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
@@ -70,6 +70,30 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 | [M03-10](milestone_03_ray_tracing/step_10_review.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved uncommitted baseline; review.md, rt-design reconciliation, 19 pending step files/seven downstream summaries, cosmetic separators in three pipeline implementations. | Opening GPL scan across 338 scoped files; native/source/signal/settings/ownership review; focused static checks, local Markdown links, non-whitespace-token equality for cosmetic edits and git diff --check. No compilation/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage not specified. | Next M03-11 cumulative docs; M04 not yet authorized. |
 | [M03-11](milestone_03_ray_tracing/step_11_documentation.md) | `accepted` | HEAD `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved prior work; five new/twenty-four updated maintained pages, documentation.md coverage and review handoff. Documentation only. | 29 maintained pages, 344 local links/anchors, 73 header/source references, code fences, source-backed tutorial wiring/defaults, git diff --check. No compile/runtime. | Accepted by project lead continuation instruction; M03 closed, backend/scenario coverage not specified. | Last M03 step; next M04-01 after acceptance. |
 | [M04-01](milestone_04_lightmaps/step_01_bake-contracts.md) | `accepted` | HEAD `95190d6d042bb85d6e9d72153b155192dac64377`; new bake Types/LightmapSettings/LightmapPixels/BakerContext/LightmapBaker/all headers, three CPU implementations, manual contract fixture and source/mapping docs. Uncommitted. | Ten source GPL/includes/dependencies/delimiters; eleven accessor metadata properties and declarations/definitions/export checks; local links and git diff --check. No compile/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage not specified. | Abstract execution only; no UV/GPU baker or preview promised. Next M04-02. |
+
+| [M04-08](milestone_04_lightmaps/step_08_documentation.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d`; cumulative docs and M04 coverage ledger, with pre-existing canonical tutorial retained. | 34 pages/505 links and anchors/fences; tutorial block equality; API/source/deployment inspection; git diff --check. No compile/runtime. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | M04 closed. M05-01 selected. |
+
+| [M05-01](milestone_05_offscreen/step_01_execution-selection.md) | `accepted` | Starting HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d`, with preserved M04-08 uncommitted documentation; new public OffscreenExecutionMode, DrawOffscreenApplicationConfig/Delegate, overloaded OffscreenApplication init, mode query, overload validation, and downstream handoffs. | New headers inspected for complete GPL and no native/Vulkan/render includes; signature/caller cross-reference, declaration/definition inspection, 312 local links across changed Markdown and git diff --check. No configure/build/runtime. | M04-08 accepted by continuation. M05-01 accepted by project lead continuation instruction; backend/scenario coverage unspecified. | Draw init validates positive extent and selects mode; actual windowless engine/surface/frame execution is M05-02. Production delegate API retained. |
+
+| [M05-02](milestone_05_offscreen/step_02_draw-offscreen-context.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` plus preserved M04/M05-01 uncommitted work. Shared window/headless draw Engine initialization, generic surface/slots and dependent resources, actual typed app frame driver/cleanup, public DefaultOffscreenApplicationDelegate, fixed scene time, window/UI guards, manual fixture and source-backed API/plan handoff. | 18 owned sources: GPL, includes, lexical delimiters, function separation and interface/lifecycle review; 132 engine include paths; local Markdown links/anchors and git diff --check. No configure/build/shader/fixture/app/GPU execution. | M05-01 accepted by project lead continuation instruction; M05-02 accepted by project lead continuation, backend/scenario coverage not specified. | Synchronous immediateSubmit confirms completion before counters/callback; no failed frame counts. Default one requested frame, overlays excluded, frozen time by default. Exact linear averaging/config import remains M05-03. See headless-execution.md and tests/draw/offscreen/README.md. |
+| [M05-03](milestone_05_offscreen/step_03_accumulation-settings.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` plus preserved M04/M05 uncommitted work. Config/direct live import and resolution precedence, optional Renderer linear/final seam, Deferred split/frozen identity, CPU double FrameAccumulator over completed RGBA16F samples, exact default N driver/final-only completion hooks, manual reference/native probes and API/downstream docs. Uncommitted. | 24 owned sources: GPL, 160 engine includes, lexical delimiters/function separation; source signature/call/transfer/ownership/completion inspection, local documentation links and git diff --check. No configuration/build/shader/C++ fixture/GPU execution. | M05-02 accepted by project lead continuation; coverage unspecified. M05-03 accepted by project lead continuation after GLM packing include correction; backend/runtime coverage unspecified. | Synchronous per-sample readback/CPU mean and final RGBA16F upload are the declared reference cost. Final color/optional SMAA run once, result publishes after GPU completion. See accumulation-settings.md and both manual fixture READMEs. Next M05-04 conditional on acceptance. |
+| [M05-04](milestone_05_offscreen/step_04_working-example.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` plus preserved M04/M05 work and accepted M05-03 correction. New registered `draw_offscreen_application` CLI with scene/material/assets/environment/lights, strict CLI/config routing, frozen default, final PNG callback, cleanup and usage docs; examples/CMakeLists registration. Uncommitted. | GPL/style and lexical inspection for new app source, CLI/API/call/ownership and output callback inspection, CMake registration/resource-helper inspection, local Markdown links and git diff --check. No configure/build/run/image inspection. | M05-03 accepted by project lead continuation instruction after the GLM include correction; coverage unspecified. M05-04 accepted by project lead continuation instruction; compilation/checks assumed successful under the agreed convention, backend/scenario coverage unspecified. | Output defaults to offscreen_output/scene.png, PNG RGBA8. Explicit unknown skip reports target warnings; random scene node IDs (light, environment, lightPose) have no name remap. M05-05 adds verified temporary-PNG publication. |
+| [M05-05](milestone_05_offscreen/step_05_readback-export.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` plus preserved M04/M05 uncommitted work and accepted M05-04. The CLI validates tight RGBA8 length, writes a PNG-suffixed temporary file, decodes it, verifies dimensions and exact RGBA bytes, then publishes it as scene.png without replacing an existing path; failure removes the temporary. README and step handoff specify row orientation, alpha/color handling, UI/animation/accumulation comparison. Uncommitted. | GPL/style and source signature/lifecycle inspection, DB writer/decoder call verification, native row-order/viewport inspection, local Markdown links and `git diff --check`. No build, executable, fixture or image inspection. | M05-04 accepted by project lead continuation instruction; compilation/checks assumed successful under the agreed convention, backend/scenario coverage unspecified. M05-05 accepted by project lead continuation instruction; compilation/checks assumed successful under the agreed convention, backend/scenario coverage unspecified. | Project lead visual orientation/content and cross-backend inspection are still not specified. Review now follows. |
+| [M05-06](milestone_05_offscreen/step_06_review.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` plus preserved uncommitted M04/M05 implementation. New `milestone_05_offscreen/review.md` records actual execution/configuration/accumulation/readback/output contracts and revises pending M06–M10 requirements. No source or CMake changes. | API/source/call-site/lifecycle review, current source versus pending steps, revised M06–M10 links/contracts, Markdown relative links and `git diff --check`. No build/runtime/image checks. | M05-05 accepted by project lead continuation instruction; compilation/checks assumed successful under the agreed convention; backend/artifact coverage not specified. M05-06 accepted by project lead continuation instruction; backend/scenario coverage unspecified. | Lead’s platform/runtime/image evidence remains unspecified. Review hands off to M05-07 cumulative maintained documentation after acceptance/continuation; M05 is not closed. |
+| [M05-07](milestone_05_offscreen/step_07_documentation.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` plus preserved inherited work. Five new maintained references/concept/tutorial/app pages and 23 updated affected pages, including packaging; new M05 documentation coverage ledger, review/index/summary handoff and explicit M06-01 closure prerequisite. Markdown only. | 28 maintained pages, 338 local links/anchors, balanced fences, three exact tutorial source excerpts, source/API/config/native-lifecycle/codec/target/asset inspection and git diff --check. No builds/runtime/visual checks. | M05-06 accepted by project lead continuation instruction; backend/scenario coverage unspecified. M05-07 accepted by project lead continuation instruction; supplemental build-from-scratch tutorial rewrite requested in M06-01; backend/scenario evidence unspecified. | See documentation.md. Complete scene/resource export remains M06/M07, UV standalone/batch M08, canonical promotion M09. Next M06-01 only after documentation acceptance/continuation. |
+| [M06-01](milestone_06_model_edit/step_01_application-copy.md) | `accepted` | HEAD `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` plus preserved inherited work and resumed partial files. New apps/draw/model_edit target/source/README, minimal apps CMake registration, application-inventory.md mapping workflows/API calls, M06-02–06/M07-01 handoffs. Supplemental tutorial 13 now constructs the entire shipped example through 22 ordered C++ blocks. | Seven owned files checked for GPL/includes/native boundary/lexical structure and style, source/API/ownership/cleanup/resource-helper inspection, complete tutorial code assembly, Markdown links/anchors and git diff --check (working tree and index). No configure/build/shader/application execution. | M05-07 accepted by project lead continuation; coverage unspecified. Lead explicitly requested the full tutorial rewrite with M06-01. Accepted by project lead continuation; backend/scenario coverage unspecified. | Startup fixture is not complete editor parity. M06-02 implements Document and complete IO; M06-03 tools/widgets; M06-04 framing; M06-05 bake; M06-06 parity. Lead should build/run draw_model_edit, test settings/orbit/resize/cleanup and production coexistence, and review the tutorial assembly. |
+
+| [M06-02](milestone_06_model_edit/step_02_complete-db-io.md) | `accepted` | Same HEAD plus preserved inherited/staged work. Shared MTL/glTF draw import, BG2 joints/submesh/material metadata, native GPU texture archive, complete resource publication, material/JSON round-trip fixes and editor Document/Open/Save/drop/unsaved flows. New API reference, resource-io.md and manual probe. No CMake edits. | 27 owned C++ files checked for GPL, block-opening style and lexical delimiter balance; manual API/ownership/metadata/rollback/dependency inspection; maintained Markdown link paths/fences; working-tree and index diff whitespace checks. No compilation, runtime, shader, packaging or probe execution. | M06-01 accepted by project lead continuation instruction; backend/scenario coverage unspecified. M06-02 accepted by project lead continuation instruction; backend/scenario coverage unspecified. | See resource-io.md and tests/draw/resource_io/README.md. Native .bg2tex requires draw loaders and little-endian texels; static import subsets/custom resource contracts/filesystem publication limits are explicit. Next M06-03 after acceptance. |
+
+| [M06-03](milestone_06_model_edit/step_03_editor-tools.md) | `accepted` | Same HEAD with inherited/staged work preserved. EditorUi now uses production Workspace composition: docked Model Properties/Environment Options, full-width Toolbar, StatusBar, File/View/Window menus with panel checkmarks, menu-launched settings and maximized app startup. Prior document/material/environment editing workflows retained. No CMake edits. | Static GPL/style/lexical checks on touched app files, Workspace/Window/Menu API and callbacks inspected, manual layout matrix updated, maintained Markdown links/fences and working-tree/index whitespace checks. No configure/build/shader/application/probe execution. | M06-02 accepted under continuation convention. UI parity correction accepted by latest project-lead continuation; backend/runtime coverage unspecified. | See step_03_editor-tools.md, editor-tools.md, doc/apps/draw_model_edit.md and tests/draw/editor_tools/README.md. |
+| [M06-04](milestone_06_model_edit/step_04_viewpoint-camera.md) | `accepted` | Same HEAD with inherited/staged work preserved. Bounds framing and explicit draw ViewpointAnalyzer integration in apps/draw/model_edit; queued weak generation/member-checked actions; candidate/visible-submesh stats and status UI; documentation and lead matrix. No CMake edits. | Static source/API/lifecycle/identifier mapping inspection, Markdown path/fence checks, and working-tree/index whitespace checks. No configure/build/shader/application/probe execution. | Accepted by latest project-lead continuation; backend/runtime coverage unspecified. | See viewpoint-camera.md. Bake integration proceeds in M06-05. |
+| [M06-05](milestone_06_model_edit/step_05_editor-baking.md) | `accepted` | Same HEAD with inherited/staged work preserved. New ModelLightmapWindow and EditorBaking source; Window menu integration; UV1/UV2 and result previews; safe UV2 regeneration; integrated AO/GI context/frame lifecycle, cancel, source invalidation, apply-to-material and native sidecar export path. No CMake changes. | GPL/style/lexical checks on new and touched app files; bake/UV/image APIs, frame completion ordering, weak target/document guards, material metadata, cleanup and complete export paths inspected; docs links/fences and working-tree/index whitespace checks. No configure/build/shader/application/probe execution. | M06-03 UI correction and M06-04 accepted by project-lead continuation; coverage unspecified. M06-05 accepted by project-lead continuation; backend/scenario coverage unspecified. | See step_05_editor-baking.md, application-inventory.md, doc/apps/draw_model_edit.md and tests/draw/editor_tools/README.md. Lead should run UV, AO/GI, cancellation/invalidation, apply and save/reload matrix on available backends. |
+| [M06-06](milestone_06_model_edit/step_06_product-validation.md) | `accepted` | Static package and parity review recorded in product-validation.md. draw_model_edit is registered via bundle_app_sdl; shared package collection installs registered apps, engine runtime dependencies, shaders and assets. No CMake changes. | Read-only inspection of app target helper, package target collection, install/resource rules and platform script configuration; inventory/manual scenarios reconciled into project-lead evidence matrix; working-tree/index whitespace checks. No configure/build/shader/package/application/probe execution. | M06-05 accepted by project-lead continuation; backend/scenario coverage unspecified. M06-06 accepted by latest project-lead continuation; runtime and package evidence remain unspecified. | See product-validation.md. Static package routing is confirmed; native launch, parity and clean-checkout package execution remain an explicit verification gap for M09/M10 gates. |
+| [M06-07](milestone_06_model_edit/step_07_review.md) | `accepted` | New review.md compares actual model editor DB/UI/bake/viewpoint/application contracts with M07–M10 requirements and updates M07–M10 handoffs. No source or CMake changes. | Read actual public API declarations and implementation records, checked affected pending summaries/steps, package-source handoff, review and downstream Markdown paths/fences, `git diff --check` and index equivalent. No compile/runtime/shader/package execution. | M06-06 accepted by project-lead continuation; runtime/package coverage remains unspecified and explicitly documented. M06-07 accepted by project lead continuation after editor corrections; zero-light rendering explicitly reported correct. | See review.md. Next M06-08 cumulative documentation; M06 remains open and M07 entry is gated on M06-08 acceptance. |
+| [M06-08](milestone_06_model_edit/step_08_documentation.md) | `accepted` | Same HEAD and inherited working tree preserved. Maintained app/tutorial/UI/settings/IO/architecture documentation reconciled through M06; new model editor tutorial and documentation.md inventory; review/summary and manual evidence reconciled. Documentation-only; no CMake changes. | Source/CLI/header/resource review; local links/anchors and fenced blocks; working-tree/index whitespace checks. No build/runtime/shader/package execution. | M06-07 and editor corrections accepted by latest project lead continuation. Lead explicitly reports correct zero-light rendering; other backend/package coverage unspecified. | M06-08 accepted by project lead continuation instruction; backend/package coverage unspecified. Next M07-01. |
+
+| [M07-01](milestone_07_bg2e_composer/step_01_application-copy.md) | `awaiting_project_lead` | HEAD bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d plus inherited changes preserved; new apps/draw/bg2e_composer app sources/README/target, apps registration and M07 inventory/handoff. | GPL/private includes/identity/draw boundary, resource helper, ownership and whitespace inspected; no configure/build/shader/runtime/package execution. | M06-08 accepted by project lead continuation instruction; backend/package coverage unspecified. | M07-01 awaits lead startup checks. Next M07-02; Composer-specific gaps mapped in application-inventory.md. |
+
 
 ## Open issues
 
@@ -1252,3 +1276,537 @@ performance or exported artifact is invented from continuation acceptance.
 
 M04-07 awaits lead acceptance. Next is M04-08 cumulative documentation and its
 coverage inventory; M04 is not closed and M05 has not started.
+
+
+## M04-08 cumulative documentation delivery (2026-10-18)
+
+M04-07 accepted by project lead continuation instruction; backend/scenario coverage
+not specified. Current starting HEAD is bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d,
+with a clean initial working tree. The existing M04 canonical references and full
+ordered tutorial are already present at that revision and are retained honestly.
+
+Added public raw-executor/BakeSample reference and integrated draw lightmap
+architecture. Updated context completion recipe, canonical navigation, production
+versus draw offscreen/writer boundaries, stored/live material adoption and paired
+shader packaging guidance. The coverage inventory in M04 documentation.md maps
+added/updated/retained pages to source, examples, checks and later owners. Existing
+17 tutorial blocks match shipped main.cpp modulo whitespace. Production guides
+remain supported and separate; no standalone/batch/export or camera average is
+claimed as implemented. No source/shader/CMake changes or build/runtime execution.
+
+Static checks across 34 pages/505 local links and anchors, fences, public
+API/caller/deployment inspection and diff whitespace pass. These are source checks, not native backend/numeric/performance
+coverage. M04-08 is delivered awaiting project lead acceptance. Continuation closes
+M04 and selects the actual linked M05-01; this turn implements no M05 work.
+
+
+M04-08 cumulative documentation accepted by project lead continuation instruction
+when they requested the next step; backend/scenario coverage unspecified. M04 is
+closed. M05-01 is now active; no build/runtime checks are claimed for this step.
+
+M05-01 delivered awaiting project lead validation; backend/scenario coverage is
+unspecified. The new draw delegate contract carries no Vulkan types, and the typed
+init overload selects experimental draw after positive extent validation. M05-02
+implements actual Engine/surface initialization and run callbacks; its current run
+path reports that staged dependency. Production offscreen behavior retains its
+existing delegate and Vulkan implementation.
+
+
+## M05-02 headless execution delivery (2026-10-18)
+
+M05-01 accepted by project lead continuation instruction; backend/scenario
+coverage not specified. The implementation was resumed after an intentional turn
+interruption, preserving its partial work and all earlier uncommitted changes.
+Starting HEAD remains bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d. No commit/reset,
+new worktree or CMake/GPU/production-render/shader modifications.
+
+Engine now initializes an actual offscreen Instance/surface through the same
+context/cleanup machinery. It retains the window accessor, adds generic/typed
+headless access and nonzero frameSlotCount, and adapts deferred/data-binding/query
+resources to generic slots. A second use of a shared active Instance is rejected
+without cleaning its owner. Window RenderLoop/UI reject headless initialization.
+
+The typed OffscreenApplication overload now creates and initializes draw Engine
+and the delegate. It performs serial acquired-slot recording/immediateSubmit,
+then endFrame/counter/completion callback only after confirmed GPU completion.
+Color is TransferSrc for completed readback; it never uses Present layout.
+DefaultOffscreenApplicationDelegate bridges the public existing renderer owner,
+scene/replacement generations, stopped preparation and one renderer update/record
+per scene frame. Default continuation requests one frame; subclasses can request
+more. Overlays are excluded; first delta is zero and later frames use the fixed
+finite nonnegative timeStepSeconds (zero freezes time). No hidden SDL/UI/input.
+
+Initialization/run failures drain retained owners before delegate cleanup and
+Engine teardown, retain the first exception, and never report failed completion.
+Unrun draw contexts also clean up on destruction; reentrant calls are rejected.
+No extra private execution class or duplicated scene traversal was introduced.
+
+Added a manual probe for raw known-value GPU clears/readback, zero frames,
+partial init/record/completion/cleanup failure, original-exception preservation,
+unrun destruction and shared Instance guards. Optional real deferred empty-scene
+mode checks actual native shader/resource integration. None was compiled or run.
+The source/style/include/lifecycle and Markdown link checks are static evidence;
+Vulkan/Metal/no-RT/SDK, scene numerics and window/production regressions stay
+lead-owned. Touched implementation function separators were corrected as required.
+
+Actual APIs/limits and lead matrix are in
+[headless-execution.md](milestone_05_offscreen/headless-execution.md) and
+[manual validation](../../../tests/draw/offscreen/README.md). Updated maintained
+Engine/config/frame/app references and M05-03/04/M08-01 concrete requirements.
+The driver still runs ordinary per-frame final processing; exact linear HDR
+averaging with final tone/color/AA once is explicitly M05-03 and cannot be inferred
+from N callbacks. No scene CLI, encoded image or standalone bake product delivered.
+
+M05-02 awaits project lead validation. The next real linked step is M05-03 under
+the normal continuation convention; no M05-03 implementation is started here.
+
+
+## M05-03 exact scene accumulation delivery (2026-10-18)
+
+M05-02 accepted by project lead continuation instruction; compilation/checks
+assumed successful under the agreed convention, backend/scenario coverage not
+specified. Starting HEAD remains bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d;
+inherited uncommitted M04/M05 files preserved. No commits or CMake changes made.
+
+Implemented [actual settings and accumulation](milestone_05_offscreen/accumulation-settings.md):
+strict file parsing before allocation, stopped direct live catalog import before
+samples, opt-in persistence bypassed by explicit documents, explicit fixed/scale
+overrides, unknown-ID rejection or explicit reported skip/catalog extension.
+The default job freezes configuration at initial prepareFrame during init.
+Public Renderer linear/final recording is optional for ordinary custom renderers;
+RendererDeferred implements it with matching slot/serial and duplicate guards.
+The public FrameAccumulator uses synchronous completed RGBA16F readback and CPU
+double RGB sums, resolves an equal N-sample mean and uploads RGBA16F once. Alpha
+is opaque; nonfinite samples reject without partial contribution. This is a
+reference implementation with readback/CPU cost, not a GPU-throughput claim.
+
+DefaultOffscreenApplicationDelegate counts config.frames completed scene samples,
+resets effect/FSR histories before zero, includes every requested sample without
+hidden warm-up, and records tone/color/optional SMAA only on the resolved average.
+The app's extra final-only submission is not a scene update/sample. Internal
+completion hooks cannot be bypassed by overriding didRenderFrame. hasResult is
+false in intermediate callbacks and true only after final GPU completion; export
+must happen in the last callback before surface teardown. Early stopping rejects.
+Zero timestep also enforces stable non-jittered scene/camera/history identity;
+nonzero timestep explicitly averages an animation sequence with fixed settings.
+In-place GPU edits must invalidate histories or be serialized outside the job.
+No overlays or undocumented private target access are used.
+
+Authored manual fixtures cover known 1/3 mean 2, N=1, signed HDR, resets,
+nonfinite/count/dimension rejection, half transfer round trips and a real GPU
+0.25/0.75 mean versus a single 0.5 final output, exact counts and final-once result
+publication at reduced internal scale. They have not been compiled or executed.
+Agent static checks inspected 24 sources, licenses, 160 includes, lexical structure,
+call signatures, native transfer usage, completion/cleanup ordering and local
+documentation links; git diff --check passed. No configure/build/shader/runtime.
+Lead checks remain the fixture READMEs, actual UI import/unknown lightPose and
+resolution precedence, frozen mutation failure, animation timestep, available
+Vulkan/Metal, no-RT/FSR-unavailable, and ordinary windowed/production regressions.
+
+Maintained app/renderer docs and actual M05-04/M05-05/M08-01 handoffs updated.
+M05-04 and M05-05 were accepted by continuation. M05-06 reviews the actual API,
+output and evidence limits and updates affected M06–M10 steps/summaries. No build,
+runtime or image inspection was performed. M05-06 awaits project lead validation;
+next linked step is M05-07 cumulative documentation after acceptance/continuation.
+
+
+## M05-03 compilation correction (2026-10-18)
+
+The project lead reported that Apple Clang could not find glm::packHalf2x16 and
+glm::unpackHalf2x16 while compiling FrameAccumulator.cpp. Inspection of the actual
+Vulkan SDK 1.4.313.1 GLM headers confirms these functions are declared in
+<glm/packing.hpp>; <glm/gtc/packing.hpp> only references them in documentation.
+Replaced the include in the implementation and the manual frame_accumulation
+fixture. No arithmetic, API or CMake changes. Declaration/call inspection and
+git diff --check performed; no compilation or fixture execution by the agent.
+M05-03 remains awaiting project lead validation of this correction; M05-04 stays
+conditional on acceptance/continuation.
+
+
+## M05-04 headless scene example delivery (2026-10-18)
+
+M05-03 accepted by the project lead's continuation instruction after the reported
+GLM packing include correction. Compilation after that correction and backend
+coverage remain unspecified; the agent did not compile. Starting source baseline
+HEAD is bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d plus preserved inherited
+uncommitted work. No commits were made.
+
+Added the `draw_offscreen_application` target at
+[examples/draw/13_offscreen_application](../../../examples/draw/13_offscreen_application/README.md)
+and registered it in examples/CMakeLists.txt. It reuses the deferred scene's HDR
+environment, OBJ/submesh textures/materials, transparent/solid-transparent model
+variants, floor and four lights. Camera/light animation and UI are absent. CLI
+validates dimensions, paired internal extent, scale, N (1..1048576), backend,
+settings path/policy and output destination before rendering; explicit settings
+and resolution precedence are delegated to M05-03. It defaults to Vulkan on
+non-macOS and Metal on macOS, outputs a single `scene.png`, creates the folder and
+refuses an existing destination. The R8G8B8A8 surface is read/saved in the final
+completed callback only after `hasResult()`. Errors return nonzero; help returns
+zero. Unknown lightPose IDs reject unless the explicit skip option reports each
+skipped property; renderer/effect IDs that match the imported catalog still apply.
+
+Agent checks were static only: full GPL header, C++ lexical/style inspection,
+CLI and lifecycle call-site inspection, image writer/readback contract, unique
+CMake target/resource helper registration, Markdown links and git diff --check.
+No configure, compile, run, GPU render or encoded image inspection. Project lead
+checks: configure the existing CMake build to discover the newly registered source,
+build `draw_offscreen_application`, run `--help` and malformed/conflicting CLI
+cases, render N=1 and N>1 at full/reduced internal resolution on available
+Vulkan/Metal, inspect `scene.png` dimensions/orientation/content, check no overwrite,
+import matching UI settings and exercise strict/skip unknown IDs and unavailable
+FSR/RT fallback. See the new example README and M05-05 checklist.
+
+M05-05 uses the actual registered target, explicit RGBA8/PNG path and final
+completed callback. This paragraph records the original M05-04 delivery handoff;
+its acceptance and the M05-05 delivery are recorded below.
+
+
+## M05-05 verified image readback and PNG publication (2026-10-18)
+
+M05-04 accepted by the project lead continuation instruction; compilation/checks
+assumed successful under the agreed convention, backend/scenario coverage not
+specified. Starting HEAD remains bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d, with
+inherited uncommitted M04/M05 work preserved. No commits or CMake changes made.
+
+The headless CLI checks the completed RGBA8 byte count, writes the PNG to a
+PNG-suffixed temporary path, reads and decodes it through db::decodeImageRGBA8,
+then verifies exact width, height and pixel-byte equality before publishing it
+as scene.png without replacing an existing path. Encoding/verification failure removes the temporary output; existing
+final and temporary paths are refused. Existing synchronous GPU readback is reused.
+No BGRA/sRGB/HDR conversion is introduced. Both backend paths copy tight image
+rows; current Vulkan and Metal viewport conventions put row zero at the top. The
+PNG writer leaves row order and alpha unchanged. The example README describes the
+comparison boundary: frozen camera/light, no editor UI/selection/gizmos, and linear
+HDR N-sample mean followed by the final color/SMAA pass.
+
+Static checks inspected signatures, callbacks, DB writer/decoder use, backend
+viewport/readback order, GPL/style and documentation links; git diff --check passed.
+No build, executable, test fixture, GPU render or independent image inspection was
+performed. The project lead should build/run draw_offscreen_application, inspect
+asymmetric output orientation/content and dimensions on available Vulkan/Metal, and
+exercise unwritable destinations plus existing final/temporary paths. M05-05 is
+delivered awaiting lead validation. The next linked step is M05-06 review after
+acceptance/continuation.
+
+
+## M05-06 technical review delivery (2026-10-18)
+
+M05-05 accepted by project lead continuation instruction; compilation/checks
+assumed successful under the agreed convention, backend/artifact coverage not
+specified. Source baseline remains HEAD bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d
+plus inherited uncommitted M04/M05 work. Added the M05 code-versus-plan review and
+reconciled pending M06–M10 requirements: M05 readback/PNG is a camera-image path,
+not complete resource serialization or a bake batch transaction; the headless
+frame driver and exact camera accumulation remain distinct from bake scheduling;
+the production OffscreenApplication path remains default pending M09 migration.
+
+Static review covers public API ownership, settings/sample/completion lifetimes,
+readback/encoding, documented orientation/color/alpha policy, pending plan impacts,
+relative links and git diff --check. No compilation, runtime, backend, fixture or
+image inspection. The lead should review review.md and provide any applicable
+product evidence through the normal continuation/failure workflow. M05-06 is
+delivered awaiting lead validation; next linked step is M05-07.
+
+
+## M05-07 cumulative documentation delivery (2026-10-18)
+
+M05-06 accepted by project lead continuation instruction; backend/scenario evidence
+not specified. Starting HEAD remains bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d with
+inherited uncommitted M04/M05 work preserved. Resumed after intentional turn
+interruption. No source, shader, CMake, build or commit/reset work.
+
+Added canonical DefaultOffscreenApplicationDelegate and FrameAccumulator references,
+headless data-flow architecture, the actual scene CLI/build/output guide and
+tutorial 13 with exact shipped source excerpts. Updated typed app/config/completion,
+GPU surface/transfer, settings and shared navigation. Corrected stale render-only
+offscreen statements and the obsolete always-valid/thin-wrapper GPU surface guide.
+Production render guides and UV bake semantics remain separate and supported.
+The coverage ledger maps 28 affected pages plus retained foundations to source,
+checks and future owners. All 338 local links/anchors and three exact C++ snippets
+pass static checks; git diff --check passes. No compilation, fixtures, GPU run,
+packaging or independent visual checks were performed.
+
+M05-07 is delivered awaiting lead acceptance. The review handoff now links this
+coverage and maintained pages. The next step is M06-01 with explicit M05-07
+documentation closure prerequisite; no M06 implementation is started.
+
+
+## M06-01 draw editor startup and supplemental tutorial delivery (2026-10-19)
+
+M05-07 accepted by project lead continuation; backend/scenario details remain
+unspecified. The same instruction explicitly requests a complete offscreen tutorial
+in the format of the other construction tutorials. Work resumed after intentional
+turn interruptions, preserving created/staged files and inherited work. HEAD remains
+bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d; no commit/reset/staging or legacy app edit.
+
+Created draw_model_edit with separate app ID org.bg2e.apps.draw.model-edit and
+graphics preference scope draw.model_edit.graphics. Native-free AppDelegate owns
+a unique RendererDeferred through the existing default delegate; StageScene owns
+a procedural fixture and same-node orbit camera; EditorUi binds live settings
+before renderer attachment and uses weak delegate ownership. Camera reset is a
+stopped generation-checked update. Renderer cleanup precedes all retained stage
+drawable releases, even on errors. Only app registration/new target CMake was
+modified as explicitly scoped by M06-01. Standard paired engine shaders/resources
+use the existing helper. Production model_edit remains intact.
+
+application-inventory.md maps Document, StageScene, ToolBar, SubmeshWindow,
+EnvironmentSettings and ModelLightmapWindow workflows plus distinct legacy API/
+widget/material calls to their remaining owners. M06-02–06 and M07-01 handoffs
+reflect the concrete startup. No document IO, material tools or bake parity is
+claimed from the fixture window. The offscreen tutorial now explains every part of
+the full application with 22 consecutive C++ source blocks, including setup,
+parsing, rendering, resources, completion/PNG and errors for a basic-C++ audience.
+Those blocks reconstruct all current example source modulo whitespace.
+
+Static validation checked seven owned C++ files, all 22 tutorial blocks, 335
+local links/anchors across 28 maintained pages and 282 local links across 15
+app/plan pages. Static source/style/dependency/lifecycle/resource/Markdown checks and both index/
+working-tree diff whitespace checks pass. No build/configuration, shader compile,
+C++ fixture, application/GPU or packaging run. Lead checks: draw_model_edit startup
+on available backends, orbit/pan/zoom/reset, resize/minimize, UI/settings edits and
+reopen, pending-update exit, optional-effect fallback and independent production
+model_edit preferences; tutorial review and actual execution remain lead-owned.
+M06-01 is delivered awaiting acceptance; next linked step is M06-02.
+
+
+## M06-02 complete resource IO and editor document delivery (2026-10-19)
+
+M06-01 accepted by project lead continuation instruction; no backend/scenario
+coverage was supplied. Starting/finishing HEAD remains
+bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d with inherited and staged changes
+preserved. No commit/reset/staging, CMake edit, configure/build or executable run.
+
+Implemented explicit-context complete scene/model export, native `.bg2tex`
+readback/decoding preserving HDR and authored mip/layers, material sampler/color/
+UV/inversion/indirect metadata, shared-parser MTL/glTF draw import and BG2 joint/
+submesh/duplicate-material handling. JSON strings now escape/decode paths and
+names correctly. Publication stages unique resources, replaces the main file
+last, restores live references and rolls back new resources on ordinary failure.
+Production overloads and graphics-free schema/reference IO remain separate.
+
+The new editor Document records root/source/save paths, dirty state and generation.
+Open/drop/import prepare candidates before adoption; renderer reattachment drops
+old queues before retired resources are cleaned. Save/Save as materialize actual
+live textures and mark clean after publication. Save/Discard/Cancel guards dirty
+replacement/close, with cancelled or failed operations retaining the document.
+A successful explicitly requested save before a failed open correctly leaves the
+old document clean. Model-only BG2 rejects graph state it cannot represent.
+
+[Resource IO handoff](milestone_06_model_edit/resource-io.md) and maintained
+[API reference](../../../doc/api/db/DrawResourceIO.md) record signatures, lifecycle,
+import subsets, native archive/production compatibility, publication/filesystem
+limits and custom component resource contracts. Updated M06-03, M07-02 and M08-03
+with actual consumer requirements. Added an unexecuted GPU HDR/mip/metadata/
+rollback probe and a lead validation matrix.
+
+Static GPL/style/lexical checks passed for 27 owned C++ files. API/declaration,
+namespace/dependency, metadata, ownership/publication and rollback paths were
+inspected; maintained Markdown paths/fences and working-tree/index whitespace
+checks pass. These are nonexecuting checks, not compilation or backend evidence.
+M06-02 is delivered awaiting project lead checks; next continuation selects M06-03.
+
+
+## M06-03 editor tools and guarded editing delivery (2026-10-19)
+
+M06-02 accepted by project lead continuation instruction; no backend/scenario
+coverage supplied. Starting/finishing HEAD remains
+bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d with inherited/staged changes preserved.
+No commit/reset/staging, CMake edit, configuration, compilation, shader tool,
+application execution, packaging or C++ probe execution.
+
+AppDelegate/StageScene now own draw picking/selection, a Scene catalog and optional
+renderer overlay, with typed document-only helpers and independent default mesh
+resources. EditorActions and EditorTools implement queued weak generation/member
+checks, node/submesh metadata and transforms, group/visibility updates, independent
+node/material/GPU clones, partial JSON modifiers and geometry reload actions.
+Dirty/redraw/history notifications include partial failures. Document replacement
+prunes selection/capture and rejects old actions while old nodes may still live.
+
+DrawMaterialEditor adds document guards, authored-image-preserving sampler edits
+and explicit AO/bakedAO/bakedGI interpretation. Actual texture previews/history
+use the draw UI session. Choosing ordinary AO clears baked interpretation; baked
+modes require an assigned map and linear UV2 metadata. Partial sampler changes
+preserve other targets' source/settings. Widget bindings detach before renderer/
+stage/Engine teardown. Shared input now tracks scene-owned mouse gestures across
+UI and prevents UI-owned releases from becoming scene picks.
+
+Environment controls use stopped public generation before adoption, with document
+lights, presets/custom images, floor/fill fixtures, camera intrinsics, explicit
+independent environment default/preset IO and world-space pose restoration. File
+menu/shortcuts, panel reopen and live dynamic Graphics settings are wired. Save
+and dirty prompts flush pending edits first. Complete export rejects unresolved
+texture requests and omits ignored runtime helpers during model validation.
+
+[Editor tool handoff](milestone_06_model_edit/editor-tools.md),
+[maintained guide](../../../doc/apps/draw_model_edit.md) and
+[manual probe/matrix](../../../tests/draw/editor_tools/README.md) record actual APIs,
+ownership, checks and remaining runtime evidence. Updated M06-04/05 and M07-03
+with concrete camera, source-edit/job invalidation and widget reuse contracts.
+The inventory now reconciles initial gap labels with M06-02/03 deliveries.
+
+Static GPL/block-style/lexical checks passed for 19 owned C++ files; application
+native include boundaries, source APIs, lifecycle, partial updates and IO ordering
+were inspected. Maintained Markdown paths/fences and working-tree/index whitespace
+checks pass. These are not compilation or backend checks. M06-03 is delivered
+awaiting lead validation; next continuation selects M06-04. No automatic framing,
+UV/bake UI or cumulative product/runtime/package acceptance is claimed here.
+
+
+## M06-04 viewpoint and camera delivery (2026-10-19)
+
+M06-03 accepted by project lead continuation instruction; backend/scenario coverage
+unspecified. Starting/finishing HEAD remains bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d.
+Inherited and staged work preserved; no commit/reset/staging, CMake edit,
+configuration/build, shader command, application run or probe execution.
+
+Added camera framing from selected-node/document world bounds and a separate best-view
+action using the draw `utils::ViewpointAnalyzer`. Actions run at a stopped renderer
+update boundary, wait for device idle, retain analyzer resources in StageScene and
+revalidate weak target, document generation, renderer generation and stage membership.
+Analysis uses 72 candidate poses at up to 48 pixels per longest image dimension, preserving the active viewport aspect, and current vertical FOV, applies only a
+nonempty visible best candidate through `applyViewpointToOrbitCamera`, and maps
+pixel coverage through the analyzer's per-call identifier table. UI reports candidate
+index/count, score, visible coverage and the top three submeshes. Failed, empty or
+stale work preserves camera pose. Analyzer teardown precedes stage resources.
+
+See [viewpoint-camera.md](milestone_06_model_edit/viewpoint-camera.md), updated
+maintained editor guide/README, manual editor matrix, feature inventory, M06-05 and
+M07-03 camera handoffs. Static review and documentation checks only; no compile or
+runtime evidence. M06-04 is delivered awaiting project-lead validation; next is M06-05.
+
+
+## M06-03 UI parity correction delivered (2026-10-19)
+
+The project lead reported that the draw_model_edit UI was not equivalent to
+apps/model_edit and could not be accepted: floating windows did not reproduce the
+Workspace layout, panel composition, menus or panel launch behavior. Reopened M06-03.
+
+Correction delivered: `bg2e::ui::Workspace` now arranges a full-width toolbar, docked
+Model Properties left panel, Environment Options right panel and bottom StatusBar.
+File/View/Window menus include checkable dock visibility; UI/Graphics settings open
+from Window. Toolbar geometry actions and weak callbacks remain draw-safe. The main
+window launches maximized. Static checks passed; no build/runtime execution. M06-03
+correction awaits project-lead validation. M06-04 remains implemented and unvalidated.
+
+## M06-03/M06-04 continuation acceptance and M06-05 delivery (2026-10-19)
+
+The project lead continued after the M06-03 Workspace parity correction. Under the
+plan's continuation convention, M06-03 including that correction and M06-04 are
+accepted; backend/runtime coverage is unspecified. Implemented M06-05 in
+`apps/draw/model_edit`: added a Window-menu UV/Lightmap utility with UV1/UV2
+diagnostics, guarded safe UV2 regeneration and draw-session previews; an
+IntegratedBakerContext job records AO/GI samples into ordinary draw-frame command
+buffers and commits each exact progress sample only after completion; cancellation,
+document replacement/source edits and teardown retire work before releasing the
+borrowed Engine context; completed composed output can be previewed and explicitly
+applied to every target submesh's live AO texture and CPU material definition with
+linear UV2 baked AO/GI metadata. M06-02 complete model/scene save persists the GPU
+image as `.bg2tex`. The document graph is the bake root, excluding editor fixtures.
+Static source/API/lifecycle/metadata/export and documentation checks passed. No
+compile, shader, application or backend execution was performed. M06-05 is delivered
+awaiting lead validation; the next pointer is M06-06 product validation.
+
+## M06-05 continuation acceptance and M06-06 validation review (2026-10-19)
+
+The project lead continued after M06-05. Under the execution protocol, M06-05 is
+accepted by continuation; backend/runtime coverage is unspecified. M06-06 static
+review confirmed the draw_model_edit target uses the shared SDL bundle helper, which
+deploys engine shader/assets resources, and the distribution collector recursively
+includes registered application executables with runtime dependencies/resources.
+The maintained feature inventory and manual checks were reconciled into
+`milestone_06_model_edit/product-validation.md`. Static whitespace checks pass.
+No native configuration, compilation, shader build, package script, executable or
+manual scenario was run. M06-06 is delivered awaiting project-lead runtime/package
+validation; M06-07 is the next linked step.
+
+## Global draw renderer defaults amendment (project lead direction, 2026-10-19)
+
+The project lead clarified that GI mode, enabled GI and enabled reflections must
+be the draw renderer's defaults, not an app-only setup. Updated
+`RendererConfiguration::indirectLighting` to `GlobalIllumination` and changed the
+default RTGI/reflection settings to enabled. `draw_model_edit` inherits this
+configuration; no application-specific duplicate is required. Explicit app/pass
+configuration remains authoritative, including `draw_lightmaps`' explicit IBL/off
+comparison. Runtime availability/status and unsupported fallback do not change.
+Updated RendererDeferred/RTGI/reflection/Settings references, draw app guides,
+tutorials, manual deferred checks and M03 historical amendment. Static whitespace
+and Markdown checks are recorded with the change. No compilation, shader or runtime
+checks were run. The current M06 review acceptance/documentation handoff remains
+in force.
+
+## M06-05 correction — nonfatal UV2 overlap (2026-10-19)
+
+The project lead reported that draw_model_edit rejects an atlas for positive-area
+triangle overlap, including after UV2 regeneration, and explicitly requested bake
+continuation even for genuinely overlapping maps. Added a Warn overlap policy to
+the shared CPU validator while retaining its strict two-argument overload. Draw
+surface packing, production LightmapBaker and standalone preflight now warn rather
+than reject/skip these targets; generator chart collisions also warn. Other
+structural/coordinate errors remain fatal. The draw editor retains a visible UV2
+warning independently of transient bake status, and legacy preview shows warnings.
+
+Generator chart checks sample texel centers and compare different chart IDs; the
+geometric validator compares continuous triangle areas, including within charts.
+Their difference explains why generation can succeed before the old bake check
+rejects the result. The clipping routine also mixed tolerant classification with
+zero-boundary intersections; it now uses consistent boundaries and translated
+polygon area to reduce cancellation. No supplied model was available to establish
+the exact source of this reported overlap; the screenshot alone cannot distinguish
+a small genuine overlap from a numeric false positive.
+
+Regression source covers warning statistics for fully duplicated UV quads, strict
+validation compatibility, thin shared edges, malformed indices and continued UV
+surface packing. No compile/test/GPU execution was performed. Updated maintained
+API, architecture and editor guidance. Correction awaits project-lead validation;
+M06-07 also remains pending and the next planned step is still M06-08.
+
+
+## M06 editor corrections accepted; M06-08 started
+
+The project lead explicitly reports correct rendering without lights and asks to
+close the current step and implement the successor. This accepts M06-07 and the
+subsequent editor corrections under the continuation convention: UV overlap
+warnings, automatic temporary-file bake application and retained result preview,
+graphics/diagnostic separation and nonpersistent diagnostics, focused reflected
+light/transform editors, numeric dragging, light-only gizmos, removal of all lights,
+and initial/random light positions. The lead reported compiler errors during the
+corrections; their fixes were delivered. Backend/package scenario coverage beyond
+the explicit zero-light statement remains unspecified. No further zero-light
+renderer analysis is requested or performed. M06-08 documentation is now active.
+
+
+## M06-08 cumulative documentation delivered
+
+Reconciled maintained documentation with accepted M06 editor corrections. Added a
+sequential model editor tutorial; refreshed graphics/debug references, complete
+resource IO, app/architecture guidance and navigation. The documentation inventory
+maps affected and retained pages to source and assigns future Composer/batch/
+retirement obligations to M07/M08/M09, with M10 as the final audit. Product evidence
+now records M06-06 continuation acceptance and the lead's explicit positive
+zero-light result while leaving package/backend coverage unspecified. Static
+link/anchor/fence/source/whitespace checks passed. No build, shader, app or package
+execution was performed. M06-08 awaits lead acceptance; next is M07-01.
+
+
+## M06-08 accepted; M07-01 application foundation delivered (2026-10-19)
+
+The project lead requested the next step, accepting M06-08 by continuation.
+Backend/package coverage remains unspecified. Created the separate
+`draw_bg2e_composer` target with typed draw startup, maximized Workspace, independent
+app/bundle/preferences/environment/temp identities and shared engine resources.
+Copied app-owned M06 orchestration while reusing engine DB/material/reflection/
+selection/settings/viewpoint/bake services unchanged. Initialized one editable
+Scene group containing the startup cube; editor camera/floor/fill are fixtures.
+
+The [application inventory](milestone_07_bg2e_composer/application-inventory.md)
+maps production scene/component/tree/import/server/multi-target/export/bake
+workflows to actual replacements or M07-02–06 work. Open model actions explicitly
+replace the document. No scene insertion, async HTTP service or multi-job bake
+parity is claimed. M07-02 now records the concrete root/camera/import handoff.
+
+Static GPL/include/identity/draw-boundary/resource-registration/ownership and
+whitespace checks passed. No build/configuration/shader/application/package
+execution, commit, staging or reset. Existing production and model-editor sources
+remain unchanged; starting/finishing HEAD is
+`bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` with inherited changes preserved.
+M07-01 awaits project-lead validation; next is M07-02.

@@ -334,7 +334,7 @@ The whole layer is DPI-scale aware:
   [ReflectionWidget](Reflection_Widgets.md) is documented in
   [doc/api/reflection](../reflection/index.md).
 
-- [Draw GraphicsSettingsWindow](GraphicsSettingsWindow.md): explicit ownership, live effect metadata, queued edits and reopen lifecycle.
+- [Draw GraphicsSettingsWindow and RendererDebugWidget](GraphicsSettingsWindow.md): graphics-only preferences, session diagnostics, queued edits and reopen lifecycle.
 
 
 ## Draw bake previews

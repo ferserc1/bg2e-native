@@ -10,6 +10,11 @@
 - `lib/include/bg2e/draw/pipeline/TemporalAccumulator.hpp`
 - `lib/include/bg2e/draw/pipeline/FrameAccumulator.hpp`
 - `lib/include/bg2e/app/DrawOffscreenApplicationDelegate.hpp`
+- `lib/src/bg2e/app/OffscreenApplication.cpp`
+- `lib/include/bg2e/draw/DefaultOffscreenApplicationDelegate.hpp`
+- `lib/src/bg2e/draw/DefaultOffscreenApplicationDelegate.cpp`
+- `lib/include/bg2e/draw/RendererDeferred.hpp`
+- `lib/src/bg2e/draw/RendererDeferred.cpp`
 
 Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
 
@@ -73,3 +78,45 @@ Source and validation boundaries: [M03 technical review](../milestone_03_ray_tra
 Implement camera-image exact averaging separately from bake::UvTemporalAccumulator. The existing accumulator requires BakeSample, UV chart/coverage identities and AO/GI signal semantics; adapting its private implementation or passing camera images as fake UV surfaces is not a supported reuse. Keep FSR/EMA histories, rendered-scene counts and bake completed-update counts separate.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+
+## M05-01 delegate time contract
+
+`DrawOffscreenApplicationDelegate::update(float deltaSeconds, uint64_t sceneFrameNumber)`
+receives scene-time units and a zero-based submitted-scene sequence. This is a
+per-scene update callback, not an accumulation contract. M05-03 must define its
+fixed timestep/frozen-scene choice and count only successfully completed
+`render(FrameContext const&)` submissions toward N; `didRenderFrame` runs after
+completion.
+
+
+## M05-02 implemented execution baseline
+
+Use the [actual headless driver](headless-execution.md): OffscreenApplication now
+owns a windowless draw Engine and its OffscreenSurface. Generic frameSlotCount
+supplies resources, current native surfaces have one slot, and each immediateSubmit
+must complete before a scene count/callback advances. DefaultOffscreenApplicationDelegate
+reuses the existing renderer owner, replacement generations and stopped prepareFrame.
+Its default continuation requests one ordinary frame; subclasses can request more.
+
+The first delta is zero and later deltas use finite nonnegative timeStepSeconds
+(default zero). Select a frozen accumulation interval explicitly; nonzero scene
+steps do not by themselves define a consistent average. Direct stopped settings
+import can inspect renderer() after init returns; no UI/facade queue is required.
+
+Extend actual driver/default delegate/renderer sources as needed for the required
+pre-final linear sample seam. Current RendererDeferred targets/reconstructed are
+private and its normal record runs final color/tone/optional SMAA on every frame.
+Neither averaging the app TransferSrc color nor bypassing tone mapping through
+undocumented private targets satisfies this step. Add a minimal public compatible
+recording/output contract and apply final processing to the resolved average once.
+Retain ordinary per-frame behavior for windowed applications and generic custom
+offscreen delegates. Keep completed-sample publication distinct from provisional
+renderer effect history and from arbitrary helper submissions.
+
+## M05-03 implementation handoff
+
+See [actual settings/averaging contracts](accumulation-settings.md). The public
+reference accumulator uses synchronous completed RGBA16F readback and CPU double
+sums; final color and optional SMAA run once after the resolved mean. No runtime
+validation is claimed.

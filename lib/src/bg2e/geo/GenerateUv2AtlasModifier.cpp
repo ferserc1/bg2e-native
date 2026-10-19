@@ -25,6 +25,7 @@
 #include <limits>
 #include <memory>
 #include <stdexcept>
+#include <iostream>
 
 namespace bg2e::geo {
 
@@ -156,8 +157,9 @@ void checkChartSeparation(const xatlas::Atlas* atlas)
                     }
                     else if (cell != chartId)
                     {
-                        throw std::runtime_error(
-                            "GenerateUv2AtlasModifier: atlas charts overlap; increase Uv2AtlasOptions::paddingPixels");
+                        std::clog << "Warning: generated UV2 atlas charts overlap; generation continues. "
+                            "Shared lightmap texels may be overwritten; increasing padding may help.\n";
+                        return;
                     }
                 }
             }

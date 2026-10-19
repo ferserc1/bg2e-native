@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/scene/Component.hpp>
+#include <bg2e/base/Color.hpp>
 
 #include <string>
 #include <filesystem>
@@ -68,6 +69,24 @@ class BG2E_API EnvironmentComponent : public Component {
         return _skyboxVisible;
     }
 
+    const base::Color& skyHorizonColor() const
+    {
+        return _skyHorizonColor;
+    }
+    void setSkyHorizonColor(const base::Color& color);
+
+    const base::Color& skyZenithColor() const
+    {
+        return _skyZenithColor;
+    }
+    void setSkyZenithColor(const base::Color& color);
+
+    const base::Color& groundColor() const
+    {
+        return _groundColor;
+    }
+    void setGroundColor(const base::Color& color);
+
     std::shared_ptr<Component> clone() const override;
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
@@ -81,6 +100,10 @@ class BG2E_API EnvironmentComponent : public Component {
     size_t _imgHash = 0;
     float _skyboxBlur = 0.0f;
     bool _skyboxVisible = true;
+
+    base::Color _skyHorizonColor{0.55f, 0.65f, 0.8f};
+    base::Color _skyZenithColor{0.06f, 0.22f, 0.6f};
+    base::Color _groundColor{0.04f, 0.035f, 0.025f};
 
     // TODO: Other environment parameters
 };

@@ -45,6 +45,7 @@ struct RenderLoop::Impl {
 RenderLoop::RenderLoop() : _impl(std::make_unique<Impl>())
 {
 }
+
 RenderLoop::~RenderLoop()
 {
     try
@@ -71,6 +72,10 @@ void RenderLoop::init(Engine* engine)
         throw std::logic_error("A draw delegate can belong to only one initialized RenderLoop");
     }
     engine->device(); // Require a successfully initialized context.
+    if (!engine->surface())
+    {
+        throw std::invalid_argument("draw::RenderLoop requires a windowed Engine; use OffscreenApplication for headless work.");
+    }
     _engine = engine;
     _delegate->_requestSceneFrame = [this]()
     {

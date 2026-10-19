@@ -87,17 +87,21 @@ See [working tutorial](../../tutorials/draw/10_deferred_renderer.md).
 AO/GI/reflection and temporal objects expose virtual settingsType/settingsInstance;
 use both matching addresses when binding replacements, as for denoise/final processors.
 Availability/status/tableCapacity/blueNoiseActive and renderer graph selections are
-read-only. Requested effect/shadow/light values remain editable and serializable
+read-only. Requested effect/global-shadow values remain editable and serializable
 without RT support; a successful import does not guarantee effective tracing.
+Scene light targets remain in the live catalog for explicit callers but are not
+graphics preferences and are excluded from graphics import/export.
 Scene capacity errors are distinct from unsupported primitives. AO radius and
 GI/reflection maxDistance must exceed twice bias; catalog validation checks proposed
 pairs before mutation. Unknown target/property/type remains a strict import error.
 
-To activate GI select renderer.indirectLighting=2 AND globalIllumination.enabled=true.
-Reflections require reflections.enabled=true independently. Manipulation sets these
-by default; deferred starts with tracing components disabled. Both examples show
+With no explicit configuration, RendererDeferred starts with
+renderer.indirectLighting=2 (GlobalIllumination), globalIllumination.enabled=true
+and reflections.enabled=true. These values are requests; inspect availability and
+the effective graph on the current device. Explicit renderer configuration or a
+user setting can choose IBL/AO or disable either effect. Both examples show
 Graphics settings at startup and have reopen buttons; MainLoop does not add it.
-Settings are requested values, with no implicit preference restore.
+Preferences are not restored implicitly.
 
 Lighting debugView appends RayVisibility=11, DiffuseGI=12, ReflectedRadiance=13 and
 ReflectionConfidence=14. These inspect resolved post-temporal/post-denoise signals
@@ -135,3 +139,37 @@ arbitrary setter side effects cannot be made transactionally safe by the codec.
 Use typed decimal strings for numeric payloads and SettingsCodec for parse/write.
 Preferences stores the codec document as ASCII hex to avoid the legacy JsonNode
 writer's escaping limitations; this does not make disk save failures transactional.
+
+## Headless import and precedence
+
+[DefaultOffscreenApplicationDelegate](DefaultOffscreenApplicationDelegate.md) binds
+this same catalog directly during the stopped initial preparation. There is no UI
+queue. Live defaults are followed by explicitly opted-in persistence only when no
+explicit document exists; an explicit graphics document bypasses persistence.
+Explicit job internalExtentOverride or scaleOverride applies last. Fixed extent
+disables scale; scale enables the live policy and requires a resolution owner.
+Output extent, backend and requested scene count remain job values.
+
+Unknown target/property IDs reject unless SkipUnknownOrUnavailable is explicitly
+selected; report skipped-property issues from settingsResult(). Applications map
+per-run scene IDs with extendSettingsCatalog or choose that skip policy. Import
+validates initialized live targets before submitting scene samples. Optional
+unavailable effects retain requested values with normal renderer fallback; valid
+settings do not imply required baking capability. The job freezes its accepted
+configuration and requires a fresh job after changes. See the
+[CLI guide](../../apps/draw_offscreen_application.md) for concrete options.
+
+## Graphics and diagnostic views
+
+`GraphicsSettingsWindow` shows renderer quality, global shadows, indirect lighting,
+AO/GI, reflections, temporal accumulation, denoising, color processing, upscaling
+and final processor settings. Show unavailable settings remains available.
+Scene environment and light controls belong to the application's environment editor.
+
+`ui::RendererDebugWidget` (header `<bg2e/ui/RendererDebugWidget.hpp>`) binds to the
+same `RenderSettingsPreferences` facade but shows only diagnostic and capability
+controls. This includes opaque-layer inspection and deferred lighting/final views.
+It has no import/export/preferences controls. The settings codec excludes these
+properties from serialization and ignores legacy diagnostic entries on restore;
+changing a diagnostic view never makes it part of saved graphics preferences.
+Scene values are likewise excluded from graphics preference documents.

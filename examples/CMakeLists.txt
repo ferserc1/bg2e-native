@@ -53,3 +53,6 @@ add_subdirectory(draw/11_manipulation)
 
 # M04 integrated baking and applied indirect maps over the draw API.
 add_subdirectory(draw/12_lightmaps)
+
+# M05 headless scene sampling, settings import and PNG output.
+add_subdirectory(draw/13_offscreen_application)

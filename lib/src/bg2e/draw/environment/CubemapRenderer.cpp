@@ -27,6 +27,7 @@
 #include <bg2e/gpu/Sampler.hpp>
 
 #include <algorithm>
+#include <cmath>
 #include <stdexcept>
 #include <utility>
 
@@ -40,8 +41,11 @@ struct GenerationPush {
     float roughness;
     float sourceMaxLod;
     float padding[2] = {};
+    glm::vec4 skyHorizonColor;
+    glm::vec4 skyZenithColor;
+    glm::vec4 groundColor;
 };
-static_assert(sizeof(GenerationPush) == 32);
+static_assert(sizeof(GenerationPush) == 80);
 std::string semantic(GenerationKind kind)
 {
     switch (kind)
@@ -131,6 +135,17 @@ void CubemapRenderer::initialize(Engine& engine, const pipeline::LayerConfigurat
         (_realized.format != gpu::PixelFormat::R16G16B16A16_SFLOAT && _realized.format != gpu::PixelFormat::R32G32B32A32_SFLOAT))
     {
         throw std::invalid_argument("Invalid environment extent, sample count or linear HDR format");
+    }
+    if (_kind == GenerationKind::ProceduralSky)
+    {
+        for (const auto& color : {_realized.skyHorizonColor, _realized.skyZenithColor, _realized.groundColor})
+        {
+            if (!std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
+                color.r < 0 || color.r > 1 || color.g < 0 || color.g > 1 || color.b < 0 || color.b > 1)
+            {
+                throw std::invalid_argument("Procedural sky colors must have finite linear RGB values in [0, 1]");
+            }
+        }
     }
     const auto levels = _realized.mipLevels == 0 ? gpu::mipLevelsForMinSize(_realized.size, 1) : _realized.mipLevels;
     if (levels > gpu::mipLevelsForMinSize(_realized.size, 1) ||
@@ -241,6 +256,9 @@ void CubemapRenderer::recordGeneration(gpu::CommandBuffer& command)
             _source ? _source->width() : 1u,
             _kind == GenerationKind::Specular && _output->mipLevels() > 1 ? float(mip) / float(_output->mipLevels() - 1) : float(mip),
             _source ? float(_source->mipLevels() - 1) : 0.0f};
+        push.skyHorizonColor = glm::vec4(_realized.skyHorizonColor.r, _realized.skyHorizonColor.g, _realized.skyHorizonColor.b, 1.0f);
+        push.skyZenithColor = glm::vec4(_realized.skyZenithColor.r, _realized.skyZenithColor.g, _realized.skyZenithColor.b, 1.0f);
+        push.groundColor = glm::vec4(_realized.groundColor.r, _realized.groundColor.g, _realized.groundColor.b, 1.0f);
         command.pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(push), &push);
         command.draw(3);
     };

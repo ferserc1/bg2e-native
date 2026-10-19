@@ -51,6 +51,13 @@ class BG2E_API RendererDeferred : public Renderer {
     void record(const FrameContext& frame) override;
     void cleanup() override;
 
+    // Split recording: retain the returned borrowed-slot owner until completion.
+    // recordFinal uses the same updated slot and accepts resolved linear RGBA16F.
+    bool supportsLinearRecording() const override;
+    std::shared_ptr<gpu::Image> recordLinear(const FrameContext& frame) override;
+    void recordFinal(const FrameContext& frame, gpu::Image& linearColor) override;
+    std::vector<uint8_t> sceneFingerprint() const override;
+
     // Explicit camera overrides first enabled scene camera; no camera uses identity.
     void setCamera(const glm::mat4& view, const glm::mat4& projection);
     void useSceneCamera();
@@ -91,7 +98,8 @@ class BG2E_API RendererDeferred : public Renderer {
         std::shared_ptr<gpu::Image> ao, gi, reflections;
         RenderQueue queue;
         uint64_t serial = 0;
-        bool prepared = false;
+        bool prepared = false, linearRecorded = false, finalRecorded = false;
+        const RenderQueue::Item* finalItem = nullptr;
     };
 
     void buildTargets();

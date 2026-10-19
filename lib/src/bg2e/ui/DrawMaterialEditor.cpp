@@ -29,6 +29,21 @@
 
 namespace bg2e::ui {
 namespace {
+void storeTextureSettings(draw::Drawable* drawable, uint32_t submesh, draw::TextureSlot slot,
+    const std::shared_ptr<draw::Texture>& texture)
+{
+    if (!drawable)
+    {
+        return;
+    }
+    using Setter = void (base::MaterialAttributes::*)(std::shared_ptr<base::Texture>);
+    const std::array<Setter, 6> setters{&base::MaterialAttributes::setAlbedoTexture,
+        &base::MaterialAttributes::setMetalnessTexture, &base::MaterialAttributes::setRoughnessTexture,
+        &base::MaterialAttributes::setNormalTexture, &base::MaterialAttributes::setAoTexture,
+        &base::MaterialAttributes::setLightEmissionTexture};
+    (drawable->materialDefinition(submesh).*setters.at(size_t(slot)))(draw::cloneTextureSettings(*texture->base()));
+}
+
 void clearTexture(draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh, draw::TextureSlot slot)
 {
     using Setter = void (base::MaterialAttributes::*)(std::shared_ptr<base::Texture>);
@@ -42,6 +57,14 @@ void clearTexture(draw::Drawable* drawable, draw::MaterialBase* material, uint32
         (drawable->materialDefinition(submesh).*setter)(nullptr);
     }
     (material->materialAttributes().*setter)(nullptr);
+    if (slot == draw::TextureSlot::AmbientOcclusion)
+    {
+        material->materialAttributes().setIndirectTextureMode(base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion);
+        if (drawable)
+        {
+            drawable->materialDefinition(submesh).setIndirectTextureMode(base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion);
+        }
+    }
     material->updateTextures();
 }
 }
@@ -52,6 +75,7 @@ struct DrawMaterialEditor::State {
     std::weak_ptr<manipulation::SelectionManager> selection;
     std::weak_ptr<draw::MaterialBase> material;
     std::function<void(draw::Renderer&)> changed;
+    std::function<bool()> guard;
     std::string error;
     uint64_t binding = 0;
     bool pending = false;
@@ -103,6 +127,13 @@ void DrawMaterialEditor::setEditMaterial(const std::shared_ptr<draw::MaterialBas
     _state->material = material;
 }
 
+void DrawMaterialEditor::setEditGuard(std::function<bool()> guard)
+{
+    ++_state->binding;
+    _state->pending = false;
+    _state->guard = std::move(guard);
+}
+
 void DrawMaterialEditor::cleanup()
 {
     ++_state->binding;
@@ -111,6 +142,8 @@ void DrawMaterialEditor::cleanup()
     _state->material.reset();
     _state->delegate.reset();
     _state->engine = nullptr;
+    _state->guard = {};
+    _state->changed = {};
     _state->error.clear();
     for (auto& widget : _impl->textures)
     {
@@ -133,14 +166,14 @@ void DrawMaterialEditor::onChanged(std::function<void(draw::Renderer&)> callback
     _state->changed = std::move(callback);
 }
 
-bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier)
+bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo)
 {
     if (!modifier.isValid())
     {
         _state->error = "Invalid material patch";
         return false;
     }
-    return queueEdit([modifier](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
+    return queueEdit([modifier, ordinaryAo](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
         if (drawable)
         {
@@ -149,6 +182,75 @@ bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier)
         else
         {
             modifier.apply(*material);
+        }
+        if (ordinaryAo)
+        {
+            const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
+            auto texture = material->aoTexture()->clone();
+            texture->setColorType(base::Color::TypeLinear);
+            material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
+            material->materialAttributes().setIndirectTextureMode(mode);
+            if (drawable)
+            {
+                drawable->materialDefinition(submesh).setAoTexture(draw::cloneTextureSettings(*texture->base()));
+                drawable->materialDefinition(submesh).setIndirectTextureMode(mode);
+            }
+        }
+    });
+}
+
+bool DrawMaterialEditor::queueIndirectMode(base::MaterialAttributes::IndirectTextureMode mode)
+{
+    return queueEdit([mode](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
+    {
+        const bool baked = mode != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
+        if (baked)
+        {
+            if (!material->materialAttributes().aoTexture())
+            {
+                throw std::invalid_argument("Assign an indirect map before choosing a baked interpretation");
+            }
+            auto texture = material->aoTexture()->clone();
+            texture->setColorType(base::Color::TypeLinear);
+            material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
+            material->materialAttributes().setAoUVSet(1);
+            if (drawable)
+            {
+                drawable->materialDefinition(submesh).setAoTexture(draw::cloneTextureSettings(*texture->base()));
+                drawable->materialDefinition(submesh).setAoUVSet(1);
+            }
+        }
+        material->materialAttributes().setIndirectTextureMode(mode);
+        if (drawable)
+        {
+            drawable->materialDefinition(submesh).setIndirectTextureMode(mode);
+        }
+    });
+}
+
+bool DrawMaterialEditor::queueTextureSettings(draw::TextureSlot slot, std::function<void(base::Texture&)> edit)
+{
+    return queueEdit([slot, edit = std::move(edit)](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
+    {
+        auto source = material->texture(slot);
+        auto settings = draw::cloneTextureSettings(*source->base());
+        edit(*settings); // Only the edited sampler/color fields apply to other selected targets.
+        if (slot == draw::TextureSlot::AmbientOcclusion && material->materialAttributes().indirectTextureMode() !=
+            base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
+        {
+            settings->setColorType(base::Color::TypeLinear);
+        }
+        auto replacement = std::make_shared<draw::Texture>(material->engine());
+        replacement->load(settings, source->imageResource()); // Retain authored pixels/mips.
+        material->setTexture(slot, replacement);
+        if (drawable)
+        {
+            using Setter = void (base::MaterialAttributes::*)(std::shared_ptr<base::Texture>);
+            const std::array<Setter, 6> setters{&base::MaterialAttributes::setAlbedoTexture,
+                &base::MaterialAttributes::setMetalnessTexture, &base::MaterialAttributes::setRoughnessTexture,
+                &base::MaterialAttributes::setNormalTexture, &base::MaterialAttributes::setAoTexture,
+                &base::MaterialAttributes::setLightEmissionTexture};
+            (drawable->materialDefinition(submesh).*setters.at(size_t(slot)))(draw::cloneTextureSettings(*replacement->base()));
         }
     });
 }
@@ -209,6 +311,11 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
             return;
         }
         state->pending = false;
+        if (state->guard && !state->guard())
+        {
+            state->error = "The open document changed";
+            return;
+        }
         bool touched = false;
         try
         {
@@ -370,6 +477,16 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     std::array<glm::vec2, 6> scale{attributes.albedoScale(), attributes.metalnessScale(), attributes.roughnessScale(), attributes.normalScale(), attributes.aoScale(), attributes.lightEmissionScale()};
     std::array<uint32_t, 6> channel{0, attributes.metalnessChannel(), attributes.roughnessChannel(), 0, attributes.aoChannel(), attributes.lightEmissionChannel()};
     std::array<bool, 6> inverted{false, attributes.metalnessInvert(), attributes.roughnessInvert(), false, false, attributes.lightEmissionInvert()};
+    int linearSelected = -1;
+    int samplingSlot = -1;
+    std::function<void(base::Texture&)> samplingEdit;
+    bool ordinaryAo = false;
+    bool modeChanged = false;
+    uint32_t indirect = static_cast<uint32_t>(attributes.indirectTextureMode());
+    if (Value::comboBox("Indirect map interpretation", {"Ambient occlusion", "Baked AO (RGB UV2)", "Baked GI (RGB UV2)"}, indirect))
+    {
+        modeChanged = true;
+    }
     int clear = -1;
     for (size_t i = 0; i < names.size(); ++i)
     {
@@ -380,14 +497,100 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
             if (choice.selected)
             {
                 patch[textureKeys[i]] = std::make_shared<json::JsonNode>(choice.path.string());
+                if (i == 1 || i == 2 || i == 3)
+                {
+                    linearSelected = int(i);
+                }
+                if (i == 4)
+                {
+                    ordinaryAo = true;
+                }
             }
             if (choice.cleared)
             {
                 clear = int(i);
             }
+            auto source = material->texture(draw::TextureSlot(i));
+            if (source)
+            {
+                const auto* settings = source->base();
+                auto append = [&](std::function<void(base::Texture&)> edit)
+                {
+                    samplingSlot = int(i);
+                    samplingEdit = [previous = std::move(samplingEdit), edit = std::move(edit)](auto& target)
+                    {
+                        if (previous)
+                        {
+                            previous(target);
+                        }
+                        edit(target);
+                    };
+                };
+                int color = settings->colorType() == base::Color::TypeLinear ? 1 : 0;
+                if (ImGui::Combo("Color interpretation", &color, "sRGB\0Linear\0"))
+                {
+                    append([color](auto& target)
+                    {
+                        target.setColorType(color ? base::Color::TypeLinear : base::Color::TypeSRGB);
+                    });
+                }
+                int mag = int(settings->magFilter());
+                int min = int(settings->minFilter());
+                if (ImGui::Combo("Magnification", &mag, "Linear\0Nearest\0"))
+                {
+                    append([mag](auto& target)
+                    {
+                        target.setMagFilter(static_cast<base::Texture::Filter>(mag));
+                    });
+                }
+                if (ImGui::Combo("Minification", &min, "Linear\0Nearest\0"))
+                {
+                    append([min](auto& target)
+                    {
+                        target.setMinFilter(static_cast<base::Texture::Filter>(min));
+                    });
+                }
+                int u = int(settings->addressModeU());
+                int v = int(settings->addressModeV());
+                const char* addressing = "Repeat\0Mirror\0Clamp edge\0Clamp border\0";
+                if (ImGui::Combo("Address U", &u, addressing))
+                {
+                    append([u](auto& target)
+                    {
+                        target.setAddressModeU(static_cast<base::Texture::AddressMode>(u));
+                    });
+                }
+                if (ImGui::Combo("Address V", &v, addressing))
+                {
+                    append([v](auto& target)
+                    {
+                        target.setAddressModeV(static_cast<base::Texture::AddressMode>(v));
+                    });
+                }
+                bool mips = settings->useMipmaps();
+                if (ImGui::Checkbox("Sample mipmaps", &mips))
+                {
+                    append([mips](auto& target)
+                    {
+                        target.setUseMipmaps(mips);
+                    });
+                }
+                float bias = settings->mipLodBias();
+                if (ImGui::DragFloat("Mip LOD bias", &bias, 0.05f, -16, 16))
+                {
+                    append([bias](auto& target)
+                    {
+                        target.setMipLodBias(bias);
+                    });
+                }
+            }
             int selectedUV = int(uv[i]);
             if (ImGui::Combo("UV", &selectedUV, "Set 0\0Set 1\0"))
             {
+                if (i == 4 && attributes.indirectTextureMode() != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
+                {
+                    selectedUV = 1;
+                }
                 patch[std::string(prefixes[i]) + "UV"] = std::make_shared<json::JsonNode>(uint32_t(selectedUV));
             }
             if (ImGui::DragFloat2("Scale", &scale[i].x, 0.01f))
@@ -417,7 +620,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     if (!patch.empty())
     {
         const utils::MaterialModifier modifier(std::make_shared<json::JsonNode>(std::move(patch)));
-        queued = queueEdit([modifier, clear](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
+        queued = queueEdit([modifier, clear, ordinaryAo, linearSelected](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
         {
             if (drawable)
             {
@@ -427,11 +630,46 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
             {
                 modifier.apply(*material);
             }
+            if (linearSelected >= 0)
+            {
+                const auto slot = static_cast<draw::TextureSlot>(linearSelected);
+                auto replacement = material->texture(slot)->clone();
+                replacement->setColorType(base::Color::TypeLinear);
+                material->setTexture(slot, replacement);
+                if (drawable)
+                {
+                    storeTextureSettings(drawable, submesh, slot, replacement);
+                }
+            }
+            if (ordinaryAo)
+            {
+                const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
+                auto texture = material->aoTexture()->clone();
+                texture->setColorType(base::Color::TypeLinear);
+                material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
+                if (drawable)
+                {
+                    drawable->materialDefinition(submesh).setAoTexture(draw::cloneTextureSettings(*texture->base()));
+                }
+                material->materialAttributes().setIndirectTextureMode(mode);
+                if (drawable)
+                {
+                    drawable->materialDefinition(submesh).setIndirectTextureMode(mode);
+                }
+            }
             if (clear >= 0)
             {
                 clearTexture(drawable, material, submesh, draw::TextureSlot(clear));
             }
         });
+    }
+    else if (samplingSlot >= 0)
+    {
+        queued = queueTextureSettings(static_cast<draw::TextureSlot>(samplingSlot), std::move(samplingEdit));
+    }
+    else if (modeChanged)
+    {
+        queued = queueIndirectMode(static_cast<base::MaterialAttributes::IndirectTextureMode>(indirect));
     }
     else if (clear >= 0)
     {

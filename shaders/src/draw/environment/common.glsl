@@ -26,6 +26,9 @@ struct GenerationPush {
     float sourceMaxLod;
     float padding0;
     float padding1;
+    vec4 skyHorizonColor;
+    vec4 skyZenithColor;
+    vec4 groundColor;
 };
 vec3 cubeDirection(uint face, vec2 uv)
 {

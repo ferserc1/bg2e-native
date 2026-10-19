@@ -41,6 +41,21 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 
 Build on [db-levels.md](../milestone_01_deferred_renderer/db-levels.md): readSceneDocument/writeSceneDocument preserve raw JSON without devices; loadScene(path) creates a typed graph with unresolved references; saveSceneReferences explicitly writes references only. Engine-aware draw scene/BG2/OBJ overloads use draw::Engine& and Node/Component::loadResources. OBJ has no MTL import yet. Complete draw save/export is not implemented and existing production save rejects draw resources. Implement real GPU readback/resource encoding and publication here rather than relabeling reference IO as complete save. New factory schema/draw paths use DefaultCreator plus virtual two-argument deserialize/serializeReferences and optional loadResources; unsupported custom components throw instead of invoking production creators. Preserve custom subclass fields explicitly.
 
+## M05-05 completed-image readback baseline
+
+M05 now supplies synchronous `gpu::Image::readPixels` for one initialized color
+mip/layer with `TransferSrc`; returned bytes are tightly packed in the image's
+native pixel format. `readPixelsRGBA8` only accepts `R8G8B8A8_UNORM`. Vulkan uses
+its transfer staging path and Metal strips row padding. The offscreen example
+selects that RGBA8 format, verifies a temporary PNG round-trip, and publishes one
+non-overwriting `scene.png` after GPU completion. This is a camera-image example,
+not a reusable resource-save API: it does not serialize GPU texture mip/layers,
+material references, scene graph/model files, or HDR formats. M06 must retain the
+actual resource format and metadata, perform required conversion explicitly, and
+write the complete scene/model resources and references with correct relative
+paths. It may reuse the completed raw readback and DB codec contracts; do not claim
+full resource export from the M05 example's PNG writer.
+
 ## M01-16 reviewed baseline
 
 Existing readSceneDocument/writeSceneDocument preserve raw JSON; loadScene schema/reference IO does not realize resources. Node/Component::loadResources, draw BG2/OBJ overloads and strict mode/context rejection exist. Complete high-level draw save currently rejects resource export; OBJ maps in the example are explicitly assigned, not MTL import. Implement the actual missing glTF/MTL, edited/GPU-only resource save, joint/custom-component round trips using M05 readback and preserve production overloads. See [M01 review](../milestone_01_deferred_renderer/review.md).
@@ -51,3 +66,26 @@ Existing readSceneDocument/writeSceneDocument preserve raw JSON; loadScene schem
 Materialize GPU-authored indirect maps before writing material references. M04 stores explicit IndirectTextureMode but its GPU-backed Texture settings can have an empty source path; serializeMaterial alone cannot export the image. Save/reload actual RGB content, linear interpretation, ao/bakedAO/bakedGI mode, UV2 and sampler/scale without converting HDR to UNORM. Cover clone-after-bake and stored-definition/live-realization agreement.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+
+## M06-01 concrete application baseline
+
+The registered application is apps/draw/model_edit (`draw_model_edit`), with
+AppDelegate/StageScene/EditorUi and a procedural startup fixture. There is no new
+Document or complete file loader/saver yet. Implement the Document state and IO
+publication in this application, replacing the fixture only after successful
+stopped adoption. Preserve current document on failed/cancelled load/save and add
+file/drop/dialog flows from the [inventory](application-inventory.md). App identity
+is org.bg2e.apps.draw.model-edit; production model_edit remains intact. A new app
+startup is not evidence that glTF/MTL/full resource export already works.
+
+
+## M06-02 delivered implementation
+
+See [resource IO contracts and review handoff](resource-io.md), the maintained
+[API reference](../../../../doc/api/db/DrawResourceIO.md) and
+[manual verification matrix](../../../../tests/draw/resource_io/README.md).
+The complete save overloads, native GPU archive, shared MTL/glTF import and editor
+Document/IO are now implemented; runtime acceptance remains lead-owned. Import
+subsets and custom external-resource export contracts are explicit, not inferred
+from raw/schema preservation. Next continuation selects M06-03.

@@ -8,7 +8,8 @@ APIs and does not replace production editor/standalone bake applications.
 The static room displays direct light, environment/IBL, emission and transparency.
 Its floor and two opaque cubes are bake targets; one cube is an independent red
 clone. Walls/emission remain unbaked, and transparent geometry is display-only.
-Live indirect AO/GI and live reflections start disabled for comparison. The
+This example explicitly selects IBL and disables live AO/GI and reflections for
+comparison, overriding the renderer-wide GI/reflections defaults. The
 example does not restore graphics preferences automatically, save files or accept
 CLI options.
 

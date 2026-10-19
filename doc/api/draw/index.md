@@ -71,7 +71,8 @@ The private execution wrapper is constructed by MainLoop, not the application.
 
 See [quick start](quick_start.md), [API reference](reference.md),
 [MainLoop selection](../app/MainLoop.md#execution-selection-and-validation) and
-[GPU API](../gpu/index.md). OffscreenApplication remains production-only. DrawableComponent has explicit typed
+[GPU API](../gpu/index.md). [OffscreenApplication](../app/OffscreenApplication.md)
+also provides an explicit typed draw path. DrawableComponent has explicit typed
 production/draw paths; resource-dependent UI migration is selective.
 
 ## Implementation details
@@ -120,3 +121,12 @@ adoption and UI ownership. Standalone scheduling/batch export is not implemented
 
 See [Baked indirect maps](BakedIndirectMaps.md) for explicit RGB lightmap metadata,
 UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
+
+## Headless scene jobs
+
+- [DefaultOffscreenApplicationDelegate](DefaultOffscreenApplicationDelegate.md):
+  exact completed camera samples, frozen state, settings import and final output.
+- [FrameAccumulator](FrameAccumulator.md): public synchronous linear RGB mean.
+- [OffscreenApplication](../app/OffscreenApplication.md): typed execution lifecycle.
+- [Offscreen tutorial](../../tutorials/draw/13_offscreen_application.md) and
+  [CLI/build guide](../../apps/draw_offscreen_application.md).

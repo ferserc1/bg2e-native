@@ -16,7 +16,8 @@ validation is claimed by this page.
 ## Current startup and lighting controls
 
 This example starts at 70% internal resolution with GI selected, GI enabled and
-reflections enabled. These are example-specific defaults; FSR/SMAA remain disabled.
+reflections enabled. GI and reflections now match the global draw renderer defaults;
+FSR/SMAA remain disabled by this example configuration.
 Actual tracing depends on available/status. Graphics settings opens at startup;
 the Manipulation window's Graphics settings button reopens it. The window/catalog
 is explicitly owned and connected, rather than registered by MainLoop.

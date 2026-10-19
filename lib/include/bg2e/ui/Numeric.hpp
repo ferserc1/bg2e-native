@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 
 #include <string>
+#include <cstdint>
 
 namespace bg2e {
 namespace ui {
@@ -76,6 +77,19 @@ class BG2E_API Numeric {
         double* value,
         double min = 0.0,
         double max = 1.0,
+        bool sameLine = false);
+
+    // Native precision drag with keyboard entry (Ctrl+click or double-click).
+    static bool drag(
+        const std::string& label,
+        double* value,
+        float speed = 0.1f,
+        bool sameLine = false);
+
+    static bool drag(
+        const std::string& label,
+        uint32_t* value,
+        float speed = 1.0f,
         bool sameLine = false);
 
     // min == max == 0 means unclamped range (standard ImGui convention)

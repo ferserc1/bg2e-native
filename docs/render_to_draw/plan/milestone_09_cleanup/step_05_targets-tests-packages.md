@@ -51,6 +51,25 @@ Retain native paired draw tracing/effect/SMAA shaders and official lookup depend
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
 
+M06 registers `draw_model_edit` through `bundle_app_sdl`; package collection is
+recursive and includes registered executable targets, runtime dependencies,
+assets and paired shaders. M06 inspected this source path but did not execute a
+native package. M09 must re-check final target/resource names and run authorized
+native install/package/standalone checks after obsolete targets are removed. See
+the [M06 product validation](../milestone_06_model_edit/product-validation.md).
+
+
+## M05 headless export target and regression coverage
+
+Inventory `draw_offscreen_application`, its paired draw shader/assets packaging,
+and `tests/draw/offscreen` separately from the legacy production offscreen
+examples. M05-05 validates one PNG through exact decode round-trip and no-clobber
+publication, but the lead's independent asymmetric-image/backend inspection is
+not recorded yet. M09-05 must migrate the target and useful fixture to the final
+canonical API, retain production regressions through M08, then remove obsolete
+production offscreen binaries/resources only when the accepted retirement manifest
+and parity evidence permit it. Do not claim that one camera PNG verifies GPU-only
+texture or bake batch export.
 
 ## M04-07 reviewed implementation requirement
 

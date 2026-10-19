@@ -88,9 +88,9 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     _engine = &engine;
     _configuration = std::move(configuration);
     uint32_t count = _requestedSlots;
-    if (count == 0 && engine.surface())
+    if (count == 0)
     {
-        count = engine.surface()->inFlightFrames();
+        count = engine.frameSlotCount();
     }
     if (!count)
     {
@@ -305,7 +305,8 @@ void RendererDeferred::buildTargets()
         gpu::ImageDescription output;
         output.size = _configuration.outputExtent;
         output.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
-        output.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment;
+        output.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment |
+            gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
         // The SDK writes storage HDR; the portable fallback only needs an attachment.
         if (_configuration.upscaler->available() && _configuration.upscaler->requirements().storageOutput)
         {
@@ -586,6 +587,8 @@ void RendererDeferred::update(const FrameContext& frame)
     }
     slot.serial = frame.frameNumber;
     slot.prepared = true;
+    slot.linearRecorded = slot.finalRecorded = false;
+    slot.finalItem = nullptr;
 }
 
 void RendererDeferred::dispatch(size_t stage, const FrameContext& frame,
@@ -596,11 +599,22 @@ void RendererDeferred::dispatch(size_t stage, const FrameContext& frame,
     Renderer::recordLayer(selected, {frame, selected.configuration, inputs, outputs, _scene.get(), raster});
 }
 
+bool RendererDeferred::supportsLinearRecording() const
+{
+    return true;
+}
+
 void RendererDeferred::record(const FrameContext& frame)
+{
+    auto linear = recordLinear(frame);
+    recordFinal(frame, *linear);
+}
+
+std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& frame)
 {
     checkFrame(frame);
     auto& slot = _targets[frame.frameSlot];
-    if (!slot.prepared || slot.serial != frame.frameNumber)
+    if (!slot.prepared || slot.serial != frame.frameNumber || slot.linearRecorded)
     {
         throw std::logic_error("Update the acquired renderer slot before recording");
     }
@@ -737,12 +751,35 @@ void RendererDeferred::record(const FrameContext& frame)
         composite(current, next,(uint64_t(item->objectId)<<32)|item->submeshIndex);
         std::swap(current, next);
     }
+    slot.finalItem = raster.item;
     UpscalerInput upscale{frame, *current, *slot.opaqueDepth, *slot.reconstructed, slot.camera, slot.jitteredProjection};
     if (!_configuration.upscaler->available() || !_configuration.upscaler->record(upscale))
     {
         _fallback->record(upscale);
     }
-    std::vector<pipeline::ImageBinding> finalInputs{{"color", slot.reconstructed.get()}};
+    frame.commandBuffer.transition(slot.reconstructed.get(), gpu::ImageLayout::ShaderReadOnly);
+    slot.linearRecorded = true;
+    return slot.reconstructed;
+}
+
+void RendererDeferred::recordFinal(const FrameContext& frame, gpu::Image& linearColor)
+{
+    checkFrame(frame);
+    auto& slot = _targets.at(frame.frameSlot);
+    if (!slot.prepared || !slot.linearRecorded || slot.finalRecorded || slot.serial != frame.frameNumber || linearColor.device() != _engine->device() ||
+        linearColor.size() != _configuration.outputExtent ||
+        linearColor.pixelFormat() != gpu::PixelFormat::R16G16B16A16_SFLOAT)
+    {
+        throw std::invalid_argument("Final scene conversion requires a matching prepared slot and linear HDR image");
+    }
+    pipeline::RasterFrame raster{&slot.queue, slot.finalItem, &_frame, &_object, &_lights, &_environmentBinding};
+    std::vector<pipeline::ImageBinding> gbuffer;
+    const auto& contract = _configuration.layers[0].configuration.contract;
+    for (size_t i = 0; i < contract.outputs.size(); ++i)
+    {
+        gbuffer.push_back({contract.outputs[i].semantic, slot.gbuffer.at(i).get()});
+    }
+    std::vector<pipeline::ImageBinding> finalInputs{{"color", &linearColor}};
     finalInputs.insert(finalInputs.end(), gbuffer.begin(), gbuffer.end());
     dispatch(2, frame, finalInputs, {{"output", &frame.colorTarget}}, &raster);
     if (_configuration.finalProcessor)
@@ -767,6 +804,17 @@ void RendererDeferred::record(const FrameContext& frame)
         }
     }
     frame.commandBuffer.transition(&frame.colorTarget, gpu::ImageLayout::ShaderReadOnly);
+    slot.finalRecorded = true;
+}
+
+std::vector<uint8_t> RendererDeferred::sceneFingerprint() const
+{
+    auto result = temporalSignature(_queue);
+    const auto* view = reinterpret_cast<const uint8_t*>(&_view);
+    result.insert(result.end(), view, view+sizeof(_view));
+    const auto* generation = reinterpret_cast<const uint8_t*>(&_historyGeneration);
+    result.insert(result.end(), generation, generation+sizeof(_historyGeneration));
+    return result;
 }
 
 void RendererDeferred::setCamera(const glm::mat4& view, const glm::mat4& projection)

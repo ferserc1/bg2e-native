@@ -29,6 +29,7 @@
 #include <bg2e/draw/environment/all.hpp>
 
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
+#include <bg2e/draw/DefaultOffscreenApplicationDelegate.hpp>
 
 #include <bg2e/draw/Drawable.hpp>
 #include <bg2e/draw/Texture.hpp>
@@ -72,3 +73,5 @@
 #include <bg2e/draw/pipeline/DenoiseFilter.hpp>
 
 #include <bg2e/draw/pipeline/SMAAProcessor.hpp>
+
+#include <bg2e/draw/pipeline/FrameAccumulator.hpp>

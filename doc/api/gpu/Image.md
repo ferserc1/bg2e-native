@@ -70,7 +70,7 @@ auto* colorImg = frame->colorImage();
 cmd->transition(colorImg, gpu::ImageLayout::ColorAttachment);
 // colorImg->currentLayout() is now ImageLayout::ColorAttachment
 
-// After rendering, transition to present
+// For a window presentation target, transition to present
 cmd->transition(colorImg, gpu::ImageLayout::Present);
 ```
 
@@ -110,3 +110,24 @@ Metal image wrapper. Wraps `MTL::Texture*`.
 
 See [rendering/subresources and transfer](Subresources_and_rendering.md) for
 MRT attachments, explicit views/layouts, capability limits and synchronous IO.
+
+## Completed image readback
+
+`readPixels(bytes, range, finalLayout)` is synchronous for one full initialized
+color mip/layer with TransferSrc usage. It returns tightly packed native-format
+bytes, with no row padding (including on Metal), and restores the specified final
+layout; its default final layout is ShaderReadOnly. Call outside command recording
+with producers stopped and keep the image/Device alive until it returns.
+
+`readPixelsRGBA8(bytes, finalLayout)` accepts only R8G8B8A8_UNORM and selects the
+base mip/layer. Despite the historical parameter name in the declaration, the
+layout argument is the desired final layout. Pass TransferSrc explicitly for the
+completed offscreen output. This helper supplies no BGRA, sRGB, HDR or row-orientation
+conversion. Raw readPixels supports other color formats without encoding them.
+`readPixelsDepth32(floats, finalLayout)` is the distinct initialized D32_SFLOAT
+TransferSrc path; it is not a general packed depth/stencil decoder.
+
+The [offscreen CLI](../../apps/draw_offscreen_application.md) selects RGBA8,
+checks width×height×4 bytes, then uses DB PNG encode/decode to verify exact output
+before publication. Color/alpha/orientation policy belongs to that caller, above
+native GPU staging. See [subresources/transfer](Subresources_and_rendering.md).

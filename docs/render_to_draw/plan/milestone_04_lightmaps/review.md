@@ -127,3 +127,21 @@ No unresolved architecture choice blocks documentation. Numeric/performance and
 export evidence remain the declared verification limits above. The serial sample
 policy, single indirect-texture slot, CPU preview and half-float display range
 must remain visible rather than being silently broadened in later callers.
+
+
+## M04-08 documentation handoff (2026-10-18)
+
+The technical review above is accepted by project lead continuation instruction;
+backend/scenario details remain unspecified. Documentation execution started from
+HEAD bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d with the existing M04 guide/tutorial
+baseline already present. [Coverage inventory](documentation.md) records the
+added public raw-executor and integrated architecture pages, updated canonical
+references/deployment/production boundaries and retained source-matching tutorial.
+Earlier review history and verification limitations are preserved.
+
+Static local-link/anchor/fence checks, tutorial-to-example non-whitespace equality,
+public method/caller and paired deployment inspection, and git diff --check pass.
+No source, shader or CMake changes, compiler, fixture, application, GPU, image export
+or package execution. This is the final ordered M04 step, awaiting lead acceptance;
+continuation closes M04 and selects M05-01. No additional M04 authoring step is
+required and no M05 implementation is delivered here.

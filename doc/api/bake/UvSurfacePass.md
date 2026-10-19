@@ -9,6 +9,11 @@ submesh; duplicate seam vertices and material/transform boundaries remain isolat
 are ignored consistently with geo validation. These are generation-local,
 conservative charts, not persistent document identities.
 
+Positive-area UV overlaps emit a warning and all overlapping triangles are still
+packed. They do not abort UV2 replacement or baking; shared texels may be
+overwritten. Invalid ranges, coordinates, indices, positions or normals remain
+errors. The model editor displays the overlap warning below its UV2 preview.
+
 Initialize UvSurfacePass with Device/backend/slot count and optionally configured
 shader root/prefix/interface bake.uvSurface.v1. At a stopped boundary prepare a
 loaded draw Drawable, obtaining a retained immutable uploaded-geometry snapshot.

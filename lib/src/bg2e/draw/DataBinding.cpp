@@ -33,11 +33,7 @@ uint32_t slotCount(Engine& engine, uint32_t count)
 {
     if (count == 0)
     {
-        if (!engine.surface())
-        {
-            throw std::invalid_argument("Explicit frame slot count required without a window surface");
-        }
-        count = engine.surface()->inFlightFrames();
+        count = engine.frameSlotCount();
     }
     if (count == 0)
     {
@@ -45,6 +41,7 @@ uint32_t slotCount(Engine& engine, uint32_t count)
     }
     return count;
 }
+
 void validateLayout(Engine& engine, const std::shared_ptr<gpu::PipelineLayout>& layout)
 {
     if (!layout || !layout->isValid() || layout->device() != engine.device())
@@ -52,6 +49,7 @@ void validateLayout(Engine& engine, const std::shared_ptr<gpu::PipelineLayout>& 
         throw std::invalid_argument("Draw binding layout must belong to its engine");
     }
 }
+
 void validateTexture(const std::shared_ptr<Texture>& texture, Engine& engine)
 {
     if (!texture || texture->engine() != &engine || !texture->image() || !texture->image()->isValid() ||
@@ -63,6 +61,7 @@ void validateTexture(const std::shared_ptr<Texture>& texture, Engine& engine)
     }
 }
 }
+
 gpu::PipelineLayoutDescription drawBindingLayout()
 {
     gpu::PipelineLayoutDescription result;
@@ -89,6 +88,7 @@ gpu::PipelineLayoutDescription drawBindingLayout()
     result.debugName = "draw.bindings.v1";
     return result;
 }
+
 void DataBinding::initializeUniforms(Engine& engine, std::shared_ptr<gpu::PipelineLayout> layout,
     uint32_t setIndex, size_t byteSize, const std::vector<gpu::ShaderBinding>& bindings, uint32_t frameSlots)
 {
@@ -116,6 +116,7 @@ void DataBinding::initializeUniforms(Engine& engine, std::shared_ptr<gpu::Pipeli
         slot.set->update();
     }
 }
+
 DataBinding::Slot& DataBinding::updateBytes(const FrameContext& frame, const void* data, size_t byteSize)
 {
     if (_engine != &frame.engine || frame.frameSlot >= _slots.size() || byteSize != _byteSize || !data)
@@ -136,6 +137,7 @@ DataBinding::Slot& DataBinding::updateBytes(const FrameContext& frame, const voi
     slot.prepared = true;
     return slot;
 }
+
 gpu::ResourceSet* DataBinding::set(const FrameContext& frame) const
 {
     if (&frame.engine != _engine || frame.frameSlot >= _slots.size())
@@ -149,6 +151,7 @@ gpu::ResourceSet* DataBinding::set(const FrameContext& frame) const
     }
     return slot.set.get();
 }
+
 void DataBinding::cleanup()
 {
     if (_engine)
@@ -160,19 +163,23 @@ void DataBinding::cleanup()
     _byteSize = 0;
     _engine = nullptr;
 }
+
 void FrameDataBinding::initialize(Engine& engine, std::shared_ptr<gpu::PipelineLayout> layout, uint32_t frameSlots)
 {
     initializeUniforms(engine, std::move(layout), 0, sizeof(FrameData), {{.vulkan = 0, .metal = 2}, {.vulkan = 1, .metal = 6}}, frameSlots);
 }
+
 void FrameDataBinding::update(const FrameContext& frame, const glm::mat4& view, const glm::mat4& projection)
 {
     const auto data = packFrame(frame, view, projection);
     updateBytes(frame, &data, sizeof(data));
 }
+
 void LightDataBinding::initialize(Engine& engine, std::shared_ptr<gpu::PipelineLayout> layout, uint32_t frameSlots)
 {
     initializeUniforms(engine, std::move(layout), 2, sizeof(LightUniforms), {{.vulkan = 0, .metal = 4}}, frameSlots);
 }
+
 void LightDataBinding::update(const FrameContext& frame, const LightUniforms& lights)
 {
     if (lights.count.x > MaxLights)
@@ -194,12 +201,14 @@ void LightDataBinding::update(const FrameContext& frame, const LightUniforms& li
     }
     updateBytes(frame, &lights, sizeof(lights));
 }
+
 void EnvironmentDataBinding::initialize(Engine& engine, std::shared_ptr<gpu::PipelineLayout> layout, uint32_t frameSlots, uint32_t metalTextureBase)
 {
     initializeUniforms(engine, std::move(layout), 3, sizeof(EnvironmentData), {{.vulkan = 8, .metal = 5}}, frameSlots);
     _metalTextureBase = metalTextureBase;
     _owners.resize(_slots.size());
 }
+
 void EnvironmentDataBinding::update(const FrameContext& frame, std::shared_ptr<const environment::EnvironmentResources> environment)
 {
     if (!environment || _engine != &frame.engine || frame.frameSlot >= _owners.size())
@@ -221,11 +230,13 @@ void EnvironmentDataBinding::update(const FrameContext& frame, std::shared_ptr<c
     _owners.at(frame.frameSlot) = std::move(environment);
     slot.prepared = true;
 }
+
 void EnvironmentDataBinding::cleanup()
 {
     DataBinding::cleanup();
     _owners.clear();
 }
+
 void ObjectDataBinding::initialize(Engine& engine, std::shared_ptr<gpu::PipelineLayout> layout, uint32_t frameSlots)
 {
     if (_engine && _engine != &engine)
@@ -239,6 +250,7 @@ void ObjectDataBinding::initialize(Engine& engine, std::shared_ptr<gpu::Pipeline
     _layout = std::move(layout);
     _slots.resize(count);
 }
+
 void ObjectDataBinding::prepare(const FrameContext& frame, const RenderQueue& queue)
 {
     if (_engine != &frame.engine || queue.engine() != _engine || frame.frameSlot >= _slots.size())
@@ -298,6 +310,7 @@ void ObjectDataBinding::prepare(const FrameContext& frame, const RenderQueue& qu
     slot.frameNumber = frame.frameNumber;
     slot.prepared = true;
 }
+
 gpu::ResourceSet* ObjectDataBinding::set(const FrameContext& frame, uint32_t objectId) const
 {
     if (_engine != &frame.engine || frame.frameSlot >= _slots.size())
@@ -311,6 +324,7 @@ gpu::ResourceSet* ObjectDataBinding::set(const FrameContext& frame, uint32_t obj
     }
     return slot.records.at(objectId - 1).set.get();
 }
+
 void ObjectDataBinding::cleanup()
 {
     if (_engine)

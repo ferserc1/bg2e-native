@@ -2,7 +2,7 @@
 
 [Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
-**Execution status:** see [progress](../progress.md). **Prerequisites:** Accepted M04 review; MainLoop execution pattern.
+**Execution status:** see [progress](../progress.md). **Prerequisites:** Accepted M04-08 cumulative documentation closure after M04-07 review; MainLoop execution pattern.
 
 ## Scope and deliverable
 
@@ -42,3 +42,33 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 Define completed-frame hooks and failure retirement for the new offscreen execution itself. M04's sample application uses Device::immediateSubmit followed by completeFrame; it does not add completion callbacks to the window RenderLoop and does not provide an offscreen application implementation.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+
+## M04-08 acceptance and M05-01 delivery
+
+The lead's request to implement the next step accepts M04-08 under the execution
+protocol; no backend/scenario details were specified. M05-01 adds
+`OffscreenExecutionMode`, the native-free `DrawOffscreenApplicationConfig` and
+`DrawOffscreenApplicationDelegate`, plus a typed `OffscreenApplication::init`
+overload. The production delegate overload remains source-compatible and now
+rejects null delegates/reinitialization. Draw extent is validated before selecting
+the experimental mode. Invalid/mixed use cannot reach production Vulkan delegate
+callbacks through this overload.
+
+The delegate exposes config, engine/surface initialization, scene initialization,
+resize, fixed update, a borrowed draw::FrameContext recording callback, completed
+scene-frame callback, continuation and cleanup. New headers contain no Vk types or
+render:: includes. M05-02 owns actual Engine/OffscreenSurface initialization,
+submission and callback execution. Until then the draw mode's run path reports that
+missing execution implementation explicitly; no windowless rendering is claimed
+by M05-01. The internal execution coordinator remains a private M05-02 choice; the
+public mode enum records which typed init overload selected.
+
+## Project lead checks for this delivery
+
+Compile the library and existing production offscreen examples to check source
+compatibility for the existing delegate overload. A small caller may derive from
+the new draw delegate and select the draw overload on Vulkan and, where available,
+Metal; verify the config callback sees defaults and rejects a zero width or height
+before any engine allocation. The draw run intentionally stops with the M05-02
+handoff message in this intermediate step. Do not count that as a rendering test.

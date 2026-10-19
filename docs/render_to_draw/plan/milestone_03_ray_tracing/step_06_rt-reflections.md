@@ -35,6 +35,13 @@ M03-07 owns reflection histories separately from GI/AO. M05 freezes scene while 
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
 
+## Later global default-policy amendment
+
+The project lead directed that renderer-created reflections are enabled by
+default, independently of the indirect-lighting mode. `RTReflectionSettings` now
+defaults `enabled` to true; explicit pass/settings and hardware availability remain
+authoritative. See the [current review amendment](review.md#later-default-policy-amendment).
+
 ## M01-08 IBL fallback ABI
 
 Use the same validated EnvironmentResources and public services from [environment-tools.md](../milestone_01_deferred_renderer/environment-tools.md). Prefilter mips encode perceptual roughness linearly; BRDF RG is A/B at (NdotV, roughness) with F0*A+B composition. Sky/prefilter are linear radiance; irradiance includes PI. Retain snapshots across submitted work and never overwrite authored prefilter mips or synchronously rebuild while recording RT work.

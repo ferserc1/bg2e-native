@@ -61,11 +61,10 @@ double polygonArea(const std::vector<UvPoint>& polygon)
         return 0.0;
     }
     double twiceArea = 0.0;
-    for (size_t index = 0; index < polygon.size(); ++index)
+    const auto& origin = polygon.front();
+    for (size_t index = 1; index + 1 < polygon.size(); ++index)
     {
-        const auto& current = polygon[index];
-        const auto& next = polygon[(index + 1) % polygon.size()];
-        twiceArea += current.x * next.y - current.y * next.x;
+        twiceArea += cross(origin, polygon[index], polygon[index + 1]);
     }
     return std::abs(twiceArea) * 0.5;
 }
@@ -89,15 +88,18 @@ double triangleIntersectionArea(const UvTriangle& first, const UvTriangle& secon
 
         UvPoint previous = polygon.back();
         double previousDistance = clipOrientation * cross(edgeStart, edgeEnd, previous);
-        bool previousInside = previousDistance >= -kBoundsEpsilon;
+        // Classify against the same zero boundary used for intersections.
+        // A tolerant classification with zero-boundary intersection can extrapolate
+        // outside an edge when both distances are negative.
+        bool previousInside = previousDistance >= 0.0;
         for (const auto& current : polygon)
         {
             const double currentDistance = clipOrientation * cross(edgeStart, edgeEnd, current);
-            const bool currentInside = currentDistance >= -kBoundsEpsilon;
+            const bool currentInside = currentDistance >= 0.0;
             if (currentInside != previousInside)
             {
                 const double denominator = previousDistance - currentDistance;
-                if (std::abs(denominator) > std::numeric_limits<double>::epsilon())
+                if (denominator != 0.0)
                 {
                     const double t = previousDistance / denominator;
                     clipped.push_back({previous.x + (current.x - previous.x) * t,
@@ -182,6 +184,12 @@ float computeCoverage(const std::vector<UvTriangle>& triangles)
 } // anonymous namespace
 
 UvAtlasValidation UvAtlasValidator::validate(const Mesh& mesh, uint32_t uvSet)
+{
+    return validate(mesh, uvSet, UvAtlasOverlapPolicy::Reject);
+}
+
+UvAtlasValidation UvAtlasValidator::validate(const Mesh& mesh, uint32_t uvSet,
+    UvAtlasOverlapPolicy overlapPolicy)
 {
     if (uvSet > 1)
     {
@@ -317,7 +325,7 @@ UvAtlasValidation UvAtlasValidator::validate(const Mesh& mesh, uint32_t uvSet)
               {
                   return lhs.minX < rhs.minX;
               });
-    for (size_t firstIndex = 0; firstIndex < triangles.size(); ++firstIndex)
+    for (size_t firstIndex = 0; firstIndex < triangles.size() && result.warning.empty(); ++firstIndex)
     {
         const auto& first = triangles[firstIndex];
         for (size_t secondIndex = firstIndex + 1; secondIndex < triangles.size(); ++secondIndex)
@@ -340,7 +348,16 @@ UvAtlasValidation UvAtlasValidator::validate(const Mesh& mesh, uint32_t uvSet)
                                       std::to_string(std::max(first.submesh, second.submesh)));
                 error.submeshIndex = std::min(first.submesh, second.submesh);
                 error.triangleIndex = first.triangle;
-                return error;
+                error.message += " (submesh " + std::to_string(first.submesh) + ", triangle " +
+                    std::to_string(first.triangle) + "; submesh " + std::to_string(second.submesh) +
+                    ", triangle " + std::to_string(second.triangle) + ")";
+                if (overlapPolicy == UvAtlasOverlapPolicy::Reject)
+                {
+                    return error;
+                }
+                result.warning = error.message +
+                    "; baking continues, but shared texels may overwrite another triangle's lightmap";
+                break;
             }
         }
     }

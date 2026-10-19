@@ -11,18 +11,22 @@ assignment are deleted.
 Engine();
 ~Engine();
 void init(SDL_Window* window, gpu::Backend& backend, const EngineConfig& config);
+void init(gpu::Size2D extent, gpu::Backend& backend, const EngineConfig& config);
 void cleanup();
 gpu::BackendType backendType() const;
 gpu::Instance* instance() const;
 gpu::PhysicalDevice* physicalDevice() const;
 gpu::Device* device() const;
 gpu::WindowSurface* surface() const;
+gpu::Surface* renderSurface() const;
+gpu::OffscreenSurface* offscreenSurface() const;
+uint32_t frameSlotCount() const;
 gpu::CleanupManager& cleanupManager();
 ```
 
 ## Initialization
 
-`init()` requires a non-null SDL window and a Backend whose type matches
+The window overload requires a non-null SDL window and a Backend whose type matches
 EngineConfig. It borrows the backend's shared Instance wrapper, rejects an
 instance already in use, applies the configured application name and debug mode,
 and creates the windowed instance. MainLoop substitutes its appId when the
@@ -44,7 +48,7 @@ The SDL window and shared Instance wrapper are borrowed. Factory-owned backends
 are retained through a lease: Factory rejects backend replacement while the
 execution or Engine retains it. A caller-owned Backend must outlive the Engine.
 The Engine controls the initialized Instance lifetime and exclusively owns its
-PhysicalDevice, Device, WindowSurface and CleanupManager.
+PhysicalDevice, Device, rendering Surface and CleanupManager.
 
 The caller must stop frame production and coordinate background GPU producers
 before cleanup, keeping them stopped throughout resource destruction.
@@ -65,3 +69,29 @@ See [EngineConfig](EngineConfig.md) and [RenderLoop](RenderLoop.md).
 
 See [framework scope and maturity](index.md#production-and-experimental-frameworks)
 for the distinction between render and draw.
+
+## Headless initialization
+
+The Size2D overload creates an offscreen Instance and OffscreenSurface with no SDL
+window or UI runtime. It shares the context lifetime and already-active Instance
+rejection above. Extents must be nonzero and color normalized/floating; depth may
+be Undefined to omit the surface depth target. Device capabilities remain required.
+A factory-owned Backend is retained; a caller-owned Backend remains borrowed.
+
+surface() preserves the window accessor and returns null headlessly. renderSurface()
+returns the current generic surface; offscreenSurface() returns the typed headless
+surface or null in window mode. frameSlotCount() validates its nonzero inFlightFrames
+and supplies renderer/data-binding defaults on both paths. Current native
+OffscreenSurfaces use one synchronized slot. Window RenderLoop and UserInterface
+reject a headless Engine rather than dereferencing the window accessor.
+
+For actual callback/submission/completion and fixed-time policy use
+[OffscreenApplication](../app/OffscreenApplication.md#experimental-draw-execution).
+The default offscreen renderer delegate reuses ordinary Renderer ownership;
+standalone bake code can instead use Device-backed passes directly without a
+camera renderer. This Engine API does not perform image averaging or file output.
+
+The [default offscreen delegate](DefaultOffscreenApplicationDelegate.md) adds
+settings/scene ownership and exact accumulation to this context. Its
+[FrameAccumulator](FrameAccumulator.md) is synchronous; applications needing only
+headless Device-backed passes can use Engine without the camera renderer.

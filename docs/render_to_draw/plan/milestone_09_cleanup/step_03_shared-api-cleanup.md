@@ -53,3 +53,12 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 Retain bake::UvMapPreviewRenderer (CPU diagnostic plus generic image upload) and ui::BakeLightmapPreview as canonical draw-compatible replacements. Delete the production render::UvMapPreviewRenderer/ui::UvMapPreview coupling only after actual editor callers have migrated. Preserve explicit IndirectTextureMode metadata, linear UV2 sampling and live/stored material consistency while removing legacy overloads.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+M06 adds a concrete application caller for draw material editing, typed texture
+preview, selection/gizmo overlays, viewpoint analysis, complete draw IO and
+integrated bake. The review records their current headers and ownership. At
+retirement, migrate all production `model_edit`/composer callers before deleting
+their overloads, preserve native resource format readability, and keep app dirty
+state/generations out of shared widgets and DB. M06 continuation does not supply
+runtime regression evidence; M09-06 must collect it before claiming equivalence.
+See the [M06 review](../milestone_06_model_edit/review.md).

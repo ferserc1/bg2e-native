@@ -151,3 +151,13 @@ Paired draw and bake libraries now have distinct compile/intermediate trees,
 shared aggregate dependencies, incremental bundle refresh and install coverage.
 GPU-only live texture ownership/JSON mode metadata do not constitute export;
 complete image materialization and standalone batch policy remain future owners.
+
+## Project lead default-renderer policy (2026-10-19)
+
+With no explicit `draw::RendererConfiguration` override, the deferred draw
+renderer selects `GlobalIllumination` and its default RTGI and reflection passes
+are enabled. These are requested settings, independent of device/shader
+availability; unsupported effects keep their status and use established fallback
+paths. An injected pass, explicit mode/settings, or an application's intentional
+comparison configuration takes precedence. Applications such as `draw_model_edit`
+inherit the shared default rather than duplicating it.

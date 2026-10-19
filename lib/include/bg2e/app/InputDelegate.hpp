@@ -36,6 +36,13 @@ class InputDelegate {
     {
     }
 
+    // A scene-owned drag can continue across UI regions. New presses over UI
+    // are still owned by the UI; the router tracks accepted button presses.
+    virtual bool mouseInputCaptured() const
+    {
+        return false;
+    }
+
     virtual void mouseMove([[maybe_unused]] int x, [[maybe_unused]] int y)
     {
     }

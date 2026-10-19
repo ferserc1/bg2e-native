@@ -86,3 +86,6 @@ provides the example completion boundary; it does not add a render-loop callback
 - [Lightmap output](LightmapOutput.md): public accumulator/composition, typed pixels and validation.
 - [UV diagnostic](UvMapPreviewRenderer.md) and [draw UI bridge](BakeLightmapPreview.md).
 - [Step-by-step tutorial](../../tutorials/draw/12_lightmaps.md) and [application/build guide](../../apps/draw_lightmaps.md).
+
+- [Raw bake executor and sample](LightmapBakeExecutor.md): public effect reuse and exclusive pass ownership.
+- [Integrated architecture](../../architecture/draw_integrated_lightmaps.md): data flow, precision and material boundaries.

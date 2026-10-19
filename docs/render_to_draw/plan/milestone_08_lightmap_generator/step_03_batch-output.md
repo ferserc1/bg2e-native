@@ -44,6 +44,17 @@ M08-04 consumes this orchestration. M09 removes production writer wrappers and a
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
 
+## M05 single-image publication is not a bake batch transaction
+
+M05's example writes one known RGBA8 camera PNG to a PNG-suffixed temporary path,
+verifies decode dimensions/bytes, then publishes with a no-clobber same-directory
+hard link. Failure removes the temporary image. This does not implement complete
+batch preflight, overwrite/replace policy, multi-file rollback, model-copy
+publication, source-sidecar protection or resource-reference rewriting. M08 must
+implement and validate those batch guarantees around typed LightmapPixels and
+complete M06/M07 resource saves. Keep lightmap RGB8 exposure and RGB32F HDR
+encoding/orientation separate from the camera PNG policy.
+
 ## M01-16 reviewed baseline
 
 M01 raw/reference JSON IO and raw completed color readback are building blocks, not complete batch/save semantics. Consume real M04 LightmapPixels and M06/M07 full resource-save contracts before implementing specialized bake writer/preflight/atomic publication. Preserve explicit byte/float color/orientation metadata and input protection. See [M01 review](../milestone_01_deferred_renderer/review.md).
@@ -67,3 +78,25 @@ See [output implementation](../milestone_04_lightmaps/accumulation-output.md).
 Export the completed typed RGB pixels and real image files before publishing model/material copies. Preserve indirectTextureMode strings (ao/bakedAO/bakedGI), UV2 and linear color on reload. A retained sampled GPU image and copied sampler settings are not an exported resource. Keep RGB32F HDR output distinct from the interactive RGBA16F range limit; apply exposure/clamp only to the explicit RGB8 GI conversion. Implement actual batch/writer types here: current bake namespace only forward-declares Batch/SceneAssembler and supplies no new writer.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+
+## M06-02 implemented resource publication baseline
+
+Reuse the [complete draw IO contract](../milestone_06_model_edit/resource-io.md):
+explicit engine-aware scene/model save snapshots native GPU color mips/layers and
+publishes unique resources before replacing the main file. `.bg2tex` preserves
+HDR and requires draw texture decoding; raw/schema/reference IO still exports no
+resources. Custom schema/reference/draw hooks preserve component fields; custom
+external-resource types require an explicit export contract. Do not route this
+through production image loaders. Format-specific batch image outputs/conversions
+remain this consumer's responsibility; native archive support does not implement
+the pending batch writer or scheduler. Preserve previous input generations and
+mark document/batch success only after output publication.
+
+The [M06 review](../milestone_06_model_edit/review.md) confirms complete native
+draw saves materialize GPU-only texture mip/layer bytes into `.bg2tex` resources
+before atomically publishing the main scene/model file. That is resource snapshot
+IO, not the M08 output contract: implement typed RGB8/RGB32F map encoding,
+complete-batch collision/preflight, overwrite policy, protected source/sidecar
+semantics and coordinated optional model-copy publication here. Do not treat
+sampler metadata or the model-editor Apply action as an output writer.

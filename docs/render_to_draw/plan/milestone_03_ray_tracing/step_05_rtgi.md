@@ -54,3 +54,11 @@ Use [rtao.md](rtao.md): public RTAmbientOcclusion, SurfaceInputs camera/explicit
 ## M03-05 delivered contract
 
 See [rtgi.md](rtgi.md) for actual APIs, native stages, ABI, linear HDR validity/composition and ownership. Compilation/runtime validation remains with the project lead.
+
+## Later global default-policy amendment
+
+The project lead directed that a default draw renderer selects GI and creates an
+enabled GI component. The current headers set that policy in
+`RendererConfiguration` and `RTGISettings`; the original implementation default
+described above is historical. Explicit modes/settings and availability fallback
+remain authoritative. See the [current review amendment](review.md#later-default-policy-amendment).

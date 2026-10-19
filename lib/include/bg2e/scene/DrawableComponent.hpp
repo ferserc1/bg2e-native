@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include <optional>
+#include <string>
+
 #include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/draw/Drawable.hpp>
@@ -81,6 +84,11 @@ class BG2E_API DrawableComponent : public Component {
 
     // Resolved source reference; setting it does not replace live resources.
     void setResourcePath(const std::filesystem::path& path);
+    // Exchange already-normalized references without allocation (transaction rollback).
+    void swapResourcePath(std::filesystem::path& path) noexcept
+    {
+        _resourcePath.swap(path);
+    }
     const std::filesystem::path& resourcePath() const
     {
         return _resourcePath;
@@ -95,6 +103,7 @@ class BG2E_API DrawableComponent : public Component {
 
   protected:
     std::filesystem::path _resourcePath;
+    std::optional<std::string> _resourceName;
     std::shared_ptr<DrawableBase> _drawable;
     std::shared_ptr<bg2e::draw::Drawable> _drawDrawable;
 };

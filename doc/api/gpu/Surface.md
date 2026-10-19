@@ -45,9 +45,9 @@ Abstract base for rendering surfaces. Holds width, height, and pixel format
 state common to both window and offscreen surfaces. Subclassed by
 `WindowSurface` and `OffscreenSurface`.
 
-This class has no backend-specific implementations. The `vk` and `metal`
-namespaces only provide concrete subclasses of `WindowSurface` and
-`OffscreenSurface`.
+Native `vk::Surface` and `metal::Surface` supply shared backend target/device
+behavior; the native WindowSurface/OffscreenSurface classes implement acquisition
+and presentation. Ordinary clients use the generic interfaces.
 
 ---
 

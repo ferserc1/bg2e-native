@@ -85,3 +85,85 @@ pending-step requirements supersede assumptions that M04 already implements a
 headless scheduler, batch writer, full GPU-only resource export or camera-image
 averaging. Continuation acceptance does not establish hardware-specific numeric,
 performance or exported-file evidence. Preserve production references until M09.
+
+
+## M05 headless export dependency
+
+M05-05 supplies completed RGBA8 camera-image readback and a single verified PNG example, not a complete model/scene resource-save API. M06-02 owns GPU-only texture materialization, format/mip/sampler metadata and full model/scene reference publication. Use the M05 raw synchronous transfer and DB codec only where their format contracts match; preserve HDR resources and explicitly convert unsupported formats.
+
+
+## M06-01 startup handoff
+
+The registered target is draw_model_edit with native-free AppDelegate/StageScene/EditorUi
+and typed draw execution. [Application inventory](application-inventory.md) maps all
+production document/stage/menu/widget/bake workflows and renderer/material/UI call
+references to M06-02–06. Startup shows a procedural fixture and settings; full file
+IO, materials/selection/environment controls, viewpoint analysis and baking were
+subsequent required steps. M06-04 now supplies explicit camera framing and best-view
+analysis; M06-05 owns bake integration. The original model_edit application is preserved.
+
+
+## M06-02 complete resource IO handoff
+
+[Resource IO implementation](resource-io.md) records actual load/save APIs,
+GPU-only HDR/mip archives, custom hooks, document adoption/dirty/error behavior,
+publication and static evidence. Complete save is explicit-context and distinct
+from reference-only IO. The draw editor now opens/imports/drops and saves models
+or graph documents, with unsaved prompts. Tools, framing and bake remain M06-03–05.
+Compilation and the manual resource/editor matrix await project lead validation.
+
+
+## M06-03 editor tools handoff
+
+[Editor tool implementation](editor-tools.md) records actual selection/overlay,
+queued node/geometry/material edits, independent clones, sampler and baked-map
+interpretation controls, environment/light/preset flows, shared input capture fix,
+dirty/IO ordering and teardown. M06-04 adds stopped bounds framing and scored draw
+viewpoint analysis; see [camera handoff](viewpoint-camera.md). [Application guide](../../../../doc/apps/draw_model_edit.md)
+and unexecuted manual probe/checks accompany the source. A project-lead UI parity
+correction now replaces the floating dashboard with the production Workspace
+composition. The project lead accepted the correction by continuation. M06-04
+camera analysis is also accepted by continuation. M06-05 now adds integrated UV2
+and lightmap workflows; M06-06 retains cumulative product/runtime verification.
+
+
+## M06-05 UV and integrated lightmap handoff
+
+`apps/draw/model_edit/src/ModelLightmapWindow.cpp` adds a menu-launched UV and
+Lightmap Baker utility with UV1/UV2 diagnostic previews, safe UV2 regeneration,
+AO/GI settings, exact submitted-sample progress, cancellation, completed-result
+preview and explicit application to target submesh materials. `EditorBaking.cpp`
+owns the integrated bake context, retires completed frames before advancing,
+invalidates jobs on document-source edits/replacement, and applies the shared GPU
+image to live material textures and CPU definitions using linear sampling, UV2 and
+the selected baked interpretation. Existing M06-02 complete scene/model export
+publishes that GPU image as a native texture sidecar. The document graph is the
+bake root; editor floor/fill/camera fixtures are excluded. Static evidence and
+project-lead checks are in the updated application guide and editor matrix. No
+build or runtime execution was performed by the agent. Next is M06-06 product
+validation.
+
+
+## M06-06 product validation handoff
+
+Static target and distribution inspection is recorded in
+[product-validation.md](product-validation.md). The draw editor uses the common
+SDL bundle helper; the distribution target collector recursively includes
+registered apps and installs runtime dependencies, shaders and assets. This only
+confirms the configured packaging path at source level. Native app launch, feature
+parity, package script execution and packaged runtime remain unverified and are
+assigned to the project lead. M06-06 was accepted by continuation without backend
+or scenario details. The [M06-07 technical review](review.md) compares actual
+application/resource contracts and updates M07–M10 handoffs. M06-08 cumulative
+documentation is the remaining milestone step; M06 remains open until it is
+accepted, and no M07 work is authorized by this review alone.
+
+
+## M06-08 cumulative documentation handoff
+
+[Documentation inventory](documentation.md) maps maintained application, tutorial,
+API, settings, reflection, architecture and deployment coverage to delivered source.
+It includes the accepted post-review editor corrections and the lead's explicit
+zero-light rendering result. M06-08 is delivered for acceptance; the next step is
+[M07-01](../milestone_07_bg2e_composer/step_01_application-copy.md), gated on that
+acceptance. No Composer implementation is part of this documentation step.

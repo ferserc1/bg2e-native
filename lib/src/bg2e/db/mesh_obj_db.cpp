@@ -30,7 +30,10 @@
 #include <fstream>
 #include <functional>
 #include <memory>
+#include <map>
 #include <cstdint>
+#include <cmath>
+#include <algorithm>
 #include <stdexcept>
 
 namespace bg2e::db {
@@ -45,7 +48,10 @@ void readObjMesh(
     std::istream& inputStream,
     std::function<void(const glm::vec3& position, const glm::vec3& normal, const glm::vec2& uv)> vertexCallback,
     std::function<void(uint32_t index)> indexCallback,
-    std::function<void(uint32_t offset, uint32_t count)> submeshCallback)
+    std::function<void(uint32_t offset, uint32_t count)> submeshCallback,
+    tinyobj::MaterialReader* materialReader = nullptr,
+    std::vector<tinyobj::material_t>* importedMaterials = nullptr,
+    std::function<void(const std::string&, int)> metadata = {})
 {
     tinyobj::attrib_t attrib;
     std::vector<tinyobj::shape_t> shapes;
@@ -54,15 +60,24 @@ void readObjMesh(
     std::string warn;
     std::string err;
 
-    const bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &inputStream);
+    const bool loaded = tinyobj::LoadObj(&attrib, &shapes, &materials, &warn, &err, &inputStream, materialReader);
     if (!warn.empty())
     {
+        if (materialReader)
+        {
+            throw std::runtime_error("OBJ material import: " + warn);
+        }
         bg2e_log_warning << "Warning loading OBJ file: " << warn << bg2e_log_end;
     }
 
     if (!loaded || !err.empty())
     {
         throw std::runtime_error(std::string("Error loading OBJ file: ") + err);
+    }
+
+    if (importedMaterials)
+    {
+        *importedMaterials = materials;
     }
 
     auto positionAt = [&](int index)
@@ -81,9 +96,24 @@ void readObjMesh(
         {
             throw std::runtime_error("OBJ requires triangulated 32-bit indexed geometry");
         }
-        const auto submeshOffset = currentIndex;
+        auto submeshOffset = currentIndex;
+        int activeMaterial = -2;
         for (size_t i = 0; i < shape.mesh.indices.size(); ++i)
         {
+            if (metadata && i % 3 == 0)
+            {
+                const int material = shape.mesh.material_ids.at(i / 3);
+                if (material != activeMaterial)
+                {
+                    if (currentIndex > submeshOffset)
+                    {
+                        submeshCallback(submeshOffset, currentIndex - submeshOffset);
+                    }
+                    submeshOffset = currentIndex;
+                    activeMaterial = material;
+                    metadata(shape.name, material);
+                }
+            }
             const auto& index = shape.mesh.indices[i];
             const auto position = positionAt(index.vertex_index);
             glm::vec3 normal;
@@ -315,16 +345,137 @@ bg2e::geo::MeshPNUUT* loadMeshObj<bg2e::geo::MeshPNUUT>(std::istream& inputStrea
     return mesh.release();
 }
 
-std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& filePath, draw::Engine& engine)
+namespace {
+class ObjMaterialReader final : public tinyobj::MaterialReader {
+  public:
+    explicit ObjMaterialReader(std::filesystem::path base) : _base(std::move(base))
+    {
+    }
+
+    bool operator()(const std::string& name, std::vector<tinyobj::material_t>* materials,
+        std::map<std::string, int>* names, std::string* warning, std::string* error) override
+    {
+        const auto path = _base / name;
+        std::ifstream input(path);
+        if (!input)
+        {
+            *error += "Could not open MTL: " + path.string();
+            return false;
+        }
+        const auto previous = materials->size();
+        tinyobj::LoadMtl(names, materials, &input, warning, error);
+        directories.resize(materials->size());
+        for (size_t i = previous; i < materials->size(); ++i)
+        {
+            directories[i] = path.parent_path();
+        }
+        return true;
+    }
+
+    std::vector<std::filesystem::path> directories;
+
+  private:
+    std::filesystem::path _base;
+};
+}
+
+std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& filePath, draw::Engine& engine,
+    std::function<void()> onTextureLoaded)
 {
+    auto mesh = std::make_shared<geo::MeshPNUUT>();
+    std::vector<tinyobj::material_t> materials;
+    std::vector<std::pair<std::string, int>> groups;
+    std::ifstream input(filePath);
+    if (!input)
+    {
+        throw std::runtime_error("Could not open OBJ: " + filePath.string());
+    }
+    ObjMaterialReader reader(std::filesystem::absolute(filePath).parent_path());
+    readObjMesh(input,
+        [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& uv)
+        {
+            mesh->vertices.push_back({p, n, uv, uv, {0, 0, 0}});
+        },
+        [&](uint32_t i)
+        {
+            mesh->indices.push_back(i);
+        },
+        [&](uint32_t offset, uint32_t count)
+        {
+            mesh->submeshes.push_back({offset, count});
+        },
+        &reader, &materials,
+        [&](const std::string& name, int material)
+        {
+            groups.emplace_back(name, material);
+        });
+    geo::GenTangentsModifier<geo::MeshPNUUT>(mesh.get()).apply();
     auto result = std::make_shared<draw::Drawable>();
     result->setName(filePath.stem().string());
-    result->setMesh(std::shared_ptr<geo::MeshPNUUT>(loadMeshObj<geo::MeshPNUUT>(filePath)));
+    result->setMesh(mesh);
     for (uint32_t i = 0; i < result->submeshesCount(); ++i)
     {
-        result->setSubmeshName("submesh_" + std::to_string(i), i);
+        const auto& [name, id] = groups.at(i);
+        auto& target = result->material(i);
+        result->setSubmeshName(name.empty() ? "submesh_" + std::to_string(i) : name, i);
+        result->setSubmeshGroupName(name, i);
+        if (id < 0)
+        {
+            continue;
+        }
+        const auto& m = materials.at(static_cast<size_t>(id));
+        if (!m.alpha_texname.empty() || (!m.bump_texname.empty() && m.normal_texname.empty()))
+        {
+            throw std::runtime_error("MTL separate opacity and height maps require conversion: " + m.name);
+        }
+        target.setName(m.name);
+        target.setAlbedo(base::Color(m.diffuse[0], m.diffuse[1], m.diffuse[2], m.dissolve));
+        target.setIsTransparent(m.dissolve < 1);
+        target.setIsSolid(m.dissolve >= 1);
+        target.setAlphaCutoff(0);
+        target.setMetalness(m.metallic);
+        target.setRoughness(m.roughness > 0 ? m.roughness : std::sqrt(2.0f / (m.shininess + 2.0f)));
+        auto texture = [&](const std::string& name, const tinyobj::texture_option_t& options, bool linear)
+            -> std::shared_ptr<base::Texture>
+        {
+            if (name.empty())
+            {
+                return {};
+            }
+            if (options.origin_offset[0] != 0 || options.origin_offset[1] != 0 ||
+                options.turbulence[0] != 0 || options.turbulence[1] != 0)
+            {
+                throw std::runtime_error("MTL texture offsets/turbulence require conversion: " + name);
+            }
+            auto t = std::make_shared<base::Texture>();
+            t->setImageFilePath((reader.directories.at(static_cast<size_t>(id)) / name).string());
+            t->setColorType(linear ? base::Color::TypeLinear : base::Color::TypeSRGB);
+            t->setUseMipmaps(true);
+            if (options.clamp)
+            {
+                t->setAddressModeU(base::Texture::AddressModeClampToEdge);
+                t->setAddressModeV(base::Texture::AddressModeClampToEdge);
+            }
+            return t;
+        };
+        target.setAlbedoTexture(texture(m.diffuse_texname, m.diffuse_texopt, false));
+        target.setAlbedoScale(glm::vec2(m.diffuse_texopt.scale[0], m.diffuse_texopt.scale[1]));
+        target.setMetalnessTexture(texture(m.metallic_texname, m.metallic_texopt, true));
+        target.setMetalnessScale(glm::vec2(m.metallic_texopt.scale[0], m.metallic_texopt.scale[1]));
+        target.setMetalnessChannel(0);
+        target.setRoughnessTexture(texture(m.roughness_texname, m.roughness_texopt, true));
+        target.setRoughnessScale(glm::vec2(m.roughness_texopt.scale[0], m.roughness_texopt.scale[1]));
+        target.setRoughnessChannel(0);
+        target.setNormalTexture(texture(m.normal_texname, m.normal_texopt, true));
+        target.setNormalScale(glm::vec2(m.normal_texopt.scale[0], m.normal_texopt.scale[1]));
+        target.setAoTexture(texture(m.ambient_texname, m.ambient_texopt, true));
+        target.setAoScale(glm::vec2(m.ambient_texopt.scale[0], m.ambient_texopt.scale[1]));
+        target.setAoChannel(0);
+        target.setLightEmissionTexture(texture(m.emissive_texname, m.emissive_texopt, false));
+        target.setLightEmissionScale(glm::vec2(m.emissive_texopt.scale[0], m.emissive_texopt.scale[1]));
+        target.setLightEmission(std::max({m.emission[0], m.emission[1], m.emission[2]}));
     }
-    result->load(&engine);
+    result->load(&engine, std::move(onTextureLoaded));
     return result;
 }
 

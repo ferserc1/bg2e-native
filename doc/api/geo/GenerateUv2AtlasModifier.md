@@ -44,8 +44,11 @@ is a packing input, not a guarantee about returned atlas dimensions.
 | `Uv2AtlasResult` | `utilization` | xatlas packing utilization for the generated atlas. |
 
 `result()` is meaningful only after `apply()` succeeds. Invalid input, xatlas
-errors, multiple output atlases, invalid output faces, or overlapping charts
-cause `apply()` to throw `std::runtime_error`.
+errors, multiple output atlases or invalid output faces cause `apply()` to throw
+`std::runtime_error`. Overlapping charts emit a warning and generation continues;
+they no longer prevent publishing the atlas. The chart check samples texel centers
+and differs from the validator's continuous triangle intersection test, so an
+atlas can pass chart packing checks and still report a subpixel triangle overlap.
 
 ## Mesh and transaction behavior
 

@@ -20,7 +20,7 @@ Current sources to inspect: [examples/draw/](../../../../examples/draw), [tests/
 ## Implementation work
 
 1. Run the agreed core matrix: default deferred/no-RT, query shadows, advanced RT/histories/denoise, FSR/external upscaler, manipulation/MaterialModifier/clones, integrated maps and accumulated offscreen export.
-2. Exercise all three applications and final scene/file/config/pixel output round-trips; validate window/headless failures, dialogs/resources and shutdown.
+2. Exercise all three applications and final scene/file/config/pixel output round-trips; validate window/headless failures, dialogs/resources and shutdown. Include model-editor Workspace parity, complete draw resource save/reload, UV2 regeneration, integrated AO/GI completion/cancel/application, best-view analysis and production model_edit preference/input regressions. M06's current execution coverage is unspecified.
 3. Audit transitive umbrella includes, exported types/symbols, shader paths, build/scripts and generated standalone sources for old namespace/Engine/native callbacks.
 4. Record compatibility-breaking changes honestly. Data-format readability is distinct from unsupported old application source/ABI; no forwarding layer is restored.
 

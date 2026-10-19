@@ -99,3 +99,59 @@ Source and validation boundaries: [M03 technical review](../milestone_03_ray_tra
 Expose the AO-slot interpretation explicitly when editing baked materials. Selecting an ordinary AO map must reset the baked mode deliberately; a missing texture or UV2 selection alone must not enable a lightmap. The current six-slot material supports scalar AO or a baked RGB map in that slot, not two independent sources. Bind bake::UvMapPreviewRenderer output with ui::BakeLightmapPreview::setImage; do not instantiate production UvMapPreview for a draw UI session.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+
+## M06-01 UI and stage baseline
+
+The new AppDelegate owns draw RendererDeferred and StageScene; EditorUi currently
+shows a startup-model status panel, GraphicsSettingsWindow and UISettingsWindow.
+The live facade connects before first attachment, uses preference scope
+`draw.model_edit.graphics`, and does not restore implicitly. Camera reset uses
+weak stage ownership plus rendererGeneration at a stopped update. Extend these
+actual owners with the [inventoried](application-inventory.md) Workspace/ToolBar,
+selection/material/submesh/environment workflows; do not copy production Engine
+or raw-native callbacks. Startup has no document editing, drop import, pick manager,
+overlay or complete widget parity. Keep stage/document/resource generations
+distinct from renderer replacement and preserve dirty/error state on partial edits.
+
+
+## M06-02 concrete IO/Document baseline
+
+Use the existing Document in apps/draw/model_edit/src and the
+[complete IO contract](resource-io.md). StageScene owns document.root separately
+from floor/camera/light fixtures. Open/save/drop already execute at stopped
+boundaries; successful loads advance Document::generation and reattach renderer
+catalogs before retired resources are released. Every tool mutation must mark the
+Document modified and check weak ownership plus captured document generation;
+renderer generation alone does not identify the open document. Save exports live
+GPU textures, so edits must keep MaterialBase attributes and stored definitions
+coherent. Keep BG2's single-node limitations and use scene saves for graph edits.
+
+
+## M06-03 delivered implementation
+
+[Editor tool contracts and review handoff](editor-tools.md) records actual stage,
+selection/gizmo/widget/action owners, weak document guards, native-free controls,
+independent clone/material/geometry workflows and environment presets. See the
+[maintained editor guide](../../../../doc/apps/draw_model_edit.md) and
+[manual probe/checks](../../../../tests/draw/editor_tools/README.md). Shared input
+capture and widget/export fixes are part of this integration. No build/runtime
+execution is claimed. Next continuation selects M06-04.
+
+
+## Project-lead UI parity correction (2026-10-19)
+
+The project lead reported that separate floating dashboard/properties/environment
+windows do not match `apps/model_edit` and prevent M06 acceptance. The correction
+uses `bg2e::ui::Workspace` with the same main composition: full-width toolbar,
+docked Model Properties left, Environment Options right and bottom StatusBar.
+File/View/Window menus reproduce open/import/save/quit, camera/highlight actions,
+checkable panel toggles and explicit UI/Graphics settings launch. View retains camera reset, framing, best-view and highlight actions. Geometry actions
+remain toolbar buttons and use draw-safe queued handlers. Workspace refreshes panel
+positions when the UI viewport or scale changes. `draw_model_edit` launches
+maximized like the production editor. The main document dashboard is removed;
+status and file identity live in the bottom bar.
+
+This correction supersedes the prior floating-window composition described in the
+M06-03 handoff. M06-04 source remains implemented, but project-lead acceptance is
+held until this prerequisite correction is validated.

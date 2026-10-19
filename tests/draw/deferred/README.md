@@ -14,3 +14,12 @@ These fixtures are source only. The agent has not compiled shaders/C++ or execut
 10. Exercise exact D16 and D32 image copies in transfer layouts on both native backends, with two matching sampled depth attachments and depth rendering/read-sampling to observe results. Mismatched formats/extents/usages/layouts, overlapping copies, and depth-stencil formats remain rejected. No depth upload/readback extension is implied. Keep all production examples operational.
 
 The full working Application example and reflected controls are M01-15/M01-12; FSR/upscaler injection and automatic internal-resolution policy are M01-13. This step already performs ordinary bilinear final reconstruction and requires no FSR/RT support.
+
+11. Construct `RendererDeferred` with an empty `RendererConfiguration`. Verify the
+   retained configuration requests `GlobalIllumination`, and the created GI and
+   reflection components report `enabled() == true`. Check `available()`, status
+   and `usesGlobalIllumination()`/`usesReflections()` separately on supported and
+   unsupported devices; a requested default is not proof of native capability.
+   Then explicitly choose IBL and disable each effect, and verify those settings
+   remain authoritative. Confirm `draw_model_edit` inherits the same default and
+   the explicit IBL/off configuration in `draw_lightmaps` remains unchanged.

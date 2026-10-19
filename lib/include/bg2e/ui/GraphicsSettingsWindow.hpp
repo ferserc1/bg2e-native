@@ -47,13 +47,23 @@ class BG2E_API GraphicsSettingsWindow : public Window {
     uint64_t catalogGeneration() const;
     const draw::SettingsResult& lastResult() const;
 
+  protected:
+    explicit GraphicsSettingsWindow(bool diagnostics);
+
   private:
+    bool _diagnostics = false;
     struct State;
     std::shared_ptr<State> _state;
     std::shared_ptr<draw::RenderSettingsPreferences> _preferences;
     draw::RenderSettingsPreferences::Completion completion();
     void report(const std::string& code, const std::string& message);
     void drawContents();
+};
+
+// Session-only diagnostic controls over the same queued renderer settings.
+class BG2E_API RendererDebugWidget : public GraphicsSettingsWindow {
+  public:
+    RendererDebugWidget();
 };
 
 }

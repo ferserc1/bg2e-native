@@ -79,6 +79,10 @@ float stepOr(const reflection::PropertyMetadata& md, float fallback)
 bool drawIntEditor(const std::string& label, int& v, const reflection::PropertyInfo& prop)
 {
     const auto& md = prop.metadata;
+    if (!md.min && !md.max)
+    {
+        return Numeric::drag(label, &v, stepOr(md, 1.0f));
+    }
     int min = static_cast<int>(minOr(md, 0.0f));
     int max = static_cast<int>(maxOr(md, 100.0f));
     switch (prop.editor)
@@ -95,6 +99,10 @@ bool drawIntEditor(const std::string& label, int& v, const reflection::PropertyI
 bool drawFloatEditor(const std::string& label, float& v, const reflection::PropertyInfo& prop)
 {
     const auto& md = prop.metadata;
+    if (!md.min && !md.max)
+    {
+        return Numeric::drag(label, &v, stepOr(md, 0.1f));
+    }
     float min = minOr(md, 0.0f);
     float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -121,6 +129,10 @@ bool drawFloatEditor(const std::string& label, float& v, const reflection::Prope
 bool drawVec2Editor(const std::string& label, glm::vec2& v, const reflection::PropertyInfo& prop)
 {
     const auto& md = prop.metadata;
+    if (!md.min && !md.max)
+    {
+        return Vector::dragVec2(label, v, stepOr(md, 0.1f));
+    }
     const float min = minOr(md, 0.0f);
     const float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -145,6 +157,10 @@ bool drawVec2Editor(const std::string& label, glm::vec2& v, const reflection::Pr
 bool drawVec3Editor(const std::string& label, glm::vec3& v, const reflection::PropertyInfo& prop)
 {
     const auto& md = prop.metadata;
+    if (!md.min && !md.max)
+    {
+        return Vector::dragVec3(label, v, stepOr(md, 0.1f));
+    }
     const float min = minOr(md, 0.0f);
     const float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -169,6 +185,10 @@ bool drawVec3Editor(const std::string& label, glm::vec3& v, const reflection::Pr
 bool drawVec4Editor(const std::string& label, glm::vec4& v, const reflection::PropertyInfo& prop)
 {
     const auto& md = prop.metadata;
+    if (!md.min && !md.max)
+    {
+        return Vector::dragVec4(label, v, stepOr(md, 0.1f));
+    }
     const float min = minOr(md, 0.0f);
     const float max = maxOr(md, 1.0f);
     switch (prop.editor)
@@ -274,7 +294,16 @@ bool ReflectionWidget::editValue(std::any& value, const reflection::PropertyInfo
     if (proxy.type == PropertyType::UInt)
     {
         auto text = std::to_string(std::any_cast<uint32_t>(value));
-        if (Value::text(label, text, 32))
+        if (!proxy.metadata.min && !proxy.metadata.max)
+        {
+            auto next = std::any_cast<uint32_t>(value);
+            changed = Numeric::drag(label, &next, stepOr(proxy.metadata, 1.0f));
+            if (changed)
+            {
+                value = next;
+            }
+        }
+        else if (Value::text(label, text, 32))
         {
             uint32_t next = 0;
             const auto result = std::from_chars(text.data(), text.data() + text.size(), next);
@@ -288,7 +317,9 @@ bool ReflectionWidget::editValue(std::any& value, const reflection::PropertyInfo
     else if (proxy.type == PropertyType::Double)
     {
         auto next = std::any_cast<double>(value);
-        changed = Numeric::number(label, &next);
+        changed = !proxy.metadata.min && !proxy.metadata.max
+            ? Numeric::drag(label, &next, stepOr(proxy.metadata, 0.1f))
+            : Numeric::number(label, &next);
         if (changed)
         {
             value = next;
@@ -388,6 +419,16 @@ bool ReflectionWidget::drawScalarProperty(
         break;
     }
     case PropertyType::UInt: {
+        if (!prop.metadata.min && !prop.metadata.max)
+        {
+            auto v = std::any_cast<uint32_t>(prop.getter(instance));
+            changed = Numeric::drag(label, &v, stepOr(prop.metadata, 1.0f));
+            if (changed)
+            {
+                prop.setter(instance, v);
+            }
+            break;
+        }
         int v = static_cast<int>(std::any_cast<uint32_t>(prop.getter(instance)));
         changed = drawIntEditor(label, v, prop);
         if (changed && v >= 0)
@@ -407,7 +448,11 @@ bool ReflectionWidget::drawScalarProperty(
     }
     case PropertyType::Double: {
         auto v = std::any_cast<double>(prop.getter(instance));
-        if (prop.editor == PropertyEditor::Default || prop.editor == PropertyEditor::Input)
+        if (!prop.metadata.min && !prop.metadata.max)
+        {
+            changed = Numeric::drag(label, &v, stepOr(prop.metadata, 0.1f));
+        }
+        else if (prop.editor == PropertyEditor::Default || prop.editor == PropertyEditor::Input)
         {
             changed = Numeric::number(label, &v);
         }

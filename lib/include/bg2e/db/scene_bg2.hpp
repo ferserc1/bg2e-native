@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/scene/Scene.hpp>
 
 #include <filesystem>
 #include <memory>
@@ -35,6 +36,10 @@ class Node;
 }
 
 namespace db {
+
+extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
+    draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
+
 
 extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
     const std::filesystem::path& filePath,

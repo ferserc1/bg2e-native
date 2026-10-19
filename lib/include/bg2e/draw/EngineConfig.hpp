@@ -29,7 +29,7 @@ namespace draw {
 
 // Configuration for the experimental draw engine. The backend field selects
 // the low-level GPU API only; the high-level execution path is selected by
-// the MainLoop run overload.
+// the MainLoop run or typed OffscreenApplication init overload.
 struct EngineConfig {
     // Prefer the native Metal backend on macOS; use Vulkan elsewhere.
 #ifdef BG2E_IS_MAC
@@ -39,7 +39,7 @@ struct EngineConfig {
 #endif
     bool debug = false;
 
-    // Empty by default: the MainLoop appId is used as the fallback.
+    // Empty by default: the application appId is used as the fallback.
     std::string applicationName = "";
 
     gpu::PixelFormat colorFormat = gpu::PixelFormat::B8G8R8A8_UNORM;

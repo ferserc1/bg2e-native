@@ -35,6 +35,7 @@
 #include <utility>
 #include <limits>
 #include <cmath>
+#include <iostream>
 
 namespace bg2e {
 namespace render {
@@ -213,10 +214,14 @@ void LightmapBaker::validateTarget() const
         throw std::invalid_argument("LightmapBaker: dilationPixels must be in [1, 32]");
     }
 
-    const auto uvCheck = geo::UvAtlasValidator::validate(*mesh, 1);
+    const auto uvCheck = geo::UvAtlasValidator::validate(*mesh, 1, geo::UvAtlasOverlapPolicy::Warn);
     if (!uvCheck.valid)
     {
         throw std::invalid_argument("LightmapBaker: UV2 atlas is not usable: " + uvCheck.message);
+    }
+    if (!uvCheck.warning.empty())
+    {
+        std::clog << "Warning: LightmapBaker: " << uvCheck.warning << '\n';
     }
 }
 

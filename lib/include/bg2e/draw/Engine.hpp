@@ -33,7 +33,9 @@ class Backend;
 class Instance;
 class PhysicalDevice;
 class Device;
+class Surface;
 class WindowSurface;
+class OffscreenSurface;
 class CleanupManager;
 }
 
@@ -52,16 +54,25 @@ class BG2E_API Engine {
     Engine& operator=(const Engine&) = delete;
 
     void init(SDL_Window* window, gpu::Backend& backend, const EngineConfig& config);
+    // Windowless context; Undefined depth omits the surface's depth target.
+    void init(gpu::Size2D extent, gpu::Backend& backend, const EngineConfig& config);
     void cleanup();
 
     gpu::BackendType backendType() const;
     gpu::Instance* instance() const;
     gpu::PhysicalDevice* physicalDevice() const;
     gpu::Device* device() const;
+    // surface() preserves the window-only accessor; null in headless mode.
     gpu::WindowSurface* surface() const;
+    gpu::Surface* renderSurface() const;
+    gpu::OffscreenSurface* offscreenSurface() const;
+    uint32_t frameSlotCount() const;
     gpu::CleanupManager& cleanupManager();
 
   private:
+    void initialize(SDL_Window* window, gpu::Size2D extent, gpu::Backend& backend,
+        const EngineConfig& config, bool offscreen);
+
     struct Impl;
     std::unique_ptr<Impl> _impl;
 };

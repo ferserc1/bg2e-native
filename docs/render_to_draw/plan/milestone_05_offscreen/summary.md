@@ -92,3 +92,48 @@ pending-step requirements supersede assumptions that M04 already implements a
 headless scheduler, batch writer, full GPU-only resource export or camera-image
 averaging. Continuation acceptance does not establish hardware-specific numeric,
 performance or exported-file evidence. Preserve production references until M09.
+
+
+## M05-02 implemented baseline
+
+[Windowless execution](headless-execution.md) now owns the generic draw context and
+serial completed-frame driver. The public default offscreen delegate reuses the
+same polymorphic renderer/scene/generation lifecycle as the windowed delegate,
+with overlays excluded, one default requested frame and configurable fixed scene
+time. Slot defaults use the generic surface; window/UI entry points retain their
+window accessor and reject headless contexts. M05-02 is delivered awaiting lead
+validation. Exact image averaging/import/CLI/encoding remain M05-03–05; neither
+ordinary frame completion nor the manual probe closes this milestone.
+
+## M05-03 implementation handoff
+
+See [actual settings/averaging contracts](accumulation-settings.md). The public
+reference accumulator uses synchronous completed RGBA16F readback and CPU double
+sums; final color and optional SMAA run once after the resolved mean. No runtime
+validation is claimed.
+
+
+## M05-04 delivered example
+
+[draw_offscreen_application](../../../../examples/draw/13_offscreen_application/README.md)
+is the registered headless CLI target. Its scene reuses deferred example assets,
+materials, transparency, environment and lights with camera/light animation off.
+It writes a single non-overwriting scene.png after the exact accumulated result
+is complete. CLI options, validation, settings import policy and output contract
+are documented in its README. M05-05 verifies the temporary PNG by decoding it
+and comparing exact RGBA bytes and dimensions before publishing scene.png. Row
+zero is the top row, alpha is preserved, and no additional export color conversion
+is applied. Independent visual inspection and cross-backend orientation checks
+remain for the project lead. M05-06 records the source-backed contracts, verification
+limits and M06–M10 pending-step impact in [review.md](review.md); the next required
+step is the cumulative maintained-documentation update, M05-07.
+
+
+## M05-07 documentation closure delivery
+
+[Coverage and source mapping](documentation.md) records maintained reference,
+architecture, tutorial 13, CLI/build/output and navigation updates through M05.
+This final documentation step is delivered awaiting project lead acceptance.
+Continuation closes M05 and selects M06-01; no later application is delivered by
+this milestone. Runtime/backend/artifact evidence remains unspecified beyond the
+lead continuation convention.

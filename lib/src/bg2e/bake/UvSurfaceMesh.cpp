@@ -25,6 +25,7 @@
 #include <map>
 #include <numeric>
 #include <stdexcept>
+#include <iostream>
 
 namespace bg2e::bake {
 namespace {
@@ -43,10 +44,14 @@ UvSurfaceMesh buildUvSurfaceMesh(const geo::Mesh& mesh)
     {
         throw std::length_error("UV surface vertex/submesh identity exceeds uint32");
     }
-    const auto validation = geo::UvAtlasValidator::validate(mesh,1);
+    const auto validation = geo::UvAtlasValidator::validate(mesh,1,geo::UvAtlasOverlapPolicy::Warn);
     if (!validation.valid)
     {
         throw std::invalid_argument("Invalid bake UV2 atlas: "+validation.message);
+    }
+    if (!validation.warning.empty())
+    {
+        std::clog << "Warning: bake UV2 atlas: " << validation.warning << '\n';
     }
     const auto triangles = mesh.indices.size()/3;
     std::vector<uint32_t> parent(triangles);

@@ -54,6 +54,19 @@ combo adds `Unknown (<value>)` without changing the object; selecting a known
 option replaces it. Enum properties use a combo regardless of an explicit
 non-combo editor hint.
 
+### Numeric interaction
+
+Scalar and vector properties with neither `metadata.min` nor `metadata.max` use
+mouse-drag numeric fields. Drag horizontally to change the value; Ctrl+click or
+double-click a field to enter a number directly. This includes TransformComponent
+translation and scale, and the decomposed rows of matrix editors. The metadata
+step controls drag speed (default 1 for integers, 0.1 for floating-point values).
+Unsigned integers and doubles retain their native storage precision while dragging.
+
+Properties with bounds retain their metadata-selected editor. Transform rotation,
+for example, continues to use its bounded angle slider. Read-only fields remain
+disabled. The same behavior applies to transient values edited through `editValue`.
+
 ### Object properties
 
 An `Object` is edited in place through its object accessors. Missing reflection

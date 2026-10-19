@@ -186,7 +186,7 @@ void SoftShadowPass::initialize(Engine& engine, const LayerConfiguration& config
         _status = "Query shadows unavailable: logical query/acceleration or visibility format support is missing";
         return;
     }
-    const uint32_t slots = _requestedSlots ? _requestedSlots : (engine.surface() ? engine.surface()->inFlightFrames() : 0);
+    const uint32_t slots = _requestedSlots ? _requestedSlots : engine.frameSlotCount();
     if (!slots)
     {
         throw std::invalid_argument("Query shadows require an explicit acquired slot count without a surface");

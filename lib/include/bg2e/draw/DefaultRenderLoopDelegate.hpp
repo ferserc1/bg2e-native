@@ -49,6 +49,9 @@ class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
     // Zero internalExtent follows output; an explicit internalExtent is fixed
     // across output resizes. Output extent/format come from the retained target.
     void setRenderer(std::unique_ptr<Renderer> renderer, RendererConfiguration configuration = {});
+
+    // Stopped boundary; zero follows output, nonzero fixes the internal extent.
+    void setInternalExtent(gpu::Size2D extent);
     void setScene(std::shared_ptr<scene::Node> sceneRoot);
     std::shared_ptr<scene::Node> scene() const;
 

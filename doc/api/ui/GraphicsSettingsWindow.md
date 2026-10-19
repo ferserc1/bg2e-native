@@ -31,9 +31,11 @@ attach/detach callback owners must be explicitly composed. Extensions receive
 actual Renderer and SettingsCatalog after standard target binding. Supply live
 metadata, matching instance addresses and retained owners, not settings copies.
 
-Sections enumerate fresh descriptors/getters each frame. Read-only availability,
-status and graph/capacity diagnostics remain separate from writable requested
-options. queueEdit, importFile and restore queue generation-checked changes;
+Sections enumerate fresh graphics descriptors/getters each frame. Scene
+environment/lights and debug/capability descriptors are filtered out. Global
+shadows, indirect mode, AO/GI, reflections, temporal accumulation, denoising, color,
+resolution/upscaling and final processing remain graphics controls.
+**Show unavailable settings** controls unavailable graphics descriptors. queueEdit, importFile and restore queue generation-checked changes;
 pending() disables overlapping edits/export/persist. lastResult() reports failures.
 Renderer replacement rebinds generations and invalidates stale handles/editor IDs.
 
@@ -46,3 +48,17 @@ Manipulation invokes its existing UI cleanup before renderer teardown.
 See [live settings and target IDs](../draw/Settings.md),
 [deferred tutorial](../../tutorials/draw/10_deferred_renderer.md) and
 [light/transform editing](../../apps/draw_manipulation.md).
+
+## RendererDebugWidget
+
+Header: `<bg2e/ui/RendererDebugWidget.hpp>`. Bind a `RendererDebugWidget` to the
+same facade, call `draw()` during the UI frame, and provide an `open()` menu action.
+The widget uses the same queued generation-checked edits but shows diagnostic and
+capability descriptors only: opaque layer inspection, deferred lighting/final
+views and effect statuses. It exposes no preference import/export controls.
+
+The codec excludes diagnostic and scene values from graphics documents and skips
+legacy diagnostic entries during restore. Debug selections last for the live
+session and are never restored as preferences. `draw_model_edit` opens the widget
+through Window → Renderer Diagnostics; its Environment Options panel owns scene
+editing. See the [model editor guide](../../apps/draw_model_edit.md).

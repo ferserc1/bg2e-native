@@ -32,3 +32,19 @@ correction; this does not establish every backend/environment combination.
 
 See [GPU images](../gpu/Subresources_and_rendering.md) and
 [deferred renderer](RendererDeferred.md).
+
+## Procedural sky colors
+
+`GenerationSettings` exposes three linear RGB colors for `ProceduralSkyRenderer`:
+
+| Setting | Default RGB |
+| --- | --- |
+| `skyHorizonColor` | `(0.55, 0.65, 0.8)` |
+| `skyZenithColor` | `(0.06, 0.22, 0.6)` |
+| `groundColor` | `(0.04, 0.035, 0.025)` |
+
+RGB components must be finite and within `[0, 1]`; alpha is ignored. Both GLSL and Metal use these values. The existing horizon transition and sun remain unchanged.
+
+`scene::EnvironmentComponent` exposes matching getters and setters, reflection color editors, and JSON fields. Missing JSON fields restore the original defaults. Colors are stored with scenes and environment presets, including when an HDR image is selected, and take effect when the image path is empty. `EnvironmentGenerator::synchronize()` detects color changes and rebuilds procedural sky and IBL resources at the renderer update boundary. Direct generation users can change the colors through `configuration().defaultSky->settings()` and call `build()` again.
+
+Draw Model Edit's Environment Options uses `ui::ReflectionWidget::drawProperties()` on a cloned `EnvironmentComponent`, sharing the component editor's metadata and controls. Changes are queued through the editor's existing environment update operation before the edited component is adopted.

@@ -46,9 +46,14 @@ class BG2E_API DrawMaterialEditor {
     void setSelectionManager(const std::shared_ptr<manipulation::SelectionManager>& selection);
     void setEditMaterial(const std::shared_ptr<draw::MaterialBase>& material);
     void cleanup();
+    // Capture the owning document generation in this predicate. It runs before
+    // queued work; rebinding the guard cancels earlier pending edits.
+    void setEditGuard(std::function<bool()> guard);
 
     bool draw(UserInterface& ui);
-    bool queuePatch(const utils::MaterialModifier& modifier);
+    bool queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo = false);
+    bool queueIndirectMode(base::MaterialAttributes::IndirectTextureMode mode);
+    bool queueTextureSettings(draw::TextureSlot slot, std::function<void(base::Texture&)> edit);
     bool queueClearTexture(draw::TextureSlot slot);
 
     bool pending() const;

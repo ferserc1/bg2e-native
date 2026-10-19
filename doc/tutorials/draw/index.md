@@ -3,7 +3,7 @@
 This directory contains step-by-step tutorials for `bg2e::draw`, the
 experimental application rendering framework built over `bg2e::gpu`.
 
-Each tutorial corresponds to an example in `examples/draw/` and explains
+The numbered tutorials correspond to examples in `examples/draw/` and explain
 application setup, scene/UI delegate behavior, and GPU implementation details,
 including shader code where applicable. The series adapts selected GPU examples
 to draw's managed lifecycle and retained scene/UI composition.
@@ -27,9 +27,17 @@ exercise the experimental APIs separately from that production path.
 | 10 | [Deferred renderer](10_deferred_renderer.md) | Scene resources, query shadows, live settings, public pass injection and reduced resolution/optional FSR |
 | 11 | [Scene manipulation](11_manipulation.md) | Build a selectable scene step by step, route camera/tool gestures, edit materials and apply analyzed viewpoints |
 | 12 | [Integrated lightmaps](12_lightmaps.md) | Independent UV2, exact completed bake samples, RGB material adoption and preview ownership |
+| 13 | [Offscreen scene export](13_offscreen_application.md) | Windowless execution, exact linear camera samples, settings precedence and verified PNG output |
 
 New tutorials will be added to this table as the draw example series grows.
 The numbering follows the corresponding directories in `examples/draw/`.
+
+## Application workflow
+
+[Editing, lighting and baking a model](model_edit.md) walks through the delivered
+`apps/draw/model_edit` application. It is an application tutorial, not an additional
+numbered example target. It covers complete resource saving and focused component
+editors in addition to the numbered rendering examples.
 
 ## Prerequisites
 
