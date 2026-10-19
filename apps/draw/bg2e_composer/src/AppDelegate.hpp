@@ -57,6 +57,10 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void analyzeBestView();
     void openDocument();
     void openDocument(const std::filesystem::path& path);
+    void newDocument();
+    void importDocument(const std::filesystem::path& path, float unitsScale = 1.0f,
+        bool sourceIsZUp = false);
+    void exportSelectedModels();
     bool confirmClose();
     void requestQuit()
     {
@@ -153,9 +157,19 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::filesystem::path chooseSavePath();
 
     struct PendingIo {
-        std::filesystem::path open;
-        std::filesystem::path save;
+        enum class Kind { Open, Save, New, Import, Export };
+        Kind kind = Kind::Open;
+        std::filesystem::path path;
+        uint64_t generation = 0;
+        std::weak_ptr<bg2e::scene::Node> parent;
+        std::vector<std::weak_ptr<bg2e::scene::Node>> targets;
+        float unitsScale = 1.0f;
+        bool sourceIsZUp = false;
+        bool batch = false;
+        bool destinationConfirmed = false;
     };
+    void processDocumentIo();
+    bool saveBeforeReplace();
     bool _additiveSelection = false;
     bool _preparing = false;
     bool _quitPending = false;

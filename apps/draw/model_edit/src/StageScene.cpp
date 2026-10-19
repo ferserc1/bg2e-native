@@ -49,6 +49,11 @@ namespace model_edit {
 namespace {
 class CameraProjection final : public bg2e::math::PerspectiveProjection {
   public:
+    std::shared_ptr<bg2e::math::Projection> clone() const override
+    {
+        return std::make_shared<CameraProjection>(*this);
+    }
+
     void apply(glm::mat4& matrix) override
     {
         matrix = glm::perspectiveRH_ZO(glm::radians(fov()), _viewport.width / _viewport.height, near(), far());

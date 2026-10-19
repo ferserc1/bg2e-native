@@ -19,6 +19,7 @@
 #include "AppDelegate.hpp"
 
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/db/scene_save_dialog.hpp>
 #include <bg2e/app/MessageBox.hpp>
 #include <bg2e/draw/FsrUpscaler.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
@@ -121,6 +122,10 @@ void AppDelegate::queueInput(std::function<void()> event)
             return;
         }
         const bool manipulating = _selection && _selection->sceneInputBlocked();
+        const auto* orbit = _stage->orbitCamera();
+        const auto beforeRotation = orbit ? orbit->rotation() : glm::vec2(0);
+        const auto beforeCenter = orbit ? orbit->center() : glm::vec3(0);
+        const auto beforeDistance = orbit ? orbit->distance() : 0.0f;
         try
         {
             _stage->camera()->update(0);
@@ -130,7 +135,8 @@ void AppDelegate::queueInput(std::function<void()> event)
         {
             _status = error.what();
         }
-        if (manipulating)
+        if (manipulating || (orbit && (orbit->rotation() != beforeRotation ||
+            orbit->center() != beforeCenter || orbit->distance() != beforeDistance)))
         {
             _stage->markModified();
         }
@@ -198,6 +204,7 @@ void AppDelegate::resetCamera()
         if (auto stage = weakStage.lock())
         {
             stage->resetCamera();
+            stage->markModified();
             renderer.invalidateHistories();
         }
     });
@@ -239,6 +246,7 @@ void AppDelegate::frameSelection()
             owner->_viewpointStatus = "Selected model has no visible geometry to frame";
             return;
         }
+        owner->_stage->markModified();
         owner->_viewpointStatus = "Camera framed " + node->name();
         renderer.invalidateHistories();
     });
@@ -303,6 +311,7 @@ void AppDelegate::analyzeBestView()
                 return analysis.pixelsPerSubmesh[lhs] > analysis.pixelsPerSubmesh[rhs];
             });
             owner->_stage->applyViewpoint(candidate);
+            owner->_stage->markModified();
             owner->_viewpointStatus = "Best of " + std::to_string(samples.size()) + " views (#" +
                 std::to_string(bestIndex + 1) + "): " + std::to_string(analysis.visibleSubmeshCount) +
                 "/" + std::to_string(owner->_stage->analyzedSubmeshes().size()) + " submeshes, " +
@@ -335,12 +344,7 @@ void AppDelegate::analyzeBestView()
 
 std::filesystem::path AppDelegate::chooseSavePath()
 {
-    auto path = bg2e::app::FileDialog::getSaveFilePath({{"Scene document", "json,bg2scene,bg2e"}, {"Single BG2 model", "bg2"}});
-    if (!path.empty() && path.extension().empty())
-    {
-        path.replace_extension(".json");
-    }
-    return path;
+    return bg2e::db::getSceneSavePath();
 }
 
 void AppDelegate::requestOpen(const std::filesystem::path& path)
@@ -350,7 +354,7 @@ void AppDelegate::requestOpen(const std::filesystem::path& path)
         return;
     }
     PendingIo operation;
-    operation.open = path;
+    operation.path = path;
     // Dirty prompts run after queued edits are flushed at the stopped boundary.
     _pendingIo = std::move(operation);
     requestSceneFrame();
@@ -362,7 +366,7 @@ void AppDelegate::openDocument()
     {
         return;
     }
-    const auto path = bg2e::app::FileDialog::getOpenFilePath({{"Models and scenes", "bg2,vwglb,obj,gltf,glb,json,bg2scene,bg2e"}});
+    const auto path = bg2e::app::FileDialog::getOpenFilePath({{"Models and scenes", "bg2,vwglb,obj,gltf,glb,json,bg2scene,bg2e,vitscnj"}});
     requestOpen(path);
 }
 
@@ -373,7 +377,16 @@ void AppDelegate::openDocument(const std::filesystem::path& path)
 
 void AppDelegate::fileDropped(const std::filesystem::path& path)
 {
-    requestOpen(path);
+    const auto extension = path.extension().string();
+    if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj" ||
+        std::filesystem::is_directory(path))
+    {
+        requestOpen(path);
+    }
+    else
+    {
+        importDocument(path);
+    }
 }
 
 void AppDelegate::saveDocument(bool saveAs)
@@ -387,7 +400,11 @@ void AppDelegate::saveDocument(bool saveAs)
     {
         return;
     }
-    _pendingIo = PendingIo{{}, std::move(path)};
+    PendingIo operation;
+    operation.kind = PendingIo::Kind::Save;
+    operation.destinationConfirmed = saveAs || _stage->document().savePath.empty();
+    operation.path = std::move(path);
+    _pendingIo = std::move(operation);
     requestSceneFrame();
 }
 
@@ -425,8 +442,7 @@ bool AppDelegate::confirmClose()
     {
         // MainLoop invokes this callback between frames, before command acquisition.
         _engine->device()->waitIdle();
-        _stage->save(path);
-        return true;
+        return _stage->save(path, _stage->document().savePath.empty());
     }
     catch (const std::exception& error)
     {
@@ -446,63 +462,7 @@ void AppDelegate::prepareFrame()
         }
     } reset{_preparing};
     retireBakeFrame();
-    if (_pendingIo && _stage)
-    {
-        stopLightmapBake(true);
-        auto operation = std::move(*_pendingIo);
-        _pendingIo.reset();
-        try
-        {
-            // Save includes all edits already requested by UI/input; opening must
-            // consider their dirty notifications before offering to discard them.
-            DefaultRenderLoopDelegate::prepareFrame();
-            _engine->device()->waitIdle();
-            std::shared_ptr<bg2e::scene::Node> candidate;
-            if (!operation.open.empty())
-            {
-                candidate = _stage->load(operation.open);
-                _stage->prepareTools(candidate);
-                if (_stage->document().dirty)
-                {
-                    using Box = bg2e::app::MessageBox;
-                    const int choice = Box::showWarning("Unsaved document", "Save changes before opening another file?",
-                        {{0, "Cancel", Box::Esc}, {1, "Discard"}, {2, "Save", Box::Return}});
-                    if (choice == 2)
-                    {
-                        operation.save = _stage->document().savePath.empty() ? chooseSavePath() : _stage->document().savePath;
-                        if (operation.save.empty())
-                        {
-                            operation.open.clear();
-                        }
-                    }
-                    else if (choice != 1)
-                    {
-                        operation.open.clear();
-                    }
-                }
-            }
-            if (!operation.save.empty())
-            {
-                _stage->save(operation.save);
-                _status = "Saved " + operation.save.filename().string();
-            }
-            if (!operation.open.empty())
-            {
-                _stage->adopt(std::move(candidate), operation.open);
-                _selection->deselect();
-                for (int button = 0; button < 3; ++button)
-                {
-                    _input.mouseButtonUp(scene().get(), button, 0, 0);
-                }
-                setScene(scene()); // Rebuild renderer catalogs and drop all old slot queues.
-                _status = "Opened " + operation.open.filename().string();
-            }
-        }
-        catch (const std::exception& error)
-        {
-            _status = std::string("File operation failed: ") + error.what();
-        }
-    }
+    processDocumentIo();
     if (_selection && _stage && _selection->selectedNode() && !_stage->contains(_selection->selectedNode()))
     {
         _selection->deselect();

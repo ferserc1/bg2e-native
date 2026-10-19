@@ -150,6 +150,21 @@ void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
     updateLights();
 }
 
+std::shared_ptr<Node> Scene::releaseSceneRoot()
+{
+    auto root = std::move(_sceneRoot);
+    if (root)
+    {
+        root->_scene = nullptr;
+    }
+    _mainCameraNode = nullptr;
+    _mainEnvironment = nullptr;
+    _lightComponents.clear();
+    _lights.clear();
+    _lightsChanged = true;
+    return root;
+}
+
 void Scene::setMainCamera(CameraComponent* camera)
 {
     if (!camera)

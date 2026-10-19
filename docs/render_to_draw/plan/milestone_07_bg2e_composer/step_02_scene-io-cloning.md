@@ -98,3 +98,15 @@ the inherited single-child unwrapping rule with root components/metadata and
 repeated saves; do not infer full factory/component parity from the baseline.
 The copy's independent clone and complete-save calls are actual engine services,
 not a replacement for these Composer regressions.
+
+## M07-02 delivery
+
+See the [actual IO/clone contract](scene-io-cloning.md) and
+[unexecuted probes/manual matrix](../../../../tests/draw/composer_io/README.md).
+The app now implements stopped Open/Save/New/Import/Export, canonical scene paths,
+enabled-camera validation, explicit detached Scene-root transfer, prefab/model
+insertion and complete selected-model output. Shared factories/lookup/cloning
+preserve user subclasses or fail explicitly; camera projection copies are
+independent and perspective parameters round-trip. M06 complete resource writers
+remain authoritative. Lead compile/runtime acceptance is pending; no agent build
+or runtime checks were run.

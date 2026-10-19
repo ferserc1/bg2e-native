@@ -66,3 +66,15 @@ Reuse [implemented UV surfaces/reload](../milestone_04_lightmaps/uv-surfaces.md)
 Assemble unbaked immutable sources before starting target jobs. UV2 generation returns an independent replacement drawable and requires queue/tracing/target refresh. If material maps are adopted between targets, advance source generation and rebuild snapshots; alternatively defer all adoption until every target completes, as draw_lightmaps does. Transparent display objects are not automatic supported receivers or occluders; preserve the explicit tracing inclusion policy.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+## M07-02 scene/prefab ownership handoff
+
+Scene::releaseSceneRoot transfers a complete schema/draw scene root and clears
+its former Scene back-pointer/caches. Retain the detached container for multi-root
+files; unwrap exactly one synthetic level for a single editable/prefab root.
+Node lookup now supports registered component subclasses through their base
+interface, and clones reject shared/owned/sliced component copies. Camera
+projections have an independent virtual clone contract. Reuse these ownership
+contracts when assembling standalone sources; the Composer's camera-required
+Open policy is app-specific and must not reject camera-less bake prefabs.
+See [M07-02 actual handoff](../milestone_07_bg2e_composer/scene-io-cloning.md).

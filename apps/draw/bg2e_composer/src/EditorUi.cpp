@@ -58,20 +58,34 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             owner->openDocument();
         }
     }}});
-    file.addMenuItem({"Open glTF...", {.handler = [weakDelegate]
+    file.addMenuItem({"New Scene", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyN, .handler = [weakDelegate]
     {
-        const auto path = bg2e::app::FileDialog::getOpenFilePath({{"glTF model", "gltf,glb"}});
-        if (auto owner = weakDelegate.lock(); owner && !path.empty())
+        if (auto owner = weakDelegate.lock())
         {
-            owner->openDocument(path);
+            owner->newDocument();
         }
     }}});
-    file.addMenuItem({"Open OBJ...", {.handler = [weakDelegate]
+    file.addMenuItem({"Close Scene", {.handler = [weakDelegate]
     {
-        const auto path = bg2e::app::FileDialog::getOpenFilePath({{"OBJ model", "obj"}});
-        if (auto owner = weakDelegate.lock(); owner && !path.empty())
+        if (auto owner = weakDelegate.lock())
         {
-            owner->openDocument(path);
+            owner->newDocument();
+        }
+    }}});
+    file.addMenuItem({"Import Model or Prefab...", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            const auto path = bg2e::app::FileDialog::getOpenFilePath(
+                {{"Models and scene prefabs", "bg2,vwglb,obj,gltf,glb,json,bg2scene,bg2e,vitscnj"}});
+            owner->importDocument(path);
+        }
+    }}});
+    file.addMenuItem({"Export Selected Model(s)...", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->exportSelectedModels();
         }
     }}});
     file.addMenuItem({"Save", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [weakDelegate]

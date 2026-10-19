@@ -76,6 +76,10 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
     {
         throw std::runtime_error("Component constructor returned null for " + *type);
     }
+    if (result->ownerNode() || result->typeName() != *type)
+    {
+        throw std::logic_error("Schema constructor must return a detached component of type " + *type);
+    }
     result->deserialize(data, basePath);
     return result.release();
 }

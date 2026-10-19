@@ -10,13 +10,13 @@ This is the execution record for all implementation chats. The **Next step to im
 |---|---|
 | Workflow state | `awaiting_project_lead` |
 | Current milestone | M07 — Experimental bg2e_composer application |
-| Active step | None — M07-01 delivered |
-| Last implemented step | M07-01 — Application inventory and copy |
-| Last accepted step | M06-08 — accepted by project lead continuation instruction |
-| Awaiting project lead validation | M07-01 application startup and inventory |
-| Next step to implement | [M07-02 — Complete scene graph IO, factories and independent cloning](milestone_07_bg2e_composer/step_02_scene-io-cloning.md) |
+| Active step | None — M07-02 delivered |
+| Last implemented step | M07-02 — Complete scene graph IO, factories and independent cloning |
+| Last accepted step | M07-01 — accepted by project lead continuation instruction |
+| Awaiting project lead validation | M07-02 scene IO, camera and clone regression checks |
+| Next step to implement | [M07-03 — Scene editor, reflection, materials and manipulation](milestone_07_bg2e_composer/step_03_scene-editing.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Project lead acceptance of M07-01; backend/package coverage remains unspecified. |
+| Condition before starting | Project lead acceptance of M07-02; backend/package coverage remains unspecified. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
@@ -92,7 +92,9 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 | [M06-07](milestone_06_model_edit/step_07_review.md) | `accepted` | New review.md compares actual model editor DB/UI/bake/viewpoint/application contracts with M07–M10 requirements and updates M07–M10 handoffs. No source or CMake changes. | Read actual public API declarations and implementation records, checked affected pending summaries/steps, package-source handoff, review and downstream Markdown paths/fences, `git diff --check` and index equivalent. No compile/runtime/shader/package execution. | M06-06 accepted by project-lead continuation; runtime/package coverage remains unspecified and explicitly documented. M06-07 accepted by project lead continuation after editor corrections; zero-light rendering explicitly reported correct. | See review.md. Next M06-08 cumulative documentation; M06 remains open and M07 entry is gated on M06-08 acceptance. |
 | [M06-08](milestone_06_model_edit/step_08_documentation.md) | `accepted` | Same HEAD and inherited working tree preserved. Maintained app/tutorial/UI/settings/IO/architecture documentation reconciled through M06; new model editor tutorial and documentation.md inventory; review/summary and manual evidence reconciled. Documentation-only; no CMake changes. | Source/CLI/header/resource review; local links/anchors and fenced blocks; working-tree/index whitespace checks. No build/runtime/shader/package execution. | M06-07 and editor corrections accepted by latest project lead continuation. Lead explicitly reports correct zero-light rendering; other backend/package coverage unspecified. | M06-08 accepted by project lead continuation instruction; backend/package coverage unspecified. Next M07-01. |
 
-| [M07-01](milestone_07_bg2e_composer/step_01_application-copy.md) | `awaiting_project_lead` | HEAD bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d plus inherited changes preserved; new apps/draw/bg2e_composer app sources/README/target, apps registration and M07 inventory/handoff. | GPL/private includes/identity/draw boundary, resource helper, ownership and whitespace inspected; no configure/build/shader/runtime/package execution. | M06-08 accepted by project lead continuation instruction; backend/package coverage unspecified. | M07-01 awaits lead startup checks. Next M07-02; Composer-specific gaps mapped in application-inventory.md. |
+| [M07-01](milestone_07_bg2e_composer/step_01_application-copy.md) | `accepted` | HEAD bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d plus inherited changes preserved; new apps/draw/bg2e_composer app sources/README/target, apps registration and M07 inventory/handoff. | GPL/private includes/identity/draw boundary, resource helper, ownership and whitespace inspected; no configure/build/shader/runtime/package execution. | M06-08 accepted by project lead continuation instruction; backend/package coverage unspecified. | M07-01 accepted by project lead continuation instruction; backend/package coverage unspecified. Next M07-02; Composer-specific gaps mapped in application-inventory.md. |
+
+| [M07-02](milestone_07_bg2e_composer/step_02_scene-io-cloning.md) | `awaiting_project_lead` | HEAD bd6a95076141335550f415f47ea2a824703b119c; initially clean checkout. Composer DocumentIo/stage/menu/camera IO, shared Scene root transfer, Node subclass lookup/clone guards, factory/projection/camera/controller fixes, dependent Model Edit projection clone, source probes and documentation. | Static declarations/call sites/GPL/style/delimiters/ownership/IO/mode/include/link/whitespace checks; no configure/build/shader/runtime/probe/package execution. | M07-01 accepted by project lead continuation instruction; backend/package/scenario coverage unspecified. | Actual contracts in scene-io-cloning.md; lead checks in tests/draw/composer_io. Next M07-03, including full component/controller UI and fixture/light policy. |
 
 
 ## Open issues
@@ -1810,3 +1812,40 @@ execution, commit, staging or reset. Existing production and model-editor source
 remain unchanged; starting/finishing HEAD is
 `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d` with inherited changes preserved.
 M07-01 awaits project-lead validation; next is M07-02.
+
+
+## M07-01 accepted; M07-02 scene IO/cloning delivered (2026-10-19)
+
+The project lead requested the next step, accepting M07-01 by continuation.
+Starting/finishing HEAD is `bd6a95076141335550f415f47ea2a824703b119c`, checkout
+initially clean; no commit, staging or reset. Backend/package coverage unspecified.
+
+Composer now queues stopped Open/Save/New/Import/Export operations. Shared path
+helpers preserve Name/Name.json naming and redirected-overwrite cancellation;
+complete draw writers retain GPU-only resources and mark clean after publication.
+Document replacement is dirty-guarded; model/prefab imports insert under a weak
+selected parent with document generation and separate unit/axis wrapper. Selected
+model exports exclude descendants and node placement; each batch item publishes
+independently, with failed destination reported. Active bake work retires before IO.
+
+Added explicit Scene root ownership transfer, exact single-root unwrapping and
+complete multi-root containers. Camera-required scene Open uses schema validation
+then draw resource realization, retains perspective/optical parameters, supplies
+missing optical projection defaults and chooses the first enabled camera. The
+initial camera is now authored document state; camera controls mark changes dirty.
+Shared lookup resolves component subclasses; factories enforce detached registered
+types; Node clones reject sliced/shared/owned copies; camera projections clone
+independently; controller clones clear input gestures. Existing complete draw
+resource writers remain authoritative.
+
+[Scene IO handoff](milestone_07_bg2e_composer/scene-io-cloning.md) and
+[source probes/manual matrix](../../../tests/draw/composer_io/README.md) record
+actual APIs, resource lifetime, custom component hooks, batch failure boundaries
+and checks. Updated M07-03/04 and M08-02 with concrete ownership/input/import
+requirements. Full scene UI, fixture/light policy and async/multi-bake scheduling
+remain in their planned successors.
+
+Static GPL/style/delimiter/include/interface/mode/ownership/resource-path/cancel/
+rollback and Markdown/whitespace checks passed. No compilation, configuration,
+shader, executable, source-probe or packaging run was performed. M07-02 awaits
+lead validation; next is M07-03.

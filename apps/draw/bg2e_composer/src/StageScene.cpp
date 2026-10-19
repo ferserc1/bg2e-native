@@ -22,6 +22,8 @@
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/db/scene.hpp>
+#include <bg2e/db/scene_path.hpp>
+#include <bg2e/db/scene_save_dialog.hpp>
 #include <bg2e/db/image.hpp>
 #include <bg2e/db/scene_bg2.hpp>
 #include <bg2e/db/scene_gltf.hpp>
@@ -36,6 +38,9 @@
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/BoundingBox.hpp>
+#include <bg2e/scene/FindCameraVisitor.hpp>
+#include <bg2e/scene/UpdateVisitor.hpp>
+#include <bg2e/scene/ChainJoint.hpp>
 #include <bg2e/utils/SceneCameraUtils.hpp>
 
 #include <exception>
@@ -44,14 +49,49 @@
 #include <stdexcept>
 #include <utility>
 #include <algorithm>
+#include <cctype>
+#include <typeinfo>
 
 namespace bg2e_composer {
 namespace {
+unsigned enabledLightCount(bg2e::scene::Node* root)
+{
+    if (!root || !root->enabled())
+    {
+        return 0;
+    }
+    unsigned count = root->light() ? 1u : 0u;
+    for (const auto& child : root->children())
+    {
+        count += enabledLightCount(child.get());
+    }
+    return count;
+}
+
 class CameraProjection final : public bg2e::math::PerspectiveProjection {
   public:
+    std::shared_ptr<bg2e::math::Projection> clone() const override
+    {
+        return std::make_shared<CameraProjection>(*this);
+    }
+
     void apply(glm::mat4& matrix) override
     {
         matrix = glm::perspectiveRH_ZO(glm::radians(fov()), _viewport.width / _viewport.height, near(), far());
+    }
+};
+
+class OpticalCameraProjection final : public bg2e::math::OpticalProjection {
+  public:
+    std::shared_ptr<bg2e::math::Projection> clone() const override
+    {
+        return std::make_shared<OpticalCameraProjection>(*this);
+    }
+
+    void apply(glm::mat4& matrix) override
+    {
+        const float fov = 2.0f * std::atan(frameSize() / (2.0f * focalLength()));
+        matrix = glm::perspectiveRH_ZO(fov, _viewport.width / _viewport.height, near(), far());
     }
 };
 }
@@ -113,8 +153,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
     orbit->setRotateButtons(true, false, false);
     orbit->setPanButtons(false, false, true);
     orbit->setZoomButtons(false, true, false);
+    _model->addChild(_camera);
     resetCamera();
-    _root->addChild(_camera);
 
     auto light = std::make_shared<scene::Node>("Stage light");
     light->addComponent(scene::TransformComponent::makeTranslated(2, 2, 2));
@@ -128,6 +168,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
     _scene->setSceneRoot(_root);
     _scene->setMainCamera(_camera->camera());
     prepareTools();
+    refreshCamera();
     return _root;
 }
 
@@ -146,7 +187,11 @@ void StageScene::resetCamera()
 {
     if (_camera)
     {
-        auto* orbit = _camera->getComponent<bg2e::scene::OrbitCameraComponent>();
+        auto* orbit = orbitCamera();
+        if (!orbit)
+        {
+            return;
+        }
         orbit->setCenter({0, 0, 0});
         orbit->setDistance(8);
         orbit->setRotation({15.0f, 30.0f});
@@ -155,7 +200,14 @@ void StageScene::resetCamera()
 
 bg2e::scene::OrbitCameraComponent* StageScene::orbitCamera() const
 {
-    return _camera ? _camera->getComponent<bg2e::scene::OrbitCameraComponent>() : nullptr;
+    for (auto node = _camera.get(); node && contains(node); node = node->parent())
+    {
+        if (auto* orbit = node->getComponent<bg2e::scene::OrbitCameraComponent>())
+        {
+            return orbit;
+        }
+    }
+    return nullptr;
 }
 
 bool StageScene::frameNode(bg2e::scene::Node* node)
@@ -278,61 +330,311 @@ void cleanupTree(bg2e::scene::Node& node)
 }
 }
 
-std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path& input)
+void StageScene::discardCandidate(const std::shared_ptr<bg2e::scene::Node>& candidate) noexcept
+{
+    if (!candidate || candidate->parent() || candidate->scene())
+    {
+        return;
+    }
+    try
+    {
+        cleanupTree(*candidate);
+    }
+    catch (...)
+    {
+        // Preserve the original load/adoption exception; detached RAII resources
+        // are still released when the last candidate reference is destroyed.
+    }
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::newDocumentRoot() const
 {
     using namespace bg2e;
-    const auto path = std::filesystem::absolute(input).lexically_normal();
+    auto root = std::make_shared<scene::Node>("Scene");
+    root->addComponent(new scene::TransformComponent());
+    auto camera = std::make_shared<scene::Node>("Camera");
+    camera->addComponent(new scene::TransformComponent());
+    camera->addComponent(new scene::CameraComponent());
+    camera->camera()->setProjection(new CameraProjection());
+    auto orbit = std::make_shared<scene::OrbitCameraComponent>();
+    orbit->setDistance(8);
+    orbit->setRotation({15, 30});
+    orbit->setWheelSpeed(0.4f);
+    camera->addComponent(orbit);
+    root->addChild(camera);
+    return root;
+}
+
+void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) const
+{
+    using namespace bg2e;
+    if (auto* camera = root->camera())
+    {
+        auto* projection = camera->projection();
+        if (!projection)
+        {
+            auto fallback = std::make_shared<OpticalCameraProjection>();
+            fallback->setFrameSize(50);
+            fallback->setFocalLength(55);
+            fallback->setFar(1000);
+            camera->setProjection(fallback);
+        }
+        else if (typeid(*projection) == typeid(math::PerspectiveProjection))
+        {
+            auto converted = std::make_shared<CameraProjection>();
+            static_cast<math::PerspectiveProjection&>(*converted) =
+                *static_cast<math::PerspectiveProjection*>(projection);
+            camera->setProjection(converted);
+        }
+        else if (typeid(*projection) == typeid(math::OpticalProjection))
+        {
+            auto converted = std::make_shared<OpticalCameraProjection>();
+            static_cast<math::OpticalProjection&>(*converted) =
+                *static_cast<math::OpticalProjection*>(projection);
+            camera->setProjection(converted);
+        }
+        const auto* prepared = camera->projection();
+        if (!std::isfinite(prepared->near()) || !std::isfinite(prepared->far()) ||
+            prepared->near() <= 0 || prepared->far() <= prepared->near())
+        {
+            throw std::invalid_argument("Camera requires finite clipping planes with 0 < near < far");
+        }
+        float fov = utils::cameraVerticalFieldOfView(camera);
+        if (auto perspective = camera->projection<math::PerspectiveProjection>())
+        {
+            fov = perspective->fov();
+        }
+        else if (auto optical = camera->projection<math::OpticalProjection>())
+        {
+            if (!std::isfinite(optical->frameSize()) || !std::isfinite(optical->focalLength()) ||
+                optical->frameSize() <= 0 || optical->focalLength() <= 0)
+            {
+                throw std::invalid_argument("Optical camera requires finite positive film size and focal length");
+            }
+            fov = glm::degrees(2.0f * std::atan(optical->frameSize() / (2.0f * optical->focalLength())));
+        }
+        if (!std::isfinite(fov) || fov <= 0 || fov >= 179)
+        {
+            throw std::invalid_argument("Camera requires a finite vertical field of view in (0, 179)");
+        }
+    }
+    for (const auto& child : root->children())
+    {
+        prepareCameras(child);
+    }
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesystem::path& path,
+    bool requireCamera, bg2e::scene::SceneProgressCallback progress)
+{
+    // Parse/validate without a graphics context before resource realization.
+    auto loaded = bg2e::db::loadScene(path, progress);
+    if (!loaded || !loaded->rootNode())
+    {
+        throw std::invalid_argument("The file does not contain a scene");
+    }
+    auto wrapper = loaded->releaseSceneRoot();
+    std::shared_ptr<bg2e::scene::Node> candidate = wrapper;
+    if (wrapper->children().size() == 1)
+    {
+        candidate = wrapper->children().front();
+        wrapper->removeChild(candidate); // Unwrap the synthetic level exactly once.
+    }
+    if (requireCamera)
+    {
+        bg2e::scene::FindCameraVisitor cameras;
+        cameras.setIgnoreDisabled(true);
+        cameras.findCameras(candidate.get());
+        if (cameras.cameras().empty())
+        {
+            throw std::invalid_argument("A Composer scene requires an enabled camera; use Import for a prefab");
+        }
+    }
+    prepareCameras(candidate);
+    if (requireCamera && enabledLightCount(candidate.get()) > 8)
+    {
+        throw std::invalid_argument("Draw scenes support at most eight enabled lights");
+    }
+    bg2e::scene::SceneLoadProgress resources;
+    resources.callback = std::move(progress);
+    try
+    {
+        candidate->loadResources(*_engine, &resources);
+        return candidate;
+    }
+    catch (...)
+    {
+        discardCandidate(candidate);
+        throw;
+    }
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path& input)
+{
+    auto path = std::filesystem::absolute(input).lexically_normal();
+    if (std::filesystem::is_directory(path))
+    {
+        path = bg2e::db::resolveSceneLoadPath(path);
+    }
     const auto extension = path.extension().string();
+    if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
+    {
+        return prepareScene(path, true, nullptr);
+    }
+    auto root = newDocumentRoot();
+    root->addChild(prepareImport(path));
+    return root;
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesystem::path& input,
+    float unitsScale, bool sourceIsZUp, bg2e::scene::SceneProgressCallback progress)
+{
+    using namespace bg2e;
+    if (!std::isfinite(unitsScale) || unitsScale <= 0)
+    {
+        throw std::invalid_argument("Import units scale must be finite and positive");
+    }
+    auto path = std::filesystem::absolute(input).lexically_normal();
+    if (std::filesystem::is_directory(path))
+    {
+        path = bg2e::db::resolveSceneLoadPath(path);
+    }
+    const auto extension = path.extension().string();
+    std::shared_ptr<scene::Node> node;
     if (extension == ".bg2" || extension == ".vwglb")
     {
-        return db::loadSceneBg2(path, *_engine);
+        node = db::loadSceneBg2(path, *_engine);
     }
-    if (extension == ".gltf" || extension == ".glb")
+    else if (extension == ".gltf" || extension == ".glb")
     {
-        return db::loadGltf(path, *_engine);
+        node = db::loadGltf(path, *_engine, progress);
     }
-    if (extension == ".obj")
+    else if (extension == ".obj")
     {
-        auto drawable = db::loadDrawableObj(path, *_engine);
-        auto node = std::make_shared<scene::Node>(path.stem().string());
-        auto component = std::make_shared<scene::DrawableComponent>(drawable);
+        node = std::make_shared<scene::Node>(path.stem().string());
+        auto component = std::make_shared<scene::DrawableComponent>(db::loadDrawableObj(path, *_engine));
         component->setResourcePath(path);
         node->addComponent(component);
-        node->addComponent(new scene::TransformComponent());
-        return node;
     }
-    if (extension == ".json" || (extension == ".bg2scene" || extension == ".bg2e"))
+    else if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
     {
-        auto loaded = db::loadScene(path, *_engine);
-        auto children = loaded->rootNode()->children();
-        if (children.size() == 1)
-        {
-            loaded->rootNode()->removeChild(children[0]);
-            return children[0];
-        }
-        auto result = std::make_shared<scene::Node>(path.stem().string());
-        for (auto& child : children)
-        {
-            loaded->rootNode()->removeChild(child);
-            result->addChild(child);
-        }
-        return result;
+        node = prepareScene(path, false, progress);
     }
-    throw std::invalid_argument("Supported files: BG2, VWGLB, OBJ/MTL, glTF/GLB, JSON scene");
+    else
+    {
+        throw std::invalid_argument("Supported imports: BG2, VWGLB, OBJ/MTL, glTF/GLB and scene prefab");
+    }
+    if (!node)
+    {
+        throw std::runtime_error("Import returned no scene content");
+    }
+    auto wrapper = std::make_shared<scene::Node>(path.stem().string());
+    try
+    {
+        prepareCameras(node);
+        auto matrix = glm::mat4(1);
+        if (sourceIsZUp)
+        {
+            matrix = glm::rotate(matrix, glm::radians(-90.0f), glm::vec3(1, 0, 0));
+        }
+        matrix = glm::scale(matrix, glm::vec3(unitsScale));
+        wrapper->addComponent(new scene::TransformComponent(matrix));
+        wrapper->addChild(node);
+        prepareTools(wrapper);
+        return wrapper;
+    }
+    catch (...)
+    {
+        if (!node->parent())
+        {
+            discardCandidate(node);
+        }
+        discardCandidate(wrapper);
+        throw;
+    }
+}
+
+void StageScene::insert(std::shared_ptr<bg2e::scene::Node> candidate,
+    const std::shared_ptr<bg2e::scene::Node>& parent)
+{
+    if (!candidate || candidate->parent() || !parent || !contains(parent.get()))
+    {
+        throw std::invalid_argument("Import requires a detached candidate and a current document parent");
+    }
+    unsigned addedLights = enabledLightCount(candidate.get());
+    for (auto* node = parent.get(); node; node = node->parent())
+    {
+        if (!node->enabled())
+        {
+            addedLights = 0;
+        }
+    }
+    const unsigned totalLights = enabledLightCount(_document.root.get()) + addedLights;
+    if (totalLights > 8)
+    {
+        throw std::invalid_argument("Import would exceed eight enabled document lights");
+    }
+    parent->addChild(candidate);
+    if (totalLights == 8)
+    {
+        _fillLight->setEnabled(false); // Authored lights take priority over fixtures.
+    }
+    if (environmentNode() && _root->environment())
+    {
+        _root->removeComponent(_root->environment()->shared_from_this());
+    }
+    markModified();
+    refreshCamera();
+}
+
+void StageScene::refreshCamera()
+{
+    bg2e::scene::FindCameraVisitor find;
+    find.setIgnoreDisabled(true);
+    find.findCameras(_document.root.get());
+    for (const auto& weak : find.cameras())
+    {
+        if (auto camera = weak.lock())
+        {
+            _camera = camera->ownerNode()->shared_from_this();
+            _scene->updateLights();
+            _scene->updateEnvironment();
+            _scene->setMainCamera(camera.get());
+            return;
+        }
+    }
+    throw std::logic_error("The editable scene has no enabled camera");
 }
 
 void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source)
 {
-    if (!candidate)
+    if (!candidate || candidate->parent() || candidate->scene())
     {
-        throw std::invalid_argument("Cannot adopt an empty model");
+        throw std::invalid_argument("Cannot adopt an empty or attached scene");
+    }
+    bg2e::scene::FindCameraVisitor cameras;
+    cameras.setIgnoreDisabled(true);
+    cameras.findCameras(candidate.get());
+    if (cameras.cameras().empty())
+    {
+        throw std::invalid_argument("A Composer document requires an enabled camera");
+    }
+    prepareCameras(candidate);
+    const unsigned totalLights = enabledLightCount(candidate.get());
+    if (totalLights > 8)
+    {
+        throw std::invalid_argument("Draw scenes support at most eight enabled lights");
     }
     Document next;
     next.root = candidate;
-    next.sourcePath = std::filesystem::absolute(source).lexically_normal();
-    const auto extension = source.extension().string();
-    next.dirty = extension != ".bg2" && extension != ".vwglb" && extension != ".json" && extension != ".bg2scene" && extension != ".bg2e";
-    if (!next.dirty)
+    next.sourcePath = source.empty() ? source : std::filesystem::absolute(source).lexically_normal();
+    if (!source.empty() && std::filesystem::is_directory(next.sourcePath))
+    {
+        next.sourcePath = bg2e::db::resolveSceneLoadPath(next.sourcePath);
+    }
+    const auto extension = next.sourcePath.extension().string();
+    next.dirty = !source.empty() && extension != ".json" && extension != ".bg2scene" && extension != ".bg2e" && extension != ".vitscnj";
+    if (!source.empty() && !next.dirty)
     {
         next.savePath = next.sourcePath;
     }
@@ -347,36 +649,136 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
     }
     _model = std::move(candidate);
     _document = std::move(next);
+    if (totalLights == 8)
+    {
+        _fillLight->setEnabled(false);
+    }
     if (environmentNode() && _root->environment())
     {
         _root->removeComponent(_root->environment()->shared_from_this());
     }
-    _scene->updateAll();
+    refreshCamera();
 }
 
-void StageScene::save(const std::filesystem::path& path)
+bool StageScene::save(const std::filesystem::path& path, bool destinationConfirmed)
 {
     if (!_document.root)
     {
         throw std::logic_error("Open a document before saving");
     }
-    auto committedPath = std::filesystem::absolute(path).lexically_normal();
-    const auto extension = path.extension().string();
-    if (extension == ".bg2" || extension == ".vwglb")
+    const auto target = bg2e::db::inspectSceneSaveTarget(path);
+    const bool current = !target.pathChanged && target.path == _document.savePath;
+    auto committedPath = bg2e::db::confirmSceneSavePath(path, bg2e::db::SceneSavePathSource::Direct,
+        bg2e::db::SceneArtifactType::Scene,
+        destinationConfirmed || current ? bg2e::db::SceneOverwritePolicy::Allow : bg2e::db::SceneOverwritePolicy::Confirm);
+    if (committedPath.empty())
     {
-        bg2e::db::storeDrawableBg2(path, *_engine, _document.root.get());
+        return false;
     }
-    else if (extension == ".json" || (extension == ".bg2scene" || extension == ".bg2e"))
-    {
-        bg2e::db::saveScene(_document.root.get(), *_engine, path);
-    }
-    else
-    {
-        throw std::invalid_argument("Save as .json/.bg2scene to preserve the graph, or .bg2 for one model");
-    }
-    // Commit metadata after the resource transaction, including filesystem path allocation.
+    refreshCamera();
+    bg2e::scene::UpdateVisitor update;
+    update.update(_document.root.get(), 0);
+    bg2e::db::saveScene(_document.root.get(), *_engine, committedPath);
+    // Commit metadata only after complete resource/main publication succeeds.
     _document.savePath = std::move(committedPath);
     _document.dirty = false;
+    return true;
+}
+
+void StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
+    const std::filesystem::path& destination, bool batch)
+{
+    using namespace bg2e;
+    if (destination.empty() || nodes.empty() || (!batch && nodes.size() != 1))
+    {
+        throw std::invalid_argument("Model export requires an output and explicit selected nodes");
+    }
+    std::vector<std::pair<std::shared_ptr<scene::Node>, std::filesystem::path>> exports;
+    std::set<std::string> names;
+    // Validate every target/name before publishing the first file. Batch mode
+    // depends on selection count; non-drawable selections are skipped only there.
+    for (const auto& node : nodes)
+    {
+        if (!node || !contains(node.get()))
+        {
+            throw std::invalid_argument("Model export target is no longer in the document");
+        }
+        auto component = node->drawable();
+        if (!component || !component->drawDrawable())
+        {
+            if (!batch)
+            {
+                throw std::invalid_argument("The selected node does not own a draw model");
+            }
+            continue;
+        }
+        auto output = destination;
+        if (batch)
+        {
+            const auto& name = node->name();
+            if (name.empty() || name == "." || name == ".." || name.back() == '.' || name.back() == ' ' ||
+                name.find_first_of("/\\:<>\"|?*") != std::string::npos ||
+                std::any_of(name.begin(), name.end(), [](unsigned char c)
+                {
+                    return c < 32;
+                }))
+            {
+                throw std::invalid_argument("Model name is not a portable export directory: " + name);
+            }
+            auto key = name;
+            std::transform(key.begin(), key.end(), key.begin(), [](unsigned char c)
+            {
+                return static_cast<char>(std::toupper(c));
+            });
+            const auto stem = key.substr(0, key.find('.'));
+            if (stem == "CON" || stem == "PRN" || stem == "AUX" || stem == "NUL" ||
+                (stem.size() == 4 && (stem.starts_with("COM") || stem.starts_with("LPT")) && stem[3] >= '1' && stem[3] <= '9') ||
+                !names.insert(key).second)
+            {
+                throw std::invalid_argument("Reserved or duplicate model export name: " + name);
+            }
+            output /= name;
+            if (std::filesystem::exists(output))
+            {
+                throw std::invalid_argument("Batch export directory already exists: " + output.string());
+            }
+            output /= name + ".bg2";
+        }
+        else if (output.extension() != ".bg2")
+        {
+            throw std::invalid_argument("Export a model with a .bg2 extension");
+        }
+        // Export this node's model only: no descendants, scene components or
+        // placement transform. The live drawable is borrowed for snapshot IO.
+        auto model = std::make_shared<scene::Node>(node->name());
+        model->addComponent(new scene::DrawableComponent(component->drawDrawable()));
+        if (auto joint = node->getComponent<scene::InputChainJointComponent>())
+        {
+            model->addComponent(joint->clone());
+        }
+        if (auto joint = node->getComponent<scene::OutputChainJointComponent>())
+        {
+            model->addComponent(joint->clone());
+        }
+        exports.emplace_back(std::move(model), std::move(output));
+    }
+    if (exports.empty())
+    {
+        throw std::invalid_argument("No selected node owns a draw model");
+    }
+    for (const auto& [model, output] : exports)
+    {
+        // Each complete writer is transactional. A later batch failure leaves
+        // earlier exported models intact and reports the failed destination.
+        try
+        {
+            db::storeDrawableBg2(output, *_engine, model.get());
+        }
+        catch (const std::exception& error)
+        {
+            throw std::runtime_error("Model export failed at " + output.string() + ": " + error.what());
+        }
+    }
 }
 
 void StageScene::releaseRetired()
@@ -493,7 +895,7 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
         }
         node->template getComponent<manipulation::GizmoComponent>()->synchronizeResources();
     });
-    _scene->updateAll();
+    refreshCamera();
 }
 
 void StageScene::duplicate(const std::shared_ptr<bg2e::scene::Node>& node)
@@ -502,42 +904,22 @@ void StageScene::duplicate(const std::shared_ptr<bg2e::scene::Node>& node)
     {
         return;
     }
-    unsigned documentLights = 0;
-    unsigned copiedLights = 0;
-    visitNodes(_document.root, [&](const auto& item)
-    {
-        documentLights += bool(item->light());
-    });
-    visitNodes(node, [&](const auto& item)
-    {
-        copiedLights += bool(item->light());
-    });
-    if (copiedLights && documentLights + copiedLights > 5)
-    {
-        throw std::invalid_argument("Duplicating this branch would exceed five document lights");
-    }
-    auto copy = node->clone(); // Independent CPU/GPU mesh, material and image resources.
-    copy->setName(node->name() + " copy");
-    if (auto transform = copy->getComponent<bg2e::scene::TransformComponent>())
-    {
-        transform->translate(1, 0, 0);
-    }
     if (node == _document.root)
     {
-        auto group = std::make_shared<bg2e::scene::Node>("Model group");
-        group->addChild(copy);
-        group->addChild(node->clone());
-        _retired.reserve(_retired.size() + 1);
-        _root->addChild(group);
-        _retired.push_back(node);
-        _root->removeChild(node);
-        _model = group;
-        _document.root = group;
-        ++_document.generation;
+        throw std::invalid_argument("Select a child node to duplicate; the scene root is retained");
     }
-    else
+    auto copy = node->clone();
+    copy->setName(node->name() + " copy");
+    // Prepare every new component/resource before publishing the branch.
+    try
     {
-        node->parent()->addChild(copy);
+        prepareTools(copy);
+        insert(copy, node->parent()->shared_from_this());
+    }
+    catch (...)
+    {
+        discardCandidate(copy);
+        throw;
     }
     prepareTools();
 }
@@ -548,10 +930,20 @@ void StageScene::remove(const std::shared_ptr<bg2e::scene::Node>& node)
     {
         throw std::invalid_argument("Select a child node to remove; the document root is retained");
     }
+    if (_camera)
+    {
+        for (auto current = _camera.get(); current; current = current->parent())
+        {
+            if (current == node.get())
+            {
+                throw std::invalid_argument("Cannot remove the active camera branch");
+            }
+        }
+    }
     _retired.reserve(_retired.size() + 1);
     _retired.push_back(node);
     node->parent()->removeChild(node);
-    _scene->updateAll();
+    refreshCamera();
 }
 
 float StageScene::floorHeight() const
@@ -561,11 +953,15 @@ float StageScene::floorHeight() const
 
 void StageScene::setFillLight(bool enabled)
 {
+    if (enabled && enabledLightCount(_document.root.get()) >= 8)
+    {
+        return; // Keep the authored scene within the draw light ABI.
+    }
     if (_fillLight && _fillLight->light())
     {
         _fillLight->setEnabled(enabled);
     }
-    _scene->updateAll();
+    refreshCamera();
 }
 
 void StageScene::setFloor(bool visible, float height)
@@ -613,7 +1009,7 @@ void StageScene::adoptEnvironment(const std::shared_ptr<bg2e::scene::Node>& pres
     {
         _root->removeComponent(fixture->shared_from_this());
     }
-    _scene->updateAll();
+    refreshCamera();
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::environmentPreset() const
@@ -773,7 +1169,7 @@ void StageScene::restoreEnvironment(const std::shared_ptr<bg2e::scene::Node>& pr
             prepareTools(_fillLight);
         }
     }
-    _scene->updateAll();
+    refreshCamera();
 }
 
 void StageScene::cleanup()

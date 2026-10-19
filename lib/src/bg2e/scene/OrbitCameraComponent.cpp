@@ -31,6 +31,13 @@ std::shared_ptr<Component> OrbitCameraComponent::clone() const
 {
     auto copy = std::make_shared<OrbitCameraComponent>(*this);
     copy->_owner = nullptr;
+    copy->_mouseButtonPressed = false;
+    copy->_keys = {};
+    if (copy->_isFlying)
+    {
+        copy->_distance = copy->_savedDistance;
+        copy->_isFlying = false;
+    }
     return copy;
 }
 

@@ -138,6 +138,16 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
         {
             return dynamic_cast<ComponentT*>(_components[className].get());
         }
+        // Custom subclasses are stored under their concrete RTTI key. Prefer
+        // the exact type, then resolve a base interface in component order.
+        sortComponents();
+        for (const auto& component : _orderedComponents)
+        {
+            if (auto result = dynamic_cast<ComponentT*>(component.get()))
+            {
+                return result;
+            }
+        }
         return nullptr;
     }
 

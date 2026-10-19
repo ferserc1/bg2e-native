@@ -109,3 +109,13 @@ The separate target and draw editing foundation now exist. The
 actual reused services and M07-02–06 gaps; it is the implementation baseline for
 subsequent steps. The legacy Composer remains unchanged. Lead launch/backend
 validation is pending; no Composer-wide feature parity is claimed by M07-01.
+
+## M07-02 implementation handoff
+
+[Scene IO and cloning](scene-io-cloning.md) records queued document operations,
+canonical save paths, detached roots, camera validation, prefab/model insertion,
+selected-only export and complete resources. Shared subclass/projection clone
+contracts were tightened; source probes and lead checks are under
+[tests/draw/composer_io](../../../../tests/draw/composer_io/README.md). Full scene
+UI/fixture-light/controller policy, async services and multi-job baking remain the
+ordered M07-03–05 work. Agent checks are static; runtime/package evidence is pending.

@@ -24,3 +24,27 @@ preservation is broader than typed component construction.
 Stop scene/GPU producers for realization or replacement, retain Engine/device
 until resources are released, and use the matching DrawableComponent mode.
 See [draw resources](../draw/Resources.md).
+
+## Detached scene roots and custom component copies
+
+`scene::Scene::releaseSceneRoot()` returns the entire root as a shared pointer,
+clears its Scene back-pointer and the old Scene's camera/environment/light caches,
+and leaves `rootNode()` null. Adopt the result into another Scene/container before
+using Scene update or camera APIs again. Single-root consumers may detach exactly
+one synthetic wrapper level; multiple-root files retain the complete container.
+
+`Node::getComponent<T>()` prefers an exact type, then an ordered compatible
+subclass. Schema constructors must produce detached objects with the registered
+`typeName`; the draw route still invokes graphics-free deserialize followed by
+`loadResources(draw::Engine&)`, never a production creator. `Node::clone()` rejects
+null/shared/owned/sliced component copies and preserves common priority/serialization
+flags. User subclasses must override inherited slicing clones and implement their
+reference/resource hooks.
+
+Camera component clones now independently copy their projections through virtual
+`math::Projection::clone()`. Perspective/optical projections implement it; custom
+projection subclasses must return their own concrete type. Perspective schema IO
+retains FOV/near/far. Unsupported serialized base Camera projection types fail
+explicitly; a custom Camera component needs its own parser for custom formats.
+See the [Composer IO handoff](../../../docs/render_to_draw/plan/milestone_07_bg2e_composer/scene-io-cloning.md)
+and [manual checks](../../../tests/draw/composer_io/README.md).

@@ -21,6 +21,8 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 
 #include <bg2e/scene/Node.hpp>
+#include <stdexcept>
+#include <typeinfo>
 
 namespace bg2e::scene {
 
@@ -36,6 +38,15 @@ std::shared_ptr<Component> CameraComponent::clone() const
 {
     auto copy = std::make_shared<CameraComponent>(*this);
     copy->_owner = nullptr;
+    if (const auto* projection = _camera.projection())
+    {
+        auto independent = projection->clone();
+        if (!independent || independent.get() == projection || typeid(*independent) != typeid(*projection))
+        {
+            throw std::logic_error("Projection clone must preserve its concrete type and independent state");
+        }
+        copy->setProjection(std::move(independent));
+    }
     return copy;
 }
 

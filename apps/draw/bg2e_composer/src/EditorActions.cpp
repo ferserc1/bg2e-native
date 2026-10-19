@@ -36,7 +36,7 @@ void AppDelegate::notifyEdited(bg2e::draw::Renderer& renderer)
     invalidateLightmapSources();
     _stage->markModified();
     renderer.invalidateHistories();
-    _stage->sceneObject()->updateAll();
+    _stage->refreshCamera();
     renderer.attachScene(scene());
     setScene(scene()); // Rebind reflected catalogs at the next stopped boundary too.
     requestSceneFrame();
@@ -435,11 +435,22 @@ void AppDelegate::setCameraIntrinsics(float fov, float nearPlane, float farPlane
         {
             return;
         }
-        auto projection = _stage->camera()->template projection<bg2e::math::PerspectiveProjection>();
-        projection->setFov(fov);
-        projection->setNear(nearPlane);
-        projection->setFar(farPlane);
-        renderer.invalidateHistories();
+        auto* camera = _stage->camera();
+        if (auto* projection = camera->projection<bg2e::math::PerspectiveProjection>())
+        {
+            projection->setFov(fov);
+        }
+        else if (auto* projection = camera->projection<bg2e::math::OpticalProjection>())
+        {
+            projection->setFocalLength(projection->frameSize() / (2.0f * std::tan(glm::radians(fov) * 0.5f)));
+        }
+        else
+        {
+            return;
+        }
+        camera->projection()->setNear(nearPlane);
+        camera->projection()->setFar(farPlane);
+        notifyEdited(renderer);
     });
 }
 

@@ -24,6 +24,7 @@
 #include <bg2e/json/NodeReader.hpp>
 
 #include <memory>
+#include <stdexcept>
 
 namespace bg2e {
 namespace base {
@@ -88,6 +89,10 @@ class BG2E_API Camera {
                 proj->deserialize(projection->node());
                 _projection = proj;
             }
+            else
+            {
+                throw std::invalid_argument("Unsupported camera projection type: " + type);
+            }
         }
         else if (auto matrix = reader.getGlmMat4("projectionMatrix"))
         {
@@ -112,7 +117,7 @@ class BG2E_API Camera {
 
   protected:
     std::shared_ptr<math::Projection> _projection;
-    glm::mat4 _projMatrix;
+    glm::mat4 _projMatrix{1.0f};
 };
 
 }

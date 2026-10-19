@@ -44,6 +44,10 @@ class BG2E_API Scene {
     void setSceneRoot(std::shared_ptr<Node> scene);
     void setMainCamera(CameraComponent* camera);
 
+    // Detaches the complete root for adoption by another Scene, clearing its
+    // back-pointer and this Scene's cached component references.
+    std::shared_ptr<Node> releaseSceneRoot();
+
     // Non-throwing scene validation. Each rule is a separate static function so
     // new checks can be added independently without touching existing ones.
     // validateScene() is the aggregate entry point used by file-open flows.

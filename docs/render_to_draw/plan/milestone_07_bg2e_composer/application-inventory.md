@@ -97,3 +97,15 @@ Project lead checks after compilation:
 Starting HEAD: `bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d`, with inherited staged and
 unstaged work preserved. M06-08 accepted by project lead continuation; backend and
 package coverage unspecified. M07-01 awaits lead validation.
+
+## M07-02 inventory amendment
+
+The table above records the M07-01 baseline. Its M07-02 gaps are now implemented
+at the source level: document camera and validation, single/multi-root adoption,
+new/close and canonical complete saves, selected-only model export, prefab/model
+insertion with unit/axis wrappers and independent user-component/camera clones.
+See [actual contracts and remaining scope](scene-io-cloning.md). M07-03 retains
+scene-tree/component/controller UI and fixture/light policy; M07-04 retains
+asynchronous/server import; M07-05 retains multi-target bake scheduling.
+M07-01 was accepted by lead continuation, with backend/package coverage unspecified.
+M07-02 awaits lead validation.

@@ -59,3 +59,14 @@ Source and validation boundaries: [M03 technical review](../milestone_03_ray_tra
 Stop or retire an active bake before main-thread scene/texture/geometry adoption. Imported replacement nodes must not be published into an existing frozen bake baseline. Explicitly invalidate sources/reset targets, reacquire environment snapshots and rebind UV/result previews; a worker token alone does not establish GPU completion or valid target generations.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+## M07-02 preparation/adoption handoff
+
+Reuse StageScene::prepareImport(path, unitsScale, sourceIsZUp, progress) and
+insert(candidate, parent), documented in [scene-io-cloning.md](scene-io-cloning.md).
+They currently run synchronously at a stopped Engine boundary. Preserve their
+separate conversion wrapper, typed resource realization and document path/dirty
+semantics. Background parsing must not move GPU realization to an unsafe worker.
+Capture request and document generations plus a weak current parent; revalidate
+after asynchronous completion and before insertion/reimport removal. Retire or
+discard detached candidates before releasing their borrowed context.

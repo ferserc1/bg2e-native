@@ -48,7 +48,20 @@ class StageScene {
     const std::vector<bg2e::utils::AnalyzedSubmesh>& analyzedSubmeshes() const;
     std::shared_ptr<bg2e::scene::Node> load(const std::filesystem::path& path);
     void adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source);
-    void save(const std::filesystem::path& path);
+    bool save(const std::filesystem::path& path, bool destinationConfirmed = false);
+
+    // Call only at a stopped renderer boundary. Candidates stay detached until
+    // publication; imports preserve the current document and its save path.
+    std::shared_ptr<bg2e::scene::Node> newDocumentRoot() const;
+    std::shared_ptr<bg2e::scene::Node> prepareImport(const std::filesystem::path& path,
+        float unitsScale = 1.0f, bool sourceIsZUp = false,
+        bg2e::scene::SceneProgressCallback progress = nullptr);
+    void insert(std::shared_ptr<bg2e::scene::Node> candidate,
+        const std::shared_ptr<bg2e::scene::Node>& parent);
+    void exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
+        const std::filesystem::path& destination, bool batch);
+    void refreshCamera();
+    void discardCandidate(const std::shared_ptr<bg2e::scene::Node>& candidate) noexcept;
     void releaseRetired();
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
     bool contains(bg2e::scene::Node* node) const;
@@ -96,6 +109,10 @@ class StageScene {
     }
 
   private:
+    std::shared_ptr<bg2e::scene::Node> prepareScene(const std::filesystem::path& path,
+        bool requireCamera, bg2e::scene::SceneProgressCallback progress);
+    void prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) const;
+
     void addDrawable(const char* name, std::shared_ptr<bg2e::draw::Drawable> drawable,
         const glm::vec3& position);
 

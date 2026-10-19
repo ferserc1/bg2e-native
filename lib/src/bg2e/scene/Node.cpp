@@ -27,6 +27,7 @@
 
 #include <algorithm>
 #include <stdexcept>
+#include <typeinfo>
 
 namespace bg2e::scene {
 
@@ -93,7 +94,15 @@ std::shared_ptr<Node> Node::clone() const
     // copy, so the new node shares no component state with this one.
     for (const auto& comp : orderedComponents())
     {
-        copy->addComponent(comp->clone());
+        auto component = comp->clone();
+        if (!component || component.get() == comp.get() || component->ownerNode() ||
+            typeid(*component) != typeid(*comp))
+        {
+            throw std::logic_error("Component clone must preserve its concrete type and return a detached independent instance: " + comp->typeName());
+        }
+        component->setPriority(comp->priority());
+        component->setIgnoreSerialization(comp->ignoreSerialization());
+        copy->addComponent(std::move(component));
     }
 
     // Recursively deep copy the child subtree.
@@ -173,6 +182,7 @@ const std::unordered_map<std::string, std::shared_ptr<Component>>& Node::compone
 
 const std::vector<std::shared_ptr<Component>>& Node::orderedComponents() const
 {
+    sortComponents();
     return _orderedComponents;
 }
 

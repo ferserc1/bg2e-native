@@ -120,3 +120,28 @@ Reuse the widget and typed selection API; Composer still implements scene-tree,
 multi-node selection/edit policy and safe graph transactions. `ViewpointAnalyzer`
 borrows draw Engine/resources and runs synchronously with producers stopped, so
 scene scope and UI responsiveness remain Composer responsibilities.
+
+## M07-02 concrete IO and camera baseline
+
+Consume [scene-io-cloning.md](scene-io-cloning.md): AppDelegate exposes queued
+newDocument/importDocument/exportSelectedModels; StageScene owns detached candidate
+preparation, camera validation, sibling cloning and complete scene/model saves.
+Do not recreate these services in SceneEditor. Import parents/exports carry weak
+node identity plus document generation. Scene open/adoption unwraps exactly one
+synthetic level and retains a complete multi-root container.
+
+The initial camera now belongs to the document. refreshCamera resolves the first
+enabled depth-first camera (matching draw extraction), with an optional ancestor
+orbit controller. Complete scene open requires a camera; prefab insertion does not.
+Finish explicit active-controller input/inspector behavior, world/parent camera
+framing, and safe camera removal/component-disable policy in the scene UI. Static
+authored cameras must remain usable without inventing a controller. Keep copied
+projection parameters independent and use Projection::clone for custom projections.
+
+Floor/fill remain inherited fixtures; finish Composer's fixture/light UI policy
+before claiming product parity, including eight authored lights, no authored
+lights and light-bearing imports/duplicates. M07-02 rejects Open/import/duplicate
+publication beyond eight enabled document lights and suppresses the fill fixture
+when eight authored lights occupy the ABI. The old Model Edit five-light limit
+is removed. Apply the same preflight discipline to new-light, component-enable,
+reparent and other inspector actions before graph publication.

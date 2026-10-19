@@ -24,6 +24,7 @@
 #include <bg2e/json/NodeReader.hpp>
 
 #include <memory>
+#include <stdexcept>
 
 namespace bg2e {
 namespace math {
@@ -70,6 +71,12 @@ class Projection {
     }
 
     virtual void apply(glm::mat4& matrix) = 0;
+
+    // Custom projections must return an independent object of their own type.
+    virtual std::shared_ptr<Projection> clone() const
+    {
+        throw std::logic_error("Projection does not implement independent cloning");
+    }
 
     inline void setNear(float n)
     {
@@ -161,8 +168,19 @@ class PerspectiveProjection : public Projection {
         return _fov;
     }
 
-    void deserialize(std::shared_ptr<json::JsonNode>) override
+    std::shared_ptr<Projection> clone() const override
     {
+        return std::make_shared<PerspectiveProjection>(*this);
+    }
+
+    void deserialize(std::shared_ptr<json::JsonNode> data) override
+    {
+        Projection::deserialize(data);
+        json::ObjectReader reader(data);
+        if (auto fov = reader.getNumber("fov"))
+        {
+            _fov = *fov;
+        }
     }
 
     std::shared_ptr<json::JsonNode> serialize() override
@@ -196,6 +214,11 @@ class OpticalProjection : public Projection {
             _viewport.width / _viewport.height,
             _near,
             _far);
+    }
+
+    std::shared_ptr<Projection> clone() const override
+    {
+        return std::make_shared<OpticalProjection>(*this);
     }
 
     inline void setFocalLength(float fl)
