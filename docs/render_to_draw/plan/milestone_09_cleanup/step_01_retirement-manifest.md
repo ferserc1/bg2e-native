@@ -21,6 +21,14 @@ Current sources to inspect: [lib/include/bg2e/render/](../../../../lib/include/b
 
 ## Implementation work
 
+Use [M07 actual dependency review](../milestone_07_bg2e_composer/review.md):
+inventory shared DB CPU-reader versus production realization overloads, Scene root
+transfer/custom clone hooks, helper geometry exclusion, legacy/draw import server
+identities and db::LightmapOutputWriter's render::LightmapPixels dependency.
+Retain the corrected bool SelectableList contract and its callers; this CPU wrapper
+is not obsolete native Vulkan implementation. Package/runtime coverage remains
+explicitly unspecified except the lead-checked selection correction.
+
 1. Scan includes, qualified types, aliases/macros, umbrella headers, CMake targets, tests, standalone templates, package/install/resource paths and indirect callers outside render.
 2. Build a per-file remove/migrate/keep manifest distinguishing obsolete application APIs from neutral CPU functionality and still-needed GPU backends/SDK assets.
 3. Cross-check every production feature against an accepted new product/API. Close required gaps before deleting its reference implementation; retain historical design documents as evidence, not maintained usage instructions.
@@ -101,3 +109,14 @@ baker ownership, viewpoint helper and `draw_model_edit` bundle/package resources
 to the source inventory. Preserve both applications and their settings identities
 through M08. M06-06 runtime/package evidence remains unspecified; do not treat the
 source-level package rules as proof that production parity gates passed.
+
+
+## M07-04 import/server retirement handoff
+
+Include legacy Composer ImportServer/SceneImporter/ImportSettings and import-window
+paths in the retirement manifest. The draw app has its own namespaced service,
+joined CPU queue, preferences and private httplib include, documented in
+[async-import-service.md](../milestone_07_bg2e_composer/async-import-service.md).
+Preserve reusable db::readGltf/readObj and explicit-engine parsed-model realization
+APIs when removing production overloads. HTTP/backend runtime evidence remains
+project-lead-owned and is not established by the source handoff alone.

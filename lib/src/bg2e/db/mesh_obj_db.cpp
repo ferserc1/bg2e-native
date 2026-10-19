@@ -379,8 +379,7 @@ class ObjMaterialReader final : public tinyobj::MaterialReader {
 };
 }
 
-std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& filePath, draw::Engine& engine,
-    std::function<void()> onTextureLoaded)
+std::shared_ptr<ObjMesh> readObj(const std::filesystem::path& filePath)
 {
     auto mesh = std::make_shared<geo::MeshPNUUT>();
     std::vector<tinyobj::material_t> materials;
@@ -410,15 +409,16 @@ std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& fil
             groups.emplace_back(name, material);
         });
     geo::GenTangentsModifier<geo::MeshPNUUT>(mesh.get()).apply();
-    auto result = std::make_shared<draw::Drawable>();
-    result->setName(filePath.stem().string());
-    result->setMesh(mesh);
-    for (uint32_t i = 0; i < result->submeshesCount(); ++i)
+    auto result = std::make_shared<ObjMesh>();
+    result->name = filePath.stem().string();
+    result->mesh = mesh;
+    result->materials.resize(mesh->submeshes.size());
+    for (uint32_t i = 0; i < result->mesh->submeshes.size(); ++i)
     {
         const auto& [name, id] = groups.at(i);
-        auto& target = result->material(i);
-        result->setSubmeshName(name.empty() ? "submesh_" + std::to_string(i) : name, i);
-        result->setSubmeshGroupName(name, i);
+        auto& target = result->materials[i];
+        result->submeshNames.push_back(name.empty() ? "submesh_" + std::to_string(i) : name);
+        result->submeshGroups.push_back(name);
         if (id < 0)
         {
             continue;
@@ -475,8 +475,33 @@ std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& fil
         target.setLightEmissionScale(glm::vec2(m.emissive_texopt.scale[0], m.emissive_texopt.scale[1]));
         target.setLightEmission(std::max({m.emission[0], m.emission[1], m.emission[2]}));
     }
+    return result;
+}
+
+std::shared_ptr<draw::Drawable> loadDrawableObj(const ObjMesh& model, draw::Engine& engine,
+    std::function<void()> onTextureLoaded)
+{
+    if (!model.mesh)
+    {
+        throw std::invalid_argument("OBJ geometry is empty");
+    }
+    auto result = std::make_shared<draw::Drawable>();
+    result->setName(model.name);
+    result->setMesh(std::make_shared<geo::MeshPNUUT>(*model.mesh));
+    for (uint32_t i = 0; i < result->submeshesCount(); ++i)
+    {
+        result->setMaterial(draw::cloneMaterialAttributes(model.materials.at(i)), i);
+        result->setSubmeshName(model.submeshNames.at(i), i);
+        result->setSubmeshGroupName(model.submeshGroups.at(i), i);
+    }
     result->load(&engine, std::move(onTextureLoaded));
     return result;
+}
+
+std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& filePath, draw::Engine& engine,
+    std::function<void()> onTextureLoaded)
+{
+    return loadDrawableObj(*readObj(filePath), engine, std::move(onTextureLoaded));
 }
 
 std::shared_ptr<draw::Drawable> loadDrawableObj(const std::filesystem::path& basePath,

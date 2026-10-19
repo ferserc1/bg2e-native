@@ -22,6 +22,18 @@ Current sources to inspect: [lib/include/bg2e/render/StandaloneBakeSceneAssemble
 
 ## Implementation work
 
+Honor the M07 lead correction: unregistered JSON component types warn/skip while
+the remaining graph loads. Do not reintroduce strict unknown-type rejection in
+assembly. Registered malformed/resource failures and required bake target checks
+remain distinct; raw JSON retention is not implied by typed save.
+
+Reconcile [M07 review](../milestone_07_bg2e_composer/review.md): preserve complete
+multi-root containers and detach Scene back-pointers through releaseSceneRoot;
+unwrap only the synthetic single-root level. Do not import Composer's camera-required
+Open policy into bake prefabs. Keep chain joints, exact custom component/projection
+clone contracts and isSceneGeometry helper exclusion. Use parsed-data DB overloads,
+not Composer's worker/HTTP classes, and freeze snapshots after UV2 replacement.
+
 1. Reimplement assembly in bake using pure schema/file IO plus high-level draw resource load where needed. Preserve context/model/prefab root rules, target/source identities and optional load-target-resource behavior.
 2. Keep UV2 atlas generation/validation in geo, at the same coordinated waitIdle/rebuild boundary as editor/bake examples.
 3. Capture complete geometry/material/environment/light inputs without viewport tool/gizmo contamination; preserve joints/metadata and required target eligibility rules.
@@ -78,3 +90,13 @@ projections have an independent virtual clone contract. Reuse these ownership
 contracts when assembling standalone sources; the Composer's camera-required
 Open policy is app-specific and must not reject camera-less bake prefabs.
 See [M07-02 actual handoff](../milestone_07_bg2e_composer/scene-io-cloning.md).
+
+
+## M07-04 CPU parser handoff
+
+[Composer's implemented import boundary](../milestone_07_bg2e_composer/async-import-service.md)
+adds db::readGltf/GltfDocument and db::readObj/ObjMesh plus stopped draw realization
+of their results and existing Bg2Mesh CPU data. Reuse these DB entry points where
+assembly needs them. They do not provide a batch scheduler, filesystem snapshot,
+job cancellation or protected output publication. Keep factories/GPU work with
+the initialized standalone context and do not depend on Composer's HTTP/job classes.

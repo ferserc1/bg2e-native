@@ -50,8 +50,9 @@ class BG2E_API ComponentFactoryRegistry {
     bool contains(const std::string& componentName) const;
     Component* createDefault(const std::string& componentName) const;
 
-    // Strict schema/draw paths use the registered default constructor followed
-    // by Component's graphics-free parser. They never invoke a production Creator.
+    // Schema/draw paths use registered defaults and the graphics-free parser,
+    // never a production Creator. Unknown types warn and return nullptr; callers
+    // skip them. Invalid registered constructors/data/resources still fail.
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath);
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
         draw::Engine& engine, SceneLoadProgress* progress = nullptr);

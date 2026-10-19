@@ -12,6 +12,12 @@ upgrade the M02 continuation assumption into backend-specific runtime evidence.
 
 ## Working product
 
+Include [M07 review](../milestone_07_bg2e_composer/review.md) and its eventual
+M07-08 coverage record when auditing Composer/root/custom clone/parsed DB/thread/
+bake output guidance. The bool SelectableList contract and checked selection
+correction survive canonical cleanup; final target identities and package/backend
+claims must follow actual M09 source/evidence, not interim app handoff text.
+
 A final reviewed, coherent maintained documentation set under `doc/`, already authored incrementally by M01–M09. It covers the same final API/reference, tutorials, applications/CLI/build/distribution and validation scope originally assigned to M10. This milestone verifies the accumulated result and makes localized corrections rather than writing that set from scratch.
 
 ## Scope exclusions

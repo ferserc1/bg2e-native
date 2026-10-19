@@ -56,6 +56,19 @@ class BG2E_API SceneTree {
         return _selectionManager;
     }
 
+    // Optional intent callbacks let applications queue edits at a stopped boundary.
+    // With callbacks absent, production immediate behavior is preserved.
+    using SelectCallback = std::function<void(scene::Node*, bool)>;
+    using ReparentCallback = std::function<void(scene::Node*, scene::Node*)>;
+    void onSelect(SelectCallback callback)
+    {
+        _onSelect = std::move(callback);
+    }
+    void onReparent(ReparentCallback callback)
+    {
+        _onReparent = std::move(callback);
+    }
+
     void draw();
 
     // Called after a drag & drop reparent operation modifies the hierarchy.
@@ -70,6 +83,8 @@ class BG2E_API SceneTree {
     manipulation::SelectionManager* _selectionManager = nullptr;
 
     ChangedCallback _onChanged;
+    SelectCallback _onSelect;
+    ReparentCallback _onReparent;
 
     void drawNode(scene::Node* node);
     void handleClick(scene::Node* node);

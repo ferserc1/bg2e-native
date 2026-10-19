@@ -19,6 +19,9 @@
 #pragma once
 
 #include "Document.hpp"
+#include <bg2e/db/scene_gltf.hpp>
+#include <bg2e/db/mesh_bg2.hpp>
+#include <bg2e/db/mesh_obj.hpp>
 
 #include <bg2e/draw/Drawable.hpp>
 #include <bg2e/draw/Engine.hpp>
@@ -29,6 +32,7 @@
 #include <bg2e/utils/ViewpointAnalyzer.hpp>
 
 #include <memory>
+#include <functional>
 #include <vector>
 
 namespace bg2e_composer {
@@ -55,12 +59,20 @@ class StageScene {
     std::shared_ptr<bg2e::scene::Node> newDocumentRoot() const;
     std::shared_ptr<bg2e::scene::Node> prepareImport(const std::filesystem::path& path,
         float unitsScale = 1.0f, bool sourceIsZUp = false,
-        bg2e::scene::SceneProgressCallback progress = nullptr);
+        bg2e::scene::SceneProgressCallback progress = nullptr,
+        const bg2e::db::GltfDocument* gltf = nullptr,
+        std::shared_ptr<bg2e::json::JsonNode> schema = {},
+        const bg2e::db::Bg2Mesh* bg2 = nullptr, const bg2e::db::ObjMesh* obj = nullptr);
+    void publishImport(const std::shared_ptr<bg2e::scene::Node>& candidate,
+        const std::shared_ptr<bg2e::scene::Node>& parent,
+        const std::shared_ptr<bg2e::scene::Node>& previous = {},
+        std::function<void(bool restoring)> rebind = {});
     void insert(std::shared_ptr<bg2e::scene::Node> candidate,
         const std::shared_ptr<bg2e::scene::Node>& parent);
     void exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
         const std::filesystem::path& destination, bool batch);
     void refreshCamera();
+    void validateEditingGraph();
     void discardCandidate(const std::shared_ptr<bg2e::scene::Node>& candidate) noexcept;
     void releaseRetired();
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
@@ -110,7 +122,8 @@ class StageScene {
 
   private:
     std::shared_ptr<bg2e::scene::Node> prepareScene(const std::filesystem::path& path,
-        bool requireCamera, bg2e::scene::SceneProgressCallback progress);
+        bool requireCamera, bg2e::scene::SceneProgressCallback progress,
+        std::shared_ptr<bg2e::json::JsonNode> schema = {});
     void prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) const;
 
     void addDrawable(const char* name, std::shared_ptr<bg2e::draw::Drawable> drawable,

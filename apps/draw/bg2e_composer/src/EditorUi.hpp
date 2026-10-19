@@ -29,6 +29,8 @@
 #include <bg2e/ui/DrawMaterialEditor.hpp>
 #include <bg2e/ui/StatusBar.hpp>
 #include <bg2e/ui/Workspace.hpp>
+#include <bg2e/ui/SceneTree.hpp>
+#include <bg2e/ui/ComponentInspector.hpp>
 #include "SceneLightmapWindow.hpp"
 
 namespace bg2e_composer {
@@ -41,18 +43,22 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void drawUI() override;
 
   private:
+    void drawImportSettings(const std::shared_ptr<AppDelegate>& delegate);
+    void drawImportProgress(const std::shared_ptr<AppDelegate>& delegate);
+    void chooseImport(const std::shared_ptr<AppDelegate>& delegate);
+
+    void drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate);
     void drawTools(const std::shared_ptr<AppDelegate>& delegate);
-    void drawEnvironment(const std::shared_ptr<AppDelegate>& delegate);
     void bindDocument(const std::shared_ptr<AppDelegate>& delegate);
 
     bg2e::ui::UserInterface* _ui = nullptr;
     bg2e::ui::DrawMaterialEditor _material;
+    bg2e::ui::SceneTree _sceneTree;
+    bg2e::ui::ComponentInspector _componentInspector;
     bg2e::ui::Window _properties;
-    bg2e::ui::Window _environment;
+    bg2e::ui::Window _sceneProperties;
     uint64_t _boundGeneration = UINT64_MAX;
     bool _additive = false;
-    bool _floorVisible = true;
-    float _floorHeight = -1.05f;
     uint32_t _highlight = 2;
     std::weak_ptr<AppDelegate> _delegate;
     std::shared_ptr<bg2e::draw::RenderSettingsPreferences> _preferences;
@@ -60,10 +66,16 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     bg2e::ui::RendererDebugWidget _diagnostics;
     bg2e::ui::UISettingsWindow _uiSettings;
     SceneLightmapWindow _lightmap;
+    bg2e::ui::Window _importSettingsWindow;
+    bg2e::ui::Window _importQueueWindow;
+    std::string _importPort;
+    uint32_t _importUnits = 0;
+    bool _importZUp = false;
     bg2e::ui::Toolbar _toolbar;
     bg2e::ui::Workspace _workspace;
     bg2e::ui::StatusBar _statusBar;
     std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
+    std::shared_ptr<bg2e::ui::StatusItem> _importStatusItem;
     std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;
     uint32_t _workspaceWidth = 0;
     uint32_t _workspaceHeight = 0;

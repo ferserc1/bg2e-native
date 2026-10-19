@@ -51,6 +51,13 @@ class BG2E_API DrawableComponent : public Component {
     }
     virtual ~DrawableComponent() = default;
 
+    // Editor overlays may reuse DrawableComponent storage without representing
+    // authored scene geometry. Node::drawable excludes those helpers.
+    virtual bool isSceneGeometry() const
+    {
+        return true;
+    }
+
     enum class ExecutionMode
     {
         Uninitialized, Production, Draw

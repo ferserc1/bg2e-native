@@ -1,3 +1,21 @@
+/*
+ *    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <bg2e/db/scene.hpp>
@@ -64,27 +82,23 @@ inline void runSceneRepresentationProbe(const std::filesystem::path& directory)
         throw std::runtime_error("Reference-only round trip touched or relocated assets");
     }
     auto unknown = JSON(JsonObject{{"type", JSON("UnregisteredDbProbe")}, {"source", JSON("missing.custom")}});
-    nodeData->objectValue()["components"]->listValue().push_back(unknown);
+    auto& componentList = nodeData->objectValue()["components"]->listValue();
+    componentList.insert(componentList.begin(), unknown);
     db::writeSceneDocument(document, inputPath);
     read = db::readSceneDocument(inputPath);
     auto nodes = ObjectReader(read).getArray("scene");
     auto components = nodes->getObject(0)->getArray("components");
-    if (components->getObject(components->size() - 1)->getString("source").value_or("") != "missing.custom")
+    if (components->getObject(0)->getString("source").value_or("") != "missing.custom")
     {
         throw std::runtime_error("Raw document IO lost an unknown component");
     }
-    bool rejected = false;
-    try
+    auto withUnknown = db::loadScene(inputPath);
+    auto knownNode = withUnknown->rootNode()->children().at(0);
+    if (!knownNode->getComponent<scene::DrawableComponent>() ||
+        !knownNode->getComponent<scene::EnvironmentComponent>() ||
+        knownNode->orderedComponents().size() + 1 != componentList.size())
     {
-        db::loadScene(inputPath);
-    }
-    catch (const std::invalid_argument&)
-    {
-        rejected = true;
-    }
-    if (!rejected)
-    {
-        throw std::runtime_error("Typed graph load silently dropped an unsupported component");
+        throw std::runtime_error("Skipping an unknown component lost subsequent registered components");
     }
 }
 

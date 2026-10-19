@@ -10,13 +10,13 @@ This is the execution record for all implementation chats. The **Next step to im
 |---|---|
 | Workflow state | `awaiting_project_lead` |
 | Current milestone | M07 — Experimental bg2e_composer application |
-| Active step | None — M07-02 delivered |
-| Last implemented step | M07-02 — Complete scene graph IO, factories and independent cloning |
-| Last accepted step | M07-01 — accepted by project lead continuation instruction |
-| Awaiting project lead validation | M07-02 scene IO, camera and clone regression checks |
-| Next step to implement | [M07-03 — Scene editor, reflection, materials and manipulation](milestone_07_bg2e_composer/step_03_scene-editing.md) |
+| Active step | None — M07-07 Composer UI parity correction delivered |
+| Last implemented step | M07-07 — Review M07 scene/import contracts and revise CLI/cleanup |
+| Last accepted step | M07-06 including selection-crash correction — explicitly checked and accepted by project lead |
+| Awaiting project lead validation | M07-07 corrections including unknown-component warning/skip during Open Scene |
+| Next step to implement | [M07-08 — Update cumulative implementation documentation](milestone_07_bg2e_composer/step_08_documentation.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Project lead acceptance of M07-02; backend/package coverage remains unspecified. |
+| Condition before starting | Project lead validation of Open Scene and UI corrections before accepting M07-07; M07-08 remains the successor. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
@@ -94,7 +94,12 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 
 | [M07-01](milestone_07_bg2e_composer/step_01_application-copy.md) | `accepted` | HEAD bc3ccb7e78c178742fc9b0c210df8f2d0ee4527d plus inherited changes preserved; new apps/draw/bg2e_composer app sources/README/target, apps registration and M07 inventory/handoff. | GPL/private includes/identity/draw boundary, resource helper, ownership and whitespace inspected; no configure/build/shader/runtime/package execution. | M06-08 accepted by project lead continuation instruction; backend/package coverage unspecified. | M07-01 accepted by project lead continuation instruction; backend/package coverage unspecified. Next M07-02; Composer-specific gaps mapped in application-inventory.md. |
 
-| [M07-02](milestone_07_bg2e_composer/step_02_scene-io-cloning.md) | `awaiting_project_lead` | HEAD bd6a95076141335550f415f47ea2a824703b119c; initially clean checkout. Composer DocumentIo/stage/menu/camera IO, shared Scene root transfer, Node subclass lookup/clone guards, factory/projection/camera/controller fixes, dependent Model Edit projection clone, source probes and documentation. | Static declarations/call sites/GPL/style/delimiters/ownership/IO/mode/include/link/whitespace checks; no configure/build/shader/runtime/probe/package execution. | M07-01 accepted by project lead continuation instruction; backend/package/scenario coverage unspecified. | Actual contracts in scene-io-cloning.md; lead checks in tests/draw/composer_io. Next M07-03, including full component/controller UI and fixture/light policy. |
+| [M07-02](milestone_07_bg2e_composer/step_02_scene-io-cloning.md) | `accepted` | HEAD bd6a95076141335550f415f47ea2a824703b119c; initially clean checkout. Composer DocumentIo/stage/menu/camera IO, shared Scene root transfer, Node subclass lookup/clone guards, factory/projection/camera/controller fixes, dependent Model Edit projection clone, source probes and documentation. | Static declarations/call sites/GPL/style/delimiters/ownership/IO/mode/include/link/whitespace checks; no configure/build/shader/runtime/probe/package execution. | M07-01 accepted by project lead continuation instruction; backend/package/scenario coverage unspecified. | Accepted by project lead continuation instruction; backend coverage unspecified. Actual contracts in scene-io-cloning.md; lead checks in tests/draw/composer_io. Next M07-03, including full component/controller UI and fixture/light policy. |
+| [M07-03](milestone_07_bg2e_composer/step_03_scene-editing.md) | `accepted` | HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c; initially clean. Composer SceneEditor/actions/tools/camera/input, shared SceneTree intents, explicit node-only selection and Drawable helper separation. | Static API/include/ownership/rollback/camera/light/GPL/style/Markdown/whitespace checks; no build, shaders, runtime or packaging. | M07-02 accepted by project lead continuation instruction; backend/scenario coverage unspecified. | Accepted including bool-reference correction by project lead continuation instruction; backend coverage unspecified. scene-editing.md records actual contracts and lead checklist. Next M07-04. |
+| [M07-04](milestone_07_bg2e_composer/step_04_async-import-service.md) | `accepted` | HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus preserved M07-03 work. New app-local importer/server/settings/queue UI and stopped publication/rollback; reusable CPU glTF/OBJ/BG2 realization boundaries. | Static GPL/style/delimiter/include/API/thread/ownership/rollback/protocol/Markdown/whitespace review; no configuration/build, shader, parser, HTTP, app, package or probe execution. | Accepted by project lead continuation instruction; backend/package/HTTP coverage unspecified. | Actual contracts in async-import-service.md; lead matrix in tests/draw/composer_import. M07-05 follows. |
+| [M07-05](milestone_07_bg2e_composer/step_05_scene-baking.md) | `accepted` | Same HEAD plus preserved inherited work; app-local serial selected-subtree/scene batches, retained per-target outputs, staged texture preparation/adoption, previews and cleanup. No CMake/core/shader edits. | Static API/call-site/source/ownership/UV/output/GPL/style/link/whitespace checks; no configuration/build/shader/app/GPU/package/probe execution. | Accepted by project lead continuation instruction; backend/package coverage unspecified. | Actual contracts in scene-baking.md; manual checks in tests/draw/composer_baking. M07-06 follows. |
+| [M07-06](milestone_07_bg2e_composer/step_06_product-validation.md) | `accepted` | Same HEAD plus inherited work preserved; product-validation.md, workflow/distribution matrix, restored Chain controls and selection-crash correction: missing Composer list scope plus bool beginList handling in every caller. No CMake/vendor edits. | Static source/API/Chain clone/schema/ownership/style, package routing, table scopes, GPL/delimiters, Markdown paths/fences and whitespace checks; no build/shader/app/HTTP/GPU/package execution. | Lead explicitly confirms the selection correction is checked and requests continuation; M07-06 including corrections accepted. Backend/package detail unspecified. | Lead matrices retained; M07-07 follows. |
+| [M07-07](milestone_07_bg2e_composer/step_07_review.md) | `awaiting_project_lead` | HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus inherited work; review/remaining-plan updates, followed by requested Composer UI correction: left Model Properties, right Scene, removal of environment panel and shared ComponentInspector intent callbacks. | Review inventory plus eight corrected source GPL/delimiter/API/scope/style checks, local Markdown paths and working-tree/index whitespace. No build/shader/app/HTTP/GPU/package execution. | M07-06 accepted including checked selection correction. Lead subsequently rejects panel/component UI parity; correction now delivered for validation. | See ui-parity-correction.md. M07-08 remains conditional on corrected review/UI acceptance; no M08/retirement authorization. |
 
 
 ## Open issues
@@ -1849,3 +1854,244 @@ Static GPL/style/delimiter/include/interface/mode/ownership/resource-path/cancel
 rollback and Markdown/whitespace checks passed. No compilation, configuration,
 shader, executable, source-probe or packaging run was performed. M07-02 awaits
 lead validation; next is M07-03.
+
+
+## M07-02 accepted; M07-03 scene editor delivered (2026-10-19)
+
+Project lead continuation accepts M07-02; backend/package coverage unspecified.
+Starting/finishing HEAD is f7c2498cb4c29e27921c91809043dcf5fe4d963c, initially
+clean. No CMake edit, build/configuration, shader, executable, package, commit,
+staging or reset operation was performed.
+
+Implemented the hierarchical SceneTree with stopped weak selection/reparent
+intents, explicit node-only selection, separate typed submesh/material rows,
+lightweight staged reflected component editing, node/component creation/removal,
+enable validation and rollback. Eight enabled document lights and at least one
+enabled camera are enforced across these graph changes. Transform tools now apply
+to selected scene nodes; runtime Gizmo Drawable storage is excluded by the explicit
+isSceneGeometry contract from Node::drawable and Composer geometry/bake lookup.
+
+Only the active authored camera controller receives viewport input. Camera changes
+clear controller gesture state; framing/best-view application converts world
+candidates into a rigid/uniform orbit parent, preserving projections and rejecting
+unrepresentable parent transforms before changing the pose. Existing materials,
+viewpoint and renderer/upscaler settings import/export remain integrated.
+
+[Scene editing handoff](milestone_07_bg2e_composer/scene-editing.md) records source
+contracts, primary-node versus selection-wide action policy, rollback/lifecycle,
+projection/parent limits and the lead's Vulkan/Metal/fallback/production regression
+checklist. M07-04/05 consume these mutation and invalidation hooks. Static checks
+only; no compilation or runtime evidence is claimed. M07-03 awaits project-lead
+validation; next is M07-04.
+
+
+## M07-03 correction — submesh selection bool reference
+
+The project lead reported compilation failure in SceneEditor.cpp: a temporary
+bool returned by SelectionManager::isSelected was passed to SelectableList::item,
+which requires bool&. Stored the result in a mutable local bool before calling
+the widget; the existing queued selection action remains authoritative. This is
+unrelated to the const qualification of isSelected. Static signature/call-site
+inspection and git diff --check passed; no compilation or runtime check was run.
+M07-03 including this correction awaits lead validation; next remains M07-04.
+
+
+## M07-03 accepted; M07-04 asynchronous import/service delivered (2026-10-19)
+
+The project lead requested the next step, accepting M07-03 and its bool-reference
+compiler correction by continuation. Starting/finishing HEAD is
+f7c2498cb4c29e27921c91809043dcf5fe4d963c with inherited M07-03 modifications
+preserved. No CMake/configure/build/shader/executable/HTTP/package/probe command,
+commit, staging or reset was performed. Backend/HTTP coverage is unspecified.
+
+Added app-local ImportServer/Request/Settings and a joinable SceneImporter CPU
+worker with one active/16 waiting jobs, Loader/cancel/queue UI and independent
+service preferences. The localhost POST /import and GET /status protocol retains
+its occupied HTTP slot, errors, units/axis settings and canonical remote reimport.
+Worker results carry independent request/document/cancellation and weak destination/
+reimport identities. Admission captures document generation before main-thread
+polling; successful scene replacement cancels old admission/jobs and clears tracking.
+Same-renderer scene/resize rebinds reacquire current generation, while a different
+renderer or removed/moved target rejects publication. Worker/HTTP shutdown joins
+before Engine teardown; no detached loading task touches draw resources.
+
+DB now separates CPU glTF parser/buffers, OBJ/MTL geometry/attributes and existing
+BG2 parsing from explicit stopped draw realization. Prefab schema parsing is also
+worker-only; factories, vertices/images/material realization and GPU submissions
+stay on the main thread. Source parser subsets remain unchanged. Stage import
+publication preflights camera/eight-light constraints excluding the old subtree,
+keeps previous resources alive through extraction/settings rebind, and restores
+graph/sibling/camera/environment/dirty state on ordinary failure. Bake source work,
+selection/gesture capture, clipboard and histories are invalidated at the relevant
+boundaries. Failed rollback bindings propagate to renderer-first teardown.
+
+[Async import handoff](milestone_07_bg2e_composer/async-import-service.md) records
+actual APIs, resource/thread/pause/cancel/publication semantics, cooperative parser
+cancellation and synchronous realization limits. Maintained DB/service references,
+app README, inventory, M07 review/bake and M08/M09 handoffs were updated. The
+[lead matrix](../../../tests/draw/composer_import/README.md) covers queue, HTTP,
+reimport, stale targets, shutdown and Vulkan/Metal/fallback/production regression.
+Static checks only; no compiled, executed or hardware behavior is claimed.
+M07-04 awaits project-lead validation; next is M07-05.
+
+## M07-04 accepted; M07-05 scene baking delivered
+
+Project lead continuation accepts M07-04; backend/package/HTTP coverage remains
+unspecified. Starting HEAD is f7c2498cb4c29e27921c91809043dcf5fe4d963c with inherited
+M07-03/04 changes preserved. No commit/reset/staging, CMake, core API or shader
+changes, configuration, compilation, executable, GPU, probe or package execution.
+
+Composer now schedules unique selected-subtree or whole-document receivers
+serially through one integrated context and one live baker. UV2 preflight retains
+Warn overlap policy. Every typed result is captured after completion before any
+receiver material changes; previous bakers release before successor creation.
+Stopped application validates context/document/node/drawable identities, prepares
+all temporary linear byte/HDR textures before mutation, preserves live/stored
+baked mode/UV metadata and marks dirty for complete scene save. Per-target previews
+retain applied images separately and release before Engine teardown. Cancellation,
+source edits/imports and renderer-binding changes invalidate pending adoption.
+Partial material adoption failures remain explicitly reported/non-atomic; unused
+preparation files roll back, while referenced applied sources remain available.
+
+[Scene-baking contracts](milestone_07_bg2e_composer/scene-baking.md) and
+[lead checks](../../../tests/draw/composer_baking/README.md) record memory,
+completion, precision, save and verification limits. Static source/API/style,
+ownership, local link and diff whitespace checks performed; no native behavior is
+claimed. M07-05 awaits lead validation; next is M07-06 product validation, not the
+milestone review or documentation closure.
+
+## M07-05 accepted; M07-06 product validation delivered
+
+Project lead continuation accepts M07-05; exact backend/scenario/package coverage
+is unspecified. HEAD remains f7c2498cb4c29e27921c91809043dcf5fe4d963c and inherited
+changes are preserved. No commit/reset/staging, CMake edits, configure/build,
+shader compilation, app, parser, HTTP, GPU, fixture or package execution.
+
+[Product validation](milestone_07_bg2e_composer/product-validation.md) reconciles
+the historical M07-01 inventory with actual M07-02–05 IO, tree/component, import,
+material/camera/settings and bake implementations. Read-only inspection confirms
+shared bundle resources and recursive package target collection, not native launch.
+Comparison found missing production Chain add/remove controls; SceneEditor now
+adds the CPU component through queued document-checked mutations and exposes
+removal through its lightweight component inspector. Existing clone and pure
+serialization paths are reused; this missing feature is not deferred to retirement.
+
+Static source/license/style/API/ownership, Markdown path and working-tree/index
+whitespace checks performed. The consolidated lead matrix includes the correction,
+complete scene/save resources, cancel/shutdown, dialogs, Vulkan/Metal/no-RT/FSR,
+deployed resources and production regressions. M07-06 awaits validation; M07-07
+technical review is the linked successor, with M07-08 documentation still required.
+
+## M07-06 selection crash reported and correction delivered
+
+The lead reports object selection crashing in ImGui::TableNextRow with a null
+current table. Static inspection found SceneEditor.cpp calling SelectableList::item
+outside any list/table scope. This delivered M07-03 inspector defect is corrected
+under the current M07-06 product failure; prior acceptance history is preserved.
+It is not deferred work for milestone completion. No claim of runtime reproduction
+is made and no ImGui/vendor modification is needed.
+
+Composer now opens/closes its submesh list. Shared SelectableList::beginList returns
+bool and forwards BeginTable's success flag; Composer, draw/production model_edit,
+SubmeshSelector and GPUSelectionDialog skip items/endList on false. This fixes the
+separate latent clipped/skipped-table misuse without suppressing null accesses in
+ImGui. External callers need the same conditional scope and a rebuild. Public UI
+references and tests/ui/selectable_list/README.md record the contract/checks.
+
+Static call-site/API/scope/license/style and whitespace checks only; no build,
+app, shader, fixture or native runtime execution. M07-06 remains awaiting lead
+validation including this correction. M07-07 is held as successor; the milestone
+does not advance on this failure report.
+
+## M07-06 correction accepted; M07-07 technical review delivered
+
+The lead explicitly confirms the selection-crash correction is checked and asks
+to continue. M07-06 including corrections is accepted; OS/backend/SDK/package and
+other scenario coverage remains unspecified. Starting/finishing HEAD remains
+f7c2498cb4c29e27921c91809043dcf5fe4d963c, with inherited tracked/untracked work
+preserved. No source/shader/CMake edits, staging, commit/reset, configuration,
+build, executable, HTTP, GPU, fixture or package execution in this review.
+
+[M07 review](milestone_07_bg2e_composer/review.md) records actual root transfer,
+subclass/clone/projection/custom component hooks, complete versus reference IO,
+queued tree/material/camera/Chain/UI edits, separate request/document/renderer
+identities, joined CPU/HTTP workers, rollback/reimport and serial integrated bake
+completion/adoption. The lead-checked bool SelectableList scope correction remains
+part of the surviving UI contract. Package routing is source evidence only.
+
+Compared all pending M08–M10 summaries/steps and updated three summaries plus
+eleven concrete owning steps: M07-08; M08-01/02/03/05; M09-01/03/05/06;
+M10-02/04. Root index and M07 summary/product evidence are reconciled. The review
+distinguishes single-resource complete save, per-item selected export and temporary
+material adoption from still-required standalone protected batch publication.
+Remaining transitive production/shared DB/UI/app headers and the legacy output
+writer are assigned to actual M09 cleanup, not hidden by the app's draw path.
+
+Static review includes 43 owned source GPL/function-separation inventory, scoped
+brace/include/namespace/method-group review, API/ownership/dependency checks,
+Markdown paths and working-tree/index whitespace checks. No all-backend/numeric/
+package results are inferred. M07-07 awaits lead acceptance; M07-08 cumulative
+documentation is next and must be accepted before M08 begins.
+
+## Requested Composer UI parity correction after M07-07 delivery
+
+The lead requests removal of Environment Options, right-hand Scene properties,
+left-hand selected drawable/material editing and production component controls.
+This is a correction of M07-03/UI parity and the pending M07-07 assessment, not
+acceptance of M07-07 or permission to implement M07-08. Inherited work preserved.
+
+Removed the panel/draw function and environment/light/preset controls. Workspace,
+menu checkmarks and toolbar toggles now bind left Model Properties and right Scene.
+The Scene panel uses production-style independent tree/inspector child regions.
+Shared ComponentInspector retains its production defaults and adds optional
+add/remove/draw intent callbacks; Composer queues registered component creation/
+resource validation and staged CPU property edits instead of drawing fixed buttons.
+Drawable/submesh/material controls move left; multi-node editing remains materials
+only. Node creation and deletion remain toolbar actions. Floor/fill fixtures start
+disabled, document environment supersedes fallback on refresh, and tool preparation
+does not recreate removed authored Transforms. No production app, CMake, shader or
+native backend edits; no compile/runtime execution.
+
+[Correction and lead checklist](milestone_07_bg2e_composer/ui-parity-correction.md)
+record actual contracts. Review and M07-08 handoff are reconciled; static API,
+ownership/scope/license/style/link/whitespace checks performed. M07-07 plus this
+correction await validation; M07-08 remains the conditional successor.
+
+## Open Scene failure report and bounded correction
+
+The lead reports Open Scene appears to do nothing; whether the native chooser
+opens or a selected file fails validation is not specified. Source inspection
+confirms the menu queues a stopped document operation. Two concrete defects were
+corrected without claiming a reproduced or fully diagnosed runtime failure:
+
+- FileDialog::openFile/saveFile constructed an unnamed NFD::Guard temporary,
+  calling Quit before OpenDialog/SaveDialog. Named guards now retain initialization
+  until after dialog/path owners are released. PickFolder already did so.
+- Composer hid operation errors behind the Unsaved changes status. Dirty status
+  now retains the operation message; chooser exceptions and document-operation
+  failures show a visible warning, and Open explicitly records its queued kind
+  and Opening status. Existing failed-candidate cleanup/dirty replacement guard
+  remains intact; scene validation is not bypassed.
+
+No build/runtime/native dialog reproduction. Static API/lifetime/caller/whitespace
+checks only. Lead should test Open/Save chooser, cancel, opening a valid camera-
+bearing scene and an invalid/missing-resource scene; report the displayed error
+if opening still fails. Open and earlier UI corrections await validation, and the
+pending M07-07 review/M07-08 pointer does not advance.
+
+## Open Scene correction — unregistered components are nonfatal
+
+The lead identifies an unregistered JSON component as the load failure and requires
+warning/skip rather than abort. This supersedes historical strict unknown-type
+rejection in the schema/draw path. ComponentFactoryRegistry now warns and returns
+null for unregistered types; the draw overload guards null before loadResources.
+Node already skips null components and continues with later components/children.
+Registered constructors/parsers/resource failures remain distinct errors.
+
+Updated the CPU DB probe to put an unknown type before valid components and check
+successful continued loading, plus raw JSON retention. Added the missing owned
+probe GPL header. Maintained reference and operative decisions record that typed
+saves omit skipped components while raw IO remains lossless. No build or probe/
+runtime execution. Lead should reopen the reported scene and check a warning,
+remaining components/hierarchy/resources and save semantics. Correction awaits
+validation; the review/documentation pointer does not advance.

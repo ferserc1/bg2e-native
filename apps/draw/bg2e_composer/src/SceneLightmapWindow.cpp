@@ -39,7 +39,7 @@ std::shared_ptr<bg2e::scene::Node> findFirstDrawable(const std::shared_ptr<bg2e:
     {
         return nullptr;
     }
-    if (auto component = root->getComponent<bg2e::scene::DrawableComponent>();
+    if (auto component = root->drawable();
         component && component->drawDrawable())
     {
         return root;
@@ -127,7 +127,7 @@ void SceneLightmapWindow::draw()
 
 void SceneLightmapWindow::refreshUvPreview(const std::shared_ptr<bg2e::scene::Node>& target)
 {
-    auto component = target ? target->getComponent<bg2e::scene::DrawableComponent>() : nullptr;
+    auto component = target ? target->drawable() : nullptr;
     auto drawable = component ? component->drawDrawable() : nullptr;
     if (!drawable || !drawable->mesh() || !_uv0Renderer || !_uv1Renderer || !_ui || !_engine)
     {
@@ -270,7 +270,10 @@ void SceneLightmapWindow::drawContents()
 
     const auto progress = delegate->lightmapBakeProgress();
     const bool active = delegate->lightmapBakeActive();
-    if (bg2e::ui::Button::button("Start bake", false, active || _uv2Generating))
+    const bool startTarget = bg2e::ui::Button::button("Bake preview target", false, active || _uv2Generating);
+    const bool startSelected = bg2e::ui::Button::button("Bake selected subtrees", false, active || _uv2Generating);
+    const bool startScene = bg2e::ui::Button::button("Bake entire scene", false, active || _uv2Generating);
+    if (startTarget || startSelected || startScene)
     {
         _resultPreview.clear();
         _previewResultImage.reset();
@@ -287,7 +290,14 @@ void SceneLightmapWindow::drawContents()
         settings.setCpuFormat(_formatIndex == 0 ? bg2e::bake::LightmapPixelFormat::RGB8 :
             bg2e::bake::LightmapPixelFormat::RGB32F);
         settings.setDilationPixels(static_cast<uint32_t>(std::max(_dilation, 1)));
-        delegate->startLightmapBake(target, settings);
+        if (startTarget)
+        {
+            delegate->startLightmapBake(target, settings);
+        }
+        else
+        {
+            delegate->startLightmapBatch(startScene, settings);
+        }
     }
     if (active && bg2e::ui::Button::button("Cancel bake"))
     {
@@ -299,7 +309,7 @@ void SceneLightmapWindow::drawContents()
     {
         bg2e::ui::Text::text(progress.status);
     }
-    if (auto result = delegate->lightmapResult())
+    if (auto result = delegate->lightmapResult(target))
     {
         if (_previewResultImage != result->image)
         {

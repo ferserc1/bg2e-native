@@ -1,5 +1,11 @@
 # M07-01 Composer application inventory
 
+Current reconciliation: [M07-06 product validation](product-validation.md) maps
+all workflow families to implementation and lead checks. The original table below
+is the historical M07-01 gap inventory. M07-06 also restores Chain component
+add/remove controls through guarded queued edits; actual native/package coverage
+remains unspecified.
+
 [Step](step_01_application-copy.md) · [Summary](summary.md) · [Progress](../progress.md)
 
 ## Delivered foundation
@@ -52,7 +58,7 @@ or component-factory validation.
 | SceneImporter: canonical path table, weak node tracking, reimport wrapper and parent | No app importer table yet | M07-04 retain identifiers/parent, unitsScale, YUp/ZUp wrapper, stale scene/request rejection and table clear |
 | ImportSettings/Window: enabled setting, port default 8643/range 1024–49151 | No import preferences are read or changed | M07-04 distinct scope and UI; avoid both apps binding the same port unexpectedly |
 | StageScene viewpoint camera analysis | utils::ViewpointAnalyzer and applyViewpointToOrbitCamera, stopped update with document/renderer/target validity | M07-03 Composer active camera and target semantics |
-| SceneLightmapWindow and multi-target LightmapBakeJob vector | SceneLightmapWindow wraps inherited single-active-baker UV/preview/temporary-result application | M07-05 multi-target scheduling, per-target result/identity, progress/cancel, invalidation and complete-save regression |
+| SceneLightmapWindow and multi-target LightmapBakeJob vector | M07-05 serial selected-subtree/scene scheduler retains all outputs before staged texture preparation and material adoption; target-specific previews and complete-save sources | M07-06 runtime AO/GI, progress/cancel, invalidation and complete-save regression; see scene-baking.md |
 | RenderSettingsPreferences and production settings UI | draw live settings/preferences, GraphicsSettingsWindow plus separate RendererDebugWidget | M07-06 persistence/backend/SDK fallback checks |
 | app resources/distribution | Separate target uses shared SDL bundle deployment; distribution collection recursively discovers registered executable targets | M07-06 launch/resource/package verification |
 
@@ -109,3 +115,35 @@ scene-tree/component/controller UI and fixture/light policy; M07-04 retains
 asynchronous/server import; M07-05 retains multi-target bake scheduling.
 M07-01 was accepted by lead continuation, with backend/package coverage unspecified.
 M07-02 awaits lead validation.
+
+
+## M07-03 inventory amendment
+
+Scene-tree intents, primary-node component/graph editing, node-only/submesh
+selection, general transform gizmos, active camera input, camera/light validation
+and the existing material/viewpoint/settings tools are now integrated. See
+[scene editing contracts and lead checks](scene-editing.md). M07-02 is accepted
+by continuation. M07-03 runtime/production regression validation is pending;
+async/service and multi-target bake obligations remain M07-04/05.
+
+
+## M07-04 inventory amendment
+
+The earlier baseline's HTTP/import/settings gaps are now implemented by app-local
+ImportServer/ImportSettings/SceneImporter and ImportActions/ImportUi, with joined
+CPU readers, bounded local queue, weak document/destination guards, paused Loader,
+canonical remote reimport, publication rollback and independent preferences.
+See [actual contracts](async-import-service.md) and the
+[lead matrix](../../../../tests/draw/composer_import/README.md). M07-03 including
+its compiler correction is accepted by continuation; M07-04 awaits runtime/native
+HTTP validation. Scene-wide multi-target baking remains M07-05.
+
+## M07-05 implementation reconciliation
+
+The earlier M07-05 future-work labels above describe the initial foundation.
+[Scene baking](scene-baking.md) now implements app-local selected-subtree/scene
+jobs, frozen-source sequencing, per-target result identities/previews and staged
+temporary byte/HDR texture adoption. Safe UV2 and complete scene IO are reused;
+the integrated bake API remains single-live-target. M07-06 owns actual product
+regression evidence, including cancel/import/rebind, HDR display limits and
+save/reload. No runtime/package coverage is inferred from static delivery.

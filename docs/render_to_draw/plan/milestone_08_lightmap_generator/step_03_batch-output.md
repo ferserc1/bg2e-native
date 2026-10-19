@@ -26,6 +26,13 @@ Current sources to inspect: [lib/include/bg2e/render/StandaloneBakeBatch.hpp](..
 
 ## Implementation work
 
+The [M07 review](../milestone_07_bg2e_composer/review.md) distinguishes three
+contracts: complete single-model/scene DB publication, Composer per-item selected
+export, and temporary bake-texture material adoption. None supplies this step's
+whole-batch preflight/protected-input/overwrite guarantees. Do not copy editor
+partial-material failure handling as a batch transaction. Retain typed RGB32F HDR
+without imposing Composer's interactive half-float display limit on file output.
+
 1. Place specialized bake batch execution and output/preflight/model-copy orchestration in bake, including LightmapOutputWriter; keep generic image/scene file functions in DB.
 2. Preserve complete-batch output planning, duplicate identities/path collision checks, protected input assets/sidecars, explicit overwrite policy and atomic replacement semantics.
 3. Write LightmapPixels RGB8/RGB32F maps with format/conversion/dilation metadata and optional model copies that reference the generated resource correctly.

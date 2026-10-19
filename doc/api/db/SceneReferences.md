@@ -7,6 +7,10 @@ Headers: `<bg2e/db/scene.hpp>`, `<bg2e/db/mesh_obj.hpp>`,
 fields/components, without constructing a graph or opening referenced assets.
 `loadScene(path)` builds typed CPU attributes and unresolved references;
 `saveSceneReferences(root, path)` serializes references without GPU export.
+Unregistered component types warn and are skipped; loading continues with later
+components and child nodes. The draw-engine factory also returns null for such
+types without attempting resource loading. Typed saves do not preserve skipped
+component JSON; use raw document IO for a lossless unknown-data round trip.
 Unsupported component schema hooks fail explicitly rather than silently loading
 production resources. Components implement graphics-free `deserialize(data, path)`
 and `serializeReferences(path)`; `loadResources(draw::Engine&, progress)` is the

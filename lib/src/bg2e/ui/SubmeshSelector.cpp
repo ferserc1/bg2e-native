@@ -135,28 +135,30 @@ bool SubmeshSelector::draw()
     }
 
     Text::separator("Submeshes");
-    SelectableList::beginList(1);
     bool changed = false;
     auto node = _currentSelection.nodePtr();
     auto drawable = _currentSelection.drawablePtr();
-    for (uint32_t i = 0; i < drawableMesh->submeshesCount(); ++i)
+    if (SelectableList::beginList(1))
     {
-        auto submeshName = std::to_string(i) + " - " + drawableMesh->submeshName(i);
-        bool selected = _selectionMgr->isSelected(node, drawable, i);
-        if (SelectableList::item(submeshName, selected))
+        for (uint32_t i = 0; i < drawableMesh->submeshesCount(); ++i)
         {
-            if (_selectionMgr->isSelected(node, drawable, i))
+            auto submeshName = std::to_string(i) + " - " + drawableMesh->submeshName(i);
+            bool selected = _selectionMgr->isSelected(node, drawable, i);
+            if (SelectableList::item(submeshName, selected))
             {
-                _selectionMgr->removeFromSelectedItems(node, i);
+                if (_selectionMgr->isSelected(node, drawable, i))
+                {
+                    _selectionMgr->removeFromSelectedItems(node, i);
+                }
+                else
+                {
+                    _selectionMgr->addToSelectedItems(node, drawable, i);
+                }
+                changed = true;
             }
-            else
-            {
-                _selectionMgr->addToSelectedItems(node, drawable, i);
-            }
-            changed = true;
         }
+        SelectableList::endList();
     }
-    SelectableList::endList();
     if (Button::button("Clear Selection"))
     {
         _selectionMgr->deselect();

@@ -13,6 +13,13 @@ draw gizmos/previews must release their owners before Engine/UI teardown.
 
 ## Working product
 
+[M07 review](../milestone_07_bg2e_composer/review.md) identifies actual remaining
+transitive production dependencies in app/UI/scene/DB/manipulation umbrellas,
+legacy import services and the production LightmapOutputWriter. Preserve neutral
+parser/root-transfer/clone/helper-exclusion contracts and the corrected bool
+SelectableList API during deletion. M08 still owns standalone output parity;
+M07 acceptance and the positive selection correction are not native package proof.
+
 The engine exposes draw as its only production rendering framework. The render namespace, legacy scene Drawables/bindings/visitors, production Engine overloads, obsolete application/example entry points and temporary compatibility support are removed. New applications remain the supported products; no old application API/binary support is retained.
 
 ## Scope exclusions

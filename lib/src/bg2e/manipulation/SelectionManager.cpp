@@ -554,6 +554,20 @@ bool SelectionManager::addToSelectedItems(scene::Node* node)
         return addToSelectedItems(node, drawable, 0);
     }
 
+    return addNodeToSelection(node);
+}
+
+bool SelectionManager::addNodeToSelection(scene::Node* node)
+{
+    if (!node)
+    {
+        return false;
+    }
+    if (auto gizmo = node->getComponent<GizmoComponent>(); gizmo && gizmo->manipulationMode() != _mode)
+    {
+        throw std::logic_error("SelectionManager cannot attach tooling from another execution mode");
+    }
+
     // Node-only selection (groups, lights, cameras...). Only reachable from the
     // SceneTree for now.
     if (isSelected(node))

@@ -74,6 +74,11 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
 
     explicit GizmoComponent(render::Engine* engine);
     explicit GizmoComponent(draw::Engine* engine);
+    bool isSceneGeometry() const override
+    {
+        return false;
+    }
+
     ToolExecutionMode manipulationMode() const
     {
         return _mode;

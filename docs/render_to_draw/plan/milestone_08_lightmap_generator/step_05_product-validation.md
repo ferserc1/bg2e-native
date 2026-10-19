@@ -17,6 +17,12 @@ Current sources to inspect: [apps/lightmap_generator/](../../../../apps/lightmap
 
 ## Implementation work
 
+Carry [M07's evidence split](../milestone_07_bg2e_composer/review.md): the lead
+explicitly checked the selection-crash correction, not every native package,
+HTTP or bake-output scenario. Validate real standalone output/root/target/resource
+identities, cancellation and protected publication independently, and regression-check
+Composer's joined imports and integrated batch shutdown before retirement.
+
 1. Compare representative current CLI jobs and output semantics with the new executable, including model/prefab/context, accumulation reset, UV2 and per-target metadata.
 2. Verify byte/float formats, edge dilation, batch path preflight/overwrite/atomic output and reload of model copies.
 3. Run from packaged/installed resource paths without a window/UI; record supported Vulkan/Metal bake results and unavailable hardware accurately.

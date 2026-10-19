@@ -1,5 +1,9 @@
 # M07-05 — Scene-wide bake jobs, previews and complete saves
 
+Implementation handoff: [actual scene-batch contracts](scene-baking.md) and
+[project-lead checks](../../../../tests/draw/composer_baking/README.md). Acceptance
+and the next action remain owned by [progress](../progress.md).
+
 [Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M07-02–M07-04 and accepted M04/M06 bake integration.
@@ -69,3 +73,27 @@ source invalidation and complete-result adoption around those lower-level
 contracts. Do not put app-owned EditorBaking scheduling into the bake library or
 reuse a UI preview handle as job output ownership. See the
 [M06 review](../milestone_06_model_edit/review.md).
+
+
+## M07-03 editor mutation handoff
+
+Consume [scene-editing.md](scene-editing.md): SceneTree callbacks carry intents,
+AppDelegate queues weak document/member targets, and notifyEdited retires bake
+sources, marks dirty, invalidates histories and reattaches extraction/catalogs.
+Tree selection is explicitly node-only; submesh material intent remains separate.
+Rebuild tools and prune selection before retaining removed resources. Respect
+StageScene::validateEditingGraph camera/eight-enabled-light constraints and
+DrawableComponent::isSceneGeometry helper exclusion when adopting job output.
+M07-03 does not implement async services or multi-target bake scheduling.
+
+
+## M07-04 source/job publication handoff
+
+[Async import/service contracts](async-import-service.md) now own the joined CPU
+reader, independent request/document tokens, weak import/reimport targets and
+stopped publication/rollback. Publication calls notifyEdited and retires existing
+source bake work before rebinding selection, histories and renderer/settings.
+Multi-target bake scheduling must stay separate from the import queue and retain
+its own frozen-source/job identity. Do not resume a canceled bake when the import
+loader restores scene presentation. Reacquire current source/environment resources
+after committed import and preserve pending completed-frame retirement on failure.

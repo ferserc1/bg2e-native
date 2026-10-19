@@ -1,5 +1,16 @@
 # M07-06 — Composer feature parity and complete-scene regression
 
+Delivered evidence and remaining native checks: [product validation](product-validation.md).
+This step also restores the production Chain add/remove workflow in the draw
+inspector; compilation/runtime validation is delegated to the project lead.
+
+Consume [M07-05 scene batches](scene-baking.md) and the
+[manual bake matrix](../../../../tests/draw/composer_baking/README.md): serial
+frozen-source targets, all-results-before-adoption, temporary linear PNG/HDR
+archive sources, per-target previews and complete scene save. Explicitly check
+cancellation/import/renderer rebind, no-RT editing and documented partial-material
+adoption failure behavior; static implementation is not runtime parity evidence.
+
 [Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M07-01–M07-05.

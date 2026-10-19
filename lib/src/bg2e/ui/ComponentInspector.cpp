@@ -144,12 +144,19 @@ void ComponentInspector::draw()
 
         if (Button::button("Add Component", false))
         {
-            auto* component = scene::ComponentFactoryRegistry::get().createDefault(
-                componentOptions[_selectedComponentIndex].typeName);
-            if (component)
+            if (_onAddRequested)
             {
-                _node->addComponent(component);
-                changed = true;
+                _onAddRequested(componentOptions[_selectedComponentIndex].typeName);
+            }
+            else
+            {
+                auto* component = scene::ComponentFactoryRegistry::get().createDefault(
+                    componentOptions[_selectedComponentIndex].typeName);
+                if (component)
+                {
+                    _node->addComponent(component);
+                    changed = true;
+                }
             }
         }
         Value::comboBox(componentNames, _selectedComponentIndex, "componentType", true, true);
@@ -189,6 +196,13 @@ void ComponentInspector::draw()
             {
                 // Defer the removal until the iteration is finished
                 pendingRemove = comp;
+            }
+
+            if (_onDrawComponent)
+            {
+                _onDrawComponent(comp);
+                Group::popId();
+                continue;
             }
 
             std::vector<ResourceSnapshot> resources;
@@ -238,17 +252,20 @@ void ComponentInspector::draw()
 
     if (pendingRemove)
     {
-        // Removing a component may release resources (GPU buffers, textures)
-        // that are still in use by the current frame. Defer the removal
-        // through safeUpdateScene so it runs at the start of the next frame,
-        // after the device is idle. The node and the component are captured
-        // as shared_ptr so they stay alive until the lambda executes.
-        auto node = _node->shared_from_this();
-        app::MainLoop::current()->safeUpdateScene([node, pendingRemove]()
-                                                  {
-                                                      node->removeComponent(pendingRemove);
-                                                  });
-        changed = true;
+        if (_onRemoveRequested)
+        {
+            _onRemoveRequested(pendingRemove);
+        }
+        else
+        {
+            // Resource removal runs only after the device is idle.
+            auto node = _node->shared_from_this();
+            app::MainLoop::current()->safeUpdateScene([node, pendingRemove]()
+            {
+                node->removeComponent(pendingRemove);
+            });
+            changed = true;
+        }
     }
 
     if (changed)

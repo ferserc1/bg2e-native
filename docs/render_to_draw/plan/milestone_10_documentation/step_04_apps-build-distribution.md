@@ -10,6 +10,12 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 
 ## Audit work
 
+Use [M07 product/review evidence](../milestone_07_bg2e_composer/review.md) for
+Composer scene/Chain/table controls, local/remote import queue and port conflict,
+cooperative parser cancellation, joined shutdown and per-target bake previews/
+temporary sources. Reconcile these with canonical post-M09 app/settings identities.
+The lead-checked selection correction is not a recorded native package/HTTP matrix.
+
 1. Audit existing apps/draw guides against final model editor/composer/lightmap generator executables and current UI/import/material/viewpoint/bake/async/safe-edit workflows.
 2. Check offscreen/batch CLI settings/precedence, output paths/counts/formats/preflight/errors/overwrite behavior against implemented parsers and products.
 3. Check build generators, SDK/resources/native Vulkan/Metal deployment, package/standalone/library-update guidance against current scripts and installed layout.

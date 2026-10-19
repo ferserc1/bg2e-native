@@ -91,6 +91,26 @@ without unsafe casts. The normal depth limit and read-only behavior also apply.
 
 ## `ComponentInspector`
 
+### Queued application intent mode
+
+The default inspector still edits production components directly and uses the
+existing safe removal path. Draw Composer reuses the same Add Component/dropdown
+and collapsible Remove headers with three optional callbacks:
+
+- `onAddRequested(std::function<void(const std::string&)>)`: receives a registered
+  type name instead of constructing/attaching it during UI drawing.
+- `onRemoveRequested(std::function<void(std::shared_ptr<scene::Component>)>)`:
+  receives the component instead of scheduling the default removal.
+- `onDrawComponent(std::function<void(std::shared_ptr<scene::Component>)>)`:
+  draws application-controlled property contents instead of immediate reflected
+  property/action calls. This lets the app stage CPU properties without cloning
+  Drawable GPU resources during UI drawing.
+
+Applications own weak node/document/renderer guards, stopped resource realization,
+validation/rollback, dirty state and bake/history invalidation. Empty callbacks
+restore the corresponding default path. Keep widget IDs/scopes balanced in custom
+draw callbacks and clear callbacks before app teardown.
+
 The inspector iterates `node->orderedComponents()`, resolves each component's
 `TypeInfo`, and delegates fields and actions to `ReflectionWidget`. Components
 without reflection metadata are still listed and removable. Removal is deferred

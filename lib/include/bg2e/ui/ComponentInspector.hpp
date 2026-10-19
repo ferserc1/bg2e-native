@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 
 #include <functional>
+#include <memory>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -69,11 +70,29 @@ class BG2E_API ComponentInspector {
         _onResourceChanged = std::move(cb);
     }
 
+    // Optional intent mode: the application queues mutations at its safe boundary.
+    // Empty callbacks preserve the production inspector's immediate behavior.
+    void onAddRequested(std::function<void(const std::string&)> cb)
+    {
+        _onAddRequested = std::move(cb);
+    }
+    void onRemoveRequested(std::function<void(std::shared_ptr<scene::Component>)> cb)
+    {
+        _onRemoveRequested = std::move(cb);
+    }
+    void onDrawComponent(std::function<void(std::shared_ptr<scene::Component>)> cb)
+    {
+        _onDrawComponent = std::move(cb);
+    }
+
   protected:
     scene::Node* _node = nullptr;
     uint32_t _selectedComponentIndex = 0;
     std::function<void()> _onChanged;
     ResourceChangedCallback _onResourceChanged;
+    std::function<void(const std::string&)> _onAddRequested;
+    std::function<void(std::shared_ptr<scene::Component>)> _onRemoveRequested;
+    std::function<void(std::shared_ptr<scene::Component>)> _onDrawComponent;
 
     void notifyChanged() const;
 };

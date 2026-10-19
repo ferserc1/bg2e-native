@@ -76,6 +76,13 @@ FSR intrinsically maintains temporal SDK state and requires jitter/motion inputs
 
 ## 7. DB levels and graphics-free scene representation
 
+Project lead correction during M07: unregistered component types in scene JSON
+must never abort loading. Schema and draw factories warn and return null; graph
+load skips them and continues. Registered component parser/resource errors remain
+separate failures. Raw document IO preserves unknown JSON; typed saves do not
+retain skipped components. This supersedes earlier strict unknown-type rejection
+described in historical M01/M06/M07 handoffs and probes.
+
 Low-level serialization/deserialization reads/writes schema, graph descriptions, resource references and supplied CPU data. It does not fully load images/meshes into GPU resources or claim to export GPU-only textures. A graphics-free scene representation can be unresolved; complete resource readiness is not promised.
 
 High-level load/save overloads accept the chosen Engine, invoke low-level IO, realize resources, or read device images into host buffers for export. CPU mesh file parsing can still operate without an engine; low-level serialization must not initiate unrequested resource loading. Define high-level output completeness and progress/failure semantics rather than silently discard a GPU-only generated texture.

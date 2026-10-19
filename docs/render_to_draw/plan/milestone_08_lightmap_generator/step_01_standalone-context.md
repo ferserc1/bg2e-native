@@ -17,6 +17,13 @@ Current sources to inspect: [lib/include/bg2e/render/StandaloneBakerContext.hpp]
 
 ## Implementation work
 
+Consume [M07's actual review](../milestone_07_bg2e_composer/review.md): own a
+headless scene/job lifecycle rather than Composer's AppDelegate/import queue.
+One live integrated baker must be released before its successor; preserve that
+ownership lesson without binding standalone samples to window presentation slots.
+Freeze source/settings identities and retain output owners through completion;
+cancel/scene replacement may not publish or revive a discarded job.
+
 1. Implement standalone Created/Initialized/SceneReady/Cleaned lifecycle and explicit scene preparation using a windowless draw engine/device, independent of a camera RendererDeferred.
 2. Capture environment/light/material/geometry data and prepare isolated TLAS/resources using public draw/bake building blocks.
 3. Bind baker instances to scene generation, reject stale/duplicate/invalid updates and define synchronous submission/completion for one accumulation sample.

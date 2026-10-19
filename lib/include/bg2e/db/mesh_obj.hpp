@@ -19,6 +19,8 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/base/MaterialAttributes.hpp>
+#include <vector>
 
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/draw/Drawable.hpp>
@@ -75,6 +77,19 @@ MeshT* loadMeshObj(const std::filesystem::path& filePath)
 
     return loadMeshObj<MeshT>(stream);
 }
+
+// CPU geometry and MTL attributes only; safe to prepare without a GPU context.
+struct ObjMesh {
+    std::string name;
+    std::shared_ptr<geo::MeshPNUUT> mesh;
+    std::vector<base::MaterialAttributes> materials;
+    std::vector<std::string> submeshNames;
+    std::vector<std::string> submeshGroups;
+};
+
+extern BG2E_API std::shared_ptr<ObjMesh> readObj(const std::filesystem::path& filePath);
+extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableObj(const ObjMesh& model,
+    draw::Engine& engine, std::function<void()> onTextureLoaded = nullptr);
 
 // Reuses CPU geometry parsing and imports MTL resources for the draw context.
 extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableObj(

@@ -42,26 +42,13 @@ void AppDelegate::newDocument()
 
 void AppDelegate::importDocument(const std::filesystem::path& path, float unitsScale, bool sourceIsZUp)
 {
-    if (!_stage || _pendingIo || path.empty())
-    {
-        return;
-    }
-    if (!std::isfinite(unitsScale) || unitsScale <= 0)
-    {
-        _status = "Import units scale must be finite and positive";
-        return;
-    }
-    PendingIo operation;
-    operation.kind = PendingIo::Kind::Import;
-    operation.path = path;
-    operation.generation = document()->generation;
-    auto* selected = _selection ? _selection->selectedNode() : nullptr;
-    operation.parent = selected && _stage->contains(selected) ?
-        selected->shared_from_this() : document()->root;
-    operation.unitsScale = unitsScale;
-    operation.sourceIsZUp = sourceIsZUp;
-    _pendingIo = std::move(operation);
-    requestSceneFrame();
+    ImportRequest request;
+    request.filePath = path;
+    request.fileName = path.filename().string();
+    request.unitsScale = unitsScale;
+    request.coordinateSystem = sourceIsZUp ? ImportCoordinateSystem::ZUp : ImportCoordinateSystem::YUp;
+    request.documentGeneration = document() ? document()->generation : 0;
+    enqueueImport(std::move(request));
 }
 
 void AppDelegate::exportSelectedModels()
@@ -167,20 +154,6 @@ void AppDelegate::processDocumentIo()
             _status = "Exported selected models";
             return;
         }
-        if (operation.kind == Kind::Import)
-        {
-            auto parent = operation.parent.lock();
-            if (operation.generation != document()->generation || !parent || !_stage->contains(parent.get()))
-            {
-                throw std::runtime_error("Import parent belongs to a removed or replaced scene");
-            }
-            candidate = _stage->prepareImport(operation.path, operation.unitsScale, operation.sourceIsZUp);
-            invalidateLightmapSources();
-            _stage->insert(candidate, parent);
-            setScene(scene());
-            _status = "Imported " + operation.path.filename().string();
-            return;
-        }
         // Do not allocate GPU resources for a replacement before the dirty prompt.
         if (!saveBeforeReplace())
         {
@@ -190,6 +163,7 @@ void AppDelegate::processDocumentIo()
         candidate = operation.kind == Kind::New ? _stage->newDocumentRoot() : _stage->load(operation.path);
         _stage->prepareTools(candidate);
         _stage->adopt(candidate, operation.kind == Kind::New ? std::filesystem::path{} : operation.path);
+        invalidateImports();
         _selection->deselect();
         for (int button = 0; button < 3; ++button)
         {
@@ -205,6 +179,9 @@ void AppDelegate::processDocumentIo()
     {
         _stage->discardCandidate(candidate);
         _status = std::string("Scene operation failed: ") + error.what();
+        bg2e::app::MessageBox::showWarning("Scene operation failed", _status,
+            {{0, "OK", bg2e::app::MessageBox::Return}});
+        requestSceneFrame();
     }
 }
 

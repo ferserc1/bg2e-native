@@ -87,6 +87,15 @@ That review was followed by M04-08 cumulative documentation. Use
 [progress](progress.md) for the active acceptance/next-step pointer.
 
 
+## M07 review handoff
+
+[Actual Composer contracts and remaining-plan impacts](milestone_07_bg2e_composer/review.md)
+record shared root/clone/parser APIs, guarded CPU/HTTP import publication,
+integrated scene batches, complete saves and the lead-checked selection correction.
+M07-07 review hands off to M07-08 cumulative documentation before M08 entry.
+Use [progress](progress.md) for the active acceptance pointer; native package and
+unspecified backend scenarios are not inferred from this review.
+
 ## M05 review and documentation handoff
 
 [Actual M05 contracts](milestone_05_offscreen/review.md) and

@@ -78,10 +78,10 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
         auto selection = weakSelection.lock();
         auto stage = weakStage.lock();
         auto node = selection ? selection->selectedNode() : nullptr;
-        const bool lightSelected = node && node->light() && stage &&
+        const bool transformSelected = node && node->transform() && stage &&
             (stage->contains(node) || node == stage->fillLightNode().get());
-        bg2e::manipulation::GizmoComponent::setCurrentTransform(lightSelected ? node : nullptr);
-        if (lightSelected)
+        bg2e::manipulation::GizmoComponent::setCurrentTransform(transformSelected ? node : nullptr);
+        if (transformSelected)
         {
             if (auto gizmo = node->getComponent<bg2e::manipulation::GizmoComponent>())
             {
@@ -89,6 +89,7 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
             }
         }
     });
+    initializeImports();
     return root;
 }
 
@@ -109,6 +110,10 @@ glm::ivec2 AppDelegate::inputPosition(int x, int y) const
 
 void AppDelegate::queueInput(std::function<void()> event)
 {
+    if (_imports.busy())
+    {
+        return;
+    }
     const auto generation = document() ? document()->generation : 0;
     enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), generation, event = std::move(event)](auto& renderer)
     {
@@ -138,6 +143,7 @@ void AppDelegate::queueInput(std::function<void()> event)
         if (manipulating || (orbit && (orbit->rotation() != beforeRotation ||
             orbit->center() != beforeCenter || orbit->distance() != beforeDistance)))
         {
+            invalidateLightmapSources();
             _stage->markModified();
         }
         renderer.invalidateHistories();
@@ -152,7 +158,10 @@ void AppDelegate::mouseMove(int x, int y)
         const bool manipulating = _selection->sceneInputBlocked();
         if (_selection->mouseMove(_stage->sceneObject(), p.x, p.y))
         {
-            _input.mouseMove(scene().get(), x, y);
+            if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
+            {
+                controller->mouseMove(x, y);
+            }
         }
         if (manipulating)
         {
@@ -168,7 +177,10 @@ void AppDelegate::mouseButtonDown(int button, int x, int y)
         const auto p = inputPosition(x, y);
         if (_selection->mouseButtonDown(_stage->sceneObject(), button, p.x, p.y))
         {
-            _input.mouseButtonDown(scene().get(), button, x, y);
+            if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
+            {
+                controller->mouseButtonDown(button, x, y);
+            }
         }
     });
 }
@@ -180,7 +192,10 @@ void AppDelegate::mouseButtonUp(int button, int x, int y)
         const auto p = inputPosition(x, y);
         if (_selection->mouseButtonUp(_stage->sceneObject(), button, p.x, p.y, _additiveSelection))
         {
-            _input.mouseButtonUp(scene().get(), button, x, y);
+            if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
+            {
+                controller->mouseButtonUp(button, x, y);
+            }
         }
     });
 }
@@ -191,7 +206,10 @@ void AppDelegate::mouseWheel(int dx, int dy)
     {
         if (!_selection->sceneInputBlocked())
         {
-            _input.mouseWheel(scene().get(), dx, dy);
+            if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
+            {
+                controller->mouseWheel(dx, dy);
+            }
         }
     });
 }
@@ -241,9 +259,17 @@ void AppDelegate::frameSelection()
         {
             return;
         }
-        if (!owner->_stage->frameNode(node.get()))
+        try
         {
-            owner->_viewpointStatus = "Selected model has no visible geometry to frame";
+            if (!owner->_stage->frameNode(node.get()))
+            {
+                owner->_viewpointStatus = "Framing requires visible geometry and an authored orbit controller";
+                return;
+            }
+        }
+        catch (const std::exception& error)
+        {
+            owner->_viewpointStatus = error.what();
             return;
         }
         owner->_stage->markModified();
@@ -355,8 +381,10 @@ void AppDelegate::requestOpen(const std::filesystem::path& path)
     }
     PendingIo operation;
     operation.path = path;
+    operation.kind = PendingIo::Kind::Open;
     // Dirty prompts run after queued edits are flushed at the stopped boundary.
     _pendingIo = std::move(operation);
+    _status = "Opening " + path.filename().string();
     requestSceneFrame();
 }
 
@@ -366,8 +394,17 @@ void AppDelegate::openDocument()
     {
         return;
     }
-    const auto path = bg2e::app::FileDialog::getOpenFilePath({{"Models and scenes", "bg2,vwglb,obj,gltf,glb,json,bg2scene,bg2e,vitscnj"}});
-    requestOpen(path);
+    try
+    {
+        const auto path = bg2e::app::FileDialog::getOpenFilePath({{"Models and scenes", "bg2,vwglb,obj,gltf,glb,json,bg2scene,bg2e,vitscnj"}});
+        requestOpen(path);
+    }
+    catch (const std::exception& error)
+    {
+        _status = std::string("Could not open the scene dialog: ") + error.what();
+        bg2e::app::MessageBox::showWarning("Open Scene", _status, {{0, "OK", bg2e::app::MessageBox::Return}});
+        requestSceneFrame();
+    }
 }
 
 void AppDelegate::openDocument(const std::filesystem::path& path)
@@ -468,6 +505,7 @@ void AppDelegate::prepareFrame()
         _selection->deselect();
     }
     DefaultRenderLoopDelegate::prepareFrame();
+    processImports();
     if (_selection && _stage)
     {
         _selection->refreshSelection();
@@ -492,6 +530,10 @@ void AppDelegate::prepareFrame()
 
 void AppDelegate::cleanup()
 {
+    cancelImports();
+    _importServer.stop(); // Wake blocked HTTP handlers before joining the listener.
+    _imports.shutdown(); // Join all CPU readers before any app/Engine teardown.
+    setImportPaused(false);
     std::exception_ptr error;
     try
     {
@@ -517,6 +559,8 @@ void AppDelegate::cleanup()
         _toolsCleanup = {};
     }
     _selectionChanged = {};
+    _completedLightmaps.clear();
+    _completedLightmap.reset();
     _clipboard.reset();
     bg2e::manipulation::GizmoComponent::setCurrentTransform(nullptr);
     if (_selection)

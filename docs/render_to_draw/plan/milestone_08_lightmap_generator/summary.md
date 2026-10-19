@@ -12,6 +12,12 @@ does not imply complete GPU-authored image export. See [M02 review](../milestone
 
 ## Working product
 
+The [M07 review](../milestone_07_bg2e_composer/review.md) supplies accepted scene
+root/clone/parser/complete-IO and app-job contracts. M07-08 documentation acceptance
+still gates entry. Composer's serial integrated batches and per-item exports do
+not implement standalone scheduling or protected whole-batch publication. The
+lead checked the selection correction; other backend/package detail is unspecified.
+
 A runnable `apps/draw/lightmap_generator` uses windowless draw/GPU execution and public bake StandaloneBakerContext/SceneAssembler/Batch/output resources. It matches the current CLI map-generation, target validation, UV2, accumulation, output and overwrite behavior without a viewport renderer or production Engine.
 
 ## Scope exclusions

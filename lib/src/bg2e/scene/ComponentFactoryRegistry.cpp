@@ -67,7 +67,12 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
         throw std::invalid_argument("Component representation requires a type");
     }
     auto it = _registry.find(*type);
-    if (it == _registry.end() || !it->second.createDefault)
+    if (it == _registry.end())
+    {
+        bg2e_log_warning << "Skipping unregistered component type: " << *type << bg2e_log_end;
+        return nullptr;
+    }
+    if (!it->second.createDefault)
     {
         throw std::invalid_argument("No schema constructor registered for component " + *type);
     }
@@ -88,6 +93,10 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
     draw::Engine& engine, SceneLoadProgress* progress)
 {
     std::unique_ptr<Component> result(create(data, basePath));
+    if (!result)
+    {
+        return nullptr;
+    }
     result->loadResources(engine, progress);
     return result.release();
 }

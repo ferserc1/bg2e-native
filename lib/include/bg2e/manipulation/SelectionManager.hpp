@@ -288,6 +288,8 @@ class BG2E_API SelectionManager {
     // (groups, lights, cameras...) can currently only be selected through the
     // SceneTree; a future refactor will allow picking them through their gizmo.
     bool addToSelectedItems(scene::Node* node);
+    // Explicit hierarchy selection, including mesh nodes, without submesh intent.
+    bool addNodeToSelection(scene::Node* node);
     void removeFromSelectedItems(scene::Node* node);
     void removeFromSelectedItems(scene::Node* node, uint32_t submesh);
     void removeFromSelectedItems(scene::DrawableComponent* drawable, uint32_t submesh);

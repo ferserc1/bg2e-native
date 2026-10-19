@@ -415,19 +415,22 @@ persistent `bool` that holds its selection; rows inside a list share columns:
 static std::vector<std::string> s_files = { "a.bg2", "b.bg2", "c.bg2" };
 static std::vector<bool>        s_sel(s_files.size(), false);
 
-ui::SelectableList::beginList(2);            // 1 column of selectable + 1 of buttons
-for (size_t i = 0; i < s_files.size(); ++i)
+if (ui::SelectableList::beginList(2))         // 1 column of selectable + 1 of buttons
 {
-    bool rowActive = s_sel[i];
-    if (ui::SelectableList::item(s_files[i], rowActive))    // returns on click
-        s_sel[i] = !s_sel[i];                               // toggle manually
-    if (ui::SelectableList::itemButton("Remove"))           // per-row button
-        s_files.erase(s_files.begin() + i);
+    for (size_t i = 0; i < s_files.size(); ++i)
+    {
+        bool rowActive = s_sel[i];
+        if (ui::SelectableList::item(s_files[i], rowActive))
+            s_sel[i] = !s_sel[i];
+        if (ui::SelectableList::itemButton("Remove"))
+            s_files.erase(s_files.begin() + i);
+    }
+    ui::SelectableList::endList();
 }
-ui::SelectableList::endList();
 ```
 
 **Key points:**
+- Only submit rows/buttons and call `endList()` when `beginList()` returns true.
 - `item()` returns `true` **on click**, and writes the clicked state into the
   `selected` reference. For single-selection lists pass the same variable
   pattern `selected == i`; for multi-selection toggle manually like above.

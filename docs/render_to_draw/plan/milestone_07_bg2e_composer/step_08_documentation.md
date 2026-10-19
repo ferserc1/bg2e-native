@@ -10,6 +10,26 @@ Update maintained `doc/` API/reference, conceptual, tutorial, application and bu
 
 ## Milestone coverage: Scene composer, complete scene IO and asynchronous import
 
+Apply the later lead-directed unknown-component policy: unregistered JSON types
+warn/skip without aborting scene load; registered parser/resource errors are
+distinct. Typed save omits skipped components, raw IO preserves unknown JSON.
+Reconcile historical strict-rejection wording in maintained usage guidance.
+
+Include the subsequent [UI parity correction](ui-parity-correction.md): left
+drawable/material panel, right Scene tree/node inspector, no Environment Options,
+registered Add Component dropdown and shared ComponentInspector intent callbacks.
+Earlier inherited Model Edit panel/preset descriptions are no longer current
+Composer usage. Do not change draw_model_edit's independent environment workflow.
+
+Use the [actual M07 review](review.md), including the lead-checked selection
+correction and restored Chain controls. Update SelectableList recipes to honor
+bool beginList, root transfer/subclass/custom clone contracts, independent request/
+document/renderer identities, joined CPU/HTTP lifecycle and synchronous realization.
+Describe per-target preview/temporary source ownership and partial bake material
+adoption separately from complete DB save and future M08 batch transactions.
+Reconcile doc/apps/composer and draw application navigation without claiming
+native package/HTTP/backend coverage that the lead has not specified.
+
 Actual apps/draw/bg2e_composer workflows and build/deployment; complete scene serialization/cloning/resource ownership; asynchronous import/cancellation and safe scene edits; scene tools, viewpoint/reflected settings and scene-wide bake/save flows. Update model editor/shared docs if contracts changed; standalone batch generator remains undocumented until delivered.
 
 ## Implementation work

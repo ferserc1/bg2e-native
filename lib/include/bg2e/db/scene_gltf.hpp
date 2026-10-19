@@ -27,6 +27,27 @@
 namespace bg2e {
 namespace db {
 
+// CPU-only parser/buffer snapshot. No graph, engine, GPU handles or scene
+// factories are touched by readGltf. Realization consumes it on one stopped thread.
+class BG2E_API GltfDocument {
+  public:
+    const std::filesystem::path& path() const
+    {
+        return _path;
+    }
+
+  private:
+    friend BG2E_API std::shared_ptr<GltfDocument> readGltf(const std::filesystem::path&);
+    friend BG2E_API std::shared_ptr<scene::Node> loadGltf(const GltfDocument&, draw::Engine&,
+        scene::SceneProgressCallback);
+    std::filesystem::path _path;
+    std::shared_ptr<void> _data;
+};
+
+extern BG2E_API std::shared_ptr<GltfDocument> readGltf(const std::filesystem::path& path);
+extern BG2E_API std::shared_ptr<scene::Node> loadGltf(const GltfDocument& document,
+    draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
+
 extern BG2E_API std::shared_ptr<scene::Node> loadGltf(const std::filesystem::path& filePath,
     draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
 extern BG2E_API std::shared_ptr<scene::Node> loadGltf(const std::filesystem::path& basePath,

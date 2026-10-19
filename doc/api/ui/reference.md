@@ -392,7 +392,7 @@ Static-only table of selectable rows.
 
 | Method | Description |
 |--------|-------------|
-| `static void beginList(int columns = 1)` | Opens the bordered ImGui table (settings not persisted). |
+| `static bool beginList(int columns = 1)` | Opens the bordered table. Submit items and call `endList()` only if true; clipped/skipped tables may return false. |
 | `static bool item(const std::string& title, bool& selected)` | New row + first column; returns true on click and toggles `selected` through ImGui. |
 | `static bool itemButton(const std::string& title)` | Next column: a button; returns true on click. |
 | `static void endList()` | Closes the table. |

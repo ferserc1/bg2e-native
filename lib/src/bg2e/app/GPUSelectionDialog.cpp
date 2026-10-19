@@ -163,22 +163,23 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
 
         ui::Text::text("Select the GPU device to use:");
 
-        ui::SelectableList::beginList(1);
-
-        for (size_t i = 0; i < devices.size(); ++i)
+        if (ui::SelectableList::beginList(1))
         {
-            auto& dev = devices[i];
-            bool selected = selectionStates[i];
-            if (ui::SelectableList::item(dev->name + "##" + std::to_string(i), selected))
+            for (size_t i = 0; i < devices.size(); ++i)
             {
-                for (size_t j = 0; j < selectionStates.size(); ++j)
+                auto& dev = devices[i];
+                bool selected = selectionStates[i];
+                if (ui::SelectableList::item(dev->name + "##" + std::to_string(i), selected))
                 {
-                    selectionStates[j] = (j == i);
+                    for (size_t j = 0; j < selectionStates.size(); ++j)
+                    {
+                        selectionStates[j] = (j == i);
+                    }
+                    selectedDevice = i;
                 }
-                selectedDevice = i;
             }
+            ui::SelectableList::endList();
         }
-        ui::SelectableList::endList();
 
         if (ImGui::Button("Accept"))
         {

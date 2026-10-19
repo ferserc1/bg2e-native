@@ -38,8 +38,8 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
     _graphics.setPosition(320, 80);
     _graphics.setSize(620, 740);
     _graphics.close();
-    _properties.setTitle("Scene Properties");
-    _environment.setTitle("Environment Options");
+    _properties.setTitle("Model Properties");
+    _sceneProperties.setTitle("Scene");
     _workspace.leftPanelSize().min = 300;
 }
 
@@ -72,13 +72,14 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             owner->newDocument();
         }
     }}});
-    file.addMenuItem({"Import Model or Prefab...", {.handler = [weakDelegate]
+    file.addMenuItem({"Import Model or Prefab...", {.handler = [weakUi]
     {
-        if (auto owner = weakDelegate.lock())
+        if (auto ui = weakUi.lock())
         {
-            const auto path = bg2e::app::FileDialog::getOpenFilePath(
-                {{"Models and scene prefabs", "bg2,vwglb,obj,gltf,glb,json,bg2scene,bg2e,vitscnj"}});
-            owner->importDocument(path);
+            if (auto owner = ui->_delegate.lock())
+            {
+                ui->chooseImport(owner);
+            }
         }
     }}});
     file.addMenuItem({"Export Selected Model(s)...", {.handler = [weakDelegate]
@@ -147,8 +148,22 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
     }}});
     _toolbar.addMenuItem(view);
 
+    bg2e::ui::MenuItem create("Create Node");
+    const char* nodeTypes[]{"Group", "Camera", "Light", "Environment"};
+    for (unsigned kind = 0; kind < 4; ++kind)
+    {
+        create.addMenuItem({nodeTypes[kind], {.handler = [weakDelegate, kind]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->addSceneItem(kind);
+            }
+        }}});
+    }
+    _toolbar.addMenuItem(create);
+
     bg2e::ui::MenuItem window("Window");
-    window.addMenuItem({"Scene Properties", {.handler = [weakUi]
+    window.addMenuItem({"Model Properties", {.handler = [weakUi]
     {
         if (auto owner = weakUi.lock())
         {
@@ -159,7 +174,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         auto owner = weakUi.lock();
         return owner && owner->_workspace.leftPanelVisible();
     }});
-    window.addMenuItem({"Environment Options", {.handler = [weakUi]
+    window.addMenuItem({"Scene", {.handler = [weakUi]
     {
         if (auto owner = weakUi.lock())
         {
@@ -190,6 +205,13 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         if (auto owner = weakUi.lock())
         {
             owner->_diagnostics.open();
+        }
+    }}});
+    window.addMenuItem({"Import Settings", {.handler = [weakUi]
+    {
+        if (auto owner = weakUi.lock())
+        {
+            owner->_importSettingsWindow.open();
         }
     }}});
     window.addMenuItem({"UV and Lightmap Baker...", {.handler = [weakUi]
@@ -247,14 +269,21 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             owner->duplicateSelection();
         }
     });
-    addPanelButton("Scene Properties", [weakUi]
+    addPanelButton("Remove", [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->removeSelection();
+        }
+    });
+    addPanelButton("Model Properties", [weakUi]
     {
         if (auto owner = weakUi.lock())
         {
             owner->_workspace.toggleLeftPanel();
         }
     }, bg2e::ui::Toolbar::AlignRight);
-    addPanelButton("Environment", [weakUi]
+    addPanelButton("Scene", [weakUi]
     {
         if (auto owner = weakUi.lock())
         {
@@ -273,6 +302,14 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                 ui->_material.cleanup();
                 ui->_graphics.clear();
                 ui->_diagnostics.clear();
+                ui->_sceneTree.setRootNode(nullptr);
+                ui->_sceneTree.setSelectionManager(nullptr);
+                ui->_sceneTree.onSelect({});
+                ui->_sceneTree.onReparent({});
+                ui->_componentInspector.setNode(nullptr);
+                ui->_componentInspector.onAddRequested({});
+                ui->_componentInspector.onRemoveRequested({});
+                ui->_componentInspector.onDrawComponent({});
                 ui->_ui = nullptr;
             }
         });
@@ -293,11 +330,40 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
     {
         _lightmap.init(delegate, engine, session);
     }
+    _importSettingsWindow.setTitle("Import Settings");
+    _importSettingsWindow.setSize(420, 260);
+    _importSettingsWindow.close();
+    _importSettingsWindow.setDrawFunction([weakUi]
+    {
+        if (auto ui = weakUi.lock())
+        {
+            if (auto owner = ui->_delegate.lock())
+            {
+                ui->drawImportSettings(owner);
+            }
+        }
+    });
+    _importQueueWindow.setTitle("Import queue");
+    _importQueueWindow.setPosition(20, 80);
+    _importQueueWindow.setSize(380, 230);
+    _importQueueWindow.options.noClose = true;
+    _importQueueWindow.setDrawFunction([weakUi]
+    {
+        if (auto ui = weakUi.lock())
+        {
+            if (auto owner = ui->_delegate.lock())
+            {
+                ui->drawImportProgress(owner);
+            }
+        }
+    });
     _fileStatus = std::make_shared<bg2e::ui::StatusItem>();
     _saveStatus = std::make_shared<bg2e::ui::StatusItem>();
+    _importStatusItem = std::make_shared<bg2e::ui::StatusItem>();
+    _statusBar.addItem(_importStatusItem, bg2e::ui::StatusBar::AlignLeft);
     _statusBar.addItem(_fileStatus, bg2e::ui::StatusBar::AlignLeft);
     _statusBar.addItem(_saveStatus, bg2e::ui::StatusBar::AlignRight);
-    _workspace.setup(uiWidth(), uiHeight(), &_toolbar, &_properties, &_environment, nullptr, &_statusBar);
+    _workspace.setup(uiWidth(), uiHeight(), &_toolbar, &_properties, &_sceneProperties, nullptr, &_statusBar);
     _workspaceWidth = uiWidth();
     _workspaceHeight = uiHeight();
     _properties.setDrawFunction([weakUi]
@@ -310,13 +376,13 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             }
         }
     });
-    _environment.setDrawFunction([weakUi]
+    _sceneProperties.setDrawFunction([weakUi]
     {
         if (auto owner = weakUi.lock())
         {
             if (auto delegate = owner->_delegate.lock())
             {
-                owner->drawEnvironment(delegate);
+                owner->drawSceneEditor(delegate);
             }
         }
     });
@@ -329,6 +395,16 @@ void EditorUi::drawUI()
     {
         return;
     }
+    if (delegate->imports().busy())
+    {
+        if (auto job = delegate->imports().active(); job && !job->cancelled.load())
+        {
+            job->loader.draw();
+        }
+        _importQueueWindow.draw();
+        return;
+    }
+    _importSettingsWindow.draw();
     if (_workspaceWidth != uiWidth() || _workspaceHeight != uiHeight())
     {
         _workspace.resize(uiWidth(), uiHeight());
@@ -348,7 +424,8 @@ void EditorUi::drawUI()
     }
     if (document && document->dirty)
     {
-        _saveStatus->setText("Unsaved changes");
+        _saveStatus->setText(delegate->status().empty() ? "Unsaved changes" :
+            "Unsaved changes — " + delegate->status());
     }
     else if (!delegate->status().empty())
     {
@@ -362,6 +439,7 @@ void EditorUi::drawUI()
     {
         _saveStatus->setText("Ready");
     }
+    _importStatusItem->setText(delegate->importStatus());
     _workspace.draw();
     _graphics.draw();
     _diagnostics.draw();

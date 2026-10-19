@@ -162,7 +162,15 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
     }
     inline DrawableComponent* drawable()
     {
-        return getComponent<DrawableComponent>();
+        for (const auto& component : orderedComponents())
+        {
+            auto drawable = dynamic_cast<DrawableComponent*>(component.get());
+            if (drawable && drawable->isSceneGeometry())
+            {
+                return drawable;
+            }
+        }
+        return nullptr;
     }
     inline CameraComponent* camera()
     {

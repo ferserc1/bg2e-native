@@ -9,7 +9,7 @@ with an optional trailing button column — the widget behind `SubmeshSelector`.
 ```cpp
 class BG2E_API SelectableList {
 public:
-    static void beginList(int columns = 1);
+    static bool beginList(int columns = 1);
     static bool item(const std::string& title, bool& selected);   // true on click
     static bool itemButton(const std::string& title);             // true on click
     static void endList();
@@ -17,7 +17,9 @@ public:
 ```
 
 - `beginList(columns)` opens an ImGui table (settings intentionally not saved
-  across sessions).
+  across sessions). It returns whether the table was opened. Only submit items
+  and call `endList()` inside `if (SelectableList::beginList(columns))`.
+  A clipped/skipped table can return false; do not call `endList()` in that case.
 - `item(title, selected)` starts a new row + first column; `selected` is the
   in/out selection flag. Use one shared `bool` per row for single-select, or a
   per-row flag for multi-select.

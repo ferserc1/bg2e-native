@@ -50,20 +50,20 @@ void SubmeshWindow::init(AppDelegate* delegate)
                             if (targetNames.size() > 0)
                             {
                                 bg2e::ui::Text::separator("Mesh");
-                                bg2e::ui::SelectableList::beginList(1);
-
-                                for (size_t i = 0; i < targetNames.size(); i++)
+                                if (bg2e::ui::SelectableList::beginList(1))
                                 {
-                                    auto targetName = targetNames[i];
-                                    auto isSelected = i == stage->selectedTargetNodeIndex();
-                                    if (bg2e::ui::SelectableList::item(targetName, isSelected))
+                                    for (size_t i = 0; i < targetNames.size(); i++)
                                     {
-                                        stage->selectTargetNode(static_cast<uint32_t>(i));
-                                        _materialEditor.clearMaterial();
+                                        auto targetName = targetNames[i];
+                                        auto isSelected = i == stage->selectedTargetNodeIndex();
+                                        if (bg2e::ui::SelectableList::item(targetName, isSelected))
+                                        {
+                                            stage->selectTargetNode(static_cast<uint32_t>(i));
+                                            _materialEditor.clearMaterial();
+                                        }
                                     }
+                                    bg2e::ui::SelectableList::endList();
                                 }
-
-                                bg2e::ui::SelectableList::endList();
                             }
 
                             if (_drawableEditor.draw())

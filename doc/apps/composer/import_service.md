@@ -131,3 +131,20 @@ leave any previous imported node intact.
 `GET /status` reports `busy` while the slot is occupied. There is no queue of
 waiting imports and no application-level timeout. The service's request ID
 prevents a late completion from answering a request after stop and restart.
+
+## Experimental draw Composer
+
+`draw_bg2e_composer` now provides the same localhost `/import` and `/status`
+protocol with app-owned asynchronous parsing and stopped main-thread realization.
+Window > Import Settings controls the port/service and local unit/axis conversion.
+Its independent preference scope is `draw.bg2e_composer.import`; default port 8643
+and enabled state match the production service. Running both apps on the same
+port reports a bind failure; choose another port for coexistence.
+
+The loading panel supports a queue of local imports and cancellation. Remote
+requests retain the single occupied HTTP slot and canonical-path reimport policy.
+Document replacement, canceled jobs and removed/moved destinations reject late
+results. The service replies after publication and renderer bindings are restored.
+See the [implementation and lifecycle contract](../../../docs/render_to_draw/plan/milestone_07_bg2e_composer/async-import-service.md)
+and [project-lead checks](../../../tests/draw/composer_import/README.md). Native
+backend/service execution remains project-lead validation.

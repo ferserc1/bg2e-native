@@ -72,7 +72,7 @@ std::filesystem::path FileDialog::openFile()
     Preferences prefs;
     auto lastPath = prefs.get<std::string>("fileDialog.lastOpenPath", "");
 
-    NFD::Guard();
+    NFD::Guard nfdGuard;
 
     NFD::UniquePath outPath;
 
@@ -113,7 +113,7 @@ std::filesystem::path FileDialog::saveFile()
     Preferences prefs;
     auto lastPath = prefs.get<std::string>("fileDialog.lastSavePath", "");
 
-    NFD::Guard();
+    NFD::Guard nfdGuard;
 
     NFD::UniquePath outPath;
 

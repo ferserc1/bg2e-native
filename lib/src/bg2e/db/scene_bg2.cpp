@@ -30,22 +30,25 @@
 namespace bg2e::db {
 
 std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
-    draw::Engine& engine, scene::SceneProgressCallback onProgress)
+    const Bg2Mesh& model, draw::Engine& engine, scene::SceneProgressCallback onProgress)
 {
-    auto model = std::unique_ptr<Bg2Mesh>(loadMeshBg2(path));
+    if (!model.mesh)
+    {
+        throw std::invalid_argument("BG2 geometry is empty");
+    }
     auto drawable = std::make_shared<draw::Drawable>();
     drawable->setName(path.stem().string());
-    drawable->setMesh(model->mesh);
-    for (uint32_t i = 0; i < model->materials.size(); ++i)
+    drawable->setMesh(std::make_shared<geo::MeshPNUUT>(*model.mesh));
+    for (uint32_t i = 0; i < model.materials.size(); ++i)
     {
-        const auto& material = model->materials[i];
-        drawable->setMaterial(material, i);
-        drawable->setSubmeshName(model->submeshNames.at(i), i);
+        const auto& material = model.materials[i];
+        drawable->setMaterial(draw::cloneMaterialAttributes(material), i);
+        drawable->setSubmeshName(model.submeshNames.at(i), i);
         drawable->setSubmeshGroupName(material.groupName(), i);
         drawable->setSubmeshVisibility(material.visible(), i);
     }
     int textures = 0;
-    for (const auto& material : model->materials)
+    for (const auto& material : model.materials)
     {
         textures += bool(material.albedoTexture()) + bool(material.metalnessTexture()) +
             bool(material.roughnessTexture()) + bool(material.normalTexture()) +
@@ -64,16 +67,16 @@ std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
     component->setResourcePath(path);
     node->addComponent(component);
     node->addComponent(new scene::TransformComponent());
-    if (model->inputJoint)
+    if (model.inputJoint)
     {
         auto joint = std::make_shared<scene::InputChainJointComponent>();
-        joint->setJoint(*model->inputJoint);
+        joint->setJoint(*model.inputJoint);
         node->addComponent(joint);
     }
-    if (model->outputJoint)
+    if (model.outputJoint)
     {
         auto joint = std::make_shared<scene::OutputChainJointComponent>();
-        joint->setJoint(*model->outputJoint);
+        joint->setJoint(*model.outputJoint);
         node->addComponent(joint);
     }
     if (onProgress)
@@ -81,6 +84,13 @@ std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
         onProgress(path.filename().string(), textures + 1, textures + 1);
     }
     return node;
+}
+
+std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
+    draw::Engine& engine, scene::SceneProgressCallback onProgress)
+{
+    auto model = std::unique_ptr<Bg2Mesh>(loadMeshBg2(path));
+    return loadSceneBg2(path, *model, engine, std::move(onProgress));
 }
 
 std::shared_ptr<scene::Node> loadSceneBg2(

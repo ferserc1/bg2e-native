@@ -37,6 +37,11 @@ class Node;
 
 namespace db {
 
+struct Bg2Mesh;
+
+extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
+    const Bg2Mesh& model, draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
+
 extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
     draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
 

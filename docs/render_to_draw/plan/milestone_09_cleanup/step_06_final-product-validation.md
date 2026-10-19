@@ -19,6 +19,13 @@ Current sources to inspect: [examples/draw/](../../../../examples/draw), [tests/
 
 ## Implementation work
 
+Repeat [M07 product regressions](../milestone_07_bg2e_composer/product-validation.md)
+on the canonical app after cleanup: selection/table clipping and Chain controls,
+root/clone/complete save, queued HTTP cancel/reimport/stop-join, integrated multi-target
+bake cancellation/previews/save and renderer-first shutdown. The lead confirmed the
+selection correction before retirement; native package and broader scenario detail
+were not specified and must remain accurately attributed.
+
 1. Run the agreed core matrix: default deferred/no-RT, query shadows, advanced RT/histories/denoise, FSR/external upscaler, manipulation/MaterialModifier/clones, integrated maps and accumulated offscreen export.
 2. Exercise all three applications and final scene/file/config/pixel output round-trips; validate window/headless failures, dialogs/resources and shutdown. Include model-editor Workspace parity, complete draw resource save/reload, UV2 regeneration, integrated AO/GI completion/cancel/application, best-view analysis and production model_edit preference/input regressions. M06's current execution coverage is unspecified.
 3. Audit transitive umbrella includes, exported types/symbols, shader paths, build/scripts and generated standalone sources for old namespace/Engine/native callbacks.

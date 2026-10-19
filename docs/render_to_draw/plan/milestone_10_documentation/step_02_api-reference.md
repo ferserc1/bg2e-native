@@ -10,6 +10,13 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 
 ## Audit work
 
+Check [M07 reviewed contracts](../milestone_07_bg2e_composer/review.md) against
+final signatures: detached root transfer, subclass/exact clone/custom resource
+hooks, parsed CPU DB data versus stopped GPU realization, distinct request/document/
+renderer identities, helper exclusion and conditional bool SelectableList scopes.
+Distinguish full resource save from temporary material adoption and standalone
+protected-batch publication; do not retain deleted overloads as usage recipes.
+
 1. Audit existing API indexes/reference and lifecycle/ownership against final headers for draw/pipeline/environment, GPU/reflection/scene/bake/utils/manipulation/UI/DB/app.
 2. Check accessor and reflected settings catalogs, identifiers/schema/precedence, import/export and runtime rebinding; verify clone ownership, safe rare edits, graphics-free versus complete IO and public component injection.
 3. Check explicit backend bindings/native boundaries, primitive versus SDK/runtime capabilities and genuine Vulkan/Metal differences. Confirm no unsupported ResourceManager, Metal upscaler, DLSS, forward/MSAA or compatibility promise.

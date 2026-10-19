@@ -142,6 +142,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
     floor->material().setAlphaCutoff(0);
     addDrawable("Floor", floor, {0, -1.05f, 0});
     _floor = _root->children().back();
+    _floor->setEnabled(false); // Composer displays authored scene content, not Model Edit fixtures.
 
     _camera = std::make_shared<scene::Node>("Editor camera");
     _camera->addComponent(new scene::TransformComponent());
@@ -164,6 +165,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
     light->light()->light().setCastShadows(true);
     _root->addChild(light);
     _fillLight = light;
+    _fillLight->setEnabled(false);
     _scene = std::make_shared<scene::Scene>();
     _scene->setSceneRoot(_root);
     _scene->setMainCamera(_camera->camera());
@@ -233,8 +235,12 @@ bool StageScene::frameNode(bg2e::scene::Node* node)
     {
         return false;
     }
-    orbitCamera()->setCenter(bounds.center());
-    orbitCamera()->setDistance(distance);
+    bg2e::utils::CameraCandidate candidate;
+    candidate.target = bounds.center();
+    candidate.distance = distance;
+    const auto direction = glm::normalize(_camera->worldPosition() - candidate.target);
+    candidate.position = candidate.target + direction * distance;
+    applyViewpoint(candidate);
     return true;
 }
 
@@ -272,7 +278,39 @@ std::vector<bg2e::utils::ViewSample> StageScene::analyzeBestView(bg2e::scene::No
 
 void StageScene::applyViewpoint(const bg2e::utils::CameraCandidate& candidate)
 {
-    bg2e::utils::applyViewpointToOrbitCamera(candidate, orbitCamera(), camera());
+    auto orbit = orbitCamera();
+    if (!orbit || !orbit->ownerNode())
+    {
+        throw std::invalid_argument("Viewpoint actions require an authored orbit controller");
+    }
+    auto local = candidate;
+    auto parent = orbit->ownerNode()->parent();
+    const auto matrix = parent ? parent->worldMatrix() : glm::mat4(1);
+    const glm::vec3 x(matrix[0]), y(matrix[1]), z(matrix[2]);
+    const float scale = glm::length(x);
+    // An orbit cannot represent shear, reflection or nonuniform parent scale.
+    // Reject these without touching the authored pose.
+    if (!std::isfinite(scale) || scale < 1e-6f || glm::determinant(glm::mat3(matrix)) <= 0 ||
+        std::abs(glm::length(y) - scale) > scale * 1e-4f ||
+        std::abs(glm::length(z) - scale) > scale * 1e-4f ||
+        std::abs(glm::dot(x, y)) > scale * scale * 1e-4f ||
+        std::abs(glm::dot(x, z)) > scale * scale * 1e-4f ||
+        std::abs(glm::dot(y, z)) > scale * scale * 1e-4f)
+    {
+        throw std::invalid_argument("Viewpoint actions require a rigid or uniformly scaled camera parent");
+    }
+    const auto inverse = glm::inverse(matrix);
+    local.target = glm::vec3(inverse * glm::vec4(candidate.target, 1));
+    local.position = glm::vec3(inverse * glm::vec4(candidate.position, 1));
+    const auto delta = local.position - local.target;
+    local.distance = glm::length(delta);
+    if (!std::isfinite(local.distance) || local.distance < 1e-6f)
+    {
+        throw std::invalid_argument("Invalid viewpoint distance");
+    }
+    local.pitch = glm::degrees(std::asin(std::clamp(delta.y / local.distance, -1.0f, 1.0f)));
+    local.yaw = glm::degrees(std::atan2(delta.x, delta.z));
+    bg2e::utils::applyViewpointToOrbitCamera(local, orbit, camera());
 }
 
 const std::vector<bg2e::utils::AnalyzedSubmesh>& StageScene::analyzedSubmeshes() const
@@ -306,7 +344,7 @@ void cleanupTree(bg2e::scene::Node& node)
             gizmo->cleanupDrawResources();
         });
     }
-    if (auto component = node.getComponent<bg2e::scene::DrawableComponent>())
+    if (auto component = node.drawable())
     {
         if (auto drawable = component->drawDrawable())
         {
@@ -425,10 +463,12 @@ void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) 
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesystem::path& path,
-    bool requireCamera, bg2e::scene::SceneProgressCallback progress)
+    bool requireCamera, bg2e::scene::SceneProgressCallback progress,
+    std::shared_ptr<bg2e::json::JsonNode> schema)
 {
-    // Parse/validate without a graphics context before resource realization.
-    auto loaded = bg2e::db::loadScene(path, progress);
+    // CPU schema parsing may already have completed on the import worker.
+    auto loaded = schema ? bg2e::scene::Scene::deserialize(schema, path.parent_path()) :
+        bg2e::db::loadScene(path, progress);
     if (!loaded || !loaded->rootNode())
     {
         throw std::invalid_argument("The file does not contain a scene");
@@ -476,7 +516,11 @@ std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path&
     {
         path = bg2e::db::resolveSceneLoadPath(path);
     }
-    const auto extension = path.extension().string();
+    auto extension = path.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c)
+    {
+        return static_cast<char>(std::tolower(c));
+    });
     if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
     {
         return prepareScene(path, true, nullptr);
@@ -487,7 +531,9 @@ std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path&
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesystem::path& input,
-    float unitsScale, bool sourceIsZUp, bg2e::scene::SceneProgressCallback progress)
+    float unitsScale, bool sourceIsZUp, bg2e::scene::SceneProgressCallback progress,
+    const bg2e::db::GltfDocument* gltf, std::shared_ptr<bg2e::json::JsonNode> schema,
+    const bg2e::db::Bg2Mesh* bg2, const bg2e::db::ObjMesh* obj)
 {
     using namespace bg2e;
     if (!std::isfinite(unitsScale) || unitsScale <= 0)
@@ -499,26 +545,31 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesyst
     {
         path = bg2e::db::resolveSceneLoadPath(path);
     }
-    const auto extension = path.extension().string();
+    auto extension = path.extension().string();
+    std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c)
+    {
+        return static_cast<char>(std::tolower(c));
+    });
     std::shared_ptr<scene::Node> node;
     if (extension == ".bg2" || extension == ".vwglb")
     {
-        node = db::loadSceneBg2(path, *_engine);
+        node = bg2 ? db::loadSceneBg2(path, *bg2, *_engine, progress) : db::loadSceneBg2(path, *_engine, progress);
     }
     else if (extension == ".gltf" || extension == ".glb")
     {
-        node = db::loadGltf(path, *_engine, progress);
+        node = gltf ? db::loadGltf(*gltf, *_engine, progress) : db::loadGltf(path, *_engine, progress);
     }
     else if (extension == ".obj")
     {
         node = std::make_shared<scene::Node>(path.stem().string());
-        auto component = std::make_shared<scene::DrawableComponent>(db::loadDrawableObj(path, *_engine));
+        auto component = std::make_shared<scene::DrawableComponent>(obj ?
+            db::loadDrawableObj(*obj, *_engine) : db::loadDrawableObj(path, *_engine));
         component->setResourcePath(path);
         node->addComponent(component);
     }
     else if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
     {
-        node = prepareScene(path, false, progress);
+        node = prepareScene(path, false, progress, std::move(schema));
     }
     else
     {
@@ -554,6 +605,129 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesyst
     }
 }
 
+void StageScene::publishImport(const std::shared_ptr<bg2e::scene::Node>& candidate,
+    const std::shared_ptr<bg2e::scene::Node>& parent,
+    const std::shared_ptr<bg2e::scene::Node>& previous,
+    std::function<void(bool restoring)> rebind)
+{
+    if (!candidate || candidate->parent() || !parent || !contains(parent.get()) ||
+        (previous && (!contains(previous.get()) || !previous->parent() || previous == _document.root)))
+    {
+        throw std::invalid_argument("Import publication requires current targets and a detached candidate");
+    }
+    for (auto node = parent.get(); node; node = node->parent())
+    {
+        if (node == previous.get())
+        {
+            throw std::invalid_argument("Cannot replace an import containing its destination parent");
+        }
+    }
+    unsigned lights = 0;
+    unsigned cameras = 0;
+    std::function<void(bg2e::scene::Node*)> count = [&](auto node)
+    {
+        if (!node || node == previous.get() || !node->enabled())
+        {
+            return;
+        }
+        lights += node->light() != nullptr;
+        cameras += node->camera() != nullptr;
+        for (const auto& child : node->children())
+        {
+            count(child.get());
+        }
+    };
+    count(_document.root.get());
+    bool destinationEnabled = true;
+    for (auto node = parent.get(); node; node = node->parent())
+    {
+        destinationEnabled &= node->enabled();
+    }
+    if (destinationEnabled)
+    {
+        count(candidate.get());
+    }
+    if (lights > 8 || cameras == 0)
+    {
+        throw std::invalid_argument("Import must retain an enabled camera and at most eight enabled lights");
+    }
+    // Keep failed candidates alive through renderer-first teardown if restoring
+    // the previous extraction also fails.
+    _retired.reserve(_retired.size() + 2);
+    auto oldParent = previous ? previous->parent()->shared_from_this() : nullptr;
+    const auto oldChildren = oldParent ? oldParent->children() : std::vector<std::shared_ptr<bg2e::scene::Node>>{};
+    const auto oldCamera = _camera;
+    const bool oldDirty = _document.dirty;
+    const bool oldFill = _fillLight && _fillLight->enabled();
+    auto fallback = _root->environment() ? _root->environment()->shared_from_this() : nullptr;
+    parent->addChild(candidate);
+    try
+    {
+        if (previous)
+        {
+            oldParent->removeChild(previous);
+        }
+        if (environmentNode() && fallback)
+        {
+            _root->removeComponent(fallback);
+        }
+        refreshCamera();
+        if (rebind)
+        {
+            rebind(false);
+        }
+    }
+    catch (...)
+    {
+        parent->removeChild(candidate);
+        if (oldParent)
+        {
+            // Restore sibling order as well as parent identity/camera priority.
+            for (const auto& child : oldChildren)
+            {
+                oldParent->removeChild(child);
+            }
+            for (const auto& child : oldChildren)
+            {
+                oldParent->addChild(child);
+            }
+        }
+        if (fallback && !fallback->ownerNode())
+        {
+            _root->addComponent(fallback);
+        }
+        if (_fillLight)
+        {
+            _fillLight->setEnabled(oldFill);
+        }
+        _camera = oldCamera;
+        if (rebind)
+        {
+            try
+            {
+                rebind(true);
+            }
+            catch (...)
+            {
+                _retired.push_back(candidate);
+                throw;
+            }
+        }
+        else
+        {
+            refreshCamera();
+        }
+        _document.dirty = oldDirty;
+        throw;
+    }
+    if (previous)
+    {
+        _retired.push_back(previous);
+    }
+    markModified();
+}
+
+
 void StageScene::insert(std::shared_ptr<bg2e::scene::Node> candidate,
     const std::shared_ptr<bg2e::scene::Node>& parent)
 {
@@ -587,8 +761,33 @@ void StageScene::insert(std::shared_ptr<bg2e::scene::Node> candidate,
     refreshCamera();
 }
 
+void StageScene::validateEditingGraph()
+{
+    if (enabledLightCount(_document.root.get()) > 8)
+    {
+        throw std::invalid_argument("Draw scenes support at most eight enabled lights");
+    }
+    bg2e::scene::FindCameraVisitor cameras;
+    cameras.setIgnoreDisabled(true);
+    cameras.findCameras(_document.root.get());
+    if (cameras.cameras().empty())
+    {
+        throw std::invalid_argument("Keep at least one enabled document camera");
+    }
+    prepareCameras(_document.root);
+}
+
+
 void StageScene::refreshCamera()
 {
+    if (environmentNode() && _root->environment())
+    {
+        _root->removeComponent(_root->environment()->shared_from_this());
+    }
+    if (_fillLight && enabledLightCount(_document.root.get()) >= 8)
+    {
+        _fillLight->setEnabled(false);
+    }
     bg2e::scene::FindCameraVisitor find;
     find.setIgnoreDisabled(true);
     find.findCameras(_document.root.get());
@@ -596,7 +795,29 @@ void StageScene::refreshCamera()
     {
         if (auto camera = weak.lock())
         {
-            _camera = camera->ownerNode()->shared_from_this();
+            auto next = camera->ownerNode()->shared_from_this();
+            if (_camera != next)
+            {
+                // Controller clones retain authored settings and clear transient
+                // pressed-button state before another camera starts receiving input.
+                auto resetControllers = [&](bg2e::scene::Node* node)
+                {
+                    for (; node && contains(node); node = node->parent())
+                    {
+                        if (auto controller = node->getComponent<bg2e::scene::OrbitCameraComponent>())
+                        {
+                            auto fresh = controller->clone();
+                            fresh->setPriority(controller->priority());
+                            fresh->setIgnoreSerialization(controller->ignoreSerialization());
+                            node->removeComponent(controller->shared_from_this());
+                            node->addComponent(fresh);
+                        }
+                    }
+                };
+                resetControllers(_camera.get());
+                resetControllers(next.get());
+            }
+            _camera = std::move(next);
             _scene->updateLights();
             _scene->updateEnvironment();
             _scene->setMainCamera(camera.get());
@@ -851,7 +1072,7 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
     visitNodes(root, [&](const auto& node)
     {
         using namespace bg2e;
-        if (auto component = node->template getComponent<scene::DrawableComponent>())
+        if (auto component = node->drawable())
         {
             if (auto drawable = component->drawDrawable())
             {
@@ -864,10 +1085,6 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
                 meshes.insert(drawable->mesh().get());
             }
         }
-        if (!node->template getComponent<scene::TransformComponent>())
-        {
-            node->addComponent(new scene::TransformComponent());
-        }
         if (!node->template getComponent<manipulation::SelectableComponent>())
         {
             auto selectable = std::make_shared<manipulation::SelectableComponent>();
@@ -875,20 +1092,6 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
             node->addComponent(selectable);
         }
         node->template getComponent<manipulation::SelectableComponent>()->update(0);
-        if (!node->light())
-        {
-            // Preserve authored transforms and geometry, but expose editor
-            // gizmos only for lights in the composer.
-            if (auto gizmo = node->template getComponent<manipulation::GizmoComponent>())
-            {
-                if (gizmo->manipulationMode() == manipulation::ToolExecutionMode::Draw)
-                {
-                    gizmo->cleanupDrawResources();
-                }
-                node->removeComponent(gizmo->shared_from_this());
-            }
-            return;
-        }
         if (!node->template getComponent<manipulation::GizmoComponent>())
         {
             node->addComponent(new manipulation::GizmoComponent(_engine));

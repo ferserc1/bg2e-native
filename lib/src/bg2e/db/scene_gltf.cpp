@@ -612,9 +612,13 @@ template<class DrawableT, class EngineT>
 static scene::Node* loadGltfImpl(
     const std::filesystem::path& filePath,
     EngineT* engine,
-    scene::SceneProgressCallback onProgress)
+    scene::SceneProgressCallback onProgress,
+    std::shared_ptr<cgltf_data> data = {})
 {
-    std::unique_ptr<cgltf_data, decltype(&cgltf_free)> data(gltf::loadGltfFile(filePath), &cgltf_free);
+    if (!data)
+    {
+        data = std::shared_ptr<cgltf_data>(gltf::loadGltfFile(filePath), &cgltf_free);
+    }
     gltf::TemporaryImages temporaryImages(filePath, data.get());
     if constexpr (std::is_same_v<DrawableT, draw::Drawable>)
     {
@@ -799,6 +803,25 @@ static scene::Node* loadGltfImpl(
     temporaryImages.commit();
 
     return result.release();
+}
+
+std::shared_ptr<GltfDocument> readGltf(const std::filesystem::path& path)
+{
+    auto document = std::make_shared<GltfDocument>();
+    document->_path = std::filesystem::absolute(path).lexically_normal();
+    document->_data = std::shared_ptr<cgltf_data>(gltf::loadGltfFile(document->_path), &cgltf_free);
+    return document;
+}
+
+std::shared_ptr<scene::Node> loadGltf(const GltfDocument& document, draw::Engine& engine,
+    scene::SceneProgressCallback onProgress)
+{
+    if (!document._data)
+    {
+        throw std::invalid_argument("The glTF document is empty");
+    }
+    return std::shared_ptr<scene::Node>(loadGltfImpl<draw::Drawable>(document.path(), &engine,
+        std::move(onProgress), std::static_pointer_cast<cgltf_data>(document._data)));
 }
 
 scene::Node* loadGltf(const std::filesystem::path& filePath, render::Engine* engine,

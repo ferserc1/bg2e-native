@@ -103,7 +103,7 @@ void AppDelegate::selectNode(std::weak_ptr<bg2e::scene::Node> target, uint32_t s
         {
             _selection->deselect();
         }
-        if (auto component = node->getComponent<bg2e::scene::DrawableComponent>())
+        if (auto component = node->drawable())
         {
             if (_selection->isSelected(node.get(), component, submesh))
             {

@@ -70,3 +70,15 @@ semantics. Background parsing must not move GPU realization to an unsafe worker.
 Capture request and document generations plus a weak current parent; revalidate
 after asynchronous completion and before insertion/reimport removal. Retire or
 discard detached candidates before releasing their borrowed context.
+
+
+## M07-03 editor mutation handoff
+
+Consume [scene-editing.md](scene-editing.md): SceneTree callbacks carry intents,
+AppDelegate queues weak document/member targets, and notifyEdited retires bake
+sources, marks dirty, invalidates histories and reattaches extraction/catalogs.
+Tree selection is explicitly node-only; submesh material intent remains separate.
+Rebuild tools and prune selection before retaining removed resources. Respect
+StageScene::validateEditingGraph camera/eight-enabled-light constraints and
+DrawableComponent::isSceneGeometry helper exclusion when adopting job output.
+M07-03 does not implement async services or multi-target bake scheduling.

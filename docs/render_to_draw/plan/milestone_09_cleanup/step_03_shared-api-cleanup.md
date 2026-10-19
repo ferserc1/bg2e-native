@@ -20,6 +20,13 @@ Current sources to inspect: [lib/include/bg2e/scene/Drawable.hpp](../../../../li
 
 ## Implementation work
 
+Preserve [M07's neutral contracts](../milestone_07_bg2e_composer/review.md):
+Scene::releaseSceneRoot, subclass-compatible lookup, rejection of sliced/shared
+clones, independent projections, parsed-model CPU/read/draw realization APIs,
+chain metadata and isSceneGeometry helper exclusion. Keep all surviving
+SelectableList item/endList calls under a successful bool beginList scope.
+Removing production overloads must not remove those shared behavior fixes.
+
 1. Delete legacy scene Drawable/RenderMesh and native draw methods; DrawableComponent now holds draw Drawable only, with consistent final accessors used by all supported consumers.
 2. Remove production Engine/material/texture overloads and backing maps from DB/scene factories/utils/manipulation/UI/bake wrappers. Retain useful pure serialization/CPU overloads.
 3. Delete scene::vk and legacy DrawVisitor/RenderQueueVisitor implementations; keep draw visitors and scene Update/Input/Transform visitors. Finalize ResizeViewportVisitor based on actual neutral dependency.

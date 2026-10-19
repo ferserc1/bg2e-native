@@ -99,6 +99,12 @@ void SceneTree::handleClick(scene::Node* node)
 
     const bool additive = _selectionManager->multiSelection() && ImGui::GetIO().KeyCtrl;
 
+    if (_onSelect)
+    {
+        _onSelect(node, additive);
+        return;
+    }
+
     if (additive)
     {
         // Toggle the clicked node, keeping the rest of the selection
@@ -143,7 +149,28 @@ void SceneTree::handleDropTarget(scene::Node* target)
         return;
     }
 
-    if (!dragged ||
+    // A payload can outlive its source document. Compare addresses against the
+    // current tree before dereferencing a dragged pointer.
+    std::function<bool(scene::Node*)> contains = [&](scene::Node* node)
+    {
+        if (!node)
+        {
+            return false;
+        }
+        if (node == dragged)
+        {
+            return true;
+        }
+        for (const auto& child : node->children())
+        {
+            if (contains(child.get()))
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+    if (!dragged || !contains(_root) || dragged == _root ||
         dragged == target ||           // drop on itself
         dragged->parent() == target || // already a child of the target
         isAncestor(dragged, target))   // would create a cycle
@@ -156,6 +183,11 @@ void SceneTree::handleDropTarget(scene::Node* target)
 
 void SceneTree::reparentNode(scene::Node* node, scene::Node* newParent)
 {
+    if (_onReparent)
+    {
+        _onReparent(node, newParent);
+        return;
+    }
     auto* oldParent = node->parent();
     if (!oldParent || !newParent)
     {

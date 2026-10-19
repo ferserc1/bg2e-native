@@ -1,5 +1,10 @@
 # M07-07 — Review M07 scene/import contracts and revise CLI/cleanup
 
+Consume [M07-06 product validation](product-validation.md), including the Chain
+control parity correction, source-backed workflow/distribution matrix and explicit
+runtime/package evidence gaps. Do not convert static target discovery into native
+launch proof or defer lost workflows to M09.
+
 [Milestone summary](summary.md) · [Plan index](../index.md) · [Architecture decisions](../architecture-decisions.md) · [Execution protocol](../execution-protocol.md) · [Progress](../progress.md)
 
 **Execution status:** see [progress](../progress.md). **Prerequisites:** M07 product/scene/bake evidence.
@@ -35,3 +40,13 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## Revised final handoff
 
 This technical review is followed by [M07-08 — Cumulative documentation](step_08_documentation.md) in the same milestone. On review delivery, progress points to that documentation step, with normal lead acceptance required. The review does not close the milestone or authorize the following milestone by itself. Reconcile its report with the documentation handoff after that final step.
+
+
+## M07-04 implemented import boundary
+
+Review [async-import-service.md](async-import-service.md) against actual joined
+worker/HTTP lifecycle, publication rollback and same-renderer generation refresh.
+Compare CPU-only GltfDocument/ObjMesh/Bg2Mesh realization overloads with M08 parser
+reuse, and include app-local private httplib headers/settings plus retained legacy
+server paths in M09 retirement. Actual native HTTP/backend evidence remains a
+lead-owned check; static inspection does not establish it.

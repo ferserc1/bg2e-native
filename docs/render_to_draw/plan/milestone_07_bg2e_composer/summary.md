@@ -23,6 +23,11 @@ through M08.
 
 ## Working product
 
+[M07 technical review](review.md) records the implemented scene/import/bake/UI
+contracts, lead-checked selection correction and M08–M10 impacts. Product steps
+through M07-06 are accepted; M07-07 review and M07-08 cumulative documentation
+retain separate acceptance gates. No production retirement is authorized here.
+
 A runnable `apps/draw/bg2e_composer` reproduces scene composition/editing/import/baking through draw and the new DB/settings/tools APIs. The production composer stays operational through M08 as a behavior reference.
 
 ## Scope exclusions
@@ -119,3 +124,12 @@ contracts were tightened; source probes and lead checks are under
 [tests/draw/composer_io](../../../../tests/draw/composer_io/README.md). Full scene
 UI/fixture-light/controller policy, async services and multi-job baking remain the
 ordered M07-03–05 work. Agent checks are static; runtime/package evidence is pending.
+
+
+## M07-04 implementation handoff
+
+[Async import/service contracts](async-import-service.md) record CPU parser versus
+stopped GPU realization, owned worker/server shutdown, document/job validity,
+canonical reimport and renderer rollback. Read them before M07-05 multi-job bake
+integration and M07-07 review. Implementation has static checks only; project-lead
+backend/HTTP execution is pending.

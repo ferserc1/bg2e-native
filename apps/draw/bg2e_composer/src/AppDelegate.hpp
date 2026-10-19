@@ -19,15 +19,22 @@
 #pragma once
 
 #include "StageScene.hpp"
+#include "SceneImporter.hpp"
+#include "ImportServer.hpp"
+#include "ImportSettings.hpp"
+#include <unordered_map>
 
 #include <bg2e/app/InputDelegate.hpp>
 #include <bg2e/app/Uv2SafeReload.hpp>
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/bake/IntegratedBakerContext.hpp>
+#include <bg2e/bake/LightmapPixels.hpp>
 #include <bg2e/scene/InputVisitor.hpp>
 
 #include <optional>
 #include <functional>
+#include <utility>
+#include <vector>
 #include <bg2e/manipulation/SelectionManager.hpp>
 #include <bg2e/manipulation/GizmoAndSelectionRenderer.hpp>
 
@@ -61,6 +68,25 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void importDocument(const std::filesystem::path& path, float unitsScale = 1.0f,
         bool sourceIsZUp = false);
     void exportSelectedModels();
+
+    void cancelImports(bool remoteOnly = false);
+    void setImportService(bool enabled, const std::string& port);
+    bool importServiceRunning() const
+    {
+        return _importServer.isRunning();
+    }
+    uint32_t importPort() const
+    {
+        return _importSettings.port();
+    }
+    SceneImporter& imports()
+    {
+        return _imports;
+    }
+    const std::string& importStatus() const
+    {
+        return _importStatus;
+    }
     bool confirmClose();
     void requestQuit()
     {
@@ -89,6 +115,16 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t submesh, bool additive);
     void queueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
         std::function<void(bg2e::scene::Node&)> operation, bool rebuild = false);
+    void selectTreeNode(std::weak_ptr<bg2e::scene::Node> node, bool additive);
+    void reparentNode(std::weak_ptr<bg2e::scene::Node> node,
+        std::weak_ptr<bg2e::scene::Node> parent);
+    void editComponent(std::weak_ptr<bg2e::scene::Node> node,
+        std::weak_ptr<bg2e::scene::Component> original,
+        std::shared_ptr<bg2e::scene::Component> replacement);
+    void setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled);
+    void addSceneItem(unsigned kind);
+    void addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName);
+
     void editGeometry(unsigned operation);
     void duplicateSelection();
     void copyMaterial();
@@ -107,10 +143,14 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         bg2e::app::Uv2SafeReload::CompletionCallback completion);
     void startLightmapBake(std::weak_ptr<bg2e::scene::Node> target,
         const bg2e::bake::LightmapSettings& settings);
+    void startLightmapBatch(bool wholeScene, const bg2e::bake::LightmapSettings& settings);
+    void startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::Node>> targets,
+        const bg2e::bake::LightmapSettings& settings);
     void cancelLightmapBake();
     void applyLightmapBake();
     bg2e::bake::BakeProgress lightmapBakeProgress() const;
-    std::optional<bg2e::bake::LightmapResult> lightmapResult() const;
+    std::optional<bg2e::bake::LightmapResult> lightmapResult(
+        const std::shared_ptr<bg2e::scene::Node>& target = {}) const;
     bool lightmapBakeActive() const;
     void onSelectionChanged(std::function<void()> callback)
     {
@@ -157,17 +197,33 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::filesystem::path chooseSavePath();
 
     struct PendingIo {
-        enum class Kind { Open, Save, New, Import, Export };
+        enum class Kind { Open, Save, New, Export };
         Kind kind = Kind::Open;
         std::filesystem::path path;
         uint64_t generation = 0;
         std::weak_ptr<bg2e::scene::Node> parent;
         std::vector<std::weak_ptr<bg2e::scene::Node>> targets;
-        float unitsScale = 1.0f;
-        bool sourceIsZUp = false;
         bool batch = false;
         bool destinationConfirmed = false;
     };
+    void initializeImports();
+    void processImports();
+    void enqueueImport(ImportRequest request);
+    void setImportPaused(bool paused);
+    void invalidateImports();
+
+    SceneImporter _imports;
+    ImportServer _importServer;
+    ImportSettings _importSettings;
+    struct ImportedEntry {
+        std::weak_ptr<bg2e::scene::Node> node;
+        uint64_t generation = 0;
+    };
+    std::unordered_map<std::string, ImportedEntry> _imported;
+    uint64_t _nextImportToken = 1;
+    bool _importPaused = false;
+    std::string _importStatus;
+
     void processDocumentIo();
     bool saveBeforeReplace();
     bool _additiveSelection = false;
@@ -186,8 +242,19 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     };
     std::optional<BakeSubmission> _bakeSubmission;
     std::weak_ptr<bg2e::scene::Node> _bakeTarget;
+    struct BakeTarget {
+        std::weak_ptr<bg2e::scene::Node> node;
+        std::shared_ptr<bg2e::draw::Drawable> drawable;
+        std::optional<bg2e::bake::LightmapResult> result;
+        std::optional<bg2e::bake::LightmapPixels> pixels;
+    };
+    std::vector<BakeTarget> _bakeTargets;
+    size_t _bakeTargetIndex = 0;
+    bg2e::bake::LightmapSettings _bakeSettings;
     uint64_t _bakeDocumentGeneration = 0;
+    uint64_t _bakeRendererGeneration = 0;
     std::optional<bg2e::bake::LightmapResult> _completedLightmap;
+    std::vector<std::pair<std::weak_ptr<bg2e::scene::Node>, bg2e::bake::LightmapResult>> _completedLightmaps;
     uint64_t _completedLightmapDocumentGeneration = 0;
     bool _bakeApplyQueued = false;
     bool _wasContinuousRendering = false;

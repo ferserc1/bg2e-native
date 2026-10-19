@@ -113,9 +113,11 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
             list(child);
         }
     };
-    ui::SelectableList::beginList();
-    list(document->root);
-    ui::SelectableList::endList();
+    if (ui::SelectableList::beginList())
+    {
+        list(document->root);
+        ui::SelectableList::endList();
+    }
     auto target = selection->selectedNode();
     if (target)
     {

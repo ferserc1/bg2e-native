@@ -23,6 +23,13 @@ Current sources to inspect: [CMakeLists.txt](../../../../CMakeLists.txt), [lib/C
 
 ## Implementation work
 
+Include [M07's actual app/probe inventory](../milestone_07_bg2e_composer/review.md):
+tests/draw/composer_io, composer_import, composer_baking and tests/ui/selectable_list.
+Retain/migrate their final API/source references and native draw/bake resource
+deployment with the canonical Composer target. Audit legacy/draw server identity
+and preferences when retiring targets; do not infer installed launch from recursive
+package target collection alone.
+
 1. Remove old application/example/render shader targets that require the deleted API, or migrate a specifically useful demonstration/check to draw/bake. No old application source support remains.
 2. Adapt existing UV-surface/integrated-context/atlas executable checks and any supported tests to final public APIs; do not leave failing unbuilt targets to hide dependencies.
 3. Update engine shader library install/bundle paths, optional FSR/native backend assets, packaging scripts and standalone-project templates to new headers/default entry points.

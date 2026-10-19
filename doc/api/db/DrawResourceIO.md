@@ -123,3 +123,28 @@ save snapshots that applied GPU image into final native sidecars, preserving the
 linear UV2 baked-AO/GI material metadata. A saved model does not depend on the
 original temporary path. Reference-only serialization is not a replacement for
 this resource materialization. See the [editor workflow](../../tutorials/draw/model_edit.md).
+
+## Preparing imports without a graphics context
+
+`readGltf(path)` returns an owning `GltfDocument` containing the parsed file and
+loaded CPU buffers. `loadGltf(document, drawEngine, progress)` realizes the static
+scene using that snapshot. Its private opaque parser storage keeps cgltf types
+out of public headers. Image decoding, material/vertex conversion and resource
+realization still run during the stopped high-level operation.
+
+`readObj(path)` returns an `ObjMesh` with CPU mesh, MTL attributes, submesh names
+and groups. `loadDrawableObj(model, drawEngine, callback)` copies its editable mesh
+and texture descriptions before upload. `loadMeshBg2(path)` remains the existing
+CPU reader; `loadSceneBg2(path, const Bg2Mesh&, drawEngine, progress)` realizes that
+model, including chain joints. Existing path-taking draw overloads delegate to
+these parser/realization boundaries; production overloads remain available.
+
+These CPU readers can run on an owned worker with independent inputs. They do
+not touch a live scene, graph factories or GPU objects. Consume their completed
+results after joining/synchronizing the worker, using a stopped initialized draw
+context. Prefab workers can use `readSceneDocument`; graph deserialization and
+`Node::loadResources` stay with the application main thread. Texture and prefab
+resource paths are resolved during realization, so external files must remain
+available. Applications own job cancellation, document/destination validity,
+publication rollback and renderer/bake/selection invalidation; parser results are
+not a background GPU-loading or immutable filesystem snapshot API.
