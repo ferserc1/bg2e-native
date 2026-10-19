@@ -32,7 +32,7 @@ VkShaderStageFlags shaderStageToVkFlags(ShaderStage stage)
     switch (stage)
     {
     case ShaderStage::Vertex:
-        throw std::invalid_argument("Unknown shader stage");
+        return VK_SHADER_STAGE_VERTEX_BIT;
     case ShaderStage::Fragment:
         return VK_SHADER_STAGE_FRAGMENT_BIT;
     case ShaderStage::Compute:
