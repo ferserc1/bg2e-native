@@ -184,9 +184,15 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
     struct ExecutionCleanup {
         std::unique_ptr<detail::GraphicsExecution>& execution;
         glm::uvec2& windowSize;
+        std::vector<std::jthread>& workers;
+        std::vector<std::shared_ptr<SafeUpdateToken>>& loadTokens;
+        ui::UserInterface& userInterface;
 
         ~ExecutionCleanup()
         {
+            workers.clear(); // Join CPU readers before any app/UI/Engine teardown.
+            loadTokens.clear(); // Cancel completions queued for the exiting run.
+            userInterface.clearFrameOverride();
             if (execution)
             {
                 try
@@ -200,7 +206,7 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
             }
             windowSize = glm::uvec2{0, 0};
         }
-    } executionCleanup{_execution, _windowSize}; // Released before windowOwner on exceptions.
+    } executionCleanup{_execution, _windowSize, _asyncLoadWorkers, _asyncLoadTokens, _userInterface};
     int logicalWidth = 0;
     int logicalHeight = 0;
     SDL_GetWindowSize(window, &logicalWidth, &logicalHeight);
@@ -404,6 +410,9 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
         appPreferences.set("windowSize", glm::vec2{storeWidth, storeHeight});
     }
 
+    _asyncLoadWorkers.clear();
+    _asyncLoadTokens.clear();
+    _userInterface.clearFrameOverride();
     _execution->waitIdle();
     _execution->cleanup();
     _execution.reset();
@@ -553,7 +562,11 @@ void MainLoop::asyncLoad(
                                         });
     }
 
-    std::thread([this, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
+    auto token = std::make_shared<SafeUpdateToken>();
+    try
+    {
+        _asyncLoadTokens.push_back(token);
+        _asyncLoadWorkers.emplace_back([this, token, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
                 {
                     std::exception_ptr error;
                     try
@@ -576,9 +589,19 @@ void MainLoop::asyncLoad(
                                         {
                                             complete(error);
                                         }
-                                    });
-                })
-        .detach();
+                                    }, token);
+                });
+    }
+    catch (...)
+    {
+        *token->alive = false;
+        if (_execution->userInterfaceReady())
+        {
+            _userInterface.clearFrameOverride();
+        }
+        _execution->resumeScene();
+        throw;
+    }
 }
 
 }

@@ -21,16 +21,51 @@
 #include <bg2e/app/FileDialog.hpp>
 #include <bg2e/app/MessageBox.hpp>
 #include <bg2e/gpu/Device.hpp>
+#include <bg2e/app/MainLoop.hpp>
+#include <bg2e/db/scene.hpp>
 
 #include <cmath>
+#include <algorithm>
+#include <cctype>
 #include <set>
 #include <stdexcept>
+#include <bg2e/db/scene_path.hpp>
 
 namespace bg2e_composer {
 
+void AppDelegate::asyncLoadGuarded(std::function<void(bg2e::ui::Loader*)> loadFn,
+    glm::vec4 clearColor, std::function<void(std::exception_ptr)> onComplete)
+{
+    if (sceneLoading())
+    {
+        throw std::logic_error("A scene load is already running");
+    }
+    _asyncLoadInProgress = true;
+    try
+    {
+        bg2e::app::MainLoop::current()->asyncLoad(std::move(loadFn), clearColor,
+            [weak = weak_from_this(), complete = std::move(onComplete)](std::exception_ptr error)
+            {
+                if (auto owner = weak.lock())
+                {
+                    owner->_asyncLoadInProgress = false;
+                    if (complete)
+                    {
+                        complete(error);
+                    }
+                }
+            });
+    }
+    catch (...)
+    {
+        _asyncLoadInProgress = false;
+        throw;
+    }
+}
+
 void AppDelegate::newDocument()
 {
-    if (!_stage || _pendingIo)
+    if (!_stage || _pendingIo || sceneLoading())
     {
         return;
     }
@@ -42,6 +77,10 @@ void AppDelegate::newDocument()
 
 void AppDelegate::importDocument(const std::filesystem::path& path, float unitsScale, bool sourceIsZUp)
 {
+    if (sceneLoading())
+    {
+        return;
+    }
     ImportRequest request;
     request.filePath = path;
     request.fileName = path.filename().string();
@@ -53,7 +92,7 @@ void AppDelegate::importDocument(const std::filesystem::path& path, float unitsS
 
 void AppDelegate::exportSelectedModels()
 {
-    if (!_stage || !_selection || _pendingIo)
+    if (!_stage || !_selection || _pendingIo || sceneLoading())
     {
         return;
     }
@@ -115,7 +154,7 @@ bool AppDelegate::saveBeforeReplace()
 
 void AppDelegate::processDocumentIo()
 {
-    if (!_pendingIo || !_stage)
+    if (!_pendingIo || !_stage || _asyncLoadInProgress)
     {
         return;
     }
@@ -155,12 +194,114 @@ void AppDelegate::processDocumentIo()
             return;
         }
         // Do not allocate GPU resources for a replacement before the dirty prompt.
-        if (!saveBeforeReplace())
+        if (!operation.replacementConfirmed && !saveBeforeReplace())
         {
             _status = "Scene replacement cancelled";
             return;
         }
-        candidate = operation.kind == Kind::New ? _stage->newDocumentRoot() : _stage->load(operation.path);
+        if (operation.kind == Kind::Open && !operation.schema)
+        {
+            // Read/parse detached JSON on the worker. Component factories, GPU
+            // realization and graph publication remain at the stopped main boundary.
+            auto path = std::filesystem::absolute(operation.path).lexically_normal();
+            if (std::filesystem::is_directory(path))
+            {
+                path = bg2e::db::resolveSceneLoadPath(path);
+            }
+            auto extension = path.extension().string();
+            std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c)
+            {
+                return static_cast<char>(std::tolower(c));
+            });
+            if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
+            {
+                cancelImports();
+                operation.path = path;
+                operation.generation = document()->generation;
+                operation.replacementConfirmed = true;
+                auto schema = std::make_shared<std::shared_ptr<bg2e::json::JsonNode>>();
+                asyncLoadGuarded([path, schema](bg2e::ui::Loader* loader)
+                {
+                    loader->setProgress(0);
+                    loader->setMessage("Reading scene: " + path.filename().string());
+                    *schema = bg2e::db::readSceneDocument(path);
+                    loader->setProgress(1);
+                    loader->setMessage("Preparing scene resources...");
+                }, {0, 0, 0, 1},
+                [weak = weak_from_this(), operation = std::move(operation), schema](std::exception_ptr error) mutable
+                {
+                    auto owner = weak.lock();
+                    if (!owner)
+                    {
+                        return;
+                    }
+                    try
+                    {
+                        if (error)
+                        {
+                            std::rethrow_exception(error);
+                        }
+                        if (!owner->document() || owner->document()->generation != operation.generation)
+                        {
+                            throw std::runtime_error("Scene load belongs to a replaced document");
+                        }
+                        operation.schema = std::move(*schema);
+                        owner->_pendingIo = std::move(operation);
+                        owner->_sceneResourceLoad = true;
+                        owner->_sceneLoader.setProgress(0);
+                        owner->_sceneLoader.setMessage("Preparing scene resources...");
+                        bg2e::app::MainLoop::current()->pauseScene();
+                        owner->_status = "Preparing scene resources...";
+                    }
+                    catch (const std::exception& failure)
+                    {
+                        owner->_status = std::string("Scene operation failed: ") + failure.what();
+                        bg2e::app::MessageBox::showWarning("Scene operation failed", owner->_status,
+                            {{0, "OK", bg2e::app::MessageBox::Return}});
+                    }
+                    owner->requestSceneFrame();
+                });
+                return;
+            }
+        }
+        if (operation.schema)
+        {
+            candidate = operation.candidate;
+            if (!candidate)
+            {
+                candidate = _stage->load(operation.path, operation.schema, false);
+                operation.candidate = candidate;
+                std::function<void(const std::shared_ptr<bg2e::scene::Node>&)> collect;
+                collect = [&](const auto& node)
+                {
+                    for (const auto& component : node->orderedComponents())
+                    {
+                        operation.resources.push_back({component, node->name()});
+                    }
+                    for (const auto& child : node->children())
+                    {
+                        collect(child);
+                    }
+                };
+                collect(candidate);
+            }
+            if (operation.nextResource < operation.resources.size())
+            {
+                const auto& resource = operation.resources[operation.nextResource];
+                _sceneLoader.setMessage("Loading " + resource.nodeName + "...");
+                resource.component->loadResources(*_engine);
+                ++operation.nextResource;
+                _sceneLoader.setProgress(static_cast<float>(operation.nextResource) / operation.resources.size());
+                _pendingIo = std::move(operation);
+                requestSceneFrame();
+                bg2e::app::MainLoop::current()->requestFrame();
+                return; // Present the Loader between individual component uploads.
+            }
+        }
+        else
+        {
+            candidate = operation.kind == Kind::New ? _stage->newDocumentRoot() : _stage->load(operation.path);
+        }
         _stage->prepareTools(candidate);
         _stage->adopt(candidate, operation.kind == Kind::New ? std::filesystem::path{} : operation.path);
         invalidateImports();
@@ -174,10 +315,20 @@ void AppDelegate::processDocumentIo()
         invalidateLightmapSources();
         setScene(scene()); // Drop renderer queues before releasing retired resources.
         _status = operation.kind == Kind::New ? "New scene" : "Opened " + operation.path.filename().string();
+        if (_sceneResourceLoad)
+        {
+            _sceneResourceLoad = false;
+            bg2e::app::MainLoop::current()->resumeScene();
+        }
     }
     catch (const std::exception& error)
     {
         _stage->discardCandidate(candidate);
+        if (_sceneResourceLoad)
+        {
+            _sceneResourceLoad = false;
+            bg2e::app::MainLoop::current()->resumeScene();
+        }
         _status = std::string("Scene operation failed: ") + error.what();
         bg2e::app::MessageBox::showWarning("Scene operation failed", _status,
             {{0, "OK", bg2e::app::MessageBox::Return}});

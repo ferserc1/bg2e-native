@@ -395,6 +395,11 @@ void EditorUi::drawUI()
     {
         return;
     }
+    if (delegate->sceneLoading())
+    {
+        delegate->drawSceneLoader();
+        return;
+    }
     if (delegate->imports().busy())
     {
         if (auto job = delegate->imports().active(); job && !job->cancelled.load())

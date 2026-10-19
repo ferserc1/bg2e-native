@@ -47,8 +47,20 @@ All six material slots retain image/view/sampler and UV/color/channel convention
 Cutout acceptance is albedo alpha times material alpha >= cutoff at explicit LOD0;
 ForceNonOpaque exposes candidates and rejected hits continue behind holes. Both
 blended classes are excluded as occluders/secondary geometry by default. Huge scenes
-and material table overflow throw diagnostics; no texture substitution/truncation.
-Unavailable device/profile is separate from malformed scene/capacity failure.
+still fail for invalid geometry/buffer ranges. Material image/sampler table overflow
+is recoverable: an excess pair gets `UINT32_MAX` in both index lanes, and
+`fallbackTextureSlots` counts degraded slots. Shipped Vulkan/Metal `traceSample`
+returns white (flat `(0.5,0.5,1,1)` for the normal slot) before any descriptor access
+or color decoding. Scalar/tint/alpha/channel parameters remain unchanged; raster
+materials and all tracing geometry remain present. Overflowed cutout textures lose
+their holes, subject to the retained scalar alpha/cutoff. Already admitted pairs
+remain usable even when a table is full; rejected pairs consume neither table.
+
+One warning is emitted per TracingSceneResources overflow episode, not each frame;
+successful nonoverflow preparation or clear() resets it. The fixed native table
+profiles are unchanged. Custom compatible tracing shaders must implement the
+no-texture sentinel too. Unsupported devices and malformed resources still fail
+explicitly; this policy handles only sampled-material table exhaustion.
 
 See [surface profiles](SurfaceInputs.md), [effect capabilities](../../architecture/draw_advanced_lighting.md),
 [GPU arrays](../gpu/ResourceSet.md) and [native tracing](../gpu/RayTracingPipeline.md).

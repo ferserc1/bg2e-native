@@ -55,6 +55,11 @@ vec4 traceSample(uint materialIndex, uint slot, vec4 uv)
     TraceMaterial material = traceMaterials[materialIndex];
     uint imageIndex = material.images[slot/4u][slot%4u];
     uint samplerIndex = material.samplers[slot/4u][slot%4u];
+    if (imageIndex == 0xffffffffu || samplerIndex == 0xffffffffu)
+    {
+        // No descriptor access or sRGB conversion for an absent texture.
+        return slot == 3u ? vec4(0.5,0.5,1.0,1.0) : vec4(1.0);
+    }
     vec2 selected = drawSelectUV(material.values,slot,uv.xy,uv.zw);
     return drawDecodeSample(material.values,slot,
         textureLod(sampler2D(traceImages[nonuniformEXT(imageIndex)],traceSamplers[nonuniformEXT(samplerIndex)]),selected,0.0));

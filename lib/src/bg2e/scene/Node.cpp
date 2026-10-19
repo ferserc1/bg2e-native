@@ -303,7 +303,8 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
             auto compData = components->getObject(i);
             if (!compData)
             {
-                throw std::invalid_argument("Invalid component representation in node " + _name);
+                bg2e_log_warning << "Skipping invalid component at index " << i << " in node " << _name << bg2e_log_end;
+                continue;
             }
             auto* comp = ComponentFactoryRegistry::get().create(compData->node(), basePath);
             if (comp)
@@ -321,7 +322,8 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
             auto childData = children->getObject(i);
             if (!childData)
             {
-                throw std::invalid_argument("Invalid child representation in node " + _name);
+                bg2e_log_warning << "Skipping invalid child at index " << i << " in node " << _name << bg2e_log_end;
+                continue;
             }
             auto childNode = std::make_shared<Node>();
             childNode->deserialize(childData->node(), basePath, progress);
@@ -450,6 +452,12 @@ std::shared_ptr<json::JsonNode> Node::serialize(const std::filesystem::path& bas
             continue;
         }
         auto compData = comp.second->serialize(basePath);
+        if (!compData || !json::ObjectReader(compData).isValid())
+        {
+            bg2e_log_warning << "Skipping empty component serialization for " << comp.second->typeName()
+                << " in node " << _name << bg2e_log_end;
+            continue;
+        }
         components->listValue().push_back(compData);
     }
     obj["components"] = components;
@@ -497,6 +505,12 @@ std::shared_ptr<json::JsonNode> Node::serializeReferences(const std::filesystem:
             continue;
         }
         auto compData = comp.second->serializeReferences(basePath);
+        if (!compData || !json::ObjectReader(compData).isValid())
+        {
+            bg2e_log_warning << "Skipping empty component serialization for " << comp.second->typeName()
+                << " in node " << _name << bg2e_log_end;
+            continue;
+        }
         components->listValue().push_back(compData);
     }
     obj["components"] = components;

@@ -49,6 +49,11 @@ float4 traceSample(uint materialIndex, uint slot, float4 uv, thread const TraceD
     TraceMaterial material = data.materials[materialIndex];
     uint imageIndex = material.images[slot/4u][slot%4u];
     uint samplerIndex = material.samplers[slot/4u][slot%4u];
+    if (imageIndex == 0xffffffffu || samplerIndex == 0xffffffffu)
+    {
+        // No argument-buffer access or sRGB conversion for an absent texture.
+        return slot == 3u ? float4(0.5,0.5,1.0,1.0) : float4(1.0);
+    }
     float2 selected = drawSelectUV(material.values,slot,uv.xy,uv.zw);
     return drawDecodeSample(material.values,slot,
         data.resources->images[imageIndex].sample(data.resources->samplers[samplerIndex],selected,level(0.0)));

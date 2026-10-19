@@ -237,6 +237,48 @@ inline bool runRTAOProbe(Engine& engine, const std::filesystem::path& shaderRoot
     {
         throw std::runtime_error("Camera-depth and explicit world surfaces disagree at the same receiver");
     }
+    // A small supported profile must keep all geometry while degrading only
+    // excess texture pairs, with no out-of-range descriptor indices.
+    for (uint32_t i = 0; i < 6; ++i)
+    {
+        plane(2.0f + i, false);
+    }
+    extract();
+    TracingSceneResources bounded(device, 32);
+    auto overflow = bounded.prepare(queue);
+    if (!overflow->fallbackTextureSlots || overflow->images.size() > 32 || overflow->samplers.size() > 32 ||
+        overflow->instances.size() != 8 || overflow->materials.size() != 8)
+    {
+        throw std::runtime_error("Tracing overflow must preserve every instance with bounded resource tables");
+    }
+    uint64_t missing = 0;
+    for (const auto& material : overflow->materials)
+    {
+        for (uint32_t slot = 0; slot < 6; ++slot)
+        {
+            const auto image = material.images[slot/4][slot%4];
+            const auto sampler = material.samplers[slot/4][slot%4];
+            if (image == UINT32_MAX && sampler == UINT32_MAX)
+            {
+                ++missing;
+            }
+            else if (image >= overflow->images.size() || sampler >= overflow->samplers.size())
+            {
+                throw std::runtime_error("Tracing overflow produced an invalid image/sampler index");
+            }
+        }
+    }
+    if (missing != overflow->fallbackTextureSlots || bounded.prepare(queue)->fallbackTextureSlots != missing)
+    {
+        throw std::runtime_error("Tracing fallback accounting or repeat preparation differs");
+    }
+    root = std::make_shared<scene::Node>("recovered tracing scene");
+    plane(0.1f, false);
+    extract();
+    if (bounded.prepare(queue)->fallbackTextureSlots || !overflow->fallbackTextureSlots)
+    {
+        throw std::runtime_error("Tracing capacity recovery mutated a retained degraded snapshot");
+    }
     root = std::make_shared<scene::Node>("empty AO scene");
     if (render() < 0.999f)
     {

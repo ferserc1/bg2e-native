@@ -33,7 +33,7 @@ struct alignas(16) TracingInstanceData {
 };
 struct alignas(16) TracingMaterialData {
     MaterialData values;
-    std::array<glm::uvec4,2> images{}, samplers{}; // Six TextureSlot values; final two lanes reserved.
+    std::array<glm::uvec4,2> images{}, samplers{}; // Six slots; UINT32_MAX in both means neutral/no texture.
 };
 static_assert(sizeof(TracingVertex) == 64 && sizeof(TracingInstanceData) == 160 && sizeof(TracingMaterialData) == 256);
 static_assert(offsetof(TracingMaterialData, images) == 192 && offsetof(TracingMaterialData, samplers) == 224);
@@ -58,6 +58,7 @@ class BG2E_API TracingSnapshot {
 
     gpu::Device* device = nullptr; // Borrowed; outlives all owners.
     uint32_t capacity = 0;
+    uint64_t fallbackTextureSlots = 0; // Capacity-degraded slots; authored/raster resources are unchanged.
     std::shared_ptr<const TracingGeometry> geometry;
     std::vector<CollectRayTracingInstancesVisitor::Instance> owners;
     std::vector<TracingInstanceData> instances;
@@ -88,6 +89,7 @@ class BG2E_API TracingSceneResources {
 
     // Call only for a retired acquired slot or stopped job. Empty scenes allocate
     // no TLAS/table buffers. Blended transparent geometry is excluded by default.
+    // Excess texture/sampler pairs use neutral shader values with a warning.
     std::shared_ptr<TracingSnapshot> prepare(const RenderQueue& queue);
     void clear(); // Drop cache ownership only; retained snapshots remain valid.
     uint32_t capacity() const;
@@ -96,5 +98,6 @@ class BG2E_API TracingSceneResources {
     gpu::Device* _device;
     uint32_t _capacity;
     std::shared_ptr<const TracingGeometry> _geometry;
+    bool _capacityWarningActive = false;
 };
 }

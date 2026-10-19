@@ -201,7 +201,10 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
         {
             return;
         }
-        if (replacement && (replacement->ownerNode() || typeid(*replacement) != typeid(*old)))
+        const auto* replacementComponent = replacement.get();
+        const auto* oldComponent = old.get();
+        if (replacementComponent && (replacementComponent->ownerNode() ||
+            typeid(*replacementComponent) != typeid(*oldComponent)))
         {
             throw std::invalid_argument("Component replacement must be detached and retain its type");
         }

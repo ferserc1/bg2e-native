@@ -64,7 +64,8 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
     auto type = reader.getString("type");
     if (!reader.isValid() || !type || type->empty())
     {
-        throw std::invalid_argument("Component representation requires a type");
+        bg2e_log_warning << "Skipping component: missing or invalid type/representation" << bg2e_log_end;
+        return nullptr;
     }
     auto it = _registry.find(*type);
     if (it == _registry.end())
@@ -74,7 +75,8 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
     }
     if (!it->second.createDefault)
     {
-        throw std::invalid_argument("No schema constructor registered for component " + *type);
+        bg2e_log_warning << "Skipping component without a schema constructor: " << *type << bg2e_log_end;
+        return nullptr;
     }
     std::unique_ptr<Component> result(it->second.createDefault());
     if (!result)

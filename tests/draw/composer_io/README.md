@@ -42,9 +42,19 @@ the normal platform generator so the app's new DocumentIo.cpp is discovered.
 | Fail a later batch export | Failed destination reported; earlier complete model exports remain readable; no all-batch atomicity is claimed |
 | Replace/delete target after queuing import/export | Weak target and document-generation checks reject stale operations |
 | Close/replace with active bake or retained previews | Work retires before graph/Engine resources; old selection/material actions do not affect the replacement |
+| Open JSON/legacy scene or scene folder while moving/resizing the window | Raw document IO/parse runs on the guarded worker with Loader; GPU component realization advances between Loader frames on the main thread; no scene rendering or editor mutations while loading |
+| Repeat Open/drop/Save/New/Close during scene load | No overlapping replacement or save; Close is deferred/rejected until the pending load finishes; no stale worker publication |
+| Invalid JSON, missing resource, or shutdown/exception while reading | Error reported with old document retained before adoption; CPU worker joined before UI/Engine teardown; queued completion of the exiting run is cancelled |
+| Open primitives_scene with full tracing temporarily disabled | Null entries warn/skip, camera and all eight drawables load; per-component resource progress appears; separately track the known tracing capacity overflow rather than attributing it to JSON IO |
 | Reopen saved bakedGI/AO model/scene | GPU-only HDR/mips, linear UV2 mode, sampler/color/inversion and indirect metadata remain correct |
 
 Production `bg2e_composer` and `draw_model_edit` remain regression references.
+
+One resource load is still synchronous: a very large model/image can stall its
+individual Loader frame. Environment/renderer initialization after adoption also
+remains synchronous. Fully streaming CPU model/image decode and bounded GPU
+uploads are not claimed by this correction. Re-enable tracing only to reproduce
+the separate capacity failure described in the M07 investigation.
 M07-03 still owns the complete scene tree/component/menu/gizmo/active-controller UI
 and the Composer-specific fixture/light policy. M07-04 owns async import/server
 scheduling and M07-05 owns multiple bake jobs; these checks do not establish their

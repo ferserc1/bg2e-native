@@ -1,5 +1,13 @@
 # M07 technical review — Composer scene/import/bake contracts
 
+Subsequent failure/correction: [guarded loading and tracing investigation](loading-and-tracing-investigation.md)
+records the new Open Scene Loader phases, joined MainLoop worker lifetime and the
+macOS tracing table overflow. The latter is not a confirmed native
+Metal RT pipeline defect. The lead selected warning plus no-texture fallback for
+excess image/sampler pairs; the shared CPU/GLSL/Metal correction is delivered,
+awaiting validation. Lead validation precedes M07-08;
+earlier parity/availability assessments below do not imply that failure is fixed.
+
 Subsequent lead-directed loading policy: unregistered JSON component types now
 warn/skip and never abort graph loading. Schema/draw factory null handling and
 the CPU reference probe are corrected; registered parser/resource failures remain

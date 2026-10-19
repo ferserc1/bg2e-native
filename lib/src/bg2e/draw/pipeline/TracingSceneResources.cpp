@@ -19,6 +19,7 @@
 #include <bg2e/draw/pipeline/TracingSceneResources.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
+#include <bg2e/base/Log.hpp>
 #include <glm/gtc/matrix_inverse.hpp>
 #include <algorithm>
 #include <cmath>
@@ -149,6 +150,7 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
     range(next->owners.size(),sizeof(TracingInstanceData),limit);
     if (next->owners.empty())
     {
+        _capacityWarningActive = false;
         return next;
     }
     std::vector<std::shared_ptr<Drawable::DrawMesh>> meshes;
@@ -259,21 +261,26 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
                 throw std::invalid_argument("Tracing snapshot requires current same-device color-2D material resources");
             }
             auto imageIt = std::find(next->images.begin(),next->images.end(),image);
+            auto samplerIt = std::find(next->samplers.begin(),next->samplers.end(),sampler);
+            // Admit the pair atomically. A missing sampler also means no texture;
+            // never consume an image slot for a pair that cannot be sampled.
+            if ((imageIt == next->images.end() && next->images.size() == _capacity) ||
+                (samplerIt == next->samplers.end() && next->samplers.size() == _capacity))
+            {
+                material.images[slot/4][slot%4] = UINT32_MAX;
+                material.samplers[slot/4][slot%4] = UINT32_MAX;
+                ++next->fallbackTextureSlots;
+                continue;
+            }
             if (imageIt == next->images.end())
             {
                 next->images.push_back(image);
                 imageIt = next->images.end()-1;
             }
-            auto samplerIt = std::find(next->samplers.begin(),next->samplers.end(),sampler);
             if (samplerIt == next->samplers.end())
             {
                 next->samplers.push_back(sampler);
                 samplerIt = next->samplers.end()-1;
-            }
-            if (next->images.size() > _capacity || next->samplers.size() > _capacity)
-            {
-                throw std::length_error("Tracing material capacity exceeded: images="+std::to_string(next->images.size())+
-                    ", samplers="+std::to_string(next->samplers.size())+", capacity="+std::to_string(_capacity));
             }
             material.images[slot/4][slot%4] = uint32_t(imageIt-next->images.begin());
             material.samplers[slot/4][slot%4] = uint32_t(samplerIt-next->samplers.begin());
@@ -292,12 +299,21 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
             cutout ? gpu::RayTracingOpacity::ForceNonOpaque : gpu::RayTracingOpacity::ForceOpaque);
     }
     _geometry = geometry; // Publish cache only after the complete snapshot succeeds.
+    if (next->fallbackTextureSlots && !_capacityWarningActive)
+    {
+        bg2e_log_warning << "Tracing material capacity reached: images=" << next->images.size()
+            << ", samplers=" << next->samplers.size() << ", capacity=" << _capacity
+            << "; using neutral values for " << next->fallbackTextureSlots
+            << " texture slots (raster materials unchanged)" << bg2e_log_end;
+    }
+    _capacityWarningActive = next->fallbackTextureSlots != 0;
     return next;
 }
 
 void TracingSceneResources::clear()
 {
     _geometry.reset();
+    _capacityWarningActive = false;
 }
 
 uint32_t TracingSceneResources::capacity() const

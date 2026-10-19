@@ -168,3 +168,13 @@ availability; unsupported effects keep their status and use established fallback
 paths. An injected pass, explicit mode/settings, or an application's intentional
 comparison configuration takes precedence. Applications such as `draw_model_edit`
 inherit the shared default rather than duplicating it.
+# Lead amendment: recoverable tracing material table exhaustion
+
+For the M07 Composer loading correction, the lead explicitly authorizes treating
+excess tracing image/sampler pairs as absent textures, with a warning, instead of
+throwing and exiting. Preserve every instance/material and authored scalar values;
+only the tracing snapshot degrades, never the source/raster material. The shared
+GLSL/Metal sentinel is `UINT32_MAX` in both index lanes; sampling returns neutral
+white or flat normal before resource access. This supersedes earlier strict
+sampled-table overflow rejection, not validation of malformed geometry/resources.
+Fixed profiles and later image/sampler-management improvements remain separate.

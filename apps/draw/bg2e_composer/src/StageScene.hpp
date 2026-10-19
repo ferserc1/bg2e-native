@@ -50,7 +50,8 @@ class StageScene {
     void applyViewpoint(const bg2e::utils::CameraCandidate& candidate);
     bg2e::scene::OrbitCameraComponent* orbitCamera() const;
     const std::vector<bg2e::utils::AnalyzedSubmesh>& analyzedSubmeshes() const;
-    std::shared_ptr<bg2e::scene::Node> load(const std::filesystem::path& path);
+    std::shared_ptr<bg2e::scene::Node> load(const std::filesystem::path& path,
+        std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
     void adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source);
     bool save(const std::filesystem::path& path, bool destinationConfirmed = false);
 
@@ -123,7 +124,7 @@ class StageScene {
   private:
     std::shared_ptr<bg2e::scene::Node> prepareScene(const std::filesystem::path& path,
         bool requireCamera, bg2e::scene::SceneProgressCallback progress,
-        std::shared_ptr<bg2e::json::JsonNode> schema = {});
+        std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
     void prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) const;
 
     void addDrawable(const char* name, std::shared_ptr<bg2e::draw::Drawable> drawable,

@@ -10,13 +10,13 @@ This is the execution record for all implementation chats. The **Next step to im
 |---|---|
 | Workflow state | `awaiting_project_lead` |
 | Current milestone | M07 — Experimental bg2e_composer application |
-| Active step | None — M07-07 Composer UI parity correction delivered |
+| Active step | None — M07-07 loading and neutral-texture tracing-capacity corrections delivered |
 | Last implemented step | M07-07 — Review M07 scene/import contracts and revise CLI/cleanup |
 | Last accepted step | M07-06 including selection-crash correction — explicitly checked and accepted by project lead |
-| Awaiting project lead validation | M07-07 corrections including unknown-component warning/skip during Open Scene |
+| Awaiting project lead validation | M07-07 guarded scene Loader plus warning/neutral-texture fallback on tracing table exhaustion; rebuild shared tracing shaders and reopen primitives_scene.json |
 | Next step to implement | [M07-08 — Update cumulative implementation documentation](milestone_07_bg2e_composer/step_08_documentation.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Project lead validation of Open Scene and UI corrections before accepting M07-07; M07-08 remains the successor. |
+| Condition before starting | Project lead validation of tracing overflow, scene loading and earlier UI corrections before accepting M07-07. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
@@ -99,10 +99,20 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 | [M07-04](milestone_07_bg2e_composer/step_04_async-import-service.md) | `accepted` | HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus preserved M07-03 work. New app-local importer/server/settings/queue UI and stopped publication/rollback; reusable CPU glTF/OBJ/BG2 realization boundaries. | Static GPL/style/delimiter/include/API/thread/ownership/rollback/protocol/Markdown/whitespace review; no configuration/build, shader, parser, HTTP, app, package or probe execution. | Accepted by project lead continuation instruction; backend/package/HTTP coverage unspecified. | Actual contracts in async-import-service.md; lead matrix in tests/draw/composer_import. M07-05 follows. |
 | [M07-05](milestone_07_bg2e_composer/step_05_scene-baking.md) | `accepted` | Same HEAD plus preserved inherited work; app-local serial selected-subtree/scene batches, retained per-target outputs, staged texture preparation/adoption, previews and cleanup. No CMake/core/shader edits. | Static API/call-site/source/ownership/UV/output/GPL/style/link/whitespace checks; no configuration/build/shader/app/GPU/package/probe execution. | Accepted by project lead continuation instruction; backend/package coverage unspecified. | Actual contracts in scene-baking.md; manual checks in tests/draw/composer_baking. M07-06 follows. |
 | [M07-06](milestone_07_bg2e_composer/step_06_product-validation.md) | `accepted` | Same HEAD plus inherited work preserved; product-validation.md, workflow/distribution matrix, restored Chain controls and selection-crash correction: missing Composer list scope plus bool beginList handling in every caller. No CMake/vendor edits. | Static source/API/Chain clone/schema/ownership/style, package routing, table scopes, GPL/delimiters, Markdown paths/fences and whitespace checks; no build/shader/app/HTTP/GPU/package execution. | Lead explicitly confirms the selection correction is checked and requests continuation; M07-06 including corrections accepted. Backend/package detail unspecified. | Lead matrices retained; M07-07 follows. |
-| [M07-07](milestone_07_bg2e_composer/step_07_review.md) | `awaiting_project_lead` | HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus inherited work; review/remaining-plan updates, followed by requested Composer UI correction: left Model Properties, right Scene, removal of environment panel and shared ComponentInspector intent callbacks. | Review inventory plus eight corrected source GPL/delimiter/API/scope/style checks, local Markdown paths and working-tree/index whitespace. No build/shader/app/HTTP/GPU/package execution. | M07-06 accepted including checked selection correction. Lead subsequently rejects panel/component UI parity; correction now delivered for validation. | See ui-parity-correction.md. M07-08 remains conditional on corrected review/UI acceptance; no M08/retirement authorization. |
+| [M07-07](milestone_07_bg2e_composer/step_07_review.md) | `awaiting_project_lead` | Original review HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus inherited UI/IO corrections. Latest correction starts at a5bdc351e7a7 with null-entry/loading edits preserved; adds bounded tracing pair admission and shared GLSL/Metal no-texture fallback. | Review/source GPL/API/scope/ownership/pause/shutdown and tracing ABI/descriptor/fallback/warning checks; Markdown paths and whitespace. No build/shader/app/HTTP/GPU/package execution. | M07-06 accepted including checked selection correction. Lead selected neutral-texture fallback after reporting tracing-capacity exit; UI/loading/RT corrections await validation. | See ui-parity-correction.md and loading-and-tracing-investigation.md. Capacity fallback delivered; M07-08 is conditional successor; no M08/retirement authorization. |
 
 
 ## Open issues
+
+M07 correction awaiting validation: the lead reports macOS exiting with tracing tables at
+images=129, samplers=129, capacity=128. This is an engine table/profile overflow,
+not established native Metal pipeline failure. The loading correction and
+[source-backed options](milestone_07_bg2e_composer/loading-and-tracing-investigation.md)
+are delivered. The lead subsequently authorized warning/no-texture behavior for
+overflowed pairs, now implemented in shared snapshot construction and both native
+sampling helpers. Native budgets/profiles and raster materials are unchanged.
+The application/shader correction is not runtime-validated; M07-08 remains
+conditional on lead acceptance of this correction and earlier review/UI work.
 
 The project lead reported a Metal deprecation warning in M01-03. The texture usage check now calls `isFramebufferOnly()` instead of deprecated `framebufferOnly()`; the corrected step was accepted by project lead continuation. M01-02 was accepted by continuation with unspecified backend coverage. M01-03 checks are assumed successful under the continuation convention; the expanded manual probe has not been run or registered in CMake. M01-04 checks are assumed successful under continuation, with unspecified coverage; M01-05 accepted by continuation with unspecified coverage. M01-06 accepted after lead compilation fixes; backend/scenario coverage unspecified. M01-07 accepted by project lead continuation, compilation/checks assumed successful and coverage unspecified. M01-08 accepted by continuation with unspecified coverage. M01-09 accepted by continuation with unspecified coverage. M01-10 accepted after lead compilation corrections and reviewed shader rename; runtime coverage unspecified. M01-11 accepted by continuation; compilation/checks assumed successful, backend coverage unspecified. M01-12 accepted by project lead continuation instruction, including its type-validation correction. M01-13 accepted by project lead continuation instruction; backend coverage unspecified. M01-14 accepted after the lead virtual Window destructor correction. M01-15 accepted by project lead continuation; backend/scenario coverage unspecified. M01-16 review acceptance is held for the reported M01-15 overflow correction. The M01-11 explicit alpha table supports eight distinct image/sampler pairs and throws on a ninth; M03 reconsiders arbitrary addressing. No known static failures remain; M01-13 upscaling and M01-12 CPU/persistence/lifecycle fixtures have not been compiled or run by the agent. RendererDeferred did not exist at M01-05: the manual minimal-renderer fixture covers the intermediate lifecycle, with the actual deferred/settings replacement required in M01-15.
 
@@ -2095,3 +2105,104 @@ saves omit skipped components while raw IO remains lossless. No build or probe/
 runtime execution. Lead should reopen the reported scene and check a warning,
 remaining components/hierarchy/resources and save semantics. Correction awaits
 validation; the review/documentation pointer does not advance.
+
+## Open Scene correction — legacy null component entries
+
+The lead supplied `primitives_scene/primitives_scene.json` and the error
+`Invalid component representation in node Scene`. Read-only JSON inspection
+found twelve null component entries, one at index zero of each affected node,
+including Scene and Camera. The CPU Node parser threw before calling the factory;
+the previous unknown-type correction therefore could not handle this failure.
+No application/backend reproduction was performed and the supplied file is unchanged.
+
+Node schema loading now warns/skips nonobject component and child entries, matching
+the production loader's existing policy. Factory schema loading warns/skips
+missing/invalid/empty types and components without a schema constructor, as well
+as unregistered types. Node serializers omit empty/nonobject component results
+instead of emitting null placeholders. The original producer of the supplied
+file's placeholders is not established. Registered constructor contract violations,
+parser errors and required-resource failures are not indiscriminately swallowed.
+Composer still validates an enabled camera, valid camera projection and at most
+eight enabled lights before realizing resources and adopting the candidate;
+failure retains the current document. Typed save omits skipped data; raw IO is
+the lossless path.
+
+Extended the manual CPU DB probe with null/scalar/untyped component entries and
+an invalid child followed by a valid descendant. Static call-path/API/JSON/diff
+checks performed; `git diff --check` passes. No compilation, C++ probe, app,
+shader or GPU execution. Lead validation: reopen the supplied scene and verify
+warnings, camera, hierarchy and eight drawables; check unknown components before
+valid entries and save/reopen. M07-07 corrections remain awaiting project lead;
+M07-08 is still the conditional successor, not authorized by this failure report.
+
+## Guarded scene loading correction and macOS tracing investigation
+
+Starting HEAD `a5bdc351e7a7`, preserving the earlier uncommitted null-entry
+correction. The lead reports production uses asyncLoadGuarded/Loader and requests
+equivalent draw scene loading, plus analysis/options for tracing overflow. This
+does not accept the full pending M07-07 review/UI work or authorize an RT redesign.
+
+Draw Composer had no asyncLoadGuarded and Open was synchronous. Added the guard,
+shared MainLoop async scene-document IO/JSON parsing, document-generation checked
+main-thread completion, and one-component-per-frame resource realization with a
+visible Loader while scene drawing/editing/publication is paused. Dirty protection
+runs before the worker; candidate adoption waits for all resources; ordinary
+failures preserve the previous document before adoption. Concurrent IO/input/close
+is guarded. Component GPU uploads, model/image decode and renderer/environment
+initialization are not fully asynchronous or interruptible and may stall their
+individual frame. The separate existing model import service remains unchanged.
+
+MainLoop's detached worker lifetime was unsafe on exceptional exit; workers are
+now joined before normal/exceptional app/UI/Engine cleanup, and exiting-run
+completion tokens expire. No graphics queue is touched by the new scene read
+worker. The [investigation](milestone_07_bg2e_composer/loading-and-tracing-investigation.md)
+records actual contracts, source anchors, the conservative Metal 256 total ceiling
+plus reserved bindings selecting profile 128, per-resource identity deduplication,
+neutral-texture/sampler inflation, and the uncaught post-load frame preparation
+error. Options include graceful failure plus immutable-neutral/sampler
+canonicalization, corrected native budgets/profiles, larger/bindless tables and
+atlas/paging tradeoffs. No tracing source, shader, capacity or default is changed.
+
+Static API/call-site/ownership/pause/progress/shutdown inspection and whitespace/
+local-link checks only; no compilation, shader, app, C++ probe, GPU or package
+execution. Lead checks are in tests/draw/composer_io/README.md. Validate loading
+with advanced tracing explicitly disabled to isolate it, then select an RT remedy.
+Reported tracing exit remains open and the pointer returns to M07-07 correction;
+M07-08 is not started.
+
+## Lead-selected tracing overflow fallback delivered
+
+The lead requests the simplest nonfatal sampled-table policy: treat an excess
+texture as absent, postponing image/sampler-management improvements. This is a
+correction of M07-07, not acceptance of pending loading/UI work or M07-08 entry.
+Earlier uncommitted source/documentation changes are preserved.
+
+TracingSceneResources now checks both image and sampler capacity before admitting
+either new resource. If either table cannot accept the pair, both material index
+lanes become UINT32_MAX; tables stay bounded and admitted pairs remain usable.
+TracingSnapshot exposes fallbackTextureSlots. Shared GLSL/Metal traceSample returns
+white (flat normal for slot3) before descriptor access/color decoding. Scalars,
+material alpha/cutoff and all instances remain; raster material state is untouched.
+An overflowing alpha map may lose its holes in tracing, as explicitly authorized.
+Warnings are rate-limited per service until successful recovery/clear. Other
+geometry/resource/device errors are still explicit; profiles/budgets are unchanged.
+
+Updated the maintained tracing API/operative decision and investigation/review.
+Extended the manual RTAO fixture with 32-entry overflow, index bounds/sentinel
+accounting, retained geometry/materials, repeat prepare and recovery with old
+snapshot retention. Static CPU/shader ABI, descriptor-access ordering, native pair,
+warning/lifetime and diff checks only; no build, shader compiler, C++ probe, app
+or GPU execution. Lead must rebuild engine/shared native tracing shaders and
+reopen the supplied scene with GI/reflections enabled on available Metal/Vulkan;
+check warning without exit, unchanged raster textures and retained geometry.
+M07-07 corrections await validation; M07-08 is restored as conditional successor.
+
+### Composer component replacement compiler-warning correction
+
+The lead reports Clang `-Wpotentially-evaluated-expression` for dereferencing
+shared_ptr operands inside polymorphic typeid in SceneEditor.cpp. The replacement
+validator now obtains raw pointers with get() before typeid, avoiding overloaded
+operator* in its operands. Existing shared owners, null guards, dynamic-type and
+detached-owner checks remain unchanged. Static diff/call-site checks only; no
+compilation/runtime execution. M07-07 corrections remain awaiting lead validation;
+this compiler output does not establish tracing or scene-loading runtime results.

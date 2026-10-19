@@ -110,7 +110,7 @@ glm::ivec2 AppDelegate::inputPosition(int x, int y) const
 
 void AppDelegate::queueInput(std::function<void()> event)
 {
-    if (_imports.busy())
+    if (_imports.busy() || sceneLoading())
     {
         return;
     }
@@ -375,7 +375,7 @@ std::filesystem::path AppDelegate::chooseSavePath()
 
 void AppDelegate::requestOpen(const std::filesystem::path& path)
 {
-    if (!_stage || path.empty() || _pendingIo)
+    if (!_stage || path.empty() || _pendingIo || sceneLoading())
     {
         return;
     }
@@ -390,7 +390,7 @@ void AppDelegate::requestOpen(const std::filesystem::path& path)
 
 void AppDelegate::openDocument()
 {
-    if (_pendingIo)
+    if (_pendingIo || sceneLoading())
     {
         return;
     }
@@ -428,7 +428,7 @@ void AppDelegate::fileDropped(const std::filesystem::path& path)
 
 void AppDelegate::saveDocument(bool saveAs)
 {
-    if (!_stage || !_stage->document().root || _pendingIo)
+    if (!_stage || !_stage->document().root || _pendingIo || sceneLoading())
     {
         return;
     }
@@ -447,7 +447,7 @@ void AppDelegate::saveDocument(bool saveAs)
 
 bool AppDelegate::confirmClose()
 {
-    if (_pendingIo)
+    if (_pendingIo || sceneLoading())
     {
         return false; // Finish the pending transaction before offering another action.
     }
@@ -500,6 +500,10 @@ void AppDelegate::prepareFrame()
     } reset{_preparing};
     retireBakeFrame();
     processDocumentIo();
+    if (sceneLoading())
+    {
+        return; // Keep renderer/import mutations stopped while the Loader owns the UI.
+    }
     if (_selection && _stage && _selection->selectedNode() && !_stage->contains(_selection->selectedNode()))
     {
         _selection->deselect();
@@ -530,6 +534,13 @@ void AppDelegate::prepareFrame()
 
 void AppDelegate::cleanup()
 {
+    if (_pendingIo && _pendingIo->candidate && _stage)
+    {
+        _stage->discardCandidate(_pendingIo->candidate);
+    }
+    _pendingIo.reset();
+    _asyncLoadInProgress = false;
+    _sceneResourceLoad = false;
     cancelImports();
     _importServer.stop(); // Wake blocked HTTP handlers before joining the listener.
     _imports.shutdown(); // Join all CPU readers before any app/Engine teardown.

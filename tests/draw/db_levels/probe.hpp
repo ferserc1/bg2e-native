@@ -100,6 +100,25 @@ inline void runSceneRepresentationProbe(const std::filesystem::path& directory)
     {
         throw std::runtime_error("Skipping an unknown component lost subsequent registered components");
     }
+
+    // Legacy documents contain null helper entries. Other unusable optional entries
+    // must not prevent valid components or descendants from being decoded either.
+    componentList.insert(componentList.begin(), {
+        std::make_shared<JsonNode>(), JSON(42), JSON(JsonObject{}),
+        JSON(JsonObject{{"type", JSON(42)}}), JSON(JsonObject{{"type", JSON("")}})});
+    auto childData = JSON(JsonObject{{"name", JSON("valid child")},
+        {"components", JSON(JsonList{std::make_shared<JsonNode>(),
+            JSON(JsonObject{{"type", JSON("Transform")}})})}});
+    nodeData->objectValue()["children"] = JSON(JsonList{std::make_shared<JsonNode>(), childData});
+    db::writeSceneDocument(document, inputPath);
+    auto recovered = db::loadScene(inputPath);
+    auto recoveredNode = recovered->rootNode()->children().at(0);
+    if (recoveredNode->orderedComponents().size() != knownNode->orderedComponents().size() ||
+        recoveredNode->children().size() != 1 ||
+        !recoveredNode->children().at(0)->getComponent<scene::TransformComponent>())
+    {
+        throw std::runtime_error("Recoverable entries prevented valid graph decoding");
+    }
 }
 
 // Supply a real scene referencing BG2/OBJ resources, an initialized Engine, and

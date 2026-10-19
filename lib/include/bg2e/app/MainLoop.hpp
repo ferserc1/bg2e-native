@@ -233,6 +233,9 @@ class BG2E_API MainLoop {
 
     void requestResizeEvent();
 
+    // The worker must not mutate a live scene or concurrently use the UI's GPU
+    // queue/resources. Completion runs at the stopped main-thread boundary.
+    // Workers are joined before execution cleanup, including exceptional exit.
     void asyncLoad(
         std::function<void(ui::Loader*)> loadFn,
         glm::vec4 clearColor = {0.f, 0.f, 0.f, 1.f},
@@ -258,6 +261,8 @@ class BG2E_API MainLoop {
     std::mutex _safeUpdateSceneMutex;
 
     ui::Loader _loader;
+    std::vector<std::jthread> _asyncLoadWorkers;
+    std::vector<std::shared_ptr<SafeUpdateToken>> _asyncLoadTokens;
 
     std::mutex _mainThreadQueueMutex;
     std::queue<std::function<void()>> _mainThreadQueue;

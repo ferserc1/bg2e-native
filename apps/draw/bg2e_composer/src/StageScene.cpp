@@ -464,7 +464,7 @@ void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) 
 
 std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesystem::path& path,
     bool requireCamera, bg2e::scene::SceneProgressCallback progress,
-    std::shared_ptr<bg2e::json::JsonNode> schema)
+    std::shared_ptr<bg2e::json::JsonNode> schema, bool realizeResources)
 {
     // CPU schema parsing may already have completed on the import worker.
     auto loaded = schema ? bg2e::scene::Scene::deserialize(schema, path.parent_path()) :
@@ -495,6 +495,10 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesyste
     {
         throw std::invalid_argument("Draw scenes support at most eight enabled lights");
     }
+    if (!realizeResources)
+    {
+        return candidate;
+    }
     bg2e::scene::SceneLoadProgress resources;
     resources.callback = std::move(progress);
     try
@@ -509,7 +513,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesyste
     }
 }
 
-std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path& input)
+std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path& input,
+    std::shared_ptr<bg2e::json::JsonNode> schema, bool realizeResources)
 {
     auto path = std::filesystem::absolute(input).lexically_normal();
     if (std::filesystem::is_directory(path))
@@ -523,7 +528,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path&
     });
     if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
     {
-        return prepareScene(path, true, nullptr);
+        return prepareScene(path, true, nullptr, std::move(schema), realizeResources);
     }
     auto root = newDocumentRoot();
     root->addChild(prepareImport(path));

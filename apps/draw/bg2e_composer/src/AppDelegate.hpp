@@ -30,8 +30,10 @@
 #include <bg2e/bake/IntegratedBakerContext.hpp>
 #include <bg2e/bake/LightmapPixels.hpp>
 #include <bg2e/scene/InputVisitor.hpp>
+#include <bg2e/ui/Loader.hpp>
 
 #include <optional>
+#include <exception>
 #include <functional>
 #include <utility>
 #include <vector>
@@ -65,6 +67,18 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void openDocument();
     void openDocument(const std::filesystem::path& path);
     void newDocument();
+    void asyncLoadGuarded(std::function<void(bg2e::ui::Loader*)> loadFn,
+        glm::vec4 clearColor = {0, 0, 0, 1},
+        std::function<void(std::exception_ptr)> onComplete = {});
+
+    bool sceneLoading() const
+    {
+        return _asyncLoadInProgress || _sceneResourceLoad;
+    }
+    void drawSceneLoader()
+    {
+        _sceneLoader.draw();
+    }
     void importDocument(const std::filesystem::path& path, float unitsScale = 1.0f,
         bool sourceIsZUp = false);
     void exportSelectedModels();
@@ -205,6 +219,15 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         std::vector<std::weak_ptr<bg2e::scene::Node>> targets;
         bool batch = false;
         bool destinationConfirmed = false;
+        std::shared_ptr<bg2e::json::JsonNode> schema;
+        bool replacementConfirmed = false;
+        std::shared_ptr<bg2e::scene::Node> candidate;
+        struct Resource {
+            std::shared_ptr<bg2e::scene::Component> component;
+            std::string nodeName;
+        };
+        std::vector<Resource> resources;
+        size_t nextResource = 0;
     };
     void initializeImports();
     void processImports();
@@ -228,6 +251,9 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     bool saveBeforeReplace();
     bool _additiveSelection = false;
     bool _preparing = false;
+    bool _asyncLoadInProgress = false;
+    bool _sceneResourceLoad = false;
+    bg2e::ui::Loader _sceneLoader;
     bool _quitPending = false;
     std::function<void()> _quit;
     std::optional<PendingIo> _pendingIo;
