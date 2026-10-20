@@ -17,9 +17,11 @@
  */
 
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/Surface.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/UpdateVisitor.hpp>
 
 #include <exception>
 #include <stdexcept>
@@ -132,9 +134,11 @@ void DefaultRenderLoopDelegate::detachTargets()
 {
     if (_targetsBound)
     {
+        base::CpuProfileScope profile("delegate.detachTargetsSettingsBinding");
         _targetsBound = false;
         ++_rendererGeneration; // Invalidate delayed actions before calling user code.
         const auto detach = _detach;
+        base::CpuProfileScope::count("delegate.settingsDetachCallbacks", detach ? 1 : 0);
         if (detach)
         {
             detach();
@@ -144,6 +148,8 @@ void DefaultRenderLoopDelegate::detachTargets()
 
 void DefaultRenderLoopDelegate::attachTargets()
 {
+    base::CpuProfileScope profile("delegate.attachTargetsSettingsBinding");
+    base::CpuProfileScope::count("delegate.settingsAttachCallbacks", _attach ? 1 : 0);
     ++_rendererGeneration;
     _targetsBound = true;
     const auto attach = _attach;
@@ -216,6 +222,9 @@ void DefaultRenderLoopDelegate::initializeRenderer()
         _renderer->initialize(*_engine, std::move(configuration));
         _renderer->attachScene(_scene);
         attachTargets();
+        // Attachment callbacks may restore resolution/effect quality. Rebuild
+        // before the first record, including surfaceChanged after acquisition.
+        reconfigureRenderer();
     }
     catch (...)
     {
@@ -248,7 +257,13 @@ void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
     {
         return;
     }
-    _engine->device()->waitIdle();
+    base::CpuProfileScope::count("delegate.queuedRendererUpdateBatch", updates.size());
+    {
+        base::CpuProfileScope profile("delegate.waitIdle.queuedRendererUpdates");
+        base::CpuProfileScope::count("delegate.queuedRendererUpdateDrains", 1);
+        _engine->device()->waitIdle();
+    }
+    base::CpuProfileScope updateProfile("delegate.applyQueuedRendererUpdates");
     for (auto& update : updates)
     {
         if (!withRenderer(update.generation, update.operation))
@@ -271,12 +286,19 @@ void DefaultRenderLoopDelegate::prepareFrame()
     {
         throw std::logic_error("Default draw delegate scene is not initialized");
     }
+    base::CpuProfileScope prepareProfile("delegate.prepareFrame");
+    base::CpuProfileScope::count("delegate.prepareFrameCalls", 1);
     auto updates = std::move(_updates);
     _updates.clear(); // Updates queued by callbacks wait for the next prepare hook.
+    base::CpuProfileScope::count("delegate.pendingRendererUpdates", updates.size());
+    base::CpuProfileScope::count("delegate.rendererReplacementPending", _pendingRenderer ? 1 : 0);
+    base::CpuProfileScope::count("delegate.sceneReplacementPending", _scenePending ? 1 : 0);
     if (!_pendingRenderer && !_scenePending)
     {
+        base::CpuProfileScope stageProfile("delegate.applyQueuedUpdatesAndReconfigure");
         applyUpdates(std::move(updates));
         reconfigureRenderer();
+        stageProfile.next("delegate.rendererPrepareFrame");
         if (_rendererInitialized && _renderer->prepareFrame())
         {
             requestSceneFrame();
@@ -285,7 +307,14 @@ void DefaultRenderLoopDelegate::prepareFrame()
     }
     // This hook runs before acquisition or UI callbacks. Background producers
     // remain the application's responsibility and must not submit concurrently.
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile(_pendingRenderer
+            ? (_scenePending ? "delegate.waitIdle.rendererAndSceneReplacement" : "delegate.waitIdle.rendererReplacement")
+            : "delegate.waitIdle.sceneReplacement");
+        base::CpuProfileScope::count("delegate.replacementDrains", 1);
+        _engine->device()->waitIdle();
+    }
+    base::CpuProfileScope stageProfile("delegate.commitReplacement");
     // Snapshot before callbacks: replacements queued by detach/attach run later.
     auto pending = std::move(_pendingRenderer);
     _pendingRenderer.reset();
@@ -294,7 +323,9 @@ void DefaultRenderLoopDelegate::prepareFrame()
     _scenePending = false;
     if (pending)
     {
+        stageProfile.next("delegate.releaseRenderer");
         releaseRenderer();
+        stageProfile.next("delegate.installRendererReplacement");
         _renderer = std::move(pending->renderer);
         _initialConfiguration = std::move(pending->configuration);
         _followOutputExtent = _initialConfiguration.internalExtent.isZero();
@@ -302,20 +333,35 @@ void DefaultRenderLoopDelegate::prepareFrame()
     }
     else
     {
+        stageProfile.next("delegate.detachSceneTargets");
         detachTargets();
     }
     _scene = std::move(sceneRoot);
     if (_rendererInitialized)
     {
+        stageProfile.next("delegate.attachScene");
         _renderer->attachScene(_scene);
+        stageProfile.next("delegate.attachTargets");
         attachTargets();
     }
     else
     {
+        stageProfile.next("delegate.initializeRenderer");
         initializeRenderer();
     }
+    stageProfile.next("delegate.applyQueuedUpdates");
     applyUpdates(std::move(updates));
     reconfigureRenderer();
+    stageProfile.next("delegate.sceneVisitorUpdate");
+    // The new scene/resources are attached at this safe boundary. Give its
+    // update visitor one pass before asking the renderer to synchronize
+    // scene-derived resources such as its environment map.
+    if (_scene)
+    {
+        scene::UpdateVisitor update;
+        update.update(_scene.get(), 0.0f);
+    }
+    stageProfile.next("delegate.rendererPrepareFrame");
     if (_rendererInitialized && _renderer->prepareFrame())
     {
         requestSceneFrame();
@@ -345,7 +391,12 @@ void DefaultRenderLoopDelegate::reconfigureRenderer()
         _followOutputExtent ? _outputExtent : _fixedInternalExtent);
     if (internal != _renderer->configuration().internalExtent || _renderer->needsReconfiguration())
     {
-        _engine->device()->waitIdle();
+        base::CpuProfileScope reconfigureProfile("delegate.reconfigureRenderer");
+        {
+            base::CpuProfileScope profile("delegate.waitIdle.rendererReconfiguration");
+            base::CpuProfileScope::count("delegate.reconfigurationDrains", 1);
+            _engine->device()->waitIdle();
+        }
         detachTargets();
         _renderer->resize(_outputExtent, internal);
         attachTargets();

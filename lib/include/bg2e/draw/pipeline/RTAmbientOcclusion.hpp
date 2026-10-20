@@ -54,8 +54,8 @@ struct RTAOSettings {
 };
 struct RTAOConfiguration {
     std::filesystem::path shaderRoot;
-    std::string shaderPrefix = "draw/rtao"; // Compatible native camera/world_{hash,blue}_{32,128,256}.
-    std::string shaderInterface = "draw.rtao.v1";
+    std::string shaderPrefix = "draw/rtao"; // camera/world_{hash,blue}_256 templates; exact runtime capacity.
+    std::string shaderInterface = "draw.rtao.v2";
     std::shared_ptr<utils::BlueNoise> noise;
 };
 struct RTAOContext {
@@ -68,7 +68,7 @@ struct RTAOContext {
 };
 
 // Public Device-backed pass, independent of a concrete renderer/camera/scene UI.
-// Custom native shaders implement draw.rtao.v1; subclass record is replaceable.
+// Custom native shaders implement draw.rtao.v2; subclass record is replaceable.
 // Retain caller surfaces/output and prepared snapshots through GPU completion.
 class BG2E_API RTAmbientOcclusion {
   public:

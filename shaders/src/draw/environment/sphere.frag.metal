@@ -19,11 +19,18 @@
 #include <metal_stdlib>
 using namespace metal;
 #include "common.metal"
+float3 linearToSrgb(float3 color)
+{
+    float3 low = 12.92 * color;
+    float3 high = 1.055 * pow(max(color, float3(0.0)), float3(1.0 / 2.4)) - 0.055;
+    return select(high, low, color <= 0.0031308);
+}
 fragment float4 fragMain(float4 position [[position]], constant GenerationPush& params [[buffer(0)]], texture2d<float> sourceImage [[texture(0)]], sampler sourceSampler [[sampler(0)]])
 {
     float2 pixel = position.xy;
     float3 n = cubeDirection(params.face, pixel / float(params.size));
     float2 uv = float2(atan2(n.z, n.x) / (2.0 * PI) + 0.5, acos(clamp(n.y, -1.0, 1.0)) / PI);
-    float lod = clamp(log2(max(float(params.sourceSize) / (4.0 * float(params.size)), 1.0)), 0.0, params.sourceMaxLod);
-    return float4(sourceImage.sample(sourceSampler, uv, level(lod)).rgb, 1.0);
+    float3 encoded = sourceImage.sample(sourceSampler, uv).rgb;
+    float3 linear = params.roughness < 0.0 ? linearToSrgb(encoded) : encoded;
+    return float4(linear, 1.0);
 }

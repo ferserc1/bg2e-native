@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/RTReflections.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/base/PlatformTools.hpp>
@@ -80,9 +81,9 @@ RTReflections::RTReflections(RTReflectionConfiguration configuration)
 
 void RTReflections::initialize(gpu::Device& device, gpu::BackendType backend, uint32_t slots)
 {
-    if (_device || !device.isValid() || !slots || _configuration.shaderInterface != "draw.rt_reflections.v1")
+    if (_device || !device.isValid() || !slots || _configuration.shaderInterface != "draw.rt_reflections.v2")
     {
-        throw std::invalid_argument("Reflection initialization requires a clean instance, valid device/slots and draw.rt_reflections.v1 shaders");
+        throw std::invalid_argument("Reflection initialization requires a clean instance, valid device/slots and draw.rt_reflections.v2 shaders");
     }
     _device = &device;
     _backend = backend;
@@ -107,13 +108,13 @@ void RTReflections::initialize(gpu::Device& device, gpu::BackendType backend, ui
             _layouts[index] = device.createPipelineLayout(rtReflectionBindingLayout(_capacity,blue,backend));
             gpu::ShaderLib library(_configuration.shaderRoot,backend);
             const auto name = _configuration.shaderPrefix+"/"+(world ? "world_" : "camera_")+
-                (blue ? "blue_" : "hash_")+std::to_string(_capacity);
+                (blue ? "blue_" : "hash_")+"256";
             if (backend == gpu::BackendType::Vulkan)
             {
-                _shaders[index] = library.rayGeneration(name,&device);
-                _stages[index*3] = library.miss(name,&device);
-                _stages[index*3+1] = library.closestHit(name,&device);
-                _stages[index*3+2] = library.anyHit(name,&device);
+                _shaders[index] = library.specialized(name,gpu::ShaderStage::RayGeneration,&device,{{0,_capacity}});
+                _stages[index*3] = library.specialized(name,gpu::ShaderStage::Miss,&device,{{0,_capacity}});
+                _stages[index*3+1] = library.specialized(name,gpu::ShaderStage::ClosestHit,&device,{{0,_capacity}});
+                _stages[index*3+2] = library.specialized(name,gpu::ShaderStage::AnyHit,&device,{{0,_capacity}});
                 gpu::RayTracingPipelineDescription description;
                 description.raygenShader = _shaders[index].get();
                 description.missShader = _stages[index*3].get();
@@ -178,7 +179,7 @@ void RTReflections::prepareSnapshot(uint32_t index, uint64_t serial, std::shared
     {
         throw std::logic_error("Prepare a reflection slot once per acquired presentation/job sample");
     }
-    if (snapshot && (snapshot->device != _device || snapshot->capacity != _capacity))
+    if (snapshot && (snapshot->device != _device || snapshot->capacity > _capacity))
     {
         throw std::invalid_argument("Reflection snapshot device/profile mismatch");
     }
@@ -191,6 +192,7 @@ void RTReflections::prepareSnapshot(uint32_t index, uint64_t serial, std::shared
 
 void RTReflections::record(const RTReflectionContext& context)
 {
+    base::CpuProfileScope profile("effect.reflections.record");
     const auto usage = gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment;
     if (!_device || context.command.hasActiveScope() || context.output.device() != _device || !context.output.isValid() ||
         context.output.pixelFormat() != gpu::PixelFormat::R16G16B16A16_SFLOAT || context.output.size().isZero() ||
@@ -290,7 +292,7 @@ void RTReflections::record(const RTReflectionContext& context)
     invocation.uniforms = _device->createBuffer("Reflection invocation uniforms");
     invocation.uniforms->createUniformBuffer(data);
     slot.snapshot->build(context.command);
-    invocation.sceneSet = slot.snapshot->resourceSet(*_layouts[index]);
+    invocation.sceneSet = slot.snapshot->resourceSet(*_layouts[index], 1, _capacity);
     invocation.surfaceSet = _device->createResourceSet(_layouts[index].get(),0);
     invocation.surfaceSet->setUniformBuffer({0,1},invocation.uniforms.get());
     invocation.surfaceSet->setSampledImage({1,0},context.surface.normal);

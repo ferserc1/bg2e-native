@@ -83,3 +83,10 @@ texture or bake batch export.
 Preserve both engine native shader trees and their aggregate dependency, unique per-tree targets/Metal intermediates, incremental bundle copies and RuntimeShaders install paths. Exercise draw_lightmaps after legacy shader deletion. M04 previously omitted bake from compilation/copy; the accepted correction must survive cleanup and standalone/package regeneration.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+## Tracing specialization/template retention
+
+The [M07 capacity correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+uses deployed `_256` effect files as v2 templates for exact counts up to 16384.
+Do not delete them as obsolete small-capacity shaders or require per-capacity
+filenames. Preserve Vulkan specialization ID0, Metal record arrays/residency and
+the separate primitive probe's small templates; validate rebuilt native deployment.

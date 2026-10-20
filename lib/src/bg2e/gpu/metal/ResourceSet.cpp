@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/ResourceSet.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
@@ -27,6 +28,7 @@
 #include <algorithm>
 #include <map>
 #include <stdexcept>
+#include <unordered_set>
 
 namespace bg2e {
 namespace gpu {
@@ -293,6 +295,7 @@ ResourceSet::ArrayBinding& ResourceSet::arrayBinding(ShaderBinding binding, Reso
 
 void ResourceSet::setSampledImages(ShaderBinding binding, std::span<const ImageView> views)
 {
+    base::CpuProfileScope profile("metal.resourceSet.resolveImageViews");
     auto& array = arrayBinding(binding, ResourceType::SampledImage, views.size());
     std::vector<TextureHandle> images;
     for (const auto& view : views)
@@ -313,6 +316,7 @@ void ResourceSet::setSampledImages(ShaderBinding binding, std::span<const ImageV
 
 void ResourceSet::setSamplers(ShaderBinding binding, std::span<gpu::Sampler* const> values)
 {
+    base::CpuProfileScope profile("metal.resourceSet.resolveSamplers");
     auto& array = arrayBinding(binding, ResourceType::Sampler, values.size());
     std::vector<SampleStateHandle> samplers;
     for (auto* value : values)
@@ -330,6 +334,7 @@ void ResourceSet::setSamplers(ShaderBinding binding, std::span<gpu::Sampler* con
 
 void ResourceSet::update()
 {
+    base::CpuProfileScope profile("metal.resourceSet.updateArgumentArrays");
     if (_arrays.empty())
     {
         return;
@@ -354,12 +359,15 @@ void ResourceSet::update()
     {
         for (const auto& [slot, arrays] : groups)
         {
+            const bool records = arrays.front()->description.metalArgumentRecordsIndexable;
+            const bool argumentArray = arrays.front()->description.metalArgumentRecordArray;
+            const auto recordCount = records ? arrays.front()->description.count : 1u;
             std::vector<NS::Object*> descriptors;
             for (const auto* array : arrays)
             {
                 auto* descriptor = MTL::ArgumentDescriptor::alloc()->init();
                 descriptor->setIndex(array->description.binding.metal);
-                descriptor->setArrayLength(array->description.count);
+                descriptor->setArrayLength(records ? 1 : array->description.count);
                 descriptor->setAccess(MTL::BindingAccessReadOnly);
                 descriptor->setDataType(array->description.type == ResourceType::SampledImage ? MTL::DataTypeTexture : MTL::DataTypeSampler);
                 if (array->description.type == ResourceType::SampledImage)
@@ -369,6 +377,7 @@ void ResourceSet::update()
                 descriptors.push_back(descriptor);
             }
             auto* arguments = NS::Array::alloc()->init(descriptors.data(), descriptors.size());
+            base::CpuProfileScope arrayProfile("metal.argumentArray.createEncoder");
             auto* encoder = nativeDevice->handle()->newArgumentEncoder(arguments);
             arguments->release();
             for (auto* descriptor : descriptors)
@@ -379,29 +388,60 @@ void ResourceSet::update()
             {
                 throw std::runtime_error("Failed to create Metal argument encoder");
             }
-            auto* buffer = nativeDevice->handle()->newBuffer(encoder->encodedLength(), MTL::ResourceStorageModeShared);
+            const auto stride = encoder->encodedLength();
+            if (!stride || recordCount > nativeDevice->handle()->maxBufferLength() / stride)
+            {
+                encoder->release();
+                throw std::length_error("Metal argument table exceeds maxBufferLength");
+            }
+            arrayProfile.next("metal.argumentArray.allocateBuffer");
+            auto* buffer = nativeDevice->handle()->newBuffer(stride * recordCount, MTL::ResourceStorageModeShared);
             if (!buffer)
             {
                 encoder->release();
                 throw std::runtime_error("Failed to allocate Metal argument buffer");
             }
             buffers.push_back(buffer);
-            encoder->setArgumentBuffer(buffer, 0);
+            if (argumentArray)
+            {
+                encoder->setArgumentBuffer(buffer, 0);
+            }
             ResourceEntry entry;
             entry.index = slot;
             entry.stage = arrays.front()->description.stage;
             entry.type = ResourceType::StorageBuffer;
             entry.buffer = buffer;
+            arrayProfile.next("metal.argumentArray.encodeEntries");
+            std::unordered_set<TextureHandle> residentTextures;
             for (const auto* array : arrays)
             {
                 for (size_t i = 0; i < array->images.size(); ++i)
                 {
-                    encoder->setTexture(array->images[i], array->description.binding.metal + i);
-                    entry.indirectTextures.push_back(array->images[i]);
+                    if (records)
+                    {
+                        encoder->setArgumentBuffer(buffer, stride * i);
+                    }
+                    else if (argumentArray)
+                    {
+                        encoder->setArgumentBuffer(buffer, 0);
+                    }
+                    encoder->setTexture(array->images[i], records ? 0 : array->description.binding.metal + i);
+                    if (residentTextures.insert(array->images[i]).second)
+                    {
+                        entry.indirectTextures.push_back(array->images[i]);
+                    }
                 }
                 for (size_t i = 0; i < array->samplers.size(); ++i)
                 {
-                    encoder->setSamplerState(array->samplers[i], array->description.binding.metal + i);
+                    if (records)
+                    {
+                        encoder->setArgumentBuffer(buffer, stride * i);
+                    }
+                    else if (argumentArray)
+                    {
+                        encoder->setArgumentBuffer(buffer, 0);
+                    }
+                    encoder->setSamplerState(array->samplers[i], records ? 0 : array->description.binding.metal + i);
                 }
             }
             encoder->release();
@@ -436,6 +476,7 @@ bool ResourceSet::isValid() const
 
 void ResourceSet::cleanup()
 {
+    base::CpuProfileScope profile("metal.resourceSet.cleanup");
     for (auto* buffer : _argumentBuffers)
     {
         buffer->release();

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/Queue.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/SurfaceFrame.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
@@ -112,6 +113,7 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
 
 void Queue::submit(gpu::CommandBuffer* cmd) const
 {
+    base::CpuProfileScope profile("metal.queue.submit");
     if (!_submissions)
     {
         throw std::logic_error("Metal queue has no device");
@@ -145,6 +147,8 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
         },
         [native]
         {
+            base::CpuProfileScope waitProfile("metal.queue.waitUntilCompleted");
+            base::CpuProfileScope::count("metal.queue.completionWaits", 1);
             native->waitUntilCompleted();
             if (native->status() == MTL::CommandBufferStatusError)
             {

@@ -10,6 +10,20 @@ Update maintained `doc/` API/reference, conceptual, tutorial, application and bu
 
 ## Milestone coverage: Scene composer, complete scene IO and asynchronous import
 
+Reconcile [active environment synchronization](environment-synchronization.md):
+explicit Scene selection including nullptr, no hidden Composer Environment,
+fresh-load choice, ignored additions, default after active removal, HDR clearing,
+in-place RGB edits and visible generation errors. Preserve Model Edit's independent
+workflow and default automatic Scene behavior for clients that do not opt in.
+
+Include the later [16384 device-clamped tracing tables](tracing-capacity-16384.md):
+native v2 shader contracts, Vulkan specialization ID0, Metal argument-record
+buffers8/9, sampler-budget caveat and warning/neutral fallback. Preserve per-object
+material/import/export ownership and do not restore 32/128/256 effect ceilings.
+Include SoftShadowPass v2 too: no eight-pair whole-scene fallback; exact capacity
+with reserves (2,1,9), Vulkan bindings16/24 and Metal argument records5/6. State that
+texture-count reductions remain deferred until after migration.
+
 Apply the later lead-directed unknown-component policy: unregistered JSON types
 warn/skip without aborting scene load; registered parser/resource errors are
 distinct. Typed save omits skipped components, raw IO preserves unknown JSON.

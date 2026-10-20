@@ -77,6 +77,8 @@ struct PropertyMetadata {
     std::string resourceKind;
     std::vector<std::string> resourceExtensions;
     bool resourcePathIsProjectRelative = false;
+    bool resourceCanClear = false;
+    bool resourceCanSelectEmpty = false;
 
     // Resource properties are declared from an ordinary String or Path
     // property. Keep its storage type so generic consumers can preserve the

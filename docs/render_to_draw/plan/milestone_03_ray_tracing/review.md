@@ -24,6 +24,13 @@ are recorded in the [M03 summary amendment](summary.md#default-renderer-policy-a
 
 ## Source-to-contract comparison
 
+The indexed-resource row below records the original M03 review. Later lead-directed
+[M07 capacities and native shader v2](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+supersede its 32/128/256 ceilings, Metal buffer8 grouping and throwing-overflow
+policy. Current tracing uses exact counts up to 16384 with device reservations,
+Vulkan specialization and Metal record buffers8/9; overflow warns/degrades only
+texture slots. Preserve the original acceptance/verification provenance below.
+
 | Planned area | Actual source and contract | Classification / consequence |
 |---|---|---|
 | Backend tracing stages | [Vulkan pipeline](../../../../lib/src/bg2e/gpu/vk/RayTracingPipeline.cpp) provides optional any-hit, aligned SBT records/addresses and allocation flush. [GI](../../../../lib/src/bg2e/draw/pipeline/RTGlobalIllumination.cpp) and [reflections](../../../../lib/src/bg2e/draw/pipeline/RTReflections.cpp) use Vulkan native raygen/miss/closest/any-hit at recursion depth one; iterative shader bounces. Metal uses compute intersection queries. AO uses compute queries. | Equivalent refinement of accepted native-backend design; query-only support does not imply Vulkan GI/reflection pipeline support. No emulated native Metal pipeline. |
@@ -39,7 +46,7 @@ are recorded in the [M03 summary amendment](summary.md#default-renderer-policy-a
 | Settings and edit lifecycle | [Facade](../../../../lib/src/bg2e/draw/RenderSettingsPreferences.cpp) binds actual metadata/instance addresses; requested values serialize independently of availability/status. Codec validates merged distance/bias pairs and preserves numeric types. Weak/generation-checked queued edits reset histories, including partial-failure reports. | Delivered open catalog; no copied preferences model. Direct in-place uploads, custom shader changes and same-camera teleports still require invalidateHistories. Example-owned targets require headless/app policy, not silent schema invention. |
 | Working products | [Deferred example](../../../../examples/draw/10_deferred_renderer/src/main.cpp) and [manipulation](../../../../examples/draw/11_manipulation/src/main.cpp) now create/connect/bind/draw graphics windows and have reopen buttons. Manipulation includes live per-light properties/local XYZ/Euler edits, GI selected and GI/reflections enabled. FSR/SMAA disabled initially. | M03-09's initially missing visible UI was a missing requirement, corrected before this review and accepted by continuation. Manipulation defaults are example-specific; not global renderer defaults. |
 | Final processing | [SMAAProcessor](../../../../lib/include/bg2e/draw/pipeline/SMAAProcessor.hpp) implements device-only process and FinalProcessor integration. Paired edge/weights/blend/copy shaders and official AreaTex/SearchTex. Only after final color, once per frame, before overlays/UI. | Preserved orthogonal SMAA 1x profile, no diagonal/corner/temporal SMAA or MSAA. Default stays ordinary resampling; independent of RT and optional FSR. Keep vendored lookup bytes/licenses on retirement. |
-| Legacy shadows | [SoftShadowPass](../../../../lib/src/bg2e/draw/pipeline/SoftShadowPass.cpp) retains eight distinct cutout pairs. Specific capacity exception remains observable by table callers; pass uses neutral whole-scene visibility, sceneSupported/status and retry. | Intentional integration contract change accepted with M03-09. Advanced tables remain independent. This is graceful degradation, not arbitrary-material query-shadow parity. |
+| Legacy shadows | Original M03 review observed eight distinct cutout pairs and whole-scene neutral fallback. This historical implementation is superseded by the later [M07 direct-shadow expansion](../milestone_07_bg2e_composer/tracing-capacity-16384.md): device-clamped table up to 16384, v2 kernels, per-slot neutral alpha and all shadow occluders retained. | The M07 correction is current contract; original M03 evidence/acceptance remains historical. No material-count optimization or automatic alphaCutoff/default change is included. |
 
 ## Working-product evidence and verification limits
 

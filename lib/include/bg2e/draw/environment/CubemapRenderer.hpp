@@ -64,6 +64,7 @@ class BG2E_API CubemapRenderer : public EnvironmentPass {
         return _settings;
     }
     void setSource(std::shared_ptr<gpu::Image> source);
+    void setSourceSrgb(bool value);
     virtual std::shared_ptr<gpu::Image> generate(Engine& engine, std::shared_ptr<gpu::Image> source = nullptr);
     const EnvironmentResources& resources() const override;
     const pipeline::PassContract& contract() const override;
@@ -82,6 +83,7 @@ class BG2E_API CubemapRenderer : public EnvironmentPass {
     GenerationSettings _realized;
     Engine* _engine = nullptr;
     std::shared_ptr<gpu::Image> _source;
+    bool _sourceSrgb = false;
     std::shared_ptr<gpu::Image> _output;
     std::shared_ptr<gpu::CubeMap> _cube;
     std::shared_ptr<gpu::Sampler> _sourceSampler;

@@ -95,8 +95,10 @@ std::shared_ptr<Node> Node::clone() const
     for (const auto& comp : orderedComponents())
     {
         auto component = comp->clone();
-        if (!component || component.get() == comp.get() || component->ownerNode() ||
-            typeid(*component) != typeid(*comp))
+        const auto* clonedComponent = component.get();
+        const auto* originalComponent = comp.get();
+        if (!clonedComponent || clonedComponent == originalComponent || clonedComponent->ownerNode() ||
+            typeid(*clonedComponent) != typeid(*originalComponent))
         {
             throw std::logic_error("Component clone must preserve its concrete type and return a detached independent instance: " + comp->typeName());
         }

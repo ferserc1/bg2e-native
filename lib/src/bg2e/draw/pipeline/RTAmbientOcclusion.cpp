@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/base/PlatformTools.hpp>
@@ -127,9 +128,9 @@ RTAmbientOcclusion::RTAmbientOcclusion(RTAOConfiguration configuration)
 
 void RTAmbientOcclusion::initialize(gpu::Device& device, gpu::BackendType backend, uint32_t slots)
 {
-    if (_device || !device.isValid() || !slots || _configuration.shaderInterface != "draw.rtao.v1")
+    if (_device || !device.isValid() || !slots || _configuration.shaderInterface != "draw.rtao.v2")
     {
-        throw std::invalid_argument("AO initialization requires a clean instance, valid device/slots and draw.rtao.v1 shaders");
+        throw std::invalid_argument("AO initialization requires a clean instance, valid device/slots and draw.rtao.v2 shaders");
     }
     _device = &device;
     const auto usage = gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment;
@@ -153,8 +154,11 @@ void RTAmbientOcclusion::initialize(gpu::Device& device, gpu::BackendType backen
             _layouts[index] = device.createPipelineLayout(rtaoBindingLayout(_capacity,blue));
             gpu::ShaderLib library(_configuration.shaderRoot,backend);
             const auto name = _configuration.shaderPrefix+"/"+(world ? "world_" : "camera_")+
-                (blue ? "blue_" : "hash_")+std::to_string(_capacity);
-            _shaders[index] = library.compute(name,&device);
+                (blue ? "blue_" : "hash_")+"256";
+            // The filename is a deployed template, not the effective table size.
+            _shaders[index] = backend == gpu::BackendType::Vulkan ?
+                library.specialized(name,gpu::ShaderStage::Compute,&device,{{0,_capacity}}) :
+                library.compute(name,&device);
             _pipelines[index] = device.createComputePipeline({_shaders[index].get(),_layouts[index].get()});
         }
         gpu::SamplerDescription nearest;
@@ -204,7 +208,7 @@ void RTAmbientOcclusion::prepareSnapshot(uint32_t index, uint64_t serial, std::s
     {
         throw std::logic_error("Prepare an AO slot once per acquired presentation/job sample");
     }
-    if (snapshot && (snapshot->device != _device || snapshot->capacity != _capacity))
+    if (snapshot && (snapshot->device != _device || snapshot->capacity > _capacity))
     {
         throw std::invalid_argument("AO snapshot device/profile mismatch");
     }
@@ -217,6 +221,7 @@ void RTAmbientOcclusion::prepareSnapshot(uint32_t index, uint64_t serial, std::s
 
 void RTAmbientOcclusion::record(const RTAOContext& context)
 {
+    base::CpuProfileScope profile("effect.ao.record");
     const auto usage = gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment;
     if (!_device || context.command.hasActiveScope() || context.output.device() != _device || !context.output.isValid() ||
         context.output.pixelFormat() != gpu::PixelFormat::R16_SFLOAT || context.output.size().isZero() ||
@@ -274,7 +279,7 @@ void RTAmbientOcclusion::record(const RTAOContext& context)
     invocation.uniforms = _device->createBuffer("AO invocation uniforms");
     invocation.uniforms->createUniformBuffer(data);
     slot.snapshot->build(context.command);
-    invocation.sceneSet = slot.snapshot->resourceSet(*_layouts[index]);
+    invocation.sceneSet = slot.snapshot->resourceSet(*_layouts[index], 1, _capacity);
     invocation.surfaceSet = _device->createResourceSet(_layouts[index].get(),0);
     invocation.surfaceSet->setUniformBuffer({0,1},invocation.uniforms.get());
     invocation.surfaceSet->setSampledImage({1,0},context.surface.normal);

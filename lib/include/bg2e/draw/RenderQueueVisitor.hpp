@@ -31,6 +31,7 @@ class BG2E_API RenderQueueVisitor : public scene::NodeVisitor {
     void didVisit(scene::Node* node) override;
   private:
     RenderQueue* _queue = nullptr;
+    bool _explicitEnvironment = false;
     glm::mat4 _world{1};
     std::vector<glm::mat4> _stack;
 };

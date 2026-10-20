@@ -30,4 +30,12 @@ Output is sampled/storage/color-attachment RGBA16_SFLOAT. Quality dimensions and
 
 The manual fixture exercises emissive HDR/albedo, cutout UV continuation, bounded distance versus excluded geometry, environment escape, direct-light participation, blue noise, multiple bounces, subclass dispatch, camera/explicit agreement and disabled/empty validity. It retains the shared dense-ID/submesh/geometry cache checks. No agent build, shader compilation or runtime execution occurred. Lead validation must cover both native shader trees and hardware diagnostics, nested/mirrored transforms, shadow occlusion, all quality/profile variants and existing deferred/manipulation examples.
 
-No history, denoiser, UI/reflected settings integration, new example target or bake orchestration is introduced. Legacy SoftShadowPass still has a separate eight-cutout-pair limit; disable it when testing larger GI material tables. M03-06 reuses native hit/table/surface contracts; M03-07 owns HDR history validity/invalidation and rendered-view keys; M03-08 filtering; M03-09 visible controls and example integration; M03-10 cross-effect review. M04/M08 reuse explicit surfaces, matching-capacity snapshots and caller-owned completion discipline.
+No history, denoiser, UI/reflected settings integration, new example target or bake orchestration is introduced. The original delivery had a separate eight-cutout-pair SoftShadowPass; the later M07 correction expands it under the [shared capacity policy](../milestone_07_bg2e_composer/tracing-capacity-16384.md). Its remaining alpha fallback is per texture slot, not whole-scene; do not disable direct shadows when testing larger GI material tables below effective capacity. M03-06 reuses native hit/table/surface contracts; M03-07 owns HDR history validity/invalidation and rendered-view keys; M03-08 filtering; M03-09 visible controls and example integration; M03-10 cross-effect review. M04/M08 reuse explicit surfaces, matching-capacity snapshots and caller-owned completion discipline.
+## Later M07 capacity amendment
+
+The [16384 correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+supersedes this original delivery's small native profiles and Metal buffer8 ABI.
+GI now uses draw.rtgi.v2, exact device-clamped capacity, Vulkan specialization ID0
+and Metal image/sampler argument-record buffers8/9. Packed material ownership and
+transport semantics remain; texture-table exhaustion warns/degrades rather than
+exiting. Original numerical/native coverage claims above remain historical.

@@ -19,6 +19,7 @@
 #include <bg2e/draw/RenderQueueVisitor.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/LightComponent.hpp>
 #include <cmath>
 #include <stdexcept>
@@ -46,6 +47,17 @@ void RenderQueueVisitor::enqueue(scene::Node* root, Engine& engine, RenderQueue&
         }
     }
     _world = root->parent() ? root->parent()->worldMatrix() : glm::mat4{1};
+    auto* ownerScene = root->sceneRoot()->scene();
+    _explicitEnvironment = ownerScene && ownerScene->hasExplicitMainEnvironment();
+    if (auto* selected = _explicitEnvironment ? ownerScene->mainEnvironment() : nullptr)
+    {
+        auto intent = std::dynamic_pointer_cast<scene::EnvironmentComponent>(selected->clone());
+        if (!intent)
+        {
+            throw std::logic_error("Environment clone must preserve its component type");
+        }
+        next.setEnvironment(std::move(intent));
+    }
     _stack.clear();
     _queue = &next;
     try
@@ -140,7 +152,7 @@ void RenderQueueVisitor::visit(scene::Node* node)
         }
         ++uniforms.count.x;
     }
-    if (auto* environment = node->environment(); environment && !_queue->environment())
+    if (auto* environment = node->environment(); environment && !_queue->environment() && !_explicitEnvironment)
     {
         auto intent = std::dynamic_pointer_cast<scene::EnvironmentComponent>(environment->clone());
         if (!intent)

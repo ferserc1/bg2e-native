@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/TracingSceneResources.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/base/Log.hpp>
@@ -61,13 +62,24 @@ bool TracingSnapshot::empty() const
 
 void TracingSnapshot::build(gpu::CommandBuffer& command)
 {
+    base::CpuProfileScope profile("tracing.buildTLASAndTransitions");
     if (command.hasActiveScope())
     {
         throw std::invalid_argument("Build tracing snapshots outside active command scopes");
     }
+    if (_built)
+    {
+        return;
+    }
     for (const auto& image : images)
     {
         command.transition(image.get(),gpu::ImageLayout::ShaderReadOnly);
+    }
+    // The dedicated shadow alpha table has an independent admission/fallback
+    // policy from the six-slot material table, including in standalone use.
+    for (const auto& texture : shadowTable.alphaTextures)
+    {
+        command.transition(texture->image(),gpu::ImageLayout::ShaderReadOnly);
     }
     if (!_built && scene)
     {
@@ -76,20 +88,38 @@ void TracingSnapshot::build(gpu::CommandBuffer& command)
     }
 }
 
-std::shared_ptr<gpu::ResourceSet> TracingSnapshot::resourceSet(gpu::PipelineLayout& layout, uint32_t setIndex) const
+std::shared_ptr<gpu::ResourceSet> TracingSnapshot::resourceSet(gpu::PipelineLayout& layout, uint32_t setIndex,
+    uint32_t bindingCapacity) const
 {
+    base::CpuProfileScope lookupProfile("tracing.getSceneBindings");
     if (setIndex != 1 || !_built || empty() || !geometry || layout.device() != device)
     {
         throw std::logic_error("Build a nonempty same-device tracing snapshot before binding");
     }
+    if (!bindingCapacity)
+    {
+        bindingCapacity = capacity;
+    }
+    if (bindingCapacity < capacity)
+    {
+        throw std::invalid_argument("Tracing bindings cannot truncate a shared snapshot");
+    }
+    for (const auto& cached : _sceneBindings)
+    {
+        if (cached.layout == &layout && cached.setIndex == setIndex && cached.capacity == bindingCapacity)
+        {
+            return cached.resources;
+        }
+    }
+    base::CpuProfileScope profile("tracing.createSceneBindings");
     auto set = device->createResourceSet(&layout,setIndex);
     set->setStorageBuffer({0,2},geometry->vertexBuffer.get());
     set->setStorageBuffer({1,3},geometry->indexBuffer.get());
     set->setStorageBuffer({2,4},instanceBuffer.get());
     set->setStorageBuffer({3,5},materialBuffer.get());
     set->setRayTracingScene({4,6},scene.get());
-    std::vector<gpu::ImageView> views(capacity,images.front()->fullView());
-    std::vector<gpu::Sampler*> states(capacity,samplers.front().get());
+    std::vector<gpu::ImageView> views(bindingCapacity,images.front()->fullView());
+    std::vector<gpu::Sampler*> states(bindingCapacity,samplers.front().get());
     for (size_t i = 0; i < images.size(); ++i)
     {
         views[i] = images[i]->fullView();
@@ -99,17 +129,20 @@ std::shared_ptr<gpu::ResourceSet> TracingSnapshot::resourceSet(gpu::PipelineLayo
         states[i] = samplers[i].get();
     }
     set->setSampledImages({5,0},views);
-    set->setSamplers({6,capacity},states);
+    set->setSamplers({6,0},states);
     set->update();
+    // Publish only fully initialized bindings. Their lifetime is bounded by this
+    // frame/job snapshot; another frame always creates its own native tables.
+    _sceneBindings.push_back({&layout, layout.weak_from_this().lock(), setIndex, bindingCapacity, set});
     return set;
 }
 
 gpu::PipelineLayoutDescription tracingBindingLayout(uint32_t capacity, gpu::ShaderStage stage,
     const std::vector<gpu::ShaderStage>& additionalStages)
 {
-    if (capacity != 32 && capacity != 128 && capacity != 256)
+    if (!capacity || capacity > gpu::MaxSampledResourceTableCapacity)
     {
-        throw std::invalid_argument("Tracing arrays require a 32/128/256 shader profile");
+        throw std::invalid_argument("Tracing arrays require capacity in [1, 16384]");
     }
     gpu::PipelineLayoutDescription result;
     for (uint32_t i = 0; i < 4; ++i)
@@ -117,8 +150,8 @@ gpu::PipelineLayoutDescription tracingBindingLayout(uint32_t capacity, gpu::Shad
         result.resourceBindings.push_back({1,{i,2+i},gpu::ResourceType::StorageBuffer,stage,1,additionalStages});
     }
     result.resourceBindings.push_back({1,{4,6},gpu::ResourceType::AccelerationStructure,stage,1,additionalStages});
-    result.resourceBindings.push_back({1,{5,0},gpu::ResourceType::SampledImage,stage,capacity,additionalStages,8});
-    result.resourceBindings.push_back({1,{6,capacity},gpu::ResourceType::Sampler,stage,capacity,additionalStages,8});
+    result.resourceBindings.push_back({1,{5,0},gpu::ResourceType::SampledImage,stage,capacity,additionalStages,8,true,true});
+    result.resourceBindings.push_back({1,{6,0},gpu::ResourceType::Sampler,stage,capacity,additionalStages,9,true,true});
     return result;
 }
 
@@ -133,14 +166,17 @@ TracingSceneResources::TracingSceneResources(gpu::Device& device, uint32_t capac
     }
 }
 
-std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueue& queue)
+std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueue& queue, uint32_t shadowCapacity)
 {
+    base::CpuProfileScope profile("tracing.prepare");
+    base::CpuProfileScope stageProfile("tracing.collectAndValidate");
     if (!queue.engine() || queue.engine()->device() != _device)
     {
         throw std::invalid_argument("Tracing queue belongs to another device");
     }
     CollectRayTracingInstancesVisitor collection;
     collection.collect(queue);
+    base::CpuProfileScope::count("tracing.collectedInstances", collection.instances().size());
     auto next = std::make_shared<TracingSnapshot>();
     next->device = _device;
     next->capacity = _capacity;
@@ -150,9 +186,11 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
     range(next->owners.size(),sizeof(TracingInstanceData),limit);
     if (next->owners.empty())
     {
+        base::CpuProfileScope::count("tracing.emptySceneSnapshots", 1);
         _capacityWarningActive = false;
         return next;
     }
+    stageProfile.next("tracing.uniqueMeshCollection");
     std::vector<std::shared_ptr<Drawable::DrawMesh>> meshes;
     for (const auto& source : next->owners)
     {
@@ -161,6 +199,8 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
             meshes.push_back(source.item.drawMesh);
         }
     }
+    base::CpuProfileScope::count("tracing.uniqueMeshes", meshes.size());
+    stageProfile.next("tracing.geometryPacking");
     std::shared_ptr<const TracingGeometry> geometry = _geometry;
     if (!geometry || geometry->owners != meshes)
     {
@@ -198,6 +238,7 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
         packed->indexBuffer = buffer(*_device,packed->indices.data(),packed->indices.size()*sizeof(uint32_t));
         geometry = packed;
     }
+    stageProfile.next("tracing.instanceMaterialTextureTables");
     next->geometry = geometry;
     for (const auto& source : next->owners)
     {
@@ -288,8 +329,39 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
         next->instances.push_back(instance);
         next->materials.push_back(material);
     }
+    stageProfile.next("tracing.instanceBufferUpload");
     next->instanceBuffer = buffer(*_device,next->instances.data(),next->instances.size()*sizeof(TracingInstanceData));
+    if (shadowCapacity)
+    {
+        base::CpuProfileScope::count("shadowTable.prepared", 1);
+        stageProfile.next("tracing.prepareShadowResources");
+        {
+            base::CpuProfileScope shadowTotalProfile("tracing.shadowTablesAndBuffers");
+            {
+                base::CpuProfileScope shadowBuildProfile("tracing.buildShadowQueryTable");
+                next->shadowTable = buildShadowQueryTable(next->owners, shadowCapacity);
+                // Match the shared geometry's index/vertex bases to dense TLAS order.
+                for (size_t i = 0; i < next->instances.size(); ++i)
+                {
+                    next->shadowTable.instances[i].ranges.x = next->instances[i].ranges.x;
+                    next->shadowTable.instances[i].options.z = next->instances[i].ranges.y;
+                }
+            }
+            {
+                base::CpuProfileScope shadowInstanceProfile("tracing.shadowInstanceBufferUpload");
+                const size_t shadowInstanceBytes = next->shadowTable.instances.size() * sizeof(ShadowInstanceData);
+                next->shadowInstances = buffer(*_device, next->shadowTable.instances.data(), shadowInstanceBytes);
+                base::CpuProfileScope::count("shadowTable.instanceBufferBytes", shadowInstanceBytes);
+            }
+        }
+    }
+    else
+    {
+        base::CpuProfileScope::count("shadowTable.skippedNoShadowCapacity", 1);
+    }
+    stageProfile.next("tracing.allocateAndUploadMaterialBuffer");
     next->materialBuffer = buffer(*_device,next->materials.data(),next->materials.size()*sizeof(TracingMaterialData));
+    stageProfile.next("tracing.createSceneAndInstances");
     next->scene = _device->createRayTracingScene("draw shared tracing snapshot");
     for (uint32_t i = 0; i < next->owners.size(); ++i)
     {

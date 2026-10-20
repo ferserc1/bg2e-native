@@ -6,6 +6,14 @@
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <bg2e/ui/ResourcePicker.hpp>
@@ -72,8 +80,10 @@ bool ResourcePicker::draw(
     // followed by the browse button on the same line
     auto fileName = value.filename().string();
     const auto textCapacity = std::max(1024, static_cast<int>(fileName.size()) + 256);
+    const bool showClear = metadata.resourceCanClear || metadata.resourceCanSelectEmpty;
     const auto browseWidth = static_cast<float>(
-        Layout::calcButtonWidth("Browse") + Layout::getItemHorizontalSpacing());
+        Layout::calcButtonWidth("Browse") + Layout::getItemHorizontalSpacing() +
+        (showClear ? Layout::calcButtonWidth("Clear") + Layout::getItemHorizontalSpacing() : 0.0f));
     ImGui::SetNextItemWidth(Layout::getContentRegionAvailWidth() - browseWidth);
     Value::text(label, fileName, true, textCapacity);
 
@@ -83,7 +93,7 @@ bool ResourcePicker::draw(
         const auto filterName = metadata.resourceKind.empty() ? "Resources" : metadata.resourceKind;
         dialog.setFilters({{filterName, extensionSpec(metadata.resourceExtensions)}});
         auto selected = dialog.openFile();
-        if (!selected.empty())
+        if (!selected.empty() || metadata.resourceCanSelectEmpty)
         {
             if (metadata.resourcePathIsProjectRelative)
             {
@@ -97,6 +107,18 @@ bool ResourcePicker::draw(
             }
             changed = true;
         }
+    }
+
+    if (metadata.resourceCanClear)
+    {
+        Layout::sameLine();
+        Group::beginDisabled(value.empty() || readOnly);
+        if (Button::button("Clear##" + label, true))
+        {
+            value.clear();
+            changed = true;
+        }
+        Group::endDisabled();
     }
 
     if (readOnly)

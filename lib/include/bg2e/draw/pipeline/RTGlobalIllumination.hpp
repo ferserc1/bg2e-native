@@ -32,7 +32,7 @@ struct RTGISettings {
 };
 struct RTGIConfiguration {
     std::filesystem::path shaderRoot;
-    std::string shaderPrefix = "draw/rtgi", shaderInterface = "draw.rtgi.v1";
+    std::string shaderPrefix = "draw/rtgi", shaderInterface = "draw.rtgi.v2";
     std::shared_ptr<utils::BlueNoise> noise;
 };
 struct RTGIContext {

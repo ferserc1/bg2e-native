@@ -21,6 +21,7 @@
 #include <bg2e/app/FileDialog.hpp>
 #include <bg2e/app/MessageBox.hpp>
 #include <bg2e/gpu/Device.hpp>
+#include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/db/scene.hpp>
 
@@ -304,6 +305,12 @@ void AppDelegate::processDocumentIo()
         }
         _stage->prepareTools(candidate);
         _stage->adopt(candidate, operation.kind == Kind::New ? std::filesystem::path{} : operation.path);
+        if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(renderer());
+            deferred && deferred->environmentGenerator())
+        {
+            // Reload file contents even when a new document uses the same HDR path.
+            deferred->environmentGenerator()->resetSourceCache();
+        }
         invalidateImports();
         _selection->deselect();
         for (int button = 0; button < 3; ++button)
@@ -314,6 +321,10 @@ void AppDelegate::processDocumentIo()
         _viewpointStatus.clear();
         invalidateLightmapSources();
         setScene(scene()); // Drop renderer queues before releasing retired resources.
+        // The new document owns its EnvironmentComponent, but environment
+        // generation runs at Renderer::prepareFrame's stopped boundary.
+        requestSceneFrame();
+        _lastEnvironmentError.clear(); // A failed HDR on this document must be reported again.
         _status = operation.kind == Kind::New ? "New scene" : "Opened " + operation.path.filename().string();
         if (_sceneResourceLoad)
         {

@@ -51,7 +51,7 @@ The technical review is the penultimate step; the cumulative documentation updat
 
 ## M01 review handoff
 
-Reuse public M01 pipeline/environment/query primitives, canonical/dense identity mapping, live codec and optional SDK FSR. Do not promote the eight-pair alpha table to an arbitrary RT material ABI. The project lead owns M03-01 decisions; general arrays, object/effect histories, denoise and optional SMAA remain real work. See [M01 review](../milestone_01_deferred_renderer/review.md) for source evidence, classifications and verification limits. Milestone order and product gate remain unchanged.
+Reuse public M01 pipeline/environment/query primitives, canonical/dense identity mapping, live codec and optional SDK FSR. Do not promote the historical M01 eight-pair alpha table to an arbitrary RT material ABI. It was subsequently expanded for both advanced effects and direct SoftShadowPass under the [M07 capacity correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md). The project lead owns M03-01 decisions; object-local ownership and pending shader texture-count optimizations remain separate. General arrays, object/effect histories, denoise and optional SMAA remain real work. See [M01 review](../milestone_01_deferred_renderer/review.md) for source evidence, classifications and verification limits. Milestone order and product gate remain unchanged.
 
 ## Documentation closure order
 

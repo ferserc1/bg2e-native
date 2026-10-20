@@ -24,16 +24,17 @@ using namespace raytracing;
 struct TraceVertex { float4 position; float4 normal; float4 uv; float4 tangent; };
 struct TraceInstance { float4x4 model; float4x4 normal; uint4 ranges; uint4 identity; };
 struct TraceMaterial { DrawMaterialData values; uint4 images[2]; uint4 samplers[2]; };
-struct TraceArguments {
-    array<texture2d<float>,TRACE_CAPACITY> images [[id(0)]];
-    array<sampler,TRACE_CAPACITY> samplers [[id(TRACE_CAPACITY)]];
-};
+// Tier-2 pointer indexing over independently encoded argument records avoids
+// baking a fixed array extent (or a capacity-dependent sampler offset) into MSL.
+struct TraceImageArgument { texture2d<float> image [[id(0)]]; };
+struct TraceSamplerArgument { sampler state [[id(0)]]; };
 struct TraceData {
     const device TraceVertex* vertices;
     const device uint* indices;
     const device TraceInstance* instances;
     const device TraceMaterial* materials;
-    constant TraceArguments* resources;
+    constant TraceImageArgument* images;
+    constant TraceSamplerArgument* samplers;
 };
 float4 traceUV(uint instance, uint primitive, float2 bary, thread const TraceData& data)
 {
@@ -56,7 +57,7 @@ float4 traceSample(uint materialIndex, uint slot, float4 uv, thread const TraceD
     }
     float2 selected = drawSelectUV(material.values,slot,uv.xy,uv.zw);
     return drawDecodeSample(material.values,slot,
-        data.resources->images[imageIndex].sample(data.resources->samplers[samplerIndex],selected,level(0.0)));
+        data.images[imageIndex].image.sample(data.samplers[samplerIndex].state,selected,level(0.0)));
 }
 bool traceAccept(uint instance, uint primitive, float2 bary, uint instanceCount, thread const TraceData& data)
 {

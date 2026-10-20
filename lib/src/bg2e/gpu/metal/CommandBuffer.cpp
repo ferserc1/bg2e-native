@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/Buffer.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/GraphicsPipeline.hpp>
@@ -642,6 +643,7 @@ void CommandBuffer::pushConstants(ShaderStage stage, uint32_t offset, uint32_t s
 
 void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_t /*setIndex*/, gpu::ResourceSet* set)
 {
+    base::CpuProfileScope profile("metal.bindResources.graphicsAndResidency");
     auto* metalSet = dynamic_cast<metal::ResourceSet*>(set);
     if (!metalSet || metalSet->device() != _device || !metalSet->isValid())
     {
@@ -719,6 +721,7 @@ void CommandBuffer::bindResourceSet(gpu::GraphicsPipeline* /*pipeline*/, uint32_
 
 void CommandBuffer::bindResourceSet(gpu::ComputePipeline* /*pipeline*/, uint32_t /*setIndex*/, gpu::ResourceSet* set)
 {
+    base::CpuProfileScope profile("metal.bindResources.computeAndResidency");
     if (!_computeEncoder)
     {
         throw std::runtime_error("metal::CommandBuffer::bindResourceSet(ComputePipeline): no active compute scope; call beginCompute() first");
@@ -947,6 +950,7 @@ void CommandBuffer::bindPipeline(gpu::RayTracingPipeline* pipeline)
 
 void CommandBuffer::bindResourceSet(gpu::RayTracingPipeline* /*pipeline*/, uint32_t /*setIndex*/, gpu::ResourceSet* set)
 {
+    base::CpuProfileScope profile("metal.bindResources.tracingAndResidency");
     if (!_computeEncoder)
     {
         throw std::runtime_error("metal::CommandBuffer::bindResourceSet(RayTracingPipeline): no active compute scope");

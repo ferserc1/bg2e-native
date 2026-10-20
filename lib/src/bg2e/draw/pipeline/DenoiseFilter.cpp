@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/DenoiseFilter.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/reflection/Builder.hpp>
@@ -131,6 +132,7 @@ void DenoiseFilter::beginFrame(uint32_t index, uint64_t serial)
 
 DenoiseResult DenoiseFilter::record(const DenoiseInput& input)
 {
+    base::CpuProfileScope profile("effect.denoise.record");
     if (!_device || input.command.hasActiveScope() || !input.signal.isValid() || input.signal.device() != _device ||
         input.signal.size().isZero() || input.signal.imageType() != gpu::ImageType::Image2D ||
         !gpu::hasFlag(input.signal.usage(),gpu::ImageUsage::Sampled) ||

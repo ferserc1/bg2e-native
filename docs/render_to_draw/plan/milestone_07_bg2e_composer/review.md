@@ -1,5 +1,26 @@
 # M07 technical review — Composer scene/import/bake contracts
 
+The later [environment synchronization correction](environment-synchronization.md)
+introduces explicit active Scene selection in Composer and removes its hidden
+auxiliary Environment. Renderer, extraction and settings agree on selection;
+inactive additions cannot steal it and removing the active component restores
+renderer defaults. In-place colors/HDR editing and visible failure diagnostics
+replace arbitrary-clone GPU generation/rollback. Lead validation is pending.
+
+Direct-shadow follow-up extends the [capacity policy](tracing-capacity-16384.md)
+to SoftShadowPass as well: its independent eight-pair table is no longer current.
+The v2 query kernel uses exact device-clamped arrays and per-slot neutral alpha
+instead of whole-scene shadow removal. Model Edit's working-shadow report and
+Composer's failure prompted this correction; no native reproduction is claimed.
+Texture-count/shader optimizations wait until API migration completes.
+
+The subsequent [16384 tracing capacity correction](tracing-capacity-16384.md)
+supersedes the old fixed profiles/native table ABI referenced by earlier reviews.
+Current AO/GI/reflection native shader contracts are v2 with exact device-clamped
+counts, Vulkan specialization and Metal argument-record buffers8/9. Keep object
+materials independently owned and neutral-texture overflow warnings. Validation
+is pending; this correction does not itself accept M07-07 or implement M07-08.
+
 Subsequent failure/correction: [guarded loading and tracing investigation](loading-and-tracing-investigation.md)
 records the new Open Scene Loader phases, joined MainLoop worker lifetime and the
 macOS tracing table overflow. The latter is not a confirmed native

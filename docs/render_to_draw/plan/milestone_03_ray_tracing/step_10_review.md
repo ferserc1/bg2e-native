@@ -43,7 +43,7 @@ Audit the implementation against the accepted [M03-01 checkpoint](rt-design.md):
 
 ## M03-02 actual primitive contract
 
-Read [rt-gpu-data.md](rt-gpu-data.md). Use ShaderStage::AnyHit, appended anyHitShader, ResourceBinding::additionalStages and explicit metalArgumentBuffer/argument IDs. Set complete arrays through setSampledImages/setSamplers; choose matching 32/128/256 native shader profiles from logical-device resourceArrayCapabilities after reserving other bindings. Metal arrays currently support compute/RT color 2D sampled resources only, with retained source owners and retired/drained updates. Arbitrary draw geometry/material snapshot construction remains M03-04; the primitive probe's tiny material record is not the engine ABI. No buffer-address or array graphics-stage infrastructure is implied.
+Read [rt-gpu-data.md](rt-gpu-data.md) with the later [M07 capacity amendment](../milestone_07_bg2e_composer/tracing-capacity-16384.md). Choose the exact device-clamped capacity up to 16384 after reserves, not small compiled effect profiles. Vulkan specializes ID0; Metal uses separate argument record buffers8/9. Keep complete arrays, retained owners, retired/drained updates and warning/neutral-texture overflow behavior. Primitive probe profiles are not the engine ABI. No global material ownership, buffer-address or array graphics-stage infrastructure is implied.
 
 ## M03-03 actual noise input
 
@@ -77,9 +77,9 @@ mode selects IBL/AO/GI separately from reflections. Existing examples inject
 optional disabled FSR and SMAA. FinalProcessor/SMAAProcessor apply final scene AA
 after color/reconstruction and before overlays/UI, with standalone borrowed/owned
 output and retired-slot contracts. Reuse shared noise and explicit invalidation.
-Legacy query shadows retain an eight-pair limit but degrade the entire scene to
-neutral visibility with sceneSupported/status on overflow; advanced tables remain
-independent and never truncated. Review no-RT/partial support and the manual matrix.
+The later M07 correction expands direct query shadows to the device-clamped 16384
+policy; overflow degrades only alpha texture slots, never the entire scene's
+shadows. Review no-query/no-array/partial support and the manual matrix.
 Keep official AreaTex/SearchTex bytes and original licenses in iryku_smaa during
 production retirement: draw SMAA now consumes those resources. Do not use spatial
 AA or denoised histories as bake averages. Runtime checks remain lead-owned.

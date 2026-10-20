@@ -31,6 +31,7 @@
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/geo/cube.hpp>
 #include <bg2e/geo/plane.hpp>
+#include <bg2e/geo/sphere.hpp>
 #include <bg2e/math/projections.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
@@ -112,7 +113,6 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
         throw std::logic_error("The composer stage is already initialized");
     }
     _root = std::make_shared<scene::Node>("Composer stage");
-    _root->addComponent(new scene::EnvironmentComponent());
 
     auto model = std::make_shared<draw::Drawable>();
     model->setMesh(geo::createCube(2, 2, 2));
@@ -168,6 +168,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
     _fillLight->setEnabled(false);
     _scene = std::make_shared<scene::Scene>();
     _scene->setSceneRoot(_root);
+    _scene->setMainEnvironment(nullptr);
     _scene->setMainCamera(_camera->camera());
     prepareTools();
     refreshCamera();
@@ -183,6 +184,39 @@ void StageScene::addDrawable(const char* name, std::shared_ptr<bg2e::draw::Drawa
     node->addComponent(bg2e::scene::TransformComponent::makeTranslated(position));
     node->addComponent(new bg2e::scene::DrawableComponent(std::move(drawable)));
     _root->addChild(node);
+}
+
+std::shared_ptr<bg2e::scene::Node> StageScene::createPrimitive(unsigned kind)
+{
+    std::shared_ptr<bg2e::geo::MeshPNUUT> mesh;
+    const char* name = nullptr;
+    switch (kind)
+    {
+    case 0:
+        name = "Cube";
+        mesh.reset(bg2e::geo::createCube(1.0f, 1.0f, 1.0f));
+        break;
+    case 1:
+        name = "Sphere";
+        mesh.reset(bg2e::geo::createSphere(0.3f, 32, 16));
+        break;
+    case 2:
+        name = "Plane";
+        mesh.reset(bg2e::geo::createPlane(2.0f, 2.0f));
+        break;
+    default:
+        throw std::invalid_argument("Unknown scene primitive");
+    }
+
+    auto drawable = std::make_shared<bg2e::draw::Drawable>();
+    drawable->setMesh(std::move(mesh));
+    _drawables.push_back(drawable); // Retain partial GPU initialization for stage cleanup.
+    drawable->load(_engine);
+
+    auto node = std::make_shared<bg2e::scene::Node>(name);
+    node->addComponent(new bg2e::scene::TransformComponent());
+    node->addComponent(new bg2e::scene::DrawableComponent(std::move(drawable)));
+    return node;
 }
 
 void StageScene::resetCamera()
@@ -663,18 +697,17 @@ void StageScene::publishImport(const std::shared_ptr<bg2e::scene::Node>& candida
     const auto oldChildren = oldParent ? oldParent->children() : std::vector<std::shared_ptr<bg2e::scene::Node>>{};
     const auto oldCamera = _camera;
     const bool oldDirty = _document.dirty;
+    auto* previousEnvironment = _scene->mainEnvironment();
+    auto oldEnvironment = previousEnvironment ?
+        std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(previousEnvironment->shared_from_this()) : nullptr;
+    auto oldKnownEnvironments = _knownEnvironmentNodes;
     const bool oldFill = _fillLight && _fillLight->enabled();
-    auto fallback = _root->environment() ? _root->environment()->shared_from_this() : nullptr;
     parent->addChild(candidate);
     try
     {
         if (previous)
         {
             oldParent->removeChild(previous);
-        }
-        if (environmentNode() && fallback)
-        {
-            _root->removeComponent(fallback);
         }
         refreshCamera();
         if (rebind)
@@ -697,15 +730,13 @@ void StageScene::publishImport(const std::shared_ptr<bg2e::scene::Node>& candida
                 oldParent->addChild(child);
             }
         }
-        if (fallback && !fallback->ownerNode())
-        {
-            _root->addComponent(fallback);
-        }
         if (_fillLight)
         {
             _fillLight->setEnabled(oldFill);
         }
         _camera = oldCamera;
+        _scene->setMainEnvironment(oldEnvironment.get());
+        _knownEnvironmentNodes = std::move(oldKnownEnvironments);
         if (rebind)
         {
             try
@@ -758,10 +789,6 @@ void StageScene::insert(std::shared_ptr<bg2e::scene::Node> candidate,
     {
         _fillLight->setEnabled(false); // Authored lights take priority over fixtures.
     }
-    if (environmentNode() && _root->environment())
-    {
-        _root->removeComponent(_root->environment()->shared_from_this());
-    }
     markModified();
     refreshCamera();
 }
@@ -785,10 +812,7 @@ void StageScene::validateEditingGraph()
 
 void StageScene::refreshCamera()
 {
-    if (environmentNode() && _root->environment())
-    {
-        _root->removeComponent(_root->environment()->shared_from_this());
-    }
+    refreshEnvironment();
     if (_fillLight && enabledLightCount(_document.root.get()) >= 8)
     {
         _fillLight->setEnabled(false);
@@ -875,13 +899,10 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
     }
     _model = std::move(candidate);
     _document = std::move(next);
+    refreshEnvironment(true);
     if (totalLights == 8)
     {
         _fillLight->setEnabled(false);
-    }
-    if (environmentNode() && _root->environment())
-    {
-        _root->removeComponent(_root->environment()->shared_from_this());
     }
     refreshCamera();
 }
@@ -1184,18 +1205,68 @@ void StageScene::setFloor(bool visible, float height)
 
 std::shared_ptr<bg2e::scene::Node> StageScene::environmentNode() const
 {
-    std::shared_ptr<bg2e::scene::Node> result;
-    if (_document.root)
+    auto* environment = _scene ? _scene->mainEnvironment() : nullptr;
+    return environment ? environment->ownerNode()->shared_from_this() : nullptr;
+}
+
+void StageScene::refreshEnvironment(bool reset)
+{
+    if (!_scene)
     {
-        visitNodes(_document.root, [&](const auto& node)
-        {
-            if (!result && node->environment())
-            {
-                result = node;
-            }
-        });
+        return;
     }
-    return result;
+    if (reset)
+    {
+        _scene->resetMainEnvironmentSelection();
+    }
+    std::vector<std::shared_ptr<bg2e::scene::Node>> eligible;
+    std::function<void(const std::shared_ptr<bg2e::scene::Node>&)> collect;
+    collect = [&](const auto& node)
+    {
+        if (!node || !node->enabled())
+        {
+            return;
+        }
+        if (node->environment())
+        {
+            eligible.push_back(node);
+        }
+        for (const auto& child : node->children())
+        {
+            collect(child);
+        }
+    };
+    collect(_document.root);
+    const bool hadSelection = _scene->hasExplicitMainEnvironment();
+    auto* active = hadSelection ? _scene->mainEnvironment() : nullptr;
+    std::map<std::string, std::weak_ptr<bg2e::scene::EnvironmentComponent>> known;
+    for (const auto& node : eligible)
+    {
+        auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(node->environment()->shared_from_this());
+        known.emplace(node->identifier(), environment);
+        const auto previous = _knownEnvironmentNodes.find(node->identifier());
+        const bool added = previous == _knownEnvironmentNodes.end() || previous->second.lock() != environment;
+        if (!active && (reset || added))
+        {
+            active = node->environment();
+        }
+    }
+    if (active || reset || hadSelection)
+    {
+        _scene->setMainEnvironment(active);
+    }
+    _knownEnvironmentNodes = std::move(known);
+}
+
+void StageScene::environmentComponentReplaced(bg2e::scene::Node& node)
+{
+    const auto known = _knownEnvironmentNodes.find(node.identifier());
+    if (known != _knownEnvironmentNodes.end())
+    {
+        auto* environment = node.environment();
+        known->second = environment ?
+            std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(environment->shared_from_this()) : nullptr;
+    }
 }
 
 void StageScene::adoptEnvironment(const std::shared_ptr<bg2e::scene::Node>& preset)
@@ -1213,10 +1284,7 @@ void StageScene::adoptEnvironment(const std::shared_ptr<bg2e::scene::Node>& pres
         target = _document.root;
     }
     target->addComponent(environment);
-    if (auto fixture = _root->environment())
-    {
-        _root->removeComponent(fixture->shared_from_this());
-    }
+    _scene->setMainEnvironment(environment.get());
     refreshCamera();
 }
 
@@ -1224,9 +1292,9 @@ std::shared_ptr<bg2e::scene::Node> StageScene::environmentPreset() const
 {
     auto result = std::make_shared<bg2e::scene::Node>("Draw editor environment");
     auto source = environmentNode();
-    if (source || _root->environment())
+    if (source)
     {
-        result->addComponent(source ? source->environment()->clone() : _root->environment()->clone());
+        result->addComponent(source->environment()->clone());
     }
     else
     {
@@ -1347,10 +1415,6 @@ void StageScene::restoreEnvironment(const std::shared_ptr<bg2e::scene::Node>& pr
     {
         component->ownerNode()->removeComponent(component);
     }
-    if (auto fixture = _root->environment())
-    {
-        _root->removeComponent(fixture->shared_from_this());
-    }
     if (floor)
     {
         _floor->setEnabled(floor->enabled());
@@ -1413,6 +1477,7 @@ void StageScene::cleanup()
     _document.root.reset();
     _model.reset();
     _scene.reset();
+    _knownEnvironmentNodes.clear();
     _root.reset();
     for (auto& drawable : _drawables)
     {

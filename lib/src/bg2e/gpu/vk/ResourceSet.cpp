@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/vk/ResourceSet.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/vk/PipelineLayout.hpp>
 #include <bg2e/gpu/vk/Image.hpp>
 #include <bg2e/gpu/vk/Sampler.hpp>
@@ -36,6 +37,7 @@ namespace vk {
 ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
     : gpu::ResourceSet(gpuDevice), _device(device), _setIndex(setIndex)
 {
+    base::CpuProfileScope profile("vulkan.resourceSet.allocatePoolAndSet");
     _bindings = layout->description().resourceBindings;
     VkDescriptorSetLayout dsLayout = layout->descriptorSetLayout(setIndex);
     if (dsLayout == VK_NULL_HANDLE)
@@ -247,6 +249,7 @@ void ResourceSet::setSampler(ShaderBinding binding, gpu::Sampler* sampler)
 
 void ResourceSet::setSampledImages(ShaderBinding binding, std::span<const ImageView> views)
 {
+    base::CpuProfileScope profile("vulkan.resourceSet.resolveImageViews");
     bindingDescription(binding, ResourceType::SampledImage, views.size());
     std::vector<VkDescriptorImageInfo> infos;
     for (const auto& view : views)
@@ -413,6 +416,7 @@ void ResourceSet::setRayTracingScene(ShaderBinding binding, gpu::RayTracingScene
 
 void ResourceSet::update()
 {
+    base::CpuProfileScope profile("vulkan.resourceSet.updateDescriptors");
     for (const auto& rb : _bindings)
     {
         if (rb.set == _setIndex && rb.count > 1 &&
@@ -486,6 +490,7 @@ bool ResourceSet::isValid() const
 
 void ResourceSet::cleanup()
 {
+    base::CpuProfileScope profile("vulkan.resourceSet.cleanup");
     _initializedArrays.clear();
     _pendingArrays.clear();
     _pendingWrites.clear();

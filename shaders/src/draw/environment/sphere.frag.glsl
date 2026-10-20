@@ -26,12 +26,19 @@ layout(push_constant) uniform Push
     GenerationPush params;
 };
 layout(location = 0) out vec4 outColor;
+vec3 linearToSrgb(vec3 color)
+{
+    vec3 low = 12.92 * color;
+    vec3 high = 1.055 * pow(max(color, vec3(0.0)), vec3(1.0 / 2.4)) - 0.055;
+    return mix(high, low, lessThanEqual(color, vec3(0.0031308)));
+}
 vec4 evaluate(vec2 pixel)
 {
     vec3 n = cubeDirection(params.face, pixel / float(params.size));
     vec2 uv = vec2(atan(n.z, n.x) / (2.0 * PI) + 0.5, acos(clamp(n.y, -1.0, 1.0)) / PI);
-    float lod = clamp(log2(max(float(params.sourceSize) / (4.0 * float(params.size)), 1.0)), 0.0, params.sourceMaxLod);
-    return vec4(textureLod(sampler2D(sourceImage, sourceSampler), uv, lod).rgb, 1.0);
+    vec3 encoded = texture(sampler2D(sourceImage, sourceSampler), uv).rgb;
+    vec3 linear = params.roughness < 0.0 ? linearToSrgb(encoded) : encoded;
+    return vec4(linear, 1.0);
 }
 void main()
 {

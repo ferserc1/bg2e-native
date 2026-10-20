@@ -24,6 +24,8 @@
 #include <bg2e/utils/TextureCache.hpp>
 
 #include <cmath>
+#include <algorithm>
+#include <cctype>
 #include <stdexcept>
 
 namespace bg2e::scene {
@@ -116,11 +118,13 @@ void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData,
     setGroundColor(reader.getColor("groundColor").value_or(base::Color{0.04f, 0.035f, 0.025f}));
     setSkyboxBlur(float(reader.getNumber("skyboxBlur").value_or(0.0)));
     setSkyboxVisible(reader.getBool("skyboxVisible").value_or(true));
-    if (auto textureName = reader.getString("equirectangularTexture"))
+    auto textureName = reader.getString("equirectangularTexture");
+    if (!textureName)
     {
-        setEnvironmentImage(textureName->empty() ? std::string{} :
-            std::filesystem::absolute(basePath / *textureName).lexically_normal().string());
+        textureName = reader.getString("environmentImage");
     }
+    setEnvironmentImage(!textureName || textureName->empty() ? std::string{} :
+        std::filesystem::absolute(basePath / *textureName).lexically_normal().string());
 }
 
 void EnvironmentComponent::deserializeWithProgress(
@@ -133,7 +137,18 @@ void EnvironmentComponent::deserializeWithProgress(
 
     if (!_environmentImage.empty())
     {
-        utils::TextureCache::get().load(&engine, _environmentImage);
+        auto extension = std::filesystem::path(_environmentImage).extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char value)
+        {
+            return static_cast<char>(std::tolower(value));
+        });
+        if (extension != ".hdr")
+        {
+            // Scene resources continue to register supported raster formats
+            // with the legacy cache. HDR environment decoding is owned by the
+            // draw environment generator at its safe preparation boundary.
+            utils::TextureCache::get().load(&engine, _environmentImage);
+        }
         if (progress && progress->callback)
         {
             progress->callback(_environmentImage, progress->loaded, progress->total);

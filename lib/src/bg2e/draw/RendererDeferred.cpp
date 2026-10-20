@@ -17,6 +17,8 @@
  */
 
 #include <bg2e/draw/RendererDeferred.hpp>
+#include <bg2e/base/CpuProfile.hpp>
+#include <bg2e/scene/Scene.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/Device.hpp>
@@ -27,14 +29,21 @@
 #include <algorithm>
 #include <cmath>
 #include <set>
+#include <iostream>
 
 namespace bg2e::draw {
 namespace {
 class SceneInputs : public scene::NodeVisitor {
   public:
-    SceneInputs()
+    explicit SceneInputs(scene::Node* root)
     {
         setIgnoreDisabled(true);
+        auto* owner = root ? root->sceneRoot()->scene() : nullptr;
+        _explicitEnvironment = owner && owner->hasExplicitMainEnvironment();
+        if (_explicitEnvironment)
+        {
+            environment = owner->mainEnvironment();
+        }
     }
 
     scene::CameraComponent* camera = nullptr;
@@ -46,11 +55,14 @@ class SceneInputs : public scene::NodeVisitor {
         {
             camera = node->camera();
         }
-        if (!environment)
+        if (!_explicitEnvironment && !environment)
         {
             environment = node->getComponent<scene::EnvironmentComponent>();
         }
     }
+
+  private:
+    bool _explicitEnvironment = false;
 };
 }
 
@@ -107,7 +119,17 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     }
     _fallback = std::make_shared<ResamplingUpscaler>();
     _fallback->initialize(engine, upscaleConfiguration());
-    _configuration.upscaler->initialize(engine, upscaleConfiguration());
+    try
+    {
+        _configuration.upscaler->initialize(engine, upscaleConfiguration());
+    }
+    catch (const std::runtime_error& error)
+    {
+        warnInitialization(std::string("Upscaler initialization failed; bilinear reconstruction active: ") + error.what());
+        _configuration.upscaler->cleanup();
+        _configuration.upscaler = std::make_shared<ResamplingUpscaler>();
+        _configuration.upscaler->initialize(engine, upscaleConfiguration());
+    }
     const auto depth = _configuration.depthFormat;
     if (!_configuration.softShadows)
     {
@@ -152,11 +174,34 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     _configuration.denoise->initialize(*engine.device(),engine.backendType(),count);
     if (_configuration.finalProcessor)
     {
-        _configuration.finalProcessor->initialize(engine,_configuration.outputFormat,count);
+        try
+        {
+            _configuration.finalProcessor->initialize(engine,_configuration.outputFormat,count);
+        }
+        catch (const std::runtime_error& error)
+        {
+            warnInitialization(std::string("Final processor initialization failed; original final color retained: ") + error.what());
+            _configuration.finalProcessor->cleanup();
+            _configuration.finalProcessor.reset();
+        }
     }
     const auto ao = _configuration.ambientOcclusion;
     const auto gi = _configuration.globalIllumination;
     const auto reflection = _configuration.reflections;
+    const auto reportUnavailable = [this](const auto& effect)
+    {
+        if (effect && !effect->available())
+        {
+            warnInitialization(effect->status());
+        }
+    };
+    reportUnavailable(_configuration.softShadows);
+    reportUnavailable(ao);
+    reportUnavailable(gi);
+    reportUnavailable(reflection);
+    reportUnavailable(_configuration.temporal);
+    reportUnavailable(_configuration.denoise);
+    reportUnavailable(_configuration.finalProcessor);
     if ((ao->available() && !ao->noise()) || (gi->available() && !gi->noise()) ||
         (reflection->available() && !reflection->noise()))
     {
@@ -181,6 +226,7 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
         catch (const std::exception& error)
         {
             _noiseStatus = std::string("Shared blue noise unavailable: ")+error.what();
+            warnInitialization(_noiseStatus + "; hash sampling active");
             _sharedNoise.reset();
         }
     }
@@ -262,10 +308,21 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     _object.initialize(engine, _drawLayout, count);
     _lights.initialize(engine, _lightingLayout, count);
     _environmentBinding.initialize(engine, _lightingLayout, count, 8);
-    for (const auto& overlay : _configuration.overlays)
+    for (auto it = _configuration.overlays.begin(); it != _configuration.overlays.end();)
     {
         ++_initializedOverlays; // Cleanup also covers partially initialized overlays.
-        overlay->initialize(engine, overlayConfiguration());
+        try
+        {
+            (*it)->initialize(engine, overlayConfiguration());
+            ++it;
+        }
+        catch (const std::runtime_error& error)
+        {
+            warnInitialization(std::string("Optional overlay initialization failed; overlay omitted: ") + error.what());
+            (*it)->cleanup();
+            --_initializedOverlays;
+            it = _configuration.overlays.erase(it);
+        }
     }
     buildTargets();
     if (_configuration.environment)
@@ -276,10 +333,34 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     else
     {
         _generator = std::make_unique<environment::EnvironmentGenerator>(engine, _shaderRoot);
-        _generator->synchronize(nullptr);
+        try
+        {
+            _generator->synchronize(nullptr);
+        }
+        catch (const std::runtime_error& error)
+        {
+            warnInitialization(std::string("Initial environment generation failed; black environment active: ") + error.what());
+            _generator->cleanup(); // Release partially generated maps before the minimal allocation.
+            _generator->buildFallback();
+        }
         _environment = _generator->resources();
     }
     std::dynamic_pointer_cast<environment::SkyboxPass>(_configuration.layers[3].layer)->setEnvironment(_environment);
+}
+
+void RendererDeferred::warnInitialization(const std::string& message)
+{
+    if (!_initializationWarnings.empty())
+    {
+        _initializationWarnings += '\n';
+    }
+    _initializationWarnings += message;
+    std::cerr << "WARN: " << message << std::endl;
+}
+
+const std::string& RendererDeferred::initializationWarnings() const
+{
+    return _initializationWarnings;
 }
 
 pipeline::OverlayConfiguration RendererDeferred::overlayConfiguration() const
@@ -362,7 +443,11 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
     {
         throw std::logic_error("Initialize renderer before scene attachment");
     }
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("renderer.waitIdle.attachScene");
+        base::CpuProfileScope::count("renderer.attachSceneDrains", 1);
+        _engine->device()->waitIdle();
+    }
     _scene = std::move(sceneRoot);
     _queue.clear();
     resetUpscaler();
@@ -402,7 +487,11 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
     {
         throw std::invalid_argument("Renderer resize requires initialized nonzero extents");
     }
-    _engine->device()->waitIdle();
+        {
+        base::CpuProfileScope profile("renderer.waitIdle.resize");
+        base::CpuProfileScope::count("renderer.resizeDrains", 1);
+        _engine->device()->waitIdle();
+    }
     _configuration.outputExtent = output;
     _configuration.internalExtent = internal;
     _configuration.upscaler->resize(upscaleConfiguration());
@@ -434,24 +523,29 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
 
 bool RendererDeferred::prepareFrame()
 {
+    base::CpuProfileScope prepareProfile("renderer.prepareFrame");
     if (!_engine)
     {
         return false;
     }
     bool overlayChanged = false;
+    base::CpuProfileScope overlayProfile("renderer.prepareOverlayFrames");
     for (const auto& overlay : _configuration.overlays)
     {
         overlayChanged = overlay->prepareFrame() || overlayChanged;
     }
+    base::CpuProfileScope::count("renderer.preparedOverlays", _configuration.overlays.size());
     if (!_generator)
     {
         return overlayChanged;
     }
-    SceneInputs inputs;
-    if (_scene)
+    if (!_scene)
     {
-        _scene->accept(&inputs);
+        return overlayChanged;
     }
+    overlayProfile.next("renderer.prepareEnvironment");
+    SceneInputs inputs(_scene.get());
+    _scene->accept(&inputs);
     try
     {
         const bool generated = _generator->synchronize(inputs.environment);
@@ -489,6 +583,8 @@ void RendererDeferred::checkFrame(const FrameContext& frame) const
 
 void RendererDeferred::update(const FrameContext& frame)
 {
+    base::CpuProfileScope profile("renderer.update");
+    base::CpuProfileScope stageProfile("renderer.extractQueueAndCamera");
     checkFrame(frame);
     auto& slot = _targets[frame.frameSlot];
     if (slot.prepared && slot.serial == frame.frameNumber)
@@ -499,7 +595,7 @@ void RendererDeferred::update(const FrameContext& frame)
     {
         scene::UpdateVisitor update;
         update.update(_scene.get(), frame.sceneDeltaSeconds);
-        SceneInputs inputs;
+        SceneInputs inputs(_scene.get());
         _scene->accept(&inputs);
         if (!_explicitCamera)
         {
@@ -517,12 +613,14 @@ void RendererDeferred::update(const FrameContext& frame)
     }
     slot.queue.sort(glm::vec3(glm::inverse(_view)[3]));
     _queue = slot.queue;
+    stageProfile.next("renderer.temporalSignature");
     auto signature = temporalSignature(slot.queue);
     if (signature != _historySignature)
     {
         invalidateHistories();
         _historySignature = std::move(signature);
     }
+    stageProfile.next("renderer.beginTemporalAndFrameBindings");
     _configuration.temporal->beginFrame(frame.frameSlot,frame.frameNumber,frame.sceneFrameNumber);
     _configuration.denoise->beginFrame(frame.frameSlot,frame.frameNumber);
     slot.camera = _upscaleCamera;
@@ -542,18 +640,66 @@ void RendererDeferred::update(const FrameContext& frame)
     }
     slot.jitteredProjection = _configuration.upscaler->prepare(slot.camera, frame.sceneFrameNumber);
     _frame.update(frame, _view, slot.jitteredProjection);
+    stageProfile.next("renderer.objectBindings");
     _object.prepare(frame, slot.queue);
+    stageProfile.next("renderer.lightAndEnvironmentBindings");
     _lights.update(frame, slot.queue.lights());
     _environmentBinding.update(frame, _environment);
+    // One immutable scene snapshot per acquired frame, shared by every RT pass.
+    // Deliberately rebuild tables/TLAS each frame, matching the production path.
+    const bool shadowTracing = _queryShadows && _configuration.softShadows->available() &&
+        _configuration.softShadows->settings().enabled;
+    const bool aoTracing = _ambientOcclusion && _configuration.ambientOcclusion->enabled() &&
+        _configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion;
+    const bool giTracing = _globalIllumination && _configuration.globalIllumination->enabled() &&
+        _configuration.indirectLighting == IndirectLightingMode::GlobalIllumination;
+    const bool reflectionTracing = _reflections && _configuration.reflections->enabled();
+    base::CpuProfileScope::count("tracing.sceneSnapshotsWithConsumer", shadowTracing || aoTracing || giTracing || reflectionTracing ? 1 : 0);
+    base::CpuProfileScope::count("tracing.shadowConsumer", shadowTracing ? 1 : 0);
+    base::CpuProfileScope::count("tracing.aoConsumer", aoTracing ? 1 : 0);
+    base::CpuProfileScope::count("tracing.giConsumer", giTracing ? 1 : 0);
+    base::CpuProfileScope::count("tracing.reflectionConsumer", reflectionTracing ? 1 : 0);
+    stageProfile.next("renderer.retireTracingSnapshot");
+    slot.tracing.reset();
+    stageProfile.next("renderer.prepareTracingSnapshot");
+    if (shadowTracing || aoTracing || giTracing || reflectionTracing)
+    {
+        if (!_tracingResources)
+        {
+            // Use a stable common profile, including currently disabled effects,
+            // so toggling an effect never changes the shared table's addressing.
+            auto capacity = gpu::MaxSampledResourceTableCapacity;
+            if (_ambientOcclusion)
+            {
+                capacity = std::min(capacity, _configuration.ambientOcclusion->tableCapacity());
+            }
+            if (_globalIllumination)
+            {
+                capacity = std::min(capacity, _configuration.globalIllumination->tableCapacity());
+            }
+            if (_reflections)
+            {
+                capacity = std::min(capacity, _configuration.reflections->tableCapacity());
+            }
+            if (_queryShadows)
+            {
+                capacity = std::min(capacity, _configuration.softShadows->alphaTextureCapacity());
+            }
+            _tracingResources = std::make_shared<pipeline::TracingSceneResources>(*_engine->device(), capacity);
+        }
+        slot.tracing = _tracingResources->prepare(slot.queue,
+            shadowTracing ? _configuration.softShadows->alphaTextureCapacity() : 0);
+    }
+    stageProfile.next("renderer.prepareEffects");
     if (_queryShadows)
     {
-        _configuration.softShadows->prepare(frame, slot.queue, _view, slot.jitteredProjection);
+        _configuration.softShadows->prepare(frame, slot.queue, _view, slot.jitteredProjection, slot.tracing);
     }
     if (_ambientOcclusion)
     {
         if (_configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion)
         {
-            _configuration.ambientOcclusion->prepare(frame.frameSlot,frame.frameNumber,slot.queue);
+            _configuration.ambientOcclusion->prepareSnapshot(frame.frameSlot,frame.frameNumber,slot.tracing);
         }
         else
         {
@@ -564,7 +710,7 @@ void RendererDeferred::update(const FrameContext& frame)
     {
         if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination)
         {
-            _configuration.globalIllumination->prepare(frame.frameSlot,frame.frameNumber,slot.queue);
+            _configuration.globalIllumination->prepareSnapshot(frame.frameSlot,frame.frameNumber,slot.tracing);
         }
         else
         {
@@ -573,7 +719,8 @@ void RendererDeferred::update(const FrameContext& frame)
     }
     if (_reflections)
     {
-        _configuration.reflections->prepare(frame.frameSlot,frame.frameNumber,slot.queue);
+        _configuration.reflections->prepareSnapshot(frame.frameSlot,frame.frameNumber,
+            reflectionTracing ? slot.tracing : nullptr);
     }
     std::dynamic_pointer_cast<environment::SkyboxPass>(_configuration.layers[3].layer)->setCamera(_view, slot.jitteredProjection);
     for (auto& selection : _configuration.layers)
@@ -595,6 +742,9 @@ void RendererDeferred::dispatch(size_t stage, const FrameContext& frame,
     const std::vector<pipeline::ImageBinding>& inputs, const std::vector<pipeline::ImageBinding>& outputs,
     const pipeline::RasterFrame* raster)
 {
+    base::CpuProfileScope profile(stage == 0 ? "layer.gbuffer" :
+        stage == 1 ? "layer.deferredLighting" : stage == 2 ? "layer.final" :
+        stage == 3 ? "layer.skybox" : "layer.other");
     const auto& selected = _configuration.layers.at(stage);
     Renderer::recordLayer(selected, {frame, selected.configuration, inputs, outputs, _scene.get(), raster});
 }
@@ -612,11 +762,16 @@ void RendererDeferred::record(const FrameContext& frame)
 
 std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& frame)
 {
+    base::CpuProfileScope profile("renderer.recordLinear");
     checkFrame(frame);
     auto& slot = _targets[frame.frameSlot];
     if (!slot.prepared || slot.serial != frame.frameNumber || slot.linearRecorded)
     {
         throw std::logic_error("Update the acquired renderer slot before recording");
+    }
+    if (slot.tracing)
+    {
+        slot.tracing->build(frame.commandBuffer);
     }
     pipeline::RasterFrame raster{&slot.queue, nullptr, &_frame, &_object, &_lights, &_environmentBinding};
     std::vector<pipeline::ImageBinding> gbuffer;
@@ -865,6 +1020,11 @@ bool RendererDeferred::usesAmbientOcclusion() const
     return _ambientOcclusion;
 }
 
+bool RendererDeferred::ambientOcclusionEnabled() const
+{
+    return _ambientOcclusion && _configuration.ambientOcclusion->enabled();
+}
+
 bool RendererDeferred::inspectOpaqueLayer() const
 {
     return _inspectOpaqueLayer;
@@ -969,6 +1129,7 @@ void RendererDeferred::cleanup()
 {
     if (_engine)
     {
+        base::CpuProfileScope profile("renderer.waitIdle.cleanup");
         _engine->device()->waitIdle();
     }
     for (size_t i = _initializedOverlays; i > 0; --i)
@@ -1030,6 +1191,7 @@ void RendererDeferred::cleanup()
     _lights.cleanup();
     _environmentBinding.cleanup();
     _targets.clear();
+    _tracingResources.reset();
     _queue.clear();
     _drawLayout.reset();
     _lightingLayout.reset();
@@ -1043,6 +1205,7 @@ void RendererDeferred::cleanup()
     _scene.reset();
     _environmentError.clear();
     _engine = nullptr;
+    _initializationWarnings.clear();
 }
 
 std::shared_ptr<pipeline::RTGlobalIllumination> RendererDeferred::globalIllumination() const
@@ -1053,6 +1216,11 @@ std::shared_ptr<pipeline::RTGlobalIllumination> RendererDeferred::globalIllumina
 bool RendererDeferred::usesGlobalIllumination() const
 {
     return _globalIllumination;
+}
+
+bool RendererDeferred::globalIlluminationEnabled() const
+{
+    return _globalIllumination && _configuration.globalIllumination->enabled();
 }
 
 IndirectLightingMode RendererDeferred::indirectLightingMode() const
@@ -1077,6 +1245,11 @@ std::shared_ptr<pipeline::RTReflections> RendererDeferred::reflections() const
 bool RendererDeferred::usesReflections() const
 {
     return _reflections;
+}
+
+bool RendererDeferred::reflectionsEnabled() const
+{
+    return _reflections && _configuration.reflections->enabled();
 }
 
 std::vector<uint8_t> RendererDeferred::temporalSignature(const RenderQueue& queue) const

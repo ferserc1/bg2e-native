@@ -81,6 +81,7 @@ RayTracingPipeline::RayTracingPipeline(gpu::Device* gpuDevice, VkDevice device, 
             stage.stage = flag;
             stage.module = native->handle();
             stage.pName = native->entryPoint().c_str();
+            stage.pSpecializationInfo = native->specializationInfo();
             stages.push_back(stage);
             return static_cast<uint32_t>(stages.size() - 1);
         };

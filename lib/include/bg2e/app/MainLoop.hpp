@@ -193,6 +193,19 @@ class BG2E_API MainLoop {
     }
 
     void setBackgroundFrameRateLimitEnabled(bool enabled);
+
+    // Main-thread only. Draw scene-only limits, independent of UI presentation.
+    // Zero is unlimited.
+    void setSceneFrameRateLimits(double foregroundFps, double backgroundFps);
+    double foregroundSceneMaxFrameRate() const
+    {
+        return _foregroundSceneMaxFrameRate;
+    }
+    double backgroundSceneMaxFrameRate() const
+    {
+        return _backgroundSceneMaxFrameRate;
+    }
+
     inline bool backgroundFrameRateLimitEnabled() const
     {
         return _backgroundFrameRateLimitEnabled.load();
@@ -274,6 +287,9 @@ class BG2E_API MainLoop {
     bool _resizeRequested = false;
 
     std::atomic<bool> _backgroundFrameRateLimitEnabled{false};
+    bool _sceneFrameRateLimitsEnabled = false;
+    double _foregroundSceneMaxFrameRate = 0.0;
+    double _backgroundSceneMaxFrameRate = 1.0;
     std::atomic<double> _backgroundMaxFrameRate{1.0};
     std::atomic<bool> _frameRequested{false};
 

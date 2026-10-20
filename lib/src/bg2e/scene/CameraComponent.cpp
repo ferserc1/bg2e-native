@@ -41,7 +41,9 @@ std::shared_ptr<Component> CameraComponent::clone() const
     if (const auto* projection = _camera.projection())
     {
         auto independent = projection->clone();
-        if (!independent || independent.get() == projection || typeid(*independent) != typeid(*projection))
+        const auto* independentProjection = independent.get();
+        if (!independentProjection || independentProjection == projection ||
+            typeid(*independentProjection) != typeid(*projection))
         {
             throw std::logic_error("Projection clone must preserve its concrete type and independent state");
         }

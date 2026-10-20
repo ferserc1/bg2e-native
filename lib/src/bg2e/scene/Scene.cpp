@@ -24,8 +24,17 @@
 #include <bg2e/json/NodeReader.hpp>
 #include <bg2e/base/Log.hpp>
 #include <stdexcept>
+#include <utility>
 
 namespace bg2e::scene {
+
+Scene::~Scene()
+{
+    if (_sceneRoot && _sceneRoot->_scene == this)
+    {
+        _sceneRoot->_scene = nullptr;
+    }
+}
 
 std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, SceneLoadProgress* progress)
 {
@@ -138,14 +147,29 @@ bool Scene::validateScene(Node* rootNode)
 
 void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
 {
+    if (!sceneRoot)
+    {
+        throw std::invalid_argument("Scene::setSceneRoot requires a non-null root");
+    }
     if (sceneRoot->_scene != nullptr)
     {
         throw std::runtime_error("Scene::setSceneRoot(): The specified scene root is already added to an scene.");
     }
 
+    if (_sceneRoot && _sceneRoot->_scene == this)
+    {
+        _explicitEnvironment = false;
+        _mainEnvironment = nullptr;
+        _selectedEnvironmentNode.reset();
+        _selectedEnvironment.reset();
+        _sceneRoot->_scene = nullptr;
+    }
     _sceneRoot = sceneRoot;
     _mainEnvironment = nullptr;
     _mainCameraNode = nullptr;
+    _explicitEnvironment = false;
+    _selectedEnvironmentNode.reset();
+    _selectedEnvironment.reset();
     _sceneRoot->_scene = this;
     updateLights();
 }
@@ -160,6 +184,9 @@ std::shared_ptr<Node> Scene::releaseSceneRoot()
     _mainCameraNode = nullptr;
     _mainEnvironment = nullptr;
     _lightComponents.clear();
+    _explicitEnvironment = false;
+    _selectedEnvironmentNode.reset();
+    _selectedEnvironment.reset();
     _lights.clear();
     _lightsChanged = true;
     return root;
@@ -208,23 +235,80 @@ CameraComponent* Scene::mainCamera()
 
 EnvironmentComponent* Scene::mainEnvironment()
 {
-    if (!_mainEnvironment)
+    if (!_sceneRoot)
     {
-        FindNodeComponentVisitor<EnvironmentComponent> findEnvironment;
-        auto envs = findEnvironment.find(_sceneRoot.get());
-
-        // Get the first environment found in the scene.
-        // TODO: improve this
-        // It should be possible to choose which environment you want to use if there are several in the scene
-        if (envs.size() > 0)
+        return nullptr;
+    }
+    if (_explicitEnvironment)
+    {
+        auto node = _selectedEnvironmentNode.lock();
+        auto component = _selectedEnvironment.lock();
+        if (!node || !component || component->ownerNode() != node.get() || node->environment() != component.get())
         {
-            if (auto envNode = envs.begin()->lock())
+            return nullptr;
+        }
+        FindNodeVisitor find;
+        find.setIgnoreDisabled(true);
+        if (node->disabled() || !find.belongsToScene(node.get(), _sceneRoot.get()))
+        {
+            return nullptr;
+        }
+        return component.get();
+    }
+    FindNodeComponentVisitor<EnvironmentComponent> findEnvironment;
+    findEnvironment.setIgnoreDisabled(true);
+    auto envs = findEnvironment.find(_sceneRoot.get());
+    if (envs.size() > 0)
+    {
+        if (auto envNode = envs.front().lock())
+        {
+            auto* component = envNode->environment();
+            if (component)
             {
-                _mainEnvironment = envNode.get();
+                setMainEnvironment(component);
+                return component;
             }
         }
     }
-    return _mainEnvironment != nullptr ? _mainEnvironment->environment() : nullptr;
+    setMainEnvironment(nullptr);
+    return nullptr;
+}
+
+void Scene::setMainEnvironment(EnvironmentComponent* environment)
+{
+    std::shared_ptr<Node> selected;
+    if (environment)
+    {
+        auto* node = environment->ownerNode();
+        FindNodeVisitor find;
+        find.setIgnoreDisabled(true);
+        if (!_sceneRoot || !node || node->environment() != environment ||
+            !find.belongsToScene(node, _sceneRoot.get()))
+        {
+            throw std::invalid_argument("The active environment must belong to an enabled scene branch");
+        }
+        selected = node->shared_from_this();
+    }
+    else if (!_sceneRoot)
+    {
+        // An unattached Scene represents implicit renderer defaults until its
+        // root is adopted. Do not freeze a default selection before loading.
+        resetMainEnvironmentSelection();
+        return;
+    }
+    _explicitEnvironment = _sceneRoot != nullptr;
+    _mainEnvironment = nullptr;
+    _selectedEnvironmentNode = std::move(selected);
+    _selectedEnvironment = environment ?
+        std::dynamic_pointer_cast<EnvironmentComponent>(environment->shared_from_this()) : nullptr;
+}
+
+void Scene::resetMainEnvironmentSelection()
+{
+    _explicitEnvironment = false;
+    _mainEnvironment = nullptr;
+    _selectedEnvironmentNode.reset();
+    _selectedEnvironment.reset();
 }
 
 void Scene::updateLights()
@@ -252,8 +336,13 @@ void Scene::updateLights()
 
 void Scene::updateEnvironment()
 {
+    if (_explicitEnvironment)
+    {
+        // Revalidate the weak selected owner; never promote an ignored sibling.
+        mainEnvironment();
+        return;
+    }
     _mainEnvironment = nullptr;
-    // Force update environment
     mainEnvironment();
 }
 

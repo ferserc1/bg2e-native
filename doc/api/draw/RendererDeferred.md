@@ -42,12 +42,26 @@ channels and preserved opaque depth support subsequent operations. Debug views
 inspect the last processed layer; `setInspectOpaqueLayer(true)` isolates opaque
 work. Debug output is not a whole-scene transparency composite.
 
-`pipeline::SoftShadowPass` uses optional ray queries, not a ray-tracing pipeline.
-No-query hardware retains raster PBR/IBL. Alpha-aware traversal supports at most
-eight distinct cutout albedo image/sampler pairs. The standalone table builder
-throws ShadowTextureCapacityError (a length_error) on overflow; the pass catches
-that condition, reports sceneSupported=false/status and renders neutral whole-scene
-visibility, retrying next frame. It never drops individual occluders. Transparent objects are excluded from default
+Ray-tracing scene resources are renderer-owned: one collected instance list,
+material/instance tables and TLAS per acquired frame, shared by shadows, AO/GI,
+reflections and both composition layers. Shadow-specific query tables are built
+from the same dense instance order. The renderer records the TLAS build before
+the layers; consumers do not build independent scenes. Each slot retains its
+snapshot until GPU completion. Tables and TLAS are rebuilt each rendered frame;
+only the pre-existing immutable packed-geometry cache is reused across frames.
+Effect-specific uniforms, outputs and layout-dependent descriptor sets remain
+separate. See [TracingSceneResources](TracingSceneResources.md) for table capacities
+and standalone effect preparation.
+
+`pipeline::SoftShadowPass` uses optional ray queries and nonuniform sampled arrays,
+not a ray-tracing pipeline. Unsupported query/array hardware retains raster PBR/IBL.
+Alpha-aware traversal uses up to 16384 albedo image/sampler pairs, clamped to device
+budgets after reserving (2 images, 1 sampler, 9 total resources). Its v2 query kernel
+uses Vulkan specialization ID0 or Metal argument-record buffers5/6. The reflected
+alphaTextureLimit reports the selected alphaTextureCapacity(), not a fixed eight.
+Overflow warns and omits only excess texture sampling, preserving scalar alpha/
+cutoff, every occluder and the rest of the scene's shadows. It no longer clears
+whole-scene visibility on the ninth pair. Transparent objects are excluded from default
 occluders. Alpha cutoff zero preserves coverage; positive cutoff discards texels.
 Configure every submesh: the standard cube has six face submeshes.
 

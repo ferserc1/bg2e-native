@@ -18,6 +18,8 @@
 
 #include <bg2e/db/scene.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
+#include <bg2e/scene/EnvironmentComponent.hpp>
+#include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
@@ -57,9 +59,115 @@ class SlicedTransform final : public bg2e::scene::TransformComponent {
     BG2E_COMPONENT_TYPE_NAME("ComposerInvalidSlicedTransform");
 };
 
+void environmentSelection(const std::filesystem::path& directory)
+{
+    using namespace bg2e;
+    auto root = std::make_shared<scene::Node>("environment scene");
+    auto first = std::make_shared<scene::Node>("first environment");
+    auto active = std::make_shared<scene::EnvironmentComponent>();
+    first->addComponent(active);
+    root->addChild(first);
+    scene::Scene owner;
+    owner.setSceneRoot(root);
+    owner.setMainEnvironment(active.get());
+    auto ignored = std::make_shared<scene::EnvironmentComponent>();
+    root->addComponent(ignored); // Earlier in traversal, but not explicitly selected.
+    owner.updateEnvironment();
+    require(owner.mainEnvironment() == active.get(), "A newly added environment stole active selection");
+    active->setSkyHorizonColor(base::Color(0.9f,0.1f,0.2f));
+    active->setEnvironmentImage("sample.hdr");
+    active->setEnvironmentImage("");
+    require(owner.mainEnvironment() == active.get() && active->skyHorizonColor().r == 0.9f,
+        "In-place colors/image clearing lost active environment state");
+    first->removeComponent(active);
+    owner.updateEnvironment();
+    require(owner.hasExplicitMainEnvironment() && !owner.mainEnvironment(),
+        "Removing active Environment promoted an ignored component instead of default sky");
+    first->addComponent(active);
+    owner.setMainEnvironment(active.get());
+    first->setEnabled(false);
+    require(!owner.mainEnvironment(), "Disabled environment branch remained active");
+    owner.setMainEnvironment(nullptr);
+    first->setEnabled(true);
+    require(!owner.mainEnvironment(), "Explicit default sky was replaced by traversal fallback");
+    owner.setMainEnvironment(active.get());
+    root->removeChild(first);
+    require(!owner.mainEnvironment(), "Detached environment branch remained active");
+    bool rejected = false;
+    try
+    {
+        owner.setMainEnvironment(active.get());
+    }
+    catch (const std::invalid_argument&)
+    {
+        rejected = true;
+    }
+    require(rejected, "Environment from outside the scene was accepted");
+    auto next = std::make_shared<scene::EnvironmentComponent>();
+    first->addComponent(next);
+    root->addChild(first);
+    owner.setMainEnvironment(next.get());
+    require(owner.mainEnvironment() == next.get(), "A new environment could not replace explicit default sky");
+    next->setEnvironmentImage("selected.hdr");
+    next->setSkyZenithColor(base::Color(0.7f,0.2f,0.1f));
+    require(owner.mainEnvironment() == next.get() && next->environmentImage() == "selected.hdr" &&
+        std::abs(next->skyZenithColor().r - 0.7f) < 0.0001f,
+        "Selected HDR/colors do not remain on the active scene component");
+    owner.releaseSceneRoot();
+    require(!owner.hasExplicitMainEnvironment() && !owner.mainEnvironment(),
+        "Released scene retained active environment references");
+    scene::Scene legacy;
+    legacy.setSceneRoot(root);
+    require(!legacy.hasExplicitMainEnvironment() && legacy.mainEnvironment() == ignored.get(),
+        "Explicit selection changed default scene traversal for existing clients");
+    legacy.releaseSceneRoot();
+    auto disabledRoot = std::make_shared<scene::Node>("disabled environment branch");
+    auto disabledNode = std::make_shared<scene::Node>("disabled HDR");
+    auto disabledEnvironment = std::make_shared<scene::EnvironmentComponent>();
+    disabledNode->addComponent(disabledEnvironment);
+    disabledNode->setEnabled(false);
+    auto enabledNode = std::make_shared<scene::Node>("enabled HDR");
+    auto enabledEnvironment = std::make_shared<scene::EnvironmentComponent>();
+    enabledNode->addComponent(enabledEnvironment);
+    disabledRoot->addChild(disabledNode);
+    disabledRoot->addChild(enabledNode);
+    scene::Scene disabledScene;
+    disabledScene.setSceneRoot(disabledRoot);
+    require(disabledScene.mainEnvironment() == enabledEnvironment.get(),
+        "Automatic environment selection chose a disabled branch");
+    disabledScene.releaseSceneRoot();
+    scene::Scene unattached;
+    require(!unattached.hasExplicitMainEnvironment(), "Unattached scene should retain implicit default sky");
+    unattached.setMainEnvironment(nullptr);
+    require(!unattached.hasExplicitMainEnvironment(), "Renderer startup selection froze defaults before scene load");
+    unattached.setSceneRoot(root);
+    require(unattached.mainEnvironment() == ignored.get(), "Loaded scene Environment was not selected after unattached startup");
+    unattached.releaseSceneRoot();
+    auto survivingRoot = std::make_shared<scene::Node>("root retained after scene destruction");
+    auto replacementRoot = std::make_shared<scene::Node>("replacement scene root");
+    {
+        scene::Scene temporary;
+        temporary.setSceneRoot(survivingRoot);
+        temporary.setSceneRoot(replacementRoot);
+        require(!survivingRoot->scene(), "Replaced root retained its previous Scene back-pointer");
+    }
+    require(!replacementRoot->scene(), "Destroyed Scene left a dangling root back-pointer");
+
+    scene::EnvironmentComponent schema;
+    schema.deserialize(json::JSON(json::JsonObject{{"environmentImage",json::JSON("new.hdr")}}), directory);
+    require(schema.environmentImage() == std::filesystem::absolute(directory / "new.hdr").lexically_normal().string(),
+        "Environment image property alias was not loaded");
+    schema.deserialize(json::JSON(json::JsonObject{{"equirectangularTexture",json::JSON("")}}), directory);
+    require(schema.environmentImage().empty(), "Empty legacy HDR reference did not restore procedural sky");
+    schema.setEnvironmentImage("previous.hdr");
+    schema.deserialize(json::JSON(json::JsonObject{}), directory);
+    require(schema.environmentImage().empty(), "Missing HDR reference retained a previous image");
+}
+
 void run(const std::filesystem::path& directory)
 {
     using namespace bg2e;
+    environmentSelection(directory);
     scene::RegisterComponent<CustomTransform> registration;
     auto root = std::make_shared<scene::Node>("Root with metadata");
     root->setSteady(true);

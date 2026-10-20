@@ -32,7 +32,7 @@ struct RTReflectionSettings {
 };
 struct RTReflectionConfiguration {
     std::filesystem::path shaderRoot;
-    std::string shaderPrefix = "draw/rt_reflections", shaderInterface = "draw.rt_reflections.v1";
+    std::string shaderPrefix = "draw/rt_reflections", shaderInterface = "draw.rt_reflections.v2";
     std::shared_ptr<utils::BlueNoise> noise;
 };
 struct RTReflectionContext {

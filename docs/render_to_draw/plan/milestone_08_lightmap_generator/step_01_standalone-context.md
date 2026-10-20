@@ -137,3 +137,11 @@ Reuse public `LightmapBakeExecutor`, `UvTemporalAccumulator` and composition
 primitives where their contracts fit, then implement a separate headless scheduler
 with its own scene/job generations, completion/abandonment, required-effect
 validation and cleanup while the Device remains alive.
+## Later tracing-capacity handoff
+
+Consume [the M07 16384 correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+without restoring small compiled profiles. AO/GI native shaders use v2 and exact
+device-clamped capacities; shared snapshots must match each effect's actual
+capacity. Preserve object-local materials and warning/neutral-texture table
+overflow. Missing required native execution remains distinct from texture-table
+degradation; do not relabel unavailable execution as a successful bake.

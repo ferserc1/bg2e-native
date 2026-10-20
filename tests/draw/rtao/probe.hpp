@@ -244,9 +244,11 @@ inline bool runRTAOProbe(Engine& engine, const std::filesystem::path& shaderRoot
         plane(2.0f + i, false);
     }
     extract();
-    TracingSceneResources bounded(device, 32);
+    const auto tableLimits = device.resourceArrayCapabilities();
+    const auto testCapacity = std::min({37u,tableLimits.maxSampledImages,tableLimits.maxSamplers});
+    TracingSceneResources bounded(device, testCapacity);
     auto overflow = bounded.prepare(queue);
-    if (!overflow->fallbackTextureSlots || overflow->images.size() > 32 || overflow->samplers.size() > 32 ||
+    if (!overflow->fallbackTextureSlots || overflow->images.size() > testCapacity || overflow->samplers.size() > testCapacity ||
         overflow->instances.size() != 8 || overflow->materials.size() != 8)
     {
         throw std::runtime_error("Tracing overflow must preserve every instance with bounded resource tables");

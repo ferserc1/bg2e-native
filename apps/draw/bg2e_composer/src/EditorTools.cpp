@@ -19,6 +19,7 @@
 #include "EditorUi.hpp"
 
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/app/Keyboard.hpp>
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/ui/Value.hpp>
@@ -61,10 +62,6 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
         return;
     }
     auto selection = delegate->selection();
-    if (ui::Button::checkBox("Add to selection", &_additive))
-    {
-        delegate->setAdditiveSelection(_additive);
-    }
     auto target = selection->selectedNode();
     if (selection->selectedNodes().size() > 1)
     {
@@ -90,7 +87,7 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
             bool selected = selection->isSelected(target, component, sub);
             if (ui::SelectableList::item(drawable->submeshName(sub) + "##sub" + std::to_string(sub), selected))
             {
-                delegate->selectNode(target->shared_from_this(), sub, _additive);
+                delegate->selectNode(target->shared_from_this(), sub, app::Keyboard::shiftPressed());
             }
         }
         ui::SelectableList::endList();

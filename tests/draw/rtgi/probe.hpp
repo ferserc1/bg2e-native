@@ -106,8 +106,25 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
         visitor.enqueue(root.get(),engine,queue);
     };
     extract();
-    auto first = gi.tracingResources()->prepare(queue);
-    auto second = gi.tracingResources()->prepare(queue);
+    auto first = gi.tracingResources()->prepare(queue, gi.tableCapacity());
+    auto second = gi.tracingResources()->prepare(queue, gi.tableCapacity());
+    if (first->scene == second->scene || first->instanceBuffer == second->instanceBuffer ||
+        first->materialBuffer == second->materialBuffer || !first->shadowInstances ||
+        first->shadowInstances == second->shadowInstances ||
+        first->shadowTable.instances.size() != first->instances.size())
+    {
+        throw std::runtime_error("Per-frame tracing snapshots must rebuild tables/TLAS and own shared shadow buffers");
+    }
+    for (size_t i = 0; i < first->instances.size(); ++i)
+    {
+        if (first->shadowTable.instances[i].ranges.w != first->instances[i].identity.x ||
+            first->shadowTable.instances[i].ranges.x != first->instances[i].ranges.x ||
+            first->shadowTable.instances[i].options.z != first->instances[i].ranges.y ||
+            first->scene->instances()[i].instanceId != i)
+        {
+            throw std::runtime_error("Shared shadow/material tables must use identical dense TLAS order");
+        }
+    }
     if (first->geometry != second->geometry || first->instances.size() != 2 || first->instances[0].identity.x != 2 ||
         first->instances[1].identity.x != 3 || first->instances[0].ranges.x != 3 || first->instances[1].ranges.y != 4 ||
         first->geometry->vertices[0].uv != glm::vec4(0.25f,0.5f,0.75f,0.5f) ||
@@ -115,6 +132,32 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
     {
         throw std::runtime_error("Shared tracing geometry, dense IDs, submesh bases, UV/material data or opacity differs");
     }
+    auto sceneLayout = device.createPipelineLayout(pipeline::rtgiBindingLayout(
+        gi.tableCapacity(), false, engine.backendType()));
+    auto otherSceneLayout = device.createPipelineLayout(pipeline::rtgiBindingLayout(
+        gi.tableCapacity(), false, engine.backendType()));
+    device.immediateSubmit([&](gpu::CommandBuffer* command)
+    {
+        first->build(*command);
+        const auto bindings = first->resourceSet(*sceneLayout);
+        for (uint32_t composition = 0; composition < 23; ++composition)
+        {
+            if (first->resourceSet(*sceneLayout, 1, gi.tableCapacity()) != bindings)
+            {
+                throw std::runtime_error("Repeated compositions must reuse the snapshot's scene bindings");
+            }
+        }
+        const auto other = first->resourceSet(*otherSceneLayout);
+        if (other == bindings || first->resourceSet(*otherSceneLayout) != other)
+        {
+            throw std::runtime_error("Distinct pipeline layouts need independently cached scene bindings");
+        }
+        second->build(*command);
+        if (second->resourceSet(*sceneLayout) == bindings)
+        {
+            throw std::runtime_error("Scene bindings must not be cached across frame snapshots");
+        }
+    });
     auto upload = [&](gpu::PixelFormat format, const void* data, size_t size)
     {
         gpu::ImageDescription description;

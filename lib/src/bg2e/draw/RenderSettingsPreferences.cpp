@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/RenderSettingsPreferences.hpp>
+#include <bg2e/scene/Scene.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/reflection/Builder.hpp>
 #include <bg2e/gpu/Device.hpp>
@@ -26,6 +27,7 @@
 #include <algorithm>
 #include <mutex>
 #include <stdexcept>
+#include <iostream>
 
 namespace bg2e::draw {
 namespace {
@@ -103,9 +105,9 @@ void registerTypes()
         shadows.property("available", &Shadows::available).category("Capabilities");
         shadows.property("sceneSupported", &Shadows::sceneSupported).category("Capabilities");
         shadows.property("status", &Shadows::status).category("Capabilities");
-        shadows.accessor<uint32_t>("alphaTextureLimit", [](const Shadows&)
+        shadows.accessor<uint32_t>("alphaTextureLimit", [](const Shadows& o)
         {
-            return pipeline::MaxShadowAlphaTextures;
+            return o.alphaTextureCapacity();
         })
             .category("Capabilities");
         TypeRegistry::get().registerType(shadows.build());
@@ -123,7 +125,7 @@ void registerTypes()
         {
             o.setEnvironmentImage(v);
         })
-            .category("Environment").resource("image", {".hdr"});
+             .category("Environment").resource("image", {".hdr", ".jpg", ".jpeg", ".png", ".bmp", ".tga"});
         env.property("skyboxBlur", &Environment::skyboxBlur, &Environment::setSkyboxBlur).category("Sky").range(0, 1);
         env.property("skyboxVisible", &Environment::skyboxVisible, &Environment::setSkyboxVisible).category("Sky");
         TypeRegistry::get().registerType(env.build());
@@ -180,6 +182,7 @@ void registerTypes()
         renderer.property("reflectionGraphSelected", &RendererDeferred::usesReflections).category("Capabilities");
         renderer.property("noiseStatus", &RendererDeferred::noiseStatus).category("Capabilities");
         renderer.property("environmentError", &RendererDeferred::environmentError).category("Environment");
+        renderer.property("initializationWarnings", &RendererDeferred::initializationWarnings).category("Capabilities");
         TypeRegistry::get().registerType(renderer.build());
     });
 }
@@ -328,6 +331,30 @@ std::string hexDecode(const std::string& input)
     }
     return result;
 }
+
+void excludeSceneSettings(json::JsonNode& document)
+{
+    auto componentsNode = document.objectValue().at("components");
+    if (!componentsNode)
+    {
+        throw std::invalid_argument("Missing settings components");
+    }
+    auto& components = componentsNode->listValue();
+    std::erase_if(components, [](const auto& component)
+    {
+        if (!component)
+        {
+            throw std::invalid_argument("Missing settings component");
+        }
+        auto idNode = component->objectValue().at("id");
+        if (!idNode)
+        {
+            throw std::invalid_argument("Missing settings component identity");
+        }
+        const auto& id = idNode->stringValue();
+        return id.starts_with("environment/") || id.starts_with("light/");
+    });
+}
 }
 
 RenderSettingsPreferences::RenderSettingsPreferences(app::Preferences* persistence, std::string key)
@@ -437,6 +464,21 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
                 bindGeneration(_catalog, *generator);
             }
             bool environmentBound = false;
+            auto* ownerScene = root ? root->sceneRoot()->scene() : nullptr;
+            if (ownerScene && ownerScene->hasExplicitMainEnvironment())
+            {
+                environmentBound = true; // Explicit nullptr must not bind an ignored component.
+                if (auto* component = ownerScene->mainEnvironment())
+                {
+                    auto entry = target("environment/" + component->ownerNode()->identifier(),
+                        "bg2e.draw.environment.v1", component, component->shared_from_this());
+                    entry.available = [deferred](const std::string&)
+                    {
+                        return deferred->environmentGenerator() != nullptr;
+                    };
+                    _catalog.add(std::move(entry));
+                }
+            }
             bindScene(_catalog, *deferred, root, environmentBound);
         }
         if (extensions)
@@ -477,6 +519,15 @@ void RenderSettingsPreferences::connect(const std::shared_ptr<DefaultRenderLoopD
             {
                 owner->bind(renderer, loop->scene(), extensions);
                 owner->_rendererGeneration = generation;
+                if (owner->_automaticPersistence && !owner->_restored)
+                {
+                    owner->_restored = true;
+                    const auto result = owner->restore(nullptr, UnknownSettingPolicy::SkipUnknownOrUnavailable);
+                    for (const auto& issue : result.issues)
+                    {
+                        std::cerr << "WARN: Could not restore graphics preferences: " << issue.message << std::endl;
+                    }
+                }
             }
         }
     });
@@ -518,6 +569,17 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
         auto owner = self.lock();
         auto result = owner ? plan.apply(owner->_catalog) : failure("target_expired", "Settings facade no longer exists");
         renderer.invalidateHistories(); // Includes reported partial application failures.
+        if (owner && owner->_automaticPersistence && result.valid())
+        {
+            try
+            {
+                owner->persist();
+            }
+            catch (const std::exception& error)
+            {
+                result.issues.push_back({"persistence_failed", "", error.what()});
+            }
+        }
         if (completion)
         {
             completion(std::move(result));
@@ -533,6 +595,20 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
 bool RenderSettingsPreferences::hasPersistence() const
 {
     return _persistence != nullptr;
+}
+
+void RenderSettingsPreferences::setAutomaticPersistence(bool enabled)
+{
+    if (enabled && !_persistence)
+    {
+        throw std::logic_error("Automatic settings persistence requires a preferences service");
+    }
+    _automaticPersistence = enabled;
+}
+
+void RenderSettingsPreferences::setExcludeSceneSettingsFromAutomaticPersistence(bool enabled)
+{
+    _excludeSceneSettingsFromPersistence = enabled;
 }
 
 void RenderSettingsPreferences::queueRestore(UnknownSettingPolicy policy, Completion completion)
@@ -556,7 +632,12 @@ void RenderSettingsPreferences::queueRestore(UnknownSettingPolicy policy, Comple
             }
             return;
         }
-        queueImport(*SettingsCodec::parse(hexDecode(stored)), policy, completion);
+        auto document = SettingsCodec::parse(hexDecode(stored));
+        if (_excludeSceneSettingsFromPersistence)
+        {
+            excludeSceneSettings(*document);
+        }
+        queueImport(*document, policy, completion);
     }
     catch (const std::exception& error)
     {
@@ -574,7 +655,12 @@ void RenderSettingsPreferences::persist() const
     }
     // Preferences uses the legacy JsonNode writer; ASCII hex avoids its unescaped
     // string limitation without losing paths, Unicode or exact numeric strings.
-    _persistence->set(_key, hexEncode(SettingsCodec::stringify(*SettingsCodec::serialize(_catalog))));
+    auto document = SettingsCodec::serialize(_catalog);
+    if (_excludeSceneSettingsFromPersistence)
+    {
+        excludeSceneSettings(*document);
+    }
+    _persistence->set(_key, hexEncode(SettingsCodec::stringify(*document)));
     _persistence->save();
 }
 
@@ -595,7 +681,12 @@ SettingsResult RenderSettingsPreferences::restore(const json::JsonNode* explicit
         {
             return {};
         }
-        return SettingsCodec::validate(*SettingsCodec::parse(hexDecode(stored)), _catalog, policy).apply(_catalog);
+        auto document = SettingsCodec::parse(hexDecode(stored));
+        if (_excludeSceneSettingsFromPersistence)
+        {
+            excludeSceneSettings(*document);
+        }
+        return SettingsCodec::validate(*document, _catalog, policy).apply(_catalog);
     }
     catch (const std::exception& error)
     {

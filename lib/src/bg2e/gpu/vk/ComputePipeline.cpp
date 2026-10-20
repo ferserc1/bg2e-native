@@ -44,6 +44,7 @@ ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, VkDevice device, const 
     csStage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
     csStage.module = vkCsModule->handle();
     csStage.pName = vkCsModule->entryPoint().c_str();
+    csStage.pSpecializationInfo = vkCsModule->specializationInfo();
 
     VkComputePipelineCreateInfo pipelineInfo{};
     pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;

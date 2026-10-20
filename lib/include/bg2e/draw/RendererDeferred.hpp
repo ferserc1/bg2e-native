@@ -78,16 +78,22 @@ class BG2E_API RendererDeferred : public Renderer {
     bool usesQueryShadows() const;
     std::shared_ptr<pipeline::RTAmbientOcclusion> ambientOcclusion() const;
     bool usesAmbientOcclusion() const;
+    bool ambientOcclusionEnabled() const;
     std::shared_ptr<pipeline::RTGlobalIllumination> globalIllumination() const;
     bool usesGlobalIllumination() const;
+    bool globalIlluminationEnabled() const;
     std::shared_ptr<pipeline::RTReflections> reflections() const;
     bool usesReflections() const;
+    bool reflectionsEnabled() const;
     IndirectLightingMode indirectLightingMode() const;
     void setIndirectLightingMode(IndirectLightingMode value);
     bool inspectOpaqueLayer() const;
     void setInspectOpaqueLayer(bool value);
     environment::EnvironmentGenerator* environmentGenerator() const;
     const std::string& environmentError() const;
+    // Recoverable initialization failures and the selected fallback, also
+    // exposed by the graphics diagnostics catalog. Empty on a clean startup.
+    const std::string& initializationWarnings() const;
   private:
     struct Targets {
         std::vector<std::shared_ptr<gpu::Image>> gbuffer;
@@ -97,12 +103,14 @@ class BG2E_API RendererDeferred : public Renderer {
         std::vector<std::shared_ptr<gpu::Image>> shadows;
         std::shared_ptr<gpu::Image> ao, gi, reflections;
         RenderQueue queue;
+        std::shared_ptr<pipeline::TracingSnapshot> tracing;
         uint64_t serial = 0;
         bool prepared = false, linearRecorded = false, finalRecorded = false;
         const RenderQueue::Item* finalItem = nullptr;
     };
 
     void buildTargets();
+    void warnInitialization(const std::string& message);
     std::vector<uint8_t> temporalSignature(const RenderQueue& queue) const;
     UpscalerConfiguration upscaleConfiguration() const;
     pipeline::OverlayConfiguration overlayConfiguration() const;
@@ -117,6 +125,7 @@ class BG2E_API RendererDeferred : public Renderer {
     RendererConfiguration _configuration;
     pipeline::LayerConfiguration _shadowConfiguration;
     bool _queryShadows = false;
+    std::shared_ptr<pipeline::TracingSceneResources> _tracingResources;
     bool _ambientOcclusion = false;
     bool _globalIllumination = false;
     bool _reflections = false;
@@ -138,6 +147,7 @@ class BG2E_API RendererDeferred : public Renderer {
     const void* _temporalCameraIdentity = nullptr;
     bool _inspectOpaqueLayer = false;
     std::string _environmentError;
+    std::string _initializationWarnings;
     std::shared_ptr<utils::BlueNoise> _sharedNoise;
     std::string _noiseStatus = "No shared atlas allocated; effects use injected noise or hash";
     std::shared_ptr<ResamplingUpscaler> _fallback;

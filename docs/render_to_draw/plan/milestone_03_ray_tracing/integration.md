@@ -40,12 +40,12 @@ absent GI/reflection is zero. Existing ambient occlusion includes material AO;
 indirect lighting includes GI/reflection when selected. Debug modes describe the
 last processed layer. Disable final color processing/use Raw HDR to inspect HDR.
 
-Legacy query shadows still use eight distinct cutout image/sampler pairs. The
-standalone table builder throws ShadowTextureCapacityError (a length_error).
-SoftShadowPass catches only that condition at preparation and uses neutral shadow
-visibility for the entire scene, exposes sceneSupported=false and an explanatory
-status, and retries next scene frame. It never truncates occluders or disables the
-independent advanced material tables. Other malformed/overflow inputs still fail.
+Later M07 correction supersedes the original eight-pair query-shadow policy:
+[SoftShadowPass v2](../milestone_07_bg2e_composer/tracing-capacity-16384.md) uses the
+exact device-clamped capacity up to 16384 with reserves (2,1,9), and excess slots
+use neutral alpha without dropping occluders or disabling whole-scene shadows.
+Malformed data remains an error. The original M03 runtime/acceptance record does
+not establish native validation of this later correction.
 
 ## Optional final processing
 

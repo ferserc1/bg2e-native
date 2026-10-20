@@ -28,12 +28,10 @@
 #include <stdexcept>
 
 namespace bg2e::draw::pipeline {
-inline constexpr uint32_t MaxShadowAlphaTextures = 8;
+class TracingSnapshot;
+class TracingSceneResources;
+inline constexpr uint32_t MaxShadowAlphaTextures = gpu::MaxSampledResourceTableCapacity;
 inline constexpr uint32_t MaxShadowSamples = 64;
-class BG2E_API ShadowTextureCapacityError : public std::length_error {
-  public:
-    using std::length_error::length_error;
-};
 struct SoftShadowSettings {
     bool enabled = true;
     float bias = 0.01f;
@@ -42,24 +40,27 @@ struct SoftShadowSettings {
     uint32_t maxSamples = 16;
 };
 // Dense TLAS-instance order; ranges.w retains the original frame object ID.
-// UV triples are resolved from the actual submesh firstIndex, not global IDs.
+// Indexed UVs are fetched from shared tracing geometry on the GPU.
 struct alignas(16) ShadowInstanceData {
-    glm::uvec4 ranges{0}; // first UV triangle, count, alpha slot or UINT_MAX, objectId
+    glm::uvec4 ranges{0}; // first index, triangle count, alpha slot or UINT_MAX, objectId
     glm::vec4 alpha{1}; // scale.xy, cutoff, albedo alpha multiplier
-    glm::uvec4 options{0}; // albedo UV set, material flags, reserved, reserved
-};
-struct alignas(16) ShadowTriangleUV {
-    glm::vec4 a{0}, b{0}, c{0}; // UV0.xy, UV1.zw for each indexed vertex
+    glm::uvec4 options{0}; // albedo UV set, material flags, vertex base, reserved
 };
 struct ShadowQueryTable {
     std::vector<ShadowInstanceData> instances;
-    std::vector<ShadowTriangleUV> triangles;
     std::vector<std::shared_ptr<Texture>> alphaTextures;
+    uint64_t fallbackTextureSlots = 0;
 };
-BG2E_API ShadowQueryTable buildShadowQueryTable(const CollectRayTracingInstancesVisitor& collection);
+// Builders return mesh-local index ranges (vertex base zero). Snapshot preparation
+// rebases them to its immutable shared geometry without copying any triangles.
+BG2E_API ShadowQueryTable buildShadowQueryTable(const CollectRayTracingInstancesVisitor& collection,
+    uint32_t capacity = MaxShadowAlphaTextures);
+BG2E_API ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstancesVisitor::Instance>& instances,
+    uint32_t capacity);
 BG2E_API PassContract softShadowContract(gpu::PixelFormat depth);
-BG2E_API gpu::PipelineLayoutDescription softShadowBindingLayout();
-static_assert(sizeof(ShadowInstanceData) == 48 && sizeof(ShadowTriangleUV) == 48);
+BG2E_API gpu::PipelineLayoutDescription softShadowBindingLayout(uint32_t capacity = MaxShadowAlphaTextures);
+static_assert(sizeof(ShadowInstanceData) == 48);
+static_assert(offsetof(ShadowInstanceData, alpha) == 16 && offsetof(ShadowInstanceData, options) == 32);
 
 // Public compute-based visibility pass. No render-stage query capability or RT
 // pipeline/SBT is needed. Unsupported creation reports status and allocates no TLAS.
@@ -67,27 +68,32 @@ class BG2E_API SoftShadowPass : public RenderLayer {
   public:
     explicit SoftShadowPass(std::filesystem::path shaderRoot = {}, uint32_t slots = 0,
         gpu::PixelFormat depth = gpu::PixelFormat::D32_SFLOAT);
+
     SoftShadowSettings& settings();
     const SoftShadowSettings& settings() const;
     bool available() const;
     bool sceneSupported() const;
+    uint32_t alphaTextureCapacity() const;
     const std::string& status() const;
     const PassContract& contract() const override;
+
     void initialize(Engine& engine, const LayerConfiguration& configuration) override;
     void attachScene(std::shared_ptr<scene::Node>) override;
     void resize(const LayerConfiguration& configuration) override;
     void update(const FrameContext&) override;
+
     // After acquiring the completed slot, once per presentation, before consumers.
+    // A renderer snapshot supplies the common TLAS, geometry and shadow metadata;
+    // omit it for independent standalone preparation.
     void prepare(const FrameContext& frame, const RenderQueue& queue,
-        const glm::mat4& view, const glm::mat4& projection);
+        const glm::mat4& view, const glm::mat4& projection,
+        std::shared_ptr<TracingSnapshot> snapshot = nullptr);
     void record(const PassContext& context) override;
     void cleanup() override;
   protected:
     struct Slot {
-        CollectRayTracingInstancesVisitor collection;
-        ShadowQueryTable table;
-        std::shared_ptr<gpu::RayTracingScene> scene;
-        std::shared_ptr<gpu::Buffer> uniforms, instances, triangles;
+        std::shared_ptr<TracingSnapshot> snapshot;
+        std::shared_ptr<gpu::Buffer> uniforms;
         std::vector<std::shared_ptr<gpu::ResourceSet>> sets;
         uint64_t serial = 0;
         bool prepared = false;
@@ -100,11 +106,13 @@ class BG2E_API SoftShadowPass : public RenderLayer {
     Engine* _engine = nullptr;
     PassContract _contract;
     std::string _status = "Not initialized";
-    bool _sceneSupported = true;
+    uint32_t _alphaCapacity = 0;
+    bool _capacityWarningActive = false;
     std::shared_ptr<gpu::ShaderModule> _shader;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::shared_ptr<gpu::ComputePipeline> _pipeline;
     std::shared_ptr<gpu::Sampler> _nearest;
     std::vector<Slot> _slots;
+    std::shared_ptr<TracingSceneResources> _standaloneResources;
 };
 }

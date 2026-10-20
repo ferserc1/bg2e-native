@@ -39,8 +39,10 @@ layout(set=1,binding=3,std430) readonly buffer TraceMaterials
     TraceMaterial traceMaterials[];
 };
 layout(set=1,binding=4) uniform accelerationStructureEXT traceScene;
-layout(set=1,binding=5) uniform texture2D traceImages[TRACE_CAPACITY];
-layout(set=1,binding=6) uniform sampler traceSamplers[TRACE_CAPACITY];
+// Specialization ID 0 matches the exact device-clamped layout capacity.
+layout(constant_id=0) const uint traceCapacity = TRACE_CAPACITY;
+layout(set=1,binding=5) uniform texture2D traceImages[traceCapacity];
+layout(set=1,binding=6) uniform sampler traceSamplers[traceCapacity];
 vec4 traceUV(uint instance, uint primitive, vec2 bary)
 {
     TraceInstance record = traceInstances[instance];

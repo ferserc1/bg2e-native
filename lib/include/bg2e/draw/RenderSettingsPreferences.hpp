@@ -23,7 +23,7 @@
 #include <bg2e/app/Preferences.hpp>
 
 namespace bg2e::draw {
-// Stateless live facade. Direct bind/apply/restore require a stopped safe boundary.
+// Live facade. Direct bind/apply/restore require a stopped safe boundary.
 // Persistence service is borrowed, optional, and must outlive this facade.
 class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<RenderSettingsPreferences> {
   public:
@@ -43,12 +43,16 @@ class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<R
     void queueImport(const json::JsonNode& document, UnknownSettingPolicy policy = UnknownSettingPolicy::Reject,
         Completion completion = {});
     bool hasPersistence() const;
+    // Opt-in application defaults: restore once on first attachment and save
+    // successfully applied queued edits/imports. Scene bindings are excluded.
+    void setAutomaticPersistence(bool enabled);
+    void setExcludeSceneSettingsFromAutomaticPersistence(bool enabled);
     void queueRestore(UnknownSettingPolicy policy = UnknownSettingPolicy::Reject, Completion completion = {});
     void persist() const;
     SettingsResult restore(const json::JsonNode* explicitDocument = nullptr,
         UnknownSettingPolicy policy = UnknownSettingPolicy::Reject);
     // Explicit document bypasses persisted defaults; otherwise persistence is used.
-    // Missing properties retain their current live values. Nothing loads implicitly.
+    // Missing properties retain their current live values. Automatic loading is opt-in.
   private:
     void enqueue(SettingsImport plan, Completion completion);
     SettingsCatalog _catalog;
@@ -56,5 +60,8 @@ class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<R
     std::string _key;
     std::weak_ptr<DefaultRenderLoopDelegate> _delegate;
     uint64_t _rendererGeneration = 0;
+    bool _automaticPersistence = false;
+    bool _restored = false;
+    bool _excludeSceneSettingsFromPersistence = false;
 };
 }

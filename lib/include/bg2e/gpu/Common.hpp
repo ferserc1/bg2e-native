@@ -206,11 +206,17 @@ inline bool hasFlag(PipelineBarrierFlags flags, PipelineBarrierFlags flag)
     return (static_cast<uint32_t>(flags) & static_cast<uint32_t>(flag)) != 0;
 }
 
+struct ShaderConstant {
+    uint32_t id = 0;
+    uint32_t value = 0;
+};
+
 struct ShaderModuleDescription {
     std::string filePath;            // Vulkan: .spv ; Metal: .metallib
     std::string entryPoint = "main"; // Vulkan: SPIR-V entry ; Metal: MTL function name
     ShaderStage stage = ShaderStage::Vertex;
     std::string debugName; // Debug label for validation layers / Xcode GPU Capture
+    std::vector<ShaderConstant> constants; // UInt32 Vulkan specialization / Metal function constants.
 };
 
 // Push constant range descriptor.
@@ -287,6 +293,11 @@ struct ResourceBinding {
     // For sampled-image/sampler arrays: explicit Metal buffer slot; binding.metal
     // is the first [[id(N)]] inside that argument buffer. UINT32_MAX = direct.
     uint32_t metalArgumentBuffer = UINT32_MAX;
+    // Metal argument array. When metalArgumentRecordsIndexable is true, encode
+    // independently stride-indexed single-resource records (Tier-2 pointer path).
+    // Otherwise encode one ordinary Metal argument buffer with fixed arrays.
+    bool metalArgumentRecordArray = false;
+    bool metalArgumentRecordsIndexable = false;
 };
 
 // Pipeline layout description.
@@ -421,6 +432,8 @@ inline void validateMetalBufferBindings(const std::vector<ResourceBinding>& bind
     }
 }
 
+inline constexpr uint32_t MaxSampledResourceTableCapacity = 16384;
+
 // Enabled logical-device limits for fully populated sampled-resource arrays.
 // Limits include ordinary resources; callers reserve their other bindings first.
 struct ResourceArrayCapabilities {
@@ -433,16 +446,14 @@ struct ResourceArrayCapabilities {
     uint32_t profileCapacity(uint32_t reservedImages = 0, uint32_t reservedSamplers = 0,
                              uint32_t reservedResources = 0) const
     {
-        for (uint32_t count : {256u, 128u, 32u})
+        if (!nonUniformSampledResources || maxSampledImages <= reservedImages ||
+            maxSamplers <= reservedSamplers || maxResourcesPerStage <= reservedResources)
         {
-            if (nonUniformSampledResources && uint64_t(count) + reservedImages <= maxSampledImages &&
-                uint64_t(count) + reservedSamplers <= maxSamplers &&
-                uint64_t(count) * 2 + reservedResources <= maxResourcesPerStage)
-            {
-                return count;
-            }
+            return 0;
         }
-        return 0;
+        // Exact device-clamped capacity, not rounded down to a compiled profile.
+        return std::min({MaxSampledResourceTableCapacity, maxSampledImages - reservedImages,
+            maxSamplers - reservedSamplers, (maxResourcesPerStage - reservedResources) / 2});
     }
 };
 

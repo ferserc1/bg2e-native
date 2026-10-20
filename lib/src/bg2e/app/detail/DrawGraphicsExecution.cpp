@@ -19,6 +19,7 @@
 #include "GraphicsExecution.hpp"
 
 #include <bg2e/app/Application.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/draw/RenderLoop.hpp>
@@ -182,6 +183,7 @@ class DrawGraphicsExecution : public GraphicsExecution {
     {
         if (_engineInitialized)
         {
+            base::CpuProfileScope profile("app.waitIdle.drawExecution");
             _engine.device()->waitIdle();
         }
     }
@@ -189,6 +191,11 @@ class DrawGraphicsExecution : public GraphicsExecution {
     void requestSceneFrame() override
     {
         _renderLoop.requestSceneFrame();
+    }
+
+    void setSceneMaxFrameRate(double fps) override
+    {
+        _renderLoop.setSceneMaxFrameRate(fps);
     }
 
     void pauseScene(const glm::vec4& clearColor) override

@@ -91,7 +91,11 @@ int main(int argc, char** argv)
         loop.setOnExitFunction([delegate]
         {
             auto active = delegate.lock();
-            return !active || active->confirmClose();
+            if (!active)
+            {
+                return true;
+            }
+            return active->confirmClose();
         });
         loop.initWindowConfig(bg2e::app::WindowConfig::maximized("bg2e Composer (draw)", true));
         return loop.run(&application, configuration);

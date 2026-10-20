@@ -35,6 +35,15 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayout
     };
     for (const auto& rb : description.resourceBindings)
     {
+        if (rb.metalArgumentRecordsIndexable &&
+            (rb.metalArgumentBuffer == UINT32_MAX || rb.binding.metal != 0))
+        {
+            throw std::invalid_argument("Argument record arrays require an explicit buffer and record id zero");
+        }
+        if (rb.metalArgumentRecordsIndexable && !rb.metalArgumentRecordArray)
+        {
+            throw std::invalid_argument("Indexable argument records require argument-array encoding");
+        }
         for (auto stage : rb.additionalStages)
         {
             if (domain(stage) != domain(rb.stage))
@@ -47,7 +56,7 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayout
             if (rb.metalArgumentBuffer == UINT32_MAX || rb.metalArgumentBuffer >= 31 ||
                 (rb.type != ResourceType::SampledImage && rb.type != ResourceType::Sampler) ||
                 rb.stage == ShaderStage::Vertex || rb.stage == ShaderStage::Fragment ||
-                uint64_t(rb.binding.metal) + rb.count > 4096)
+                uint64_t(rb.binding.metal) + rb.count > UINT32_MAX)
             {
                 throw std::invalid_argument("Sampled arrays require explicit compute/RT argument-buffer indices");
             }
@@ -66,7 +75,8 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayout
                 }
                 if (other.metalArgumentBuffer == rb.metalArgumentBuffer)
                 {
-                    if (other.set != rb.set || other.stage != rb.stage ||
+                    if (rb.metalArgumentRecordsIndexable || other.metalArgumentRecordsIndexable ||
+                        other.set != rb.set || other.stage != rb.stage ||
                         (uint64_t(rb.binding.metal) < uint64_t(other.binding.metal) + other.count &&
                          uint64_t(other.binding.metal) < uint64_t(rb.binding.metal) + rb.count))
                     {

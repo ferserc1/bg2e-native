@@ -168,7 +168,8 @@ availability; unsupported effects keep their status and use established fallback
 paths. An injected pass, explicit mode/settings, or an application's intentional
 comparison configuration takes precedence. Applications such as `draw_model_edit`
 inherit the shared default rather than duplicating it.
-# Lead amendment: recoverable tracing material table exhaustion
+
+## Lead amendment: recoverable tracing material table exhaustion
 
 For the M07 Composer loading correction, the lead explicitly authorizes treating
 excess tracing image/sampler pairs as absent textures, with a warning, instead of
@@ -177,4 +178,39 @@ only the tracing snapshot degrades, never the source/raster material. The shared
 GLSL/Metal sentinel is `UINT32_MAX` in both index lanes; sampling returns neutral
 white or flat normal before resource access. This supersedes earlier strict
 sampled-table overflow rejection, not validation of malformed geometry/resources.
-Fixed profiles and later image/sampler-management improvements remain separate.
+Later image/sampler-management improvements remain separate.
+
+## Lead amendment: tracing ceiling 16384 (2026-10-20)
+
+Use the exact minimum of 16384 and available image/sampler/aggregate device budgets
+after effect reservations, without rounding to 32/128/256. The [M07 correction](milestone_07_bg2e_composer/tracing-capacity-16384.md)
+records Vulkan specialization ID0 and Metal Tier-2 image/sampler record buffers8/9,
+native v2 shader interfaces and the conservative native sampler-budget constraint.
+This supersedes earlier fixed-profile/Metal 256-ceiling wording. Material owners
+and references remain local to independently importable/exportable objects; GPU
+tables are execution bindings, not a global material library. Keep neutral-texture
+overflow warnings. A larger resource management redesign is explicitly deferred.
+## Direct shadows capacity and deferred texture optimization
+
+The lead reports working Model Edit shadows but missing Composer scene shadows.
+SoftShadowPass retained a separate eight-pair table and whole-scene neutral
+fallback, outside the earlier AO/GI/reflection expansion. Extend that pass to the
+same exact min(16384, available device budgets) policy with reserves (2,1,9).
+Use v2 query kernels, Vulkan specialization ID0 and Metal image/sampler argument
+records5/6. Table overflow must retain all instances and other shadows; only the
+excess texture sample becomes neutral alpha with a warning and scalar alpha/cutoff
+preserved. Do not reduce texture counts, alter alphaCutoff/material defaults,
+canonicalize object resources or globalize material ownership in this correction.
+The lead explicitly defers shader/resource-count improvements until the API
+migration is complete; that later refactor needs separate authorization.
+## Composer explicit environment selection
+
+The M07 lead-directed [environment correction](milestone_07_bg2e_composer/environment-synchronization.md)
+uses one explicit active Environment selection in Scene; nullptr means renderer
+defaults. Composer has no hidden stage component. Opening a document selects its
+first enabled authored Environment, later additions cannot replace a valid active
+source, and removal restores default sky without promoting ignored components.
+Renderer generation, queue snapshots and settings honor the same source. Retain
+procedural RGB while HDR is assigned, restore RGB when cleared, and expose failures
+without silently rolling back user fields. Existing non-opt-in Scene behavior and
+Model Edit coexistence remain intact; no new global material/resource policy.

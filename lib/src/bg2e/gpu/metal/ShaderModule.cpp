@@ -53,7 +53,20 @@ ShaderModule::ShaderModule(gpu::Device* gpuDevice, MTL::Device* device, const gp
 
     // Get the function by entry point name
     auto* nsEntryPoint = NS::String::string(description.entryPoint.c_str(), NS::UTF8StringEncoding);
-    _function = _library->newFunction(nsEntryPoint);
+    if (description.constants.empty())
+    {
+        _function = _library->newFunction(nsEntryPoint);
+    }
+    else
+    {
+        auto* values = MTL::FunctionConstantValues::alloc()->init();
+        for (const auto& constant : description.constants)
+        {
+            values->setConstantValue(&constant.value, MTL::DataTypeUInt, constant.id);
+        }
+        _function = _library->newFunction(nsEntryPoint, values, &error);
+        values->release();
+    }
     if (!_function)
     {
         _library->release();

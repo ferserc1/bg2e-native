@@ -649,29 +649,24 @@ static scene::Node* loadGltfImpl(
                 }
                 if (material->has_pbr_specular_glossiness || material->has_clearcoat || material->has_transmission ||
                     material->has_volume || material->has_sheen || material->has_specular || material->has_iridescence ||
-                    material->has_anisotropy || material->has_emissive_strength ||
-                    material->emissive_factor[0] != material->emissive_factor[1] ||
-                    material->emissive_factor[0] != material->emissive_factor[2] ||
-                    (material->occlusion_texture.texture && material->occlusion_texture.scale != 1))
+                    material->has_anisotropy)
                 {
-                    throw std::invalid_argument("glTF material extension/emission/AO strength requires conversion before import");
+                    std::clog << "WARNING: glTF material uses extensions that the current material model does not represent; "
+                                 "supported core metallic-roughness properties will still be imported"
+                              << std::endl;
                 }
-                auto validateView = [](const cgltf_texture_view& view)
+                if (material->has_emissive_strength ||
+                    material->emissive_factor[0] != material->emissive_factor[1] ||
+                    material->emissive_factor[0] != material->emissive_factor[2])
                 {
-                    if (view.has_transform && (view.transform.offset[0] != 0 ||
-                        view.transform.offset[1] != 0 || view.transform.rotation != 0))
-                    {
-                        throw std::invalid_argument("glTF UV offsets/rotation require conversion before import");
-                    }
-                };
-                validateView(material->pbr_metallic_roughness.base_color_texture);
-                validateView(material->pbr_metallic_roughness.metallic_roughness_texture);
-                validateView(material->normal_texture);
-                validateView(material->occlusion_texture);
-                validateView(material->emissive_texture);
-                if (material->normal_texture.texture && material->normal_texture.scale != 1)
+                    std::clog << "WARNING: glTF RGB emission/emissive strength is reduced to the scalar emission "
+                                 "supported by MaterialAttributes"
+                              << std::endl;
+                }
+                if (material->occlusion_texture.texture && material->occlusion_texture.scale != 1)
                 {
-                    throw std::invalid_argument("glTF normal strength requires conversion before import");
+                    std::clog << "WARNING: glTF occlusion strength is unsupported and will be ignored"
+                              << std::endl;
                 }
             }
         }

@@ -27,10 +27,10 @@
 #include <bg2e/gpu/Sampler.hpp>
 
 #include <cmath>
-#include <algorithm>
 #include <numbers>
 #include <stdexcept>
 #include <utility>
+#include <vector>
 
 namespace bg2e::draw::environment {
 void EnvironmentResources::validate(gpu::Device* device) const
@@ -73,38 +73,70 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::build(const st
     if (!sourcePath.empty())
     {
         std::unique_ptr<base::Image> pixels(db::loadImage(sourcePath));
-        if (!pixels || !pixels->dataf() || pixels->width() == 0 || pixels->height() == 0)
+        if (!pixels || (!pixels->dataf() && !pixels->data()) || pixels->width() == 0 ||
+            pixels->height() == 0 || pixels->channels() < 3)
         {
-            throw std::runtime_error("Environment file must contain linear floating-point HDR pixels: " + sourcePath.string());
+            throw std::runtime_error("Environment file must contain a readable RGB image: " + sourcePath.string());
         }
         auto* device = _engine->device();
-        double maximum = 0;
-        for (size_t i = 0; i < size_t(pixels->width()) * pixels->height(); ++i)
+        const size_t pixelCount = size_t(pixels->width()) * pixels->height();
+        const bool srgbSource = !pixels->dataf() && pixels->colorType() == base::Color::TypeSRGB;
+        const bool isHdr = pixels->dataf() != nullptr;
+        std::vector<float> sourcePixels(pixelCount * 4, 0.0f);
+        for (size_t i = 0; i < pixelCount; ++i)
         {
-            for (uint32_t channel = 0; channel < std::min(3u, pixels->channels()); ++channel)
+            for (uint32_t channel = 0; channel < 3; ++channel)
             {
-                const auto value = pixels->dataf()[i * pixels->channels() + channel];
-                if (!std::isfinite(value))
+                float encoded = 0.0f;
+                if (pixels->dataf())
                 {
-                    throw std::runtime_error("Environment HDR pixels must be finite: " + sourcePath.string());
+                    encoded = pixels->dataf()[i * pixels->channels() + channel];
                 }
-                maximum = std::max(maximum, double(std::abs(value)));
+                else
+                {
+                    encoded = float(pixels->data()[i * pixels->channels() + channel]) / 255.0f;
+                }
+                if (!std::isfinite(encoded))
+                {
+                    throw std::runtime_error("Environment pixels must be finite: " + sourcePath.string());
+                }
+                sourcePixels[i * 4 + channel] = encoded;
             }
+            sourcePixels[i * 4 + 3] = 1.0f;
         }
-        // Irradiance integrates radiance over a cosine-weighted hemisphere.
-        // Leave rounding headroom below half's maximum, including the PI gain.
-        const auto format = maximum * std::numbers::pi > 65000.0
+        // Keep HDR precision when required. Normalized SDR inputs safely fit in half.
+        const auto format = isHdr
             ? gpu::PixelFormat::R32G32B32A32_SFLOAT : gpu::PixelFormat::R16G16B16A16_SFLOAT;
         const auto capabilities = device->formatCapabilities(format);
-        const auto usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
+        auto usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
+        if (capabilities.mipmapGeneration)
+        {
+            usage |= gpu::ImageUsage::Storage;
+        }
         if (!capabilities.supports(usage))
         {
-            throw std::runtime_error("Device cannot upload the HDR environment format");
+            throw std::runtime_error("Device cannot upload the linear environment format");
         }
-        source = device->createImage({.size = {pixels->width(), pixels->height()}, .format = format, .usage = usage,
-            .minMipSize = capabilities.mipmapGeneration ? 1u : 0u, .debugName = "Linear HDR equirectangular source"});
-        source->uploadImage(pixels.get());
-        source->generateMipmaps();
+        if (srgbSource)
+        {
+            _configuration.sphere->setSourceSrgb(true);
+            source = device->createImage({.size = {pixels->width(), pixels->height()}, .format = format, .usage = usage,
+                .minMipSize = 0u,
+                .debugName = "Linear equirectangular environment source"});
+            source->upload({sourcePixels.data(), sourcePixels.size() * sizeof(float)});
+        }
+        else
+        {
+            _configuration.sphere->setSourceSrgb(false);
+            source = device->createImage({.size = {pixels->width(), pixels->height()}, .format = format, .usage = usage,
+                .minMipSize = 0u,
+                .debugName = "Linear equirectangular environment source"});
+            source->upload({sourcePixels.data(), sourcePixels.size() * sizeof(float)});
+        }
+        // The sphere conversion shader filters encoded SDR samples before
+        // decoding them, so mip generation would incorrectly average sRGB.
+        // Keep one source level for both color spaces; the cube generator uses
+        // its own mip range and sampling budget.
     }
     auto result = generate(std::move(source));
     _rebuildRequested = false;
@@ -196,6 +228,63 @@ void EnvironmentGenerator::requestRebuild()
 {
     _rebuildRequested = true;
 }
+
+std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::buildFallback()
+{
+    auto* device = _engine->device();
+    device->waitIdle();
+    auto next = std::make_shared<EnvironmentResources>();
+    const auto image = [&](gpu::ImageType type, uint32_t size, uint32_t mips)
+    {
+        gpu::ImageDescription description;
+        description.size = {size, size};
+        description.type = type;
+        description.mipLevels = mips;
+        description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
+        description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+        description.debugName = "Fallback black environment";
+        auto result = device->createImage(description);
+        for (uint32_t mip = 0; mip < mips; ++mip)
+        {
+            const auto extent = result->mipExtent(mip);
+            std::vector<uint16_t> pixels(size_t(extent.width) * extent.height * 4, 0);
+            for (size_t i = 3; i < pixels.size(); i += 4)
+            {
+                pixels[i] = 0x3c00; // IEEE half 1.0 alpha.
+            }
+            for (uint32_t face = 0; face < result->arrayLayers(); ++face)
+            {
+                result->upload({pixels.data(), pixels.size() * sizeof(uint16_t), 0, mip, face});
+            }
+        }
+        return result;
+    };
+    next->sky = image(gpu::ImageType::Cubemap, 1, 1);
+    next->irradiance = next->sky;
+    next->prefilteredSpecular = image(gpu::ImageType::Cubemap, 2, 2);
+    next->brdf = image(gpu::ImageType::Image2D, 1, 1);
+    gpu::SamplerDescription sampler;
+    sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
+    sampler.addressModeU = sampler.addressModeV = sampler.addressModeW = gpu::AddressMode::ClampToEdge;
+    sampler.maxLod = 1;
+    next->sampler = device->createSampler(sampler);
+    sampler.maxLod = 0;
+    next->brdfSampler = device->createSampler(sampler);
+    next->validate(device);
+    _resources = next;
+    _rebuildRequested = false;
+    _sourcePath.clear();
+    _pathSource = true;
+    return next;
+}
+
+void EnvironmentGenerator::resetSourceCache()
+{
+    _sourcePath.clear();
+    _pathSource = false;
+    _rebuildRequested = true;
+}
+
 bool EnvironmentGenerator::synchronize(const scene::EnvironmentComponent* component)
 {
     const std::filesystem::path path = component && !component->environmentImage().empty()

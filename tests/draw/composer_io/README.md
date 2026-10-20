@@ -28,9 +28,19 @@ the normal platform generator so the app's new DocumentIo.cpp is discovered.
 |---|---|
 | Edit initial cube/camera, save, reopen three times | One editable root; camera/controller, names, flags, component priorities and independent resources retained; no editor floor/fill fixture exported |
 | Open a production scene with perspective/optical cameras | First enabled depth-first camera is active for draw and selection; authored FOV/near/far retained; missing projection gets 50 mm film / 55 mm lens optical fallback |
+| Open a scene with enabled Environment and valid HDR, JPEG or PNG | Loaded component selected; renderer and inspector agree; no hidden auxiliary Environment supersedes it. HDR remains linear; SDR is converted from sRGB to linear before environment generation. Check environmentError |
+| Open with disabled Environment plus enabled sibling/child | Disabled source is ignored; first enabled scene Environment becomes active consistently in renderer/queue/settings |
+| Model Edit removes/re-adds an Environment and calls updateEnvironment | Legacy automatic lookup re-resolves and preserves Model Edit behavior; default sky when no component remains |
+| Change selected HDR/JPEG/PNG, click Clear, edit horizon/zenith/ground RGB | Clear sets an empty path (Browse-cancel does not); procedural RGB becomes visible and persists after safe updates/save/reopen |
+| Reopen a changed scene with the same HDR path as the prior document | Source-cache reset rereads/regenerates the file; renderer displays new contents rather than reusing the previous snapshot |
+| Add another Environment earlier in the hierarchy while one is active | New component stays in the graph but is inactive; it cannot steal selection or trigger generation |
+| Remove active Environment while an ignored component remains | Default sky returns; ignored components are not promoted. Add a fresh Environment: it becomes active |
+| Disable/detach selected branch, rollback import, Open/New | No dangling source; disabled branches are ignored and failed imports restore prior selection; fresh documents choose their own first eligible component or defaults |
+| Select invalid HDR/JPEG/PNG image, then correct or click Clear | Picker filters supported environment formats; Clear sets empty path, cancelled Browse preserves it and procedural RGB returns. Values remain editable; last good snapshot plus visible error, then recovery |
 | Open multi-root scene, save and reopen | Original children retained below one editable container; no dangling source Scene pointer or repeated wrappers |
 | Open a scene without an enabled camera | Clear error; current graph, selection, paths and dirty state retained (an explicitly requested prior Save remains committed) |
 | Import camera-less JSON prefab, BG2 with joints, OBJ/MTL or glTF | Subtree inserted below selection or root; previous nodes/path retained; scene becomes dirty |
+| Import Blender glTF/GLB with emissive RGB, AO strength or material extensions | Import succeeds like production; supported core material data is retained and unsupported factors/extensions are logged as warnings, not fatal conversion errors |
 | Call importDocument(path, scale, zUp) with translated parent | Scale and -90 degree X conversion live on a separate wrapper; authored child transforms retained; invalid/nonfinite/nonpositive scale rejected |
 | Drop a model vs scene file/folder | Model inserts; JSON/legacy scene or Name/Name.json folder replaces after dirty protection |
 | Save/Discard/Cancel before New/Close/Open, Save As cancellation | Save snapshots flushed edits; discard adopts replacement only after successful load; cancel or failed IO retains current document |

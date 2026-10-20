@@ -250,6 +250,18 @@ class PropertyBuilder {
         return *this;
     }
 
+    PropertyBuilder& clearableResource(bool enabled = true)
+    {
+        info().metadata.resourceCanClear = enabled;
+        return *this;
+    }
+
+    PropertyBuilder& resourceEmptySelection(bool enabled = true)
+    {
+        info().metadata.resourceCanSelectEmpty = enabled;
+        return *this;
+    }
+
     template <typename EnumT>
     PropertyBuilder& enumValue(std::string label, EnumT value)
     {

@@ -116,12 +116,14 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
     vsStage.stage = VK_SHADER_STAGE_VERTEX_BIT;
     vsStage.module = vkVsModule->handle();
     vsStage.pName = vkVsModule->entryPoint().c_str();
+    vsStage.pSpecializationInfo = vkVsModule->specializationInfo();
 
     VkPipelineShaderStageCreateInfo fsStage{};
     fsStage.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     fsStage.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
     fsStage.module = vkFsModule->handle();
     fsStage.pName = vkFsModule->entryPoint().c_str();
+    fsStage.pSpecializationInfo = vkFsModule->specializationInfo();
 
     VkPipelineShaderStageCreateInfo stages[] = {vsStage, fsStage};
 

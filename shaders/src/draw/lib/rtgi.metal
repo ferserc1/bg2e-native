@@ -74,7 +74,8 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     const device TraceInstance* instances [[buffer(4)]],
     const device TraceMaterial* materials [[buffer(5)]],
     instance_acceleration_structure scene [[buffer(6)]],
-    constant TraceArguments& resources [[buffer(8)]],
+    constant TraceImageArgument* traceImages [[buffer(8)]],
+    constant TraceSamplerArgument* traceSamplers [[buffer(9)]],
     texture2d<float> normalImage [[texture(0)]],
 #if GI_WORLD
     texture2d<float> positionImage [[texture(1)]],
@@ -117,7 +118,7 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         giOutput.write(float4(0),pixel);
         return;
     }
-    const TraceData data{vertices,indices,instances,materials,&resources};
+    const TraceData data{vertices,indices,instances,materials,traceImages,traceSamplers};
     float3 radiance = float3(0.0);
     for (uint sampleIndex = 0u; sampleIndex < dataBlock.counts.x; ++sampleIndex)
     {

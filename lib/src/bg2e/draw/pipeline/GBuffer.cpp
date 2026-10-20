@@ -68,7 +68,7 @@ void GBuffer::initialize(Engine& engine, const LayerConfiguration& configuration
     description.fragmentShader = _fragment.get();
     description.layout = _layout.get();
     description.depthFormat = _contract.outputs.back().format;
-    description.cullMode = gpu::CullMode::None;
+    description.cullMode = gpu::CullMode::Back;
     description.depthState = gpu::DepthState{true, true, gpu::CompareOperation::LessOrEqual};
     for (auto format : gbufferFormats())
     {

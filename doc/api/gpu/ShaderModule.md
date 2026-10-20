@@ -44,6 +44,8 @@ struct ShaderModuleDescription {
     std::string filePath;            // Vulkan: .spv ; Metal: .metallib
     std::string entryPoint = "main"; // Vulkan: SPIR-V entry ; Metal: MTL function name
     ShaderStage stage = ShaderStage::Vertex;
+    std::string debugName;
+    std::vector<ShaderConstant> constants;
 };
 ```
 
@@ -52,6 +54,14 @@ struct ShaderModuleDescription {
 | `filePath`   | `std::string` | Path to the compiled shader file.              |
 | `entryPoint` | `std::string` | Entry point function name (default: `"main"`). |
 | `stage`      | `ShaderStage` | Pipeline stage this shader targets.            |
+| `debugName` | `std::string` | Optional native label. |
+| `constants` | `std::vector<ShaderConstant>` | UInt32 `{id,value}` specialization constants (Vulkan) or function constants (Metal). |
+
+Vulkan modules own the specialization data until pipeline creation; compute,
+graphics and native tracing stages forward it to Vulkan. Metal resolves function
+constants when creating its MTLFunction. Empty constants preserve ordinary loading.
+Draw tracing uses ID0 for the exact Vulkan table extent, not a runtime descriptor
+array or permission to exceed device limits.
 
 ---
 

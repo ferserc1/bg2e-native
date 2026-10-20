@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/vk/Queue.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
 #include <bg2e/gpu/vk/SurfaceFrame.hpp>
@@ -129,6 +130,7 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
 
 void Queue::submit(gpu::CommandBuffer* command) const
 {
+    base::CpuProfileScope profile("vulkan.queue.submit");
     if (!_submissions)
     {
         throw std::logic_error("Vulkan queue has no device");

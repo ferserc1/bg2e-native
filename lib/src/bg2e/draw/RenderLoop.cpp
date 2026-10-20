@@ -17,6 +17,9 @@
  */
 
 #include <bg2e/draw/RenderLoop.hpp>
+#include <bg2e/base/CpuProfile.hpp>
+#include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
+#include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
@@ -28,6 +31,9 @@
 #include <stdexcept>
 #include <utility>
 #include <vector>
+#include <cmath>
+#include <memory>
+#include <sstream>
 
 namespace bg2e::draw {
 
@@ -77,6 +83,37 @@ void RenderLoop::init(Engine* engine)
         throw std::invalid_argument("draw::RenderLoop requires a windowed Engine; use OffscreenApplication for headless work.");
     }
     _engine = engine;
+    base::CpuProfiler::setContextProvider([](void* contextData)
+    {
+        auto& loop = *static_cast<RenderLoop*>(contextData);
+        std::ostringstream text;
+        text << "backend=" << (loop._engine->backendType() == gpu::BackendType::Metal ? "Metal" : "Vulkan")
+             << " surface=" << loop._engine->renderSurface()->size().width << 'x'
+             << loop._engine->renderSurface()->size().height
+             << " presentations=" << loop._presentationCount << " scene_frames=" << loop._renderedSceneCount;
+        if (const auto delegate = std::dynamic_pointer_cast<DefaultRenderLoopDelegate>(loop._delegate))
+        {
+            if (const auto deferred = dynamic_cast<const RendererDeferred*>(delegate->renderer()))
+            {
+                const auto& config = deferred->configuration();
+                text << " renderer=deferred internal=" << config.internalExtent.width << 'x'
+                     << config.internalExtent.height
+                     << " rt_shadows=" << (deferred->usesQueryShadows() && deferred->softShadows()->settings().enabled ? "on" : "off")
+                     << " rt_ao=" << (deferred->ambientOcclusionEnabled() ? "on" : "off")
+                     << " rt_gi=" << (deferred->globalIlluminationEnabled() ? "on" : "off")
+                     << " rt_reflections=" << (deferred->reflectionsEnabled() ? "on" : "off");
+            }
+            else
+            {
+                text << " renderer=custom";
+            }
+        }
+        else
+        {
+            text << " renderer=custom";
+        }
+        return text.str();
+    }, this);
     _delegate->_requestSceneFrame = [this]()
     {
         requestSceneFrame();
@@ -107,6 +144,8 @@ void RenderLoop::frame(float deltaSeconds, ui::UserInterface&)
 
 void RenderLoop::frame(float deltaSeconds)
 {
+    base::CpuProfileScope frameProfile("frame.total", true);
+    base::CpuProfileScope stageProfile("frame.prepareDelegate");
     if (!_engine || !_sceneInitialized)
     {
         throw std::logic_error("draw scene is not initialized.");
@@ -130,13 +169,16 @@ void RenderLoop::frame(float deltaSeconds)
     if (!_scenePaused)
     {
         _sceneDeltaSeconds += deltaSeconds;
+        _sceneFrameElapsed += deltaSeconds;
     }
     auto* surface = _engine->surface();
     if (surface->size().isZero())
     {
         return;
     }
+    stageProfile.next("frame.acquireAndWaitSlot");
     auto frame = surface->beginFrame();
+    stageProfile.next("frame.resizeAndTargets");
     if (!frame)
     {
         return; // No drawable: neither slot nor frame number advances.
@@ -159,7 +201,11 @@ void RenderLoop::frame(float deltaSeconds)
     {
         // A scene target is shared by all slots. Resize drains every user,
         // unlike ordinary frame execution, which waits only during slot reuse.
-        _engine->device()->waitIdle();
+        {
+            base::CpuProfileScope profile("renderLoop.waitIdle.rebuildSceneTarget");
+            base::CpuProfileScope::count("renderLoop.sceneTargetRebuildDrains", 1);
+            _engine->device()->waitIdle();
+        }
         _impl->slots.clear();
         if (_impl->sceneColor)
         {
@@ -192,27 +238,33 @@ void RenderLoop::frame(float deltaSeconds)
     auto& slot = _impl->slots[slotIndex];
     // beginFrame already waited for this slot. New wrappers work on both
     // reusable Vulkan allocations and one-shot Metal command buffers.
+    stageProfile.next("frame.retireSlotResources");
     slot.command.reset();
     slot.frame.reset();
     const auto& queue = _engine->device()->graphicsQueue();
+    stageProfile.next("frame.createAndBeginCommand");
     slot.command = queue.createCommandBuffer("draw scene and presentation");
     slot.frame = frame;
     auto& command = *slot.command;
     command.begin();
     if (_uiPreparation)
     {
+        base::CpuProfileScope profile("frame.uiPreparation");
         _uiPreparation(command, *frame);
     }
     if (command.hasActiveScope())
     {
         throw std::logic_error("UI preparation left an active command scope.");
     }
-    const bool refresh = !_scenePaused && _sceneDirty;
+    const bool sceneDue = !_impl->colorInitialized || _sceneMaxFrameRate == 0.0 ||
+        _sceneFrameElapsed >= 1.0 / _sceneMaxFrameRate;
+    const bool refresh = !_scenePaused && _sceneDirty && sceneDue;
     const auto revision = _sceneRevision;
     FrameContext context{*_engine, command, *_impl->sceneColor, extent,
                          surface->frameCounter(), slotIndex, deltaSeconds, _renderedSceneCount, _sceneDeltaSeconds};
     if (refresh)
     {
+        base::CpuProfileScope profile("frame.delegateUpdate");
         _delegate->update(context);
     }
     if (command.hasActiveScope())
@@ -220,6 +272,7 @@ void RenderLoop::frame(float deltaSeconds)
         throw std::logic_error("Draw delegate update left an active command scope.");
     }
 
+    stageProfile.next("frame.recordScene");
     if (!_impl->colorInitialized || refresh)
     {
         command.transition(_impl->sceneColor.get(), gpu::ImageLayout::ColorAttachment);
@@ -239,12 +292,14 @@ void RenderLoop::frame(float deltaSeconds)
             throw std::logic_error("Draw delegate render left an active command scope.");
         }
     }
+    stageProfile.next("frame.copyAndUI");
     command.transition(_impl->sceneColor.get(), gpu::ImageLayout::TransferSrc);
     command.transition(presentationColor, gpu::ImageLayout::TransferDst);
     command.copyImage(_impl->sceneColor.get(), presentationColor);
     command.transition(presentationColor, gpu::ImageLayout::ColorAttachment);
     if (_uiComposition)
     {
+        base::CpuProfileScope profile("frame.uiComposition");
         _uiComposition(command, *frame);
     }
     if (command.hasActiveScope())
@@ -252,14 +307,19 @@ void RenderLoop::frame(float deltaSeconds)
         throw std::logic_error("Draw UI composition left an active command scope.");
     }
     command.transition(presentationColor, gpu::ImageLayout::Present);
+    stageProfile.next("frame.encodePresentAndEnd");
     surface->present(&command);
     command.end();
+    stageProfile.next("frame.submit");
     queue.submit(&command);
+    stageProfile.next("frame.endFrame");
     _impl->colorInitialized = true;
     if (refresh)
     {
         ++_renderedSceneCount;
         _sceneDeltaSeconds = 0.0f;
+        _sceneFrameElapsed = _sceneMaxFrameRate > 0.0
+            ? std::fmod(_sceneFrameElapsed, 1.0 / _sceneMaxFrameRate) : 0.0;
         if (revision == _sceneRevision)
         {
             _sceneDirty = false;
@@ -267,6 +327,7 @@ void RenderLoop::frame(float deltaSeconds)
     }
     surface->endFrame(frame.get());
     ++_presentationCount;
+    stageProfile.next("frame.deferredCleanup");
     _engine->cleanupManager().flushDeferred();
 }
 
@@ -284,6 +345,19 @@ void RenderLoop::requestResize()
 {
     _resizeRequested = true;
     requestSceneFrame();
+}
+
+void RenderLoop::setSceneMaxFrameRate(double fps)
+{
+    if (!std::isfinite(fps) || fps < 0.0)
+    {
+        throw std::invalid_argument("Scene frame rate must be finite and nonnegative");
+    }
+    if (_sceneMaxFrameRate != fps)
+    {
+        _sceneMaxFrameRate = fps;
+        _sceneFrameElapsed = fps > 0.0 ? 1.0 / fps : 0.0;
+    }
 }
 
 void RenderLoop::setSceneClearColor(const glm::vec4& clearColor)
@@ -328,7 +402,11 @@ void RenderLoop::cleanup()
     std::exception_ptr error;
     try
     {
-        _engine->device()->waitIdle();
+        {
+            base::CpuProfileScope profile("renderLoop.waitIdle.cleanup");
+            base::CpuProfileScope::count("renderLoop.cleanupDrains", 1);
+            _engine->device()->waitIdle();
+        }
     }
     catch (...)
     {
@@ -336,6 +414,7 @@ void RenderLoop::cleanup()
     }
     // Disconnect the borrowed loop callback even if delegate cleanup throws.
     _delegate->_requestSceneFrame = nullptr;
+    base::CpuProfiler::setContextProvider(nullptr, nullptr);
     if (_delegateInitialized)
     {
         _delegateInitialized = false;
@@ -381,6 +460,7 @@ void RenderLoop::cleanup()
     _renderedSceneCount = 0;
     _sceneDeltaSeconds = 0.0f;
     _sceneClearColor = {0.f, 0.f, 0.f, 1.f};
+    _sceneFrameElapsed = 0.0;
     if (error)
     {
         std::rethrow_exception(error);

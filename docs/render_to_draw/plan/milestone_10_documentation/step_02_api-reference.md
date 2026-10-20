@@ -48,3 +48,11 @@ Source and validation boundaries: [M03 technical review](../milestone_03_ray_tra
 Audit M04's actual contracts: one live integrated target/open frame, exact valid counts, AO/GI normalization and zero-reference policy, strict half-float raw-GI saturation rejection, nearest-seed dilation, RGB32F versus display-half limits, explicit indirectTextureMode, CPU UV preview and UI-session resource ownership. Standalone/batch/export APIs are future M08 implementations until their owning deliveries.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+## Later tracing capacity and shader ABI audit
+
+Audit [the M07 16384 policy](../milestone_07_bg2e_composer/tracing-capacity-16384.md):
+exact device/reservation-clamped counts, ShaderConstant/ShaderLib specialization,
+Metal argument-record groups, native effect shader interfaces v2, and explicit
+neutral-texture overflow. Persisted reflection/settings IDs remain v1 where their
+schema is unchanged. Old 32/128/256 effect ceilings belong only to historical
+records or deliberately small primitive probes, not maintained product guidance.

@@ -111,7 +111,8 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     const device TraceInstance* instances [[buffer(4)]],
     const device TraceMaterial* materials [[buffer(5)]],
     instance_acceleration_structure scene [[buffer(6)]],
-    constant TraceArguments& resources [[buffer(8)]],
+    constant TraceImageArgument* traceImages [[buffer(8)]],
+    constant TraceSamplerArgument* traceSamplers [[buffer(9)]],
     texture2d<float> normalImage [[texture(0)]],
 #if REF_WORLD
     texture2d<float> positionImage [[texture(1)]],
@@ -155,7 +156,7 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         reflectionOutput.write(float4(0),pixel);
         return;
     }
-    const TraceData data{vertices,indices,instances,materials,&resources};
+    const TraceData data{vertices,indices,instances,materials,traceImages,traceSamplers};
     float roughness = materialImage.read(sourcePixel).g;
     float3 viewRay = position-dataBlock.cameraRoughness.xyz;
     if ((as_type<uint>(roughness) & 0x7f800000u) == 0x7f800000u || roughness > dataBlock.cameraRoughness.w || dot(viewRay,viewRay) <= 1e-12)

@@ -13,6 +13,14 @@ const bool executed = bg2e::gpu::tests::runAdvancedTracingProbe(
 
 ## Expected checks
 
+`runResourceArrayCapacityProbe()` is a separate CPU-only helper (also invoked by
+the native probe) for exact 16384 ceiling, 1021 sampler clamp, 132 image clamp,
+aggregate-resource division and unavailable/exhausted budgets. It requires no
+Device or GPU. The primitive native test deliberately still chooses 256/128/32
+from its existing templates; that small test selection does not constrain draw
+effects, which now use exact v2 capacities and Vulkan specialization/Metal record
+arrays. Run AO/GI/reflection fixtures to exercise that new effect path.
+
 - Vulkan compute queries run when querySupported; Vulkan native raygen/miss/closest-hit/any-hit additionally runs when pipelineSupported. Metal uses its separate compute/intersection-query kernel. No native Metal SBT pipeline is claimed.
 - Two overlapping indexed triangle submeshes, nonzero firstIndex and separate packed vertex base must resolve the correct UV1 and material. Dense IDs 0/1 differ from test canonical IDs 41/93.
 - Thirty divergent front image choices exceed the old eight-pair shadow table. Alternating alpha rejects the front triangle; a rear opaque triangle must then win. Odd front indices keep the near hit. Native candidate traversal must choose nearest committed hit, independent of traversal order.

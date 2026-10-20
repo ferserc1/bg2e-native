@@ -48,11 +48,13 @@ reflection::TypeRegistration<scene::EnvironmentComponent> _environmentReflection
              "environmentImage",
              &scene::EnvironmentComponent::environmentImage,
              static_cast<void (scene::EnvironmentComponent::*)(const std::string&)>(
-                 &scene::EnvironmentComponent::setEnvironmentImage))
+             &scene::EnvironmentComponent::setEnvironmentImage))
             .displayName("Environment Image")
-            .category("Environment")
-            .tooltip("Equirectangular HDR or image used for environment lighting")
-            .resource("Environment Images", {"hdr", "exr", "jpg", "jpeg", "png", "bmp", "webp"});
+             .category("Environment")
+             .tooltip("Equirectangular SDR (sRGB) or HDR image; SDR is converted to linear lighting")
+             .resource("Environment Images", {"hdr", "jpg", "jpeg", "png", "bmp", "tga"})
+             .resourceEmptySelection()
+             .clearableResource();
     });
 
 }

@@ -52,6 +52,11 @@ auto fs = shaderLib->fragment("cube", device.get());
 The backend selection, file extension, and entry point are all resolved
 internally.
 
+`ShaderLib::specialized(name, stage, device, constants)` loads the corresponding
+module with UInt32 `{id,value}` constants. It follows the same path/entry-point
+rules; Vulkan forwards constants during pipeline creation and Metal specializes
+the native function. It does not run a source compiler or generate shader files.
+
 ---
 
 ## File-system conventions

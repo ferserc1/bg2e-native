@@ -35,3 +35,11 @@ No agent configure/build, shader compilation or fixture/runtime execution occurr
 The manual fixture checks shared geometry/dense/submesh/UV data, deterministic red mirror emission, rear blue emission through cutouts, distance misses, glossy partial confidence without RGB premultiplication, roughness rejection, shared noise, camera/explicit agreement and a 2x2 display-relative target over a 1x1 receiver. Mirrored normal-map lighting, shadow occluders, full resize/FSR behavior and partial-confidence composition require the additional lead scenarios.
 
 M03-07 must keep reflection histories separate from scalar AO and diffuse GI and preserve fractional confidence, valid black and rejected masks; do not treat alpha as binary GI validity or premultiplied radiance. M03-08 filtering must preserve those semantics and receiver edges. M03-09 adds reflected settings/UI and validates existing examples. M05 freezes scene state while varying rendered sample keys; reflection resolution remains output-relative. Legacy SoftShadowPass still has a separate eight-cutout-pair limit; disable it when checking larger effect tables. No native GPU primitives, production render migration, history, denoiser, new example or bake context is added in this step.
+## Later M07 capacity amendment
+
+The [16384 correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+supersedes this original delivery's small native profiles and Metal buffer8 ABI.
+Reflections use draw.rt_reflections.v2, exact device-clamped capacity, Vulkan
+specialization ID0 and Metal image/sampler record buffers8/9. Material ownership
+and transport semantics remain; texture-table exhaustion warns/degrades rather
+than exiting. Original coverage claims remain historical.

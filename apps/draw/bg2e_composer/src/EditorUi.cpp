@@ -22,6 +22,7 @@
 #include <bg2e/app/FileDialog.hpp>
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Text.hpp>
+#include <bg2e/draw/RendererDeferred.hpp>
 
 #include <utility>
 
@@ -31,6 +32,8 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
 {
     auto& store = bg2e::app::PreferencesStore::instance().preferences("draw.bg2e_composer.graphics");
     _preferences = std::make_shared<bg2e::draw::RenderSettingsPreferences>(&store);
+    _preferences->setAutomaticPersistence(true);
+    _preferences->setExcludeSceneSettingsFromAutomaticPersistence(true);
     _preferences->connect(delegate); // Before the renderer's first attachment.
     _graphics.bind(_preferences);
     _diagnostics.bind(_preferences);
@@ -157,6 +160,17 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             if (auto owner = weakDelegate.lock())
             {
                 owner->addSceneItem(kind);
+            }
+        }}});
+    }
+    const char* primitiveTypes[]{"Cube", "Sphere", "Plane"};
+    for (unsigned kind = 0; kind < 3; ++kind)
+    {
+        create.addMenuItem({std::string("Create ") + primitiveTypes[kind], {.handler = [weakDelegate, kind]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->addPrimitive(kind);
             }
         }}});
     }
@@ -324,7 +338,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             }
         });
     }
-    _uiSettings.init(true);
+    _uiSettings.init(true, true);
     _uiSettings.close();
     if (auto delegate = _delegate.lock())
     {
@@ -410,6 +424,11 @@ void EditorUi::drawUI()
         return;
     }
     _importSettingsWindow.draw();
+    if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(delegate->renderer());
+        deferred && !deferred->environmentError().empty())
+    {
+        bg2e::ui::Text::text("Environment error: " + deferred->environmentError());
+    }
     if (_workspaceWidth != uiWidth() || _workspaceHeight != uiHeight())
     {
         _workspace.resize(uiWidth(), uiHeight());

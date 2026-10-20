@@ -22,6 +22,7 @@
 #include <bg2e/gpu/vk/common.hpp>
 
 #include <string>
+#include <vector>
 
 namespace bg2e {
 namespace gpu {
@@ -44,12 +45,19 @@ class BG2E_API ShaderModule : public gpu::ShaderModule {
     {
         return _entryPoint;
     }
+    const VkSpecializationInfo* specializationInfo() const
+    {
+        return _constantValues.empty() ? nullptr : &_specialization;
+    }
 
   private:
     VkDevice _device{VK_NULL_HANDLE};
     VkShaderModule _shaderModule{VK_NULL_HANDLE};
     ShaderStage _stage;
     std::string _entryPoint;
+    std::vector<uint32_t> _constantValues;
+    std::vector<VkSpecializationMapEntry> _constantEntries;
+    VkSpecializationInfo _specialization{};
 };
 
 }

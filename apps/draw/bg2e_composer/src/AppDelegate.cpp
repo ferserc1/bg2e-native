@@ -19,6 +19,7 @@
 #include "AppDelegate.hpp"
 
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/app/Keyboard.hpp>
 #include <bg2e/db/scene_save_dialog.hpp>
 #include <bg2e/app/MessageBox.hpp>
 #include <bg2e/draw/FsrUpscaler.hpp>
@@ -41,6 +42,7 @@ AppDelegate::AppDelegate(std::shared_ptr<bg2e::manipulation::GizmoAndSelectionRe
     : DefaultRenderLoopDelegate(std::make_unique<bg2e::draw::RendererDeferred>(), configuration(overlay)),
       _overlay(std::move(overlay))
 {
+    setContinuousRendering(true);
 }
 
 bg2e::draw::RendererConfiguration AppDelegate::configuration(
@@ -115,7 +117,7 @@ void AppDelegate::queueInput(std::function<void()> event)
         return;
     }
     const auto generation = document() ? document()->generation : 0;
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), generation, event = std::move(event)](auto& renderer)
+    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), generation, event = std::move(event)](auto&)
     {
         auto owner = weak.lock();
         if (!owner)
@@ -146,7 +148,6 @@ void AppDelegate::queueInput(std::function<void()> event)
             invalidateLightmapSources();
             _stage->markModified();
         }
-        renderer.invalidateHistories();
     });
 }
 
@@ -190,7 +191,7 @@ void AppDelegate::mouseButtonUp(int button, int x, int y)
     queueInput([this, button, x, y]
     {
         const auto p = inputPosition(x, y);
-        if (_selection->mouseButtonUp(_stage->sceneObject(), button, p.x, p.y, _additiveSelection))
+        if (_selection->mouseButtonUp(_stage->sceneObject(), button, p.x, p.y, bg2e::app::Keyboard::shiftPressed()))
         {
             if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
             {
@@ -447,6 +448,10 @@ void AppDelegate::saveDocument(bool saveAs)
 
 bool AppDelegate::confirmClose()
 {
+    if (_quitConfirmed)
+    {
+        return true;
+    }
     if (_pendingIo || sceneLoading())
     {
         return false; // Finish the pending transaction before offering another action.
@@ -457,6 +462,7 @@ bool AppDelegate::confirmClose()
     }
     if (!_stage || !_stage->document().dirty)
     {
+        _quitConfirmed = true;
         return true;
     }
     using Box = bg2e::app::MessageBox;
@@ -464,6 +470,7 @@ bool AppDelegate::confirmClose()
         {{0, "Cancel", Box::Esc}, {1, "Discard"}, {2, "Save", Box::Return}});
     if (choice == 1)
     {
+        _quitConfirmed = true;
         return true;
     }
     if (choice != 2)
@@ -479,12 +486,30 @@ bool AppDelegate::confirmClose()
     {
         // MainLoop invokes this callback between frames, before command acquisition.
         _engine->device()->waitIdle();
-        return _stage->save(path, _stage->document().savePath.empty());
+        _quitConfirmed = _stage->save(path, _stage->document().savePath.empty());
+        return _quitConfirmed;
     }
     catch (const std::exception& error)
     {
         _status = std::string("Save failed: ") + error.what();
         return false;
+    }
+}
+
+void AppDelegate::confirmQuitRequest()
+{
+    if (!_quitPending)
+    {
+        return;
+    }
+    _quitPending = false;
+    if (confirmClose())
+    {
+        _quitConfirmed = true;
+    }
+    if (_quitConfirmed && _quit)
+    {
+        _quit();
     }
 }
 
@@ -510,6 +535,22 @@ void AppDelegate::prepareFrame()
     }
     DefaultRenderLoopDelegate::prepareFrame();
     processImports();
+    if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(renderer()))
+    {
+        const auto& error = deferred->environmentError();
+        if (error != _lastEnvironmentError)
+        {
+            _lastEnvironmentError = error;
+            if (error.empty())
+            {
+                _status = "Environment updated";
+            }
+            else
+            {
+                _status += (_status.empty() ? "" : "; ") + std::string("Environment update failed: ") + error;
+            }
+        }
+    }
     if (_selection && _stage)
     {
         _selection->refreshSelection();
@@ -524,11 +565,7 @@ void AppDelegate::prepareFrame()
     }
     if (_quitPending)
     {
-        _quitPending = false;
-        if (confirmClose() && _quit)
-        {
-            _quit();
-        }
+        confirmQuitRequest();
     }
 }
 

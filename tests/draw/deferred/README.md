@@ -15,6 +15,8 @@ These fixtures are source only. The agent has not compiled shaders/C++ or execut
 
 The full working Application example and reflected controls are M01-15/M01-12; FSR/upscaler injection and automatic internal-resolution policy are M01-13. This step already performs ordinary bilinear final reconstruction and requires no FSR/RT support.
 
+15. Render closed and open meshes with both front- and back-facing triangles. The default G-buffer must cull back-facing fragments on Vulkan and Metal; fullscreen, skybox and editor overlay pipelines retain their specialized culling states.
+
 11. Construct `RendererDeferred` with an empty `RendererConfiguration`. Verify the
    retained configuration requests `GlobalIllumination`, and the created GI and
    reflection components report `enabled() == true`. Check `available()`, status

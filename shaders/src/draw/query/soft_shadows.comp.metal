@@ -26,10 +26,12 @@ struct ShadowInstanceData {
     float4 alpha;
     uint4 options;
 };
-struct ShadowTriangleUV {
-    float4 a;
-    float4 b;
-    float4 c;
+// Matches the immutable TracingVertex buffer shared by all tracing consumers.
+struct ShadowVertex {
+    float4 position;
+    float4 normal;
+    float4 uv;
+    float4 tangent;
 };
 struct ShadowUniforms {
     float4x4 inverseViewProjection;
@@ -37,45 +39,17 @@ struct ShadowUniforms {
     uint4 counts;
     DrawLightUniforms lights;
 };
-float sampleAlpha(uint index, float2 uv, texture2d<float> alpha0, sampler alphaSampler0, texture2d<float> alpha1, sampler alphaSampler1, texture2d<float> alpha2, sampler alphaSampler2, texture2d<float> alpha3, sampler alphaSampler3, texture2d<float> alpha4, sampler alphaSampler4, texture2d<float> alpha5, sampler alphaSampler5, texture2d<float> alpha6, sampler alphaSampler6, texture2d<float> alpha7, sampler alphaSampler7)
+struct ShadowImageArgument { texture2d<float> image [[id(0)]]; };
+struct ShadowSamplerArgument { sampler state [[id(0)]]; };
+float sampleAlpha(uint index, float2 uv, constant ShadowImageArgument* images,
+    constant ShadowSamplerArgument* samplers)
 {
-    if (index == 0u)
-    {
-        return alpha0.sample(alphaSampler0, uv, level(0.0)).a;
-    }
-    if (index == 1u)
-    {
-        return alpha1.sample(alphaSampler1, uv, level(0.0)).a;
-    }
-    if (index == 2u)
-    {
-        return alpha2.sample(alphaSampler2, uv, level(0.0)).a;
-    }
-    if (index == 3u)
-    {
-        return alpha3.sample(alphaSampler3, uv, level(0.0)).a;
-    }
-    if (index == 4u)
-    {
-        return alpha4.sample(alphaSampler4, uv, level(0.0)).a;
-    }
-    if (index == 5u)
-    {
-        return alpha5.sample(alphaSampler5, uv, level(0.0)).a;
-    }
-    if (index == 6u)
-    {
-        return alpha6.sample(alphaSampler6, uv, level(0.0)).a;
-    }
-    if (index == 7u)
-    {
-        return alpha7.sample(alphaSampler7, uv, level(0.0)).a;
-    }
-    return 0.0;
+    return images[index].image.sample(samplers[index].state, uv, level(0.0)).a;
 }
 bool acceptsCandidate(uint instance, uint primitive, float2 bary,
     constant ShadowUniforms& dataBlock, const device ShadowInstanceData* instances,
-    const device ShadowTriangleUV* triangles, texture2d<float> alpha0, sampler alphaSampler0, texture2d<float> alpha1, sampler alphaSampler1, texture2d<float> alpha2, sampler alphaSampler2, texture2d<float> alpha3, sampler alphaSampler3, texture2d<float> alpha4, sampler alphaSampler4, texture2d<float> alpha5, sampler alphaSampler5, texture2d<float> alpha6, sampler alphaSampler6, texture2d<float> alpha7, sampler alphaSampler7)
+    const device ShadowVertex* vertices, const device uint* indices, constant ShadowImageArgument* images,
+    constant ShadowSamplerArgument* samplers)
 {
     if (instance >= dataBlock.counts.y)
     {
@@ -84,21 +58,24 @@ bool acceptsCandidate(uint instance, uint primitive, float2 bary,
     ShadowInstanceData data = instances[instance];
     if (data.ranges.z == 0xffffffffu)
     {
-        return true;
+        return (data.options.y & 2u) == 0u || data.alpha.w >= data.alpha.z;
     }
     if (primitive >= data.ranges.y)
     {
         return false;
     }
-    ShadowTriangleUV triangle = triangles[data.ranges.x + primitive];
-    float4 interpolated = triangle.a * (1.0 - bary.x - bary.y) + triangle.b * bary.x + triangle.c * bary.y;
+    uint first = data.ranges.x + primitive * 3u;
+    float4 a = vertices[data.options.z + indices[first]].uv;
+    float4 b = vertices[data.options.z + indices[first + 1u]].uv;
+    float4 c = vertices[data.options.z + indices[first + 2u]].uv;
+    float4 interpolated = a * (1.0 - bary.x - bary.y) + b * bary.x + c * bary.y;
     float2 uv = (data.options.x == 0u ? interpolated.xy : interpolated.zw) * data.alpha.xy;
-    return sampleAlpha(data.ranges.z, uv, alpha0, alphaSampler0, alpha1, alphaSampler1, alpha2, alphaSampler2, alpha3, alphaSampler3, alpha4, alphaSampler4, alpha5, alphaSampler5, alpha6, alphaSampler6, alpha7, alphaSampler7) * data.alpha.w >= data.alpha.z;
+    return sampleAlpha(data.ranges.z, uv, images, samplers) * data.alpha.w >= data.alpha.z;
 }
 bool visible(float3 origin, float3 direction, float distance,
     instance_acceleration_structure topLevel, constant ShadowUniforms& dataBlock,
-    const device ShadowInstanceData* instances, const device ShadowTriangleUV* triangles,
-    texture2d<float> alpha0, sampler alphaSampler0, texture2d<float> alpha1, sampler alphaSampler1, texture2d<float> alpha2, sampler alphaSampler2, texture2d<float> alpha3, sampler alphaSampler3, texture2d<float> alpha4, sampler alphaSampler4, texture2d<float> alpha5, sampler alphaSampler5, texture2d<float> alpha6, sampler alphaSampler6, texture2d<float> alpha7, sampler alphaSampler7)
+    const device ShadowInstanceData* instances, const device ShadowVertex* vertices, const device uint* indices,
+    constant ShadowImageArgument* images, constant ShadowSamplerArgument* samplers)
 {
     ray shadowRay;
     shadowRay.origin = origin;
@@ -114,8 +91,8 @@ bool visible(float3 origin, float3 direction, float distance,
     {
         if (query.get_candidate_intersection_type() == intersection_type::triangle &&
             acceptsCandidate(query.get_candidate_instance_id(), query.get_candidate_primitive_id(),
-                query.get_candidate_triangle_barycentric_coord(), dataBlock, instances, triangles,
-                alpha0, alphaSampler0, alpha1, alphaSampler1, alpha2, alphaSampler2, alpha3, alphaSampler3, alpha4, alphaSampler4, alpha5, alphaSampler5, alpha6, alphaSampler6, alpha7, alphaSampler7))
+                query.get_candidate_triangle_barycentric_coord(), dataBlock, instances, vertices, indices,
+                images, samplers))
         {
             query.commit_triangle_intersection();
         }
@@ -144,28 +121,15 @@ kernel void compMain(
     uint2 pixelIndex [[thread_position_in_grid]],
     constant ShadowUniforms& dataBlock [[buffer(1)]],
     const device ShadowInstanceData* instances [[buffer(2)]],
-    const device ShadowTriangleUV* triangles [[buffer(3)]],
+    const device ShadowVertex* vertices [[buffer(3)]],
+    const device uint* indices [[buffer(7)]],
     instance_acceleration_structure topLevel [[buffer(4)]],
     texture2d<float> normalImage [[texture(0)]],
     depth2d<float> depthImage [[texture(1)]],
     texture2d<float, access::write> shadow0 [[texture(2)]],
     texture2d<float, access::write> shadow1 [[texture(3)]],
-    texture2d<float> alpha0 [[texture(4)]],
-    sampler alphaSampler0 [[sampler(0)]],
-    texture2d<float> alpha1 [[texture(5)]],
-    sampler alphaSampler1 [[sampler(1)]],
-    texture2d<float> alpha2 [[texture(6)]],
-    sampler alphaSampler2 [[sampler(2)]],
-    texture2d<float> alpha3 [[texture(7)]],
-    sampler alphaSampler3 [[sampler(3)]],
-    texture2d<float> alpha4 [[texture(8)]],
-    sampler alphaSampler4 [[sampler(4)]],
-    texture2d<float> alpha5 [[texture(9)]],
-    sampler alphaSampler5 [[sampler(5)]],
-    texture2d<float> alpha6 [[texture(10)]],
-    sampler alphaSampler6 [[sampler(6)]],
-    texture2d<float> alpha7 [[texture(11)]],
-    sampler alphaSampler7 [[sampler(7)]])
+    constant ShadowImageArgument* images [[buffer(5)]],
+    constant ShadowSamplerArgument* samplers [[buffer(6)]])
 {
     uint2 pixel = pixelIndex;
     uint2 extent = uint2(shadow0.get_width(), shadow0.get_height());
@@ -203,7 +167,7 @@ kernel void compMain(
                     for (uint sampleIndex = 0u; sampleIndex < count; ++sampleIndex)
                     {
                         float3 sampleDirection = count == 1u ? direction : sampleLightDirection(direction, angle, sampleIndex, count, seed);
-                        visibility += visible(origin, sampleDirection, distance, topLevel, dataBlock, instances, triangles, alpha0, alphaSampler0, alpha1, alphaSampler1, alpha2, alphaSampler2, alpha3, alphaSampler3, alpha4, alphaSampler4, alpha5, alphaSampler5, alpha6, alphaSampler6, alpha7, alphaSampler7) ? 1.0 : 0.0;
+                        visibility += visible(origin, sampleDirection, distance, topLevel, dataBlock, instances, vertices, indices, images, samplers) ? 1.0 : 0.0;
                     }
                     visibility /= float(count);
                 }

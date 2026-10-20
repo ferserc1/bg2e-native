@@ -30,17 +30,21 @@ or transparent secondary transport. Native material sampling initially uses LOD0
 | AO / query shadows | Compute queries and acceleration structures; effect-specific formats |
 | GI / reflections on Vulkan | Native ray-tracing pipeline with raygen/miss/closest/any-hit, recursion depth one |
 | GI / reflections on Metal | Independently authored compute intersection-query kernels |
-| Advanced textured tracing | Nonuniform indexed resources, complete 32/128/256 tables, required output formats |
+| Advanced textured tracing | Nonuniform indexed resources, complete device-clamped tables up to 16384, v2 native shaders and required output formats |
 | Temporal / denoise / SMAA | Their own formats and native kernels; RT not required |
 | FSR | Supported Vulkan backend, SDK/runtime and camera requirements; primitive RT support is unrelated |
 
 available/status, graph selection and requested enabled/mode are distinct. UI
 requests remain serializable without device support. Unavailable interactive
-features retain usable raster/IBL/resampling. Scene capacity/malformed data errors
-remain errors. Legacy shadows alone have eight cutout pairs: the table throws a
-specific length_error subtype, while SoftShadowPass reports sceneSupported=false,
-uses neutral whole-scene visibility and retries next frame. Advanced material
-arrays are independent and never truncate occluders or substitute textures.
+features retain usable raster/IBL/resampling. Malformed scene data remains an error;
+exhausted tracing image/sampler tables warn and use neutral samples for excess
+slots without dropping geometry. Direct SoftShadowPass uses the same 16384/device
+ceiling policy with reserves (2,1,9), Vulkan specialization and Metal argument
+records5/6. Its alphaTextureLimit reports the effective capacity. Exceeding that
+bound uses neutral alpha only for excess slots, never whole-scene shadow removal.
+Both direct shadows and advanced material arrays retain every instance and the
+authored scalar values. Texture-count reductions are deferred until API migration
+is complete; object-local material/resource ownership remains unchanged.
 
 ## Histories, filtering and mutation
 

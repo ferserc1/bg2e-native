@@ -52,7 +52,7 @@ Use the same accepted [M03-01](rt-design.md) and M03-04 snapshot/candidate/mater
 
 ## M03-02 actual primitive contract
 
-Read [rt-gpu-data.md](rt-gpu-data.md). Use ShaderStage::AnyHit, appended anyHitShader, ResourceBinding::additionalStages and explicit metalArgumentBuffer/argument IDs. Set complete arrays through setSampledImages/setSamplers; choose matching 32/128/256 native shader profiles from logical-device resourceArrayCapabilities after reserving other bindings. Metal arrays currently support compute/RT color 2D sampled resources only, with retained source owners and retired/drained updates. Arbitrary draw geometry/material snapshot construction remains M03-04; the primitive probe's tiny material record is not the engine ABI. No buffer-address or array graphics-stage infrastructure is implied.
+Read [rt-gpu-data.md](rt-gpu-data.md) with the later [M07 capacity amendment](../milestone_07_bg2e_composer/tracing-capacity-16384.md). Choose the exact device-clamped capacity up to 16384 after reserves, not small compiled effect profiles. Vulkan specializes ID0; Metal uses separate argument record buffers8/9. Keep complete arrays, retained owners, retired/drained updates and warning/neutral-texture overflow behavior. Primitive probe profiles are not the engine ABI. No global material ownership, buffer-address or array graphics-stage infrastructure is implied.
 
 ## M03-03 actual noise input
 

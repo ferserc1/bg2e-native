@@ -102,6 +102,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         return _importStatus;
     }
     bool confirmClose();
+    void confirmQuitRequest();
     void requestQuit()
     {
         _quitPending = true;
@@ -121,10 +122,6 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     {
         return _stage;
     }
-    void setAdditiveSelection(bool enabled)
-    {
-        _additiveSelection = enabled;
-    }
     void setLogicalExtent(uint32_t width, uint32_t height);
     void selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t submesh, bool additive);
     void queueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
@@ -137,6 +134,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         std::shared_ptr<bg2e::scene::Component> replacement);
     void setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled);
     void addSceneItem(unsigned kind);
+    void addPrimitive(unsigned kind);
     void addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName);
 
     void editGeometry(unsigned operation);
@@ -249,15 +247,16 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
 
     void processDocumentIo();
     bool saveBeforeReplace();
-    bool _additiveSelection = false;
     bool _preparing = false;
     bool _asyncLoadInProgress = false;
     bool _sceneResourceLoad = false;
     bg2e::ui::Loader _sceneLoader;
     bool _quitPending = false;
+    bool _quitConfirmed = false;
     std::function<void()> _quit;
     std::optional<PendingIo> _pendingIo;
     std::string _status;
+    std::string _lastEnvironmentError;
     std::string _viewpointStatus;
 
     std::shared_ptr<bg2e::bake::IntegratedBakerContext> _bakeContext;

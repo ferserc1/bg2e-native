@@ -4,6 +4,12 @@ Entry revision: `15f67dff9efad51c878740bc1ddbce94f880ed46` plus preserved uncomm
 
 ## Public contracts
 
+**Later M07 amendment:** [16384 device-clamped tracing tables](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+supersedes the original Metal 256 ceilings/profile selector below. Exact capacity
+and Vulkan specialization replace small effect profiles; Metal adds exclusive
+pointer-indexed record groups. Primitive fixed-profile probes remain intentional.
+The following bullets retain the original M03-02 delivery evidence.
+
 - `ShaderStage::AnyHit`, `ShaderLib::anyHit()` (`.rahit.spv`, Vulkan `main`; optional absent Metal module), and an appended nullable `RayTracingPipelineDescription::anyHitShader` support one native Vulkan triangle hit group with closest-hit, any-hit, or both. Earlier description aggregate prefixes are preserved. Metal continues to use native compute; supplying an any-hit module to its wrapper is rejected, not emulated.
 - `ResourceBinding::additionalStages` adds explicit Vulkan visibility to one unique set/binding. It does not change the module's single execution stage. Metal additional visibility must share the same native encoder domain; raygen/miss/closest-hit/any-hit all map to compute. Cross vertex/fragment visibility is not silently accepted.
 - `ResourceBinding::count` is a fixed fully populated sampled-image/sampler descriptor count. Other resources remain scalar. `metalArgumentBuffer` selects an explicit Metal buffer slot (1..30 for compute/RT), with `binding.metal` interpreted as the first native `id` in that buffer. UINT32_MAX preserves direct scalar bindings. Groups share set/stage and have nonoverlapping argument IDs. Collision with direct compute buffers is rejected. Argument arrays currently target compute/RT and sampled color 2D views, not storage images, cubemaps, graphics stages or descriptor buffers.

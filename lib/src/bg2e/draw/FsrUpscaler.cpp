@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/FsrUpscaler.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/reflection/Builder.hpp>
@@ -88,7 +89,10 @@ void FsrUpscaler::resize(const UpscalerConfiguration& configuration)
     {
         throw std::logic_error("Initialize FSR before resizing");
     }
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("upscaler.waitIdle.resize");
+        _engine->device()->waitIdle();
+    }
     _motion.cleanup();
     _motionImages.clear();
     _bridge.cleanup();
@@ -97,12 +101,16 @@ void FsrUpscaler::resize(const UpscalerConfiguration& configuration)
     _error.clear();
     _failed = false;
     reset();
-    if (!_enabled || !_bridge.initialize(*_engine->device(), configuration.internalExtent, configuration.outputExtent, configuration.frameSlots))
+    if (!_enabled)
     {
         return;
     }
     try
     {
+        if (!_bridge.initialize(*_engine->device(), configuration.internalExtent, configuration.outputExtent, configuration.frameSlots))
+        {
+            return;
+        }
         gpu::PipelineLayoutDescription layout;
         layout.resourceBindings.push_back({0, {0, 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
         layout.resourceBindings.push_back({0, {1, 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
@@ -213,6 +221,7 @@ void FsrUpscaler::cleanup()
 {
     if (_engine)
     {
+        base::CpuProfileScope profile("upscaler.waitIdle.cleanup");
         _engine->device()->waitIdle();
     }
     _motion.cleanup();

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/app/MainLoop.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/app/SDLUtils.hpp>
 #include <bg2e/gpu/Backend.hpp>
@@ -375,7 +376,12 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
 
             const auto frameTime = std::chrono::steady_clock::now();
             const bool limitBackgroundFrameRate =
-                !isForeground && _backgroundFrameRateLimitEnabled.load();
+                !_sceneFrameRateLimitsEnabled && !isForeground && _backgroundFrameRateLimitEnabled.load();
+            if (_sceneFrameRateLimitsEnabled)
+            {
+                _execution->setSceneMaxFrameRate(isForeground
+                    ? _foregroundSceneMaxFrameRate : _backgroundSceneMaxFrameRate);
+            }
             const bool frameRequested = _frameRequested.exchange(false);
 
             if (limitBackgroundFrameRate && !frameRequested && frameTime < nextBackgroundFrame)
@@ -430,6 +436,19 @@ void MainLoop::exit()
 void MainLoop::setBackgroundFrameRateLimitEnabled(bool enabled)
 {
     _backgroundFrameRateLimitEnabled.store(enabled);
+    requestFrame();
+}
+
+void MainLoop::setSceneFrameRateLimits(double foregroundFps, double backgroundFps)
+{
+    if (!std::isfinite(foregroundFps) || foregroundFps < 0.0 ||
+        !std::isfinite(backgroundFps) || backgroundFps < 0.0)
+    {
+        throw std::invalid_argument("Scene frame rate limits must be finite and nonnegative");
+    }
+    _sceneFrameRateLimitsEnabled = true;
+    _foregroundSceneMaxFrameRate = foregroundFps;
+    _backgroundSceneMaxFrameRate = backgroundFps;
     requestFrame();
 }
 
@@ -499,6 +518,8 @@ void MainLoop::executeSafeUpdateScene()
     // no GPU work in flight to wait for.
     if (_execution)
     {
+        base::CpuProfileScope profile("app.waitIdle.safeSceneUpdate");
+        base::CpuProfileScope::count("app.safeSceneUpdatesWaiting", local.size());
         _execution->waitIdle();
     }
     bool updated = false;

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/WindowSurface.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
@@ -186,10 +187,13 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
     auto& slot = _frames[_currentFrameIndex];
     if (slot)
     {
+        base::CpuProfileScope profile("metal.surface.waitSlotSubmissions");
         slot->waitForSubmissions();
     }
     slot.reset();
+    base::CpuProfileScope profile("metal.surface.nextDrawable");
     auto* drawable = _layer->nextDrawable();
+    profile.next("metal.surface.wrapDrawable");
     if (!drawable)
     {
         return nullptr;

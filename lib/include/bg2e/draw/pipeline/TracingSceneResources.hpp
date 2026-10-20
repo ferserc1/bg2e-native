@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/draw/CollectRayTracingInstancesVisitor.hpp>
+#include <bg2e/draw/pipeline/SoftShadowPass.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/ResourceSet.hpp>
 
@@ -36,6 +37,7 @@ struct alignas(16) TracingMaterialData {
     std::array<glm::uvec4,2> images{}, samplers{}; // Six slots; UINT32_MAX in both means neutral/no texture.
 };
 static_assert(sizeof(TracingVertex) == 64 && sizeof(TracingInstanceData) == 160 && sizeof(TracingMaterialData) == 256);
+static_assert(offsetof(TracingVertex, uv) == 32 && offsetof(TracingVertex, tangent) == 48);
 static_assert(offsetof(TracingMaterialData, images) == 192 && offsetof(TracingMaterialData, samplers) == 224);
 
 // Immutable packed geometry shared across completed-slot snapshots. Mesh CPU/GPU
@@ -67,18 +69,31 @@ class BG2E_API TracingSnapshot {
     std::vector<std::shared_ptr<gpu::Sampler>> samplers;
     std::shared_ptr<gpu::Buffer> instanceBuffer, materialBuffer;
     std::shared_ptr<gpu::RayTracingScene> scene;
+    ShadowQueryTable shadowTable;
+    std::shared_ptr<gpu::Buffer> shadowInstances;
 
     bool empty() const;
     // Once per recording/submission. Discard the snapshot if recording aborts.
     void build(gpu::CommandBuffer& command);
-    std::shared_ptr<gpu::ResourceSet> resourceSet(gpu::PipelineLayout& layout, uint32_t set = 1) const;
+    // Shared, immutable bindings cached per layout/set/capacity for this snapshot
+    // only. Consumers must not mutate/clean up the returned set. Calls are serial
+    // on the recording thread, like build(). Shared-owned layouts are retained.
+    std::shared_ptr<gpu::ResourceSet> resourceSet(gpu::PipelineLayout& layout, uint32_t set = 1,
+        uint32_t bindingCapacity = 0) const;
 
   private:
+    struct SceneBindings {
+        gpu::PipelineLayout* layout = nullptr;
+        std::shared_ptr<gpu::DeviceResource> layoutOwner;
+        uint32_t setIndex = 0, capacity = 0;
+        std::shared_ptr<gpu::ResourceSet> resources;
+    };
+    mutable std::vector<SceneBindings> _sceneBindings;
     bool _built = false;
 };
 
 // Native map: set=1 bindings 0..3 -> Metal buffers2..5, TLAS4 -> buffer6,
-// images5/samplers6 -> Metal argument buffer8, ids0/capacity respectively.
+// images5/samplers6 -> Metal argument record buffers8/9, each record id0.
 BG2E_API gpu::PipelineLayoutDescription tracingBindingLayout(uint32_t capacity,
     gpu::ShaderStage stage = gpu::ShaderStage::Compute,
     const std::vector<gpu::ShaderStage>& additionalStages = {});
@@ -90,7 +105,9 @@ class BG2E_API TracingSceneResources {
     // Call only for a retired acquired slot or stopped job. Empty scenes allocate
     // no TLAS/table buffers. Blended transparent geometry is excluded by default.
     // Excess texture/sampler pairs use neutral shader values with a warning.
-    std::shared_ptr<TracingSnapshot> prepare(const RenderQueue& queue);
+    // Nonzero shadowCapacity builds shadow metadata from the same collection;
+    // UVs remain in the immutable shared geometry buffers.
+    std::shared_ptr<TracingSnapshot> prepare(const RenderQueue& queue, uint32_t shadowCapacity = 0);
     void clear(); // Drop cache ownership only; retained snapshots remain valid.
     uint32_t capacity() const;
 

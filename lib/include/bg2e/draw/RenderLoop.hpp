@@ -25,6 +25,7 @@
 
 #include <memory>
 #include <functional>
+#include <string>
 #include <cstdint>
 #include <stdexcept>
 #include <utility>
@@ -82,6 +83,9 @@ class BG2E_API RenderLoop {
 
     void requestResize();
 
+    // Limits scene work only; zero means every presentation. UI is unaffected.
+    void setSceneMaxFrameRate(double fps);
+
     void pauseScene(const glm::vec4& clearColor = {0.f, 0.f, 0.f, 1.f});
     void resumeScene();
     inline bool isScenePaused() const
@@ -120,6 +124,8 @@ class BG2E_API RenderLoop {
     uint64_t _presentationCount = 0;
     uint64_t _renderedSceneCount = 0;
     float _sceneDeltaSeconds = 0.0f;
+    double _sceneMaxFrameRate = 0.0;
+    double _sceneFrameElapsed = 0.0;
     bool _delegateInitialized = false;
     bool _sceneInitialized = false;
     uint64_t _sceneRevision = 0;

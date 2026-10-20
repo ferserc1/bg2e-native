@@ -1,5 +1,16 @@
 # Composer loading correction and tracing-capacity investigation
 
+**Later capacity expansion:** [the lead-selected 16384 policy](tracing-capacity-16384.md)
+now supersedes the old 256/128 profile diagnosis as an implementation restriction.
+The explanation below records why the original failure occurred; current native
+tables use exact device budgets and v2 shaders. The neutral-texture fallback and
+per-object resource ownership remain in force.
+
+The same capacity correction now covers direct SoftShadowPass (reserves `(2,1,9)`,
+shader interface v2, Vulkan bindings16/24 and Metal argument records5/6). This
+investigation's initial eight-pair diagnosis is historical, not the current cap.
+See `tracing-capacity-16384.md` for implementation and validation details.
+
 ## Subsequent lead-selected correction: neutral missing-texture fallback
 
 The lead explicitly selected recoverable sampled-table overflow to validate scene

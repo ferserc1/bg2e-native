@@ -107,6 +107,16 @@ void CubemapRenderer::setSource(std::shared_ptr<gpu::Image> source)
     }
     _source = std::move(source);
 }
+
+void CubemapRenderer::setSourceSrgb(bool value)
+{
+    if (_engine || _pipeline)
+    {
+        throw std::logic_error("Clean up environment pass before changing source color space");
+    }
+    _sourceSrgb = value;
+}
+
 std::shared_ptr<gpu::Image> CubemapRenderer::generate(Engine& engine, std::shared_ptr<gpu::Image> source)
 {
     cleanup();
@@ -254,7 +264,8 @@ void CubemapRenderer::recordGeneration(gpu::CommandBuffer& command)
         }
         GenerationPush push{face, std::max(1u, _realized.size >> mip), _realized.samples,
             _source ? _source->width() : 1u,
-            _kind == GenerationKind::Specular && _output->mipLevels() > 1 ? float(mip) / float(_output->mipLevels() - 1) : float(mip),
+            _kind == GenerationKind::Sphere && _sourceSrgb ? -1.0f :
+                _kind == GenerationKind::Specular && _output->mipLevels() > 1 ? float(mip) / float(_output->mipLevels() - 1) : float(mip),
             _source ? float(_source->mipLevels() - 1) : 0.0f};
         push.skyHorizonColor = glm::vec4(_realized.skyHorizonColor.r, _realized.skyHorizonColor.g, _realized.skyHorizonColor.b, 1.0f);
         push.skyZenithColor = glm::vec4(_realized.skyZenithColor.r, _realized.skyZenithColor.g, _realized.skyZenithColor.b, 1.0f);
@@ -331,6 +342,7 @@ void CubemapRenderer::cleanup()
     _fragment.reset();
     _sourceSampler.reset();
     _source.reset();
+    _sourceSrgb = false;
     _resources = {};
     _output.reset();
     _cube.reset();

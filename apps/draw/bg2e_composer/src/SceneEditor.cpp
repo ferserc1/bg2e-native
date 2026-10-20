@@ -115,12 +115,33 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
                 return;
             }
             auto staged = component->clone();
-            if (!staged || staged == component || staged->ownerNode() || typeid(*staged) != typeid(*component))
+            const auto* stagedComponent = staged.get();
+            const auto* originalComponent = component.get();
+            if (!stagedComponent || staged == component || staged->ownerNode() ||
+                typeid(*stagedComponent) != typeid(*originalComponent))
             {
                 throw std::logic_error("Component editor requires an independent, exact-type clone");
             }
             if (const auto* info = reflection::TypeRegistry::get().type(component->typeName()))
             {
+                if (auto environment = dynamic_cast<scene::EnvironmentComponent*>(component.get()))
+                {
+                    if (auto owner = weak.lock())
+                    {
+                        const bool active = owner->stage()->environmentNode().get() == environment->ownerNode();
+                        ui::Text::text(active ?
+                            "Active scene environment" : "Inactive environment (not used for rendering)");
+                        if (auto deferred = dynamic_cast<draw::RendererDeferred*>(owner->renderer());
+                            active && deferred && !deferred->environmentError().empty())
+                        {
+                            ui::Text::text("Environment error: " + deferred->environmentError());
+                        }
+                    }
+                    if (!environment->environmentImage().empty())
+                    {
+                        ui::Text::text("Clear Environment Image to use the procedural sky colors.");
+                    }
+                }
                 if (ui::ReflectionWidget::drawProperties(staged.get(), *info))
                 {
                     if (auto owner = weak.lock())
@@ -213,6 +234,22 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
             replacement->setPriority(old->priority());
             replacement->setIgnoreSerialization(old->ignoreSerialization());
         }
+        if (replacement && typeid(*oldComponent) == typeid(bg2e::scene::EnvironmentComponent))
+        {
+            // Keep the authored component identity and inspector/widget state.
+            // Only the selected environment is realized by RendererDeferred.
+            auto& current = static_cast<bg2e::scene::EnvironmentComponent&>(*old);
+            const auto& edited = static_cast<const bg2e::scene::EnvironmentComponent&>(*replacement);
+            current.setSkyHorizonColor(edited.skyHorizonColor());
+            current.setSkyZenithColor(edited.skyZenithColor());
+            current.setGroundColor(edited.groundColor());
+            current.setSkyboxBlur(edited.skyboxBlur());
+            current.setSkyboxVisible(edited.skyboxVisible());
+            current.setEnvironmentImage(edited.environmentImage());
+            return;
+        }
+        auto* scene = _stage->sceneObject();
+        const bool activeEnvironment = scene && scene->hasExplicitMainEnvironment() && scene->mainEnvironment() == old.get();
         target.removeComponent(old);
         try
         {
@@ -221,14 +258,21 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
                 target.addComponent(replacement);
             }
             _stage->validateEditingGraph();
-            if (auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(replacement))
+            if (activeEnvironment)
             {
-                auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(renderer());
-                if (!deferred || !deferred->environmentGenerator())
+                auto* nextEnvironment = dynamic_cast<bg2e::scene::EnvironmentComponent*>(replacement.get());
+                if (nextEnvironment)
                 {
-                    throw std::logic_error("The renderer has no environment generation service");
+                    scene->setMainEnvironment(nextEnvironment);
                 }
-                deferred->environmentGenerator()->synchronize(environment.get());
+                else
+                {
+                    scene->setMainEnvironment(nullptr);
+                }
+            }
+            if (replacement && dynamic_cast<bg2e::scene::EnvironmentComponent*>(old.get()))
+            {
+                _stage->environmentComponentReplaced(target);
             }
         }
         catch (...)
@@ -238,6 +282,22 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
                 target.removeComponent(replacement);
             }
             target.addComponent(old);
+            if (activeEnvironment)
+            {
+                auto* oldEnvironment = dynamic_cast<bg2e::scene::EnvironmentComponent*>(old.get());
+                if (oldEnvironment)
+                {
+                    scene->setMainEnvironment(oldEnvironment);
+                }
+                else
+                {
+                    scene->setMainEnvironment(nullptr);
+                }
+            }
+            if (dynamic_cast<bg2e::scene::EnvironmentComponent*>(old.get()))
+            {
+                _stage->environmentComponentReplaced(target);
+            }
             throw;
         }
         // queueNodeEdit refreshes stale submesh/component handles after rebuilding
@@ -311,6 +371,33 @@ void AppDelegate::addSceneItem(unsigned kind)
         catch (...)
         {
             target.removeChild(child);
+            throw;
+        }
+    }, true);
+}
+
+
+void AppDelegate::addPrimitive(unsigned kind)
+{
+    if (!document() || !document()->root || kind > 2)
+    {
+        return;
+    }
+    auto selected = _selection->selectedNode();
+    auto parent = selected ? selected->shared_from_this() : document()->root;
+    queueNodeEdit(parent, [this, kind](auto& target)
+    {
+        auto child = _stage->createPrimitive(kind);
+        target.addChild(child);
+        try
+        {
+            _stage->prepareTools(child);
+            _stage->validateEditingGraph();
+        }
+        catch (...)
+        {
+            target.removeChild(child);
+            _stage->discardCandidate(child);
             throw;
         }
     }, true);

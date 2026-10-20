@@ -82,6 +82,10 @@ class GraphicsExecution {
 
     virtual void waitIdle() = 0;
 
+    virtual void setSceneMaxFrameRate(double)
+    {
+    }
+
     // Production scenes are continuously updated; draw overrides invalidation.
     virtual void requestSceneFrame()
     {

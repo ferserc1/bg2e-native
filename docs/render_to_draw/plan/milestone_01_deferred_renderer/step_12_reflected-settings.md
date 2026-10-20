@@ -50,7 +50,7 @@ Use [raster-layers.md](raster-layers.md): RendererDeferred owns live RendererCon
 
 ## M01-11 query settings and availability
 
-Use the [actual query pass](query-shadows.md): RendererConfiguration.softShadows retains an injectable SoftShadowPass; RendererDeferred exposes softShadows() and usesQueryShadows(). Reflect live SoftShadowSettings enabled/bias/directionalDistance/maxSamples and existing per-light castShadows/sourceSize/shadowSamples. Distinguish graph selection, pipeline available/status, enabled setting and scenes with no occluders/lights; do not infer support from fullSupported or render-stage capability. maxSamples1..64 caps per-light samples (zero light samples uses a hard ray). The explicit eight cutout image/sampler-pair limit must remain discoverable. Change resource/graph choices only at a stopped lifecycle boundary; normal disabled frames need no Drawable BLAS or TLAS.
+Use the [actual query pass](query-shadows.md): RendererConfiguration.softShadows retains an injectable SoftShadowPass; RendererDeferred exposes softShadows() and usesQueryShadows(). Reflect live SoftShadowSettings enabled/bias/directionalDistance/maxSamples and existing per-light castShadows/sourceSize/shadowSamples. Distinguish graph selection, pipeline available/status, enabled setting, effective device-clamped alphaTextureLimit and scenes with no occluders/lights; do not infer support from fullSupported or render-stage capability. maxSamples1..64 caps per-light samples (zero light samples uses a hard ray). The original eight-pair limit is superseded by the shared 16384/device budget. Change resource/graph choices only at a stopped lifecycle boundary; normal disabled frames need no Drawable BLAS or TLAS.
 
 ## M01-12 delivered contract
 

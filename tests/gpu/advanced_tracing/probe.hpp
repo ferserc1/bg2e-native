@@ -31,12 +31,46 @@
 #include <stdexcept>
 
 namespace bg2e::gpu::tests {
+// CPU-only boundary checks; no Device/window or shader execution required.
+inline void runResourceArrayCapacityProbe()
+{
+    ResourceArrayCapabilities caps{true,1000000,1000000,1000000,1};
+    if (caps.profileCapacity(5,3,15) != 16384)
+    {
+        throw std::runtime_error("Sampled table ceiling differs from 16384");
+    }
+    caps.maxSamplers = 1024;
+    if (caps.profileCapacity(5,3,15) != 1021 || caps.profileCapacity(2,1,10) != 1023)
+    {
+        throw std::runtime_error("Sampler budget was not clamped exactly after reservations");
+    }
+    caps.maxSampledImages = 137;
+    if (caps.profileCapacity(5,3,15) != 132)
+    {
+        throw std::runtime_error("Image budget was rounded to an obsolete profile");
+    }
+    caps.maxResourcesPerStage = 30;
+    if (caps.profileCapacity(5,3,15) != 7 || caps.profileCapacity(5,1024,15) != 0 ||
+        caps.profileCapacity(137,0,0) != 0 || caps.profileCapacity(0,0,30) != 0)
+    {
+        throw std::runtime_error("Aggregate limits or exhausted reservations were not enforced");
+    }
+    caps.nonUniformSampledResources = false;
+    if (caps.profileCapacity() != 0)
+    {
+        throw std::runtime_error("Unavailable arrays returned a usable capacity");
+    }
+}
+
 // Run with a stopped initialized Device and the deployed shaders root. false
 // means unsupported, never a successful dispatch. No window/scene/draw API.
 inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const std::filesystem::path& root)
 {
     const auto caps = device.resourceArrayCapabilities();
-    const auto count = caps.profileCapacity(0, 0, 6);
+    runResourceArrayCapacityProbe();
+    // This primitive fixture deliberately retains its precompiled small templates.
+    const auto available = caps.profileCapacity(0, 0, 6);
+    const uint32_t count = available >= 256 ? 256 : available >= 128 ? 128 : available >= 32 ? 32 : 0;
     const auto rt = device.rayTracingCapabilities();
     if (!count || (!rt.querySupported() && (backend == BackendType::Metal || !rt.pipelineSupported())))
     {

@@ -58,7 +58,6 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     bg2e::ui::Window _properties;
     bg2e::ui::Window _sceneProperties;
     uint64_t _boundGeneration = UINT64_MAX;
-    bool _additive = false;
     uint32_t _highlight = 2;
     std::weak_ptr<AppDelegate> _delegate;
     std::shared_ptr<bg2e::draw::RenderSettingsPreferences> _preferences;

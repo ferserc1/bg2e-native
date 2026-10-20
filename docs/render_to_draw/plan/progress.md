@@ -10,16 +10,21 @@ This is the execution record for all implementation chats. The **Next step to im
 |---|---|
 | Workflow state | `awaiting_project_lead` |
 | Current milestone | M07 — Experimental bg2e_composer application |
-| Active step | None — M07-07 loading and neutral-texture tracing-capacity corrections delivered |
+| Active step | None — M07-07 explicit environment selection and HDR/procedural editing correction delivered |
 | Last implemented step | M07-07 — Review M07 scene/import contracts and revise CLI/cleanup |
 | Last accepted step | M07-06 including selection-crash correction — explicitly checked and accepted by project lead |
-| Awaiting project lead validation | M07-07 guarded scene Loader plus warning/neutral-texture fallback on tracing table exhaustion; rebuild shared tracing shaders and reopen primitives_scene.json |
+| Awaiting project lead validation | M07-07 active Environment load/edit/HDR clearing/removal/ignored-addition behavior, plus prior shadow/table and Loader corrections |
 | Next step to implement | [M07-08 — Update cumulative implementation documentation](milestone_07_bg2e_composer/step_08_documentation.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Project lead validation of tracing overflow, scene loading and earlier UI corrections before accepting M07-07. |
+| Condition before starting | Project lead validation of Environment selection/HDR/procedural transitions, direct scene shadows, native tables, scene loading and earlier UI corrections before accepting M07-07. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
+
+Latest correction scope: explicit Environment selection/HDR/procedural editing,
+alongside prior SoftShadowPass/table updates in the same M07-07 handoff. Pending review states
+and earlier unrelated native-capacity edits are preserved. See chronological
+entry below; current acceptance remains pending.
 
 M01-01 accepted by project lead continuation; compilation/checks assumed successful under the agreed convention. Backend/scenario coverage not specified. M01-02 accepted by project lead continuation; compilation/checks assumed successful, backend coverage unspecified. M01-03, including the Metal warning correction, accepted by project lead continuation; coverage unspecified. M01-04 accepted by project lead continuation; compilation/checks assumed successful, backend/deployment coverage unspecified. M01-05 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-06 accepted by continuation after the lead corrected compilation issues; backend coverage unspecified. M01-07 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-08 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-09 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-10 accepted after lead compilation corrections; irradianceImage rename and explicit CommandBuffer include reviewed as behavior-preserving. M01-11 accepted by continuation; compilation/checks assumed successful, backend coverage unspecified. M01-12, including its type-validation correction, accepted by project lead continuation instruction; backend coverage unspecified. M01-13 accepted by project lead continuation instruction; backend coverage unspecified. M01-14 accepted by project lead continuation after adding virtual Window destructor; backend coverage unspecified. M01-15 accepted by project lead continuation instruction; backend/scenario coverage unspecified. M01 HDR correction explicitly validated; transparency remains deferred. M01-16 explicitly validated by the lead and M01-17 documentation closed with separate validation waived. M02-01 accepted by lead continuation; lead reports validation through this state on macOS Metal and Linux Vulkan. Chronological handoffs below preserve earlier states.
 
@@ -99,7 +104,7 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 | [M07-04](milestone_07_bg2e_composer/step_04_async-import-service.md) | `accepted` | HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus preserved M07-03 work. New app-local importer/server/settings/queue UI and stopped publication/rollback; reusable CPU glTF/OBJ/BG2 realization boundaries. | Static GPL/style/delimiter/include/API/thread/ownership/rollback/protocol/Markdown/whitespace review; no configuration/build, shader, parser, HTTP, app, package or probe execution. | Accepted by project lead continuation instruction; backend/package/HTTP coverage unspecified. | Actual contracts in async-import-service.md; lead matrix in tests/draw/composer_import. M07-05 follows. |
 | [M07-05](milestone_07_bg2e_composer/step_05_scene-baking.md) | `accepted` | Same HEAD plus preserved inherited work; app-local serial selected-subtree/scene batches, retained per-target outputs, staged texture preparation/adoption, previews and cleanup. No CMake/core/shader edits. | Static API/call-site/source/ownership/UV/output/GPL/style/link/whitespace checks; no configuration/build/shader/app/GPU/package/probe execution. | Accepted by project lead continuation instruction; backend/package coverage unspecified. | Actual contracts in scene-baking.md; manual checks in tests/draw/composer_baking. M07-06 follows. |
 | [M07-06](milestone_07_bg2e_composer/step_06_product-validation.md) | `accepted` | Same HEAD plus inherited work preserved; product-validation.md, workflow/distribution matrix, restored Chain controls and selection-crash correction: missing Composer list scope plus bool beginList handling in every caller. No CMake/vendor edits. | Static source/API/Chain clone/schema/ownership/style, package routing, table scopes, GPL/delimiters, Markdown paths/fences and whitespace checks; no build/shader/app/HTTP/GPU/package execution. | Lead explicitly confirms the selection correction is checked and requests continuation; M07-06 including corrections accepted. Backend/package detail unspecified. | Lead matrices retained; M07-07 follows. |
-| [M07-07](milestone_07_bg2e_composer/step_07_review.md) | `awaiting_project_lead` | Original review HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus inherited UI/IO corrections. Latest correction starts at a5bdc351e7a7 with null-entry/loading edits preserved; adds bounded tracing pair admission and shared GLSL/Metal no-texture fallback. | Review/source GPL/API/scope/ownership/pause/shutdown and tracing ABI/descriptor/fallback/warning checks; Markdown paths and whitespace. No build/shader/app/HTTP/GPU/package execution. | M07-06 accepted including checked selection correction. Lead selected neutral-texture fallback after reporting tracing-capacity exit; UI/loading/RT corrections await validation. | See ui-parity-correction.md and loading-and-tracing-investigation.md. Capacity fallback delivered; M07-08 is conditional successor; no M08/retirement authorization. |
+| [M07-07](milestone_07_bg2e_composer/step_07_review.md) | `awaiting_project_lead` | Original review f7c2498cb4c29e27921c91809043dcf5fe4d963c; ae0de5bbe015 plus inherited UI/IO/shadow/native-table work. Latest Environment correction: explicit Scene source, disabled-branch filtering, in-place inspector edit, HDR aliases/clear, fresh-document selection/rebuild, visible error. | GPL/style/API/ABI, weak owner/selection/destruction, renderer/queue/settings agreement, rollback, reflection Clear/empty semantics, docs/local links/whitespace. No build/shader/app/HTTP/GPU execution. | M07-06 accepted; Environment/scene/shadow/UI runtime validation not reported. | See environment-synchronization.md, tracing-capacity-16384.md and composer_io matrix. M07-08 remains conditional successor. |
 
 
 ## Open issues
@@ -113,6 +118,12 @@ overflowed pairs, now implemented in shared snapshot construction and both nativ
 sampling helpers. Native budgets/profiles and raster materials are unchanged.
 The application/shader correction is not runtime-validated; M07-08 remains
 conditional on lead acceptance of this correction and earlier review/UI work.
+
+Subsequent lead direction raises the practical table ceiling to the exact minimum
+of 16384 and device budgets after reservations. [Implemented policy](milestone_07_bg2e_composer/tracing-capacity-16384.md)
+supersedes historical small profiles/Metal 256 limits, keeps the neutral fallback
+and object-local materials, and requires rebuilt native v2 shaders. Validation
+remains pending; native sampler budgets may constrain capacity well below 16384.
 
 The project lead reported a Metal deprecation warning in M01-03. The texture usage check now calls `isFramebufferOnly()` instead of deprecated `framebufferOnly()`; the corrected step was accepted by project lead continuation. M01-02 was accepted by continuation with unspecified backend coverage. M01-03 checks are assumed successful under the continuation convention; the expanded manual probe has not been run or registered in CMake. M01-04 checks are assumed successful under continuation, with unspecified coverage; M01-05 accepted by continuation with unspecified coverage. M01-06 accepted after lead compilation fixes; backend/scenario coverage unspecified. M01-07 accepted by project lead continuation, compilation/checks assumed successful and coverage unspecified. M01-08 accepted by continuation with unspecified coverage. M01-09 accepted by continuation with unspecified coverage. M01-10 accepted after lead compilation corrections and reviewed shader rename; runtime coverage unspecified. M01-11 accepted by continuation; compilation/checks assumed successful, backend coverage unspecified. M01-12 accepted by project lead continuation instruction, including its type-validation correction. M01-13 accepted by project lead continuation instruction; backend coverage unspecified. M01-14 accepted after the lead virtual Window destructor correction. M01-15 accepted by project lead continuation; backend/scenario coverage unspecified. M01-16 review acceptance is held for the reported M01-15 overflow correction. The M01-11 explicit alpha table supports eight distinct image/sampler pairs and throws on a ninth; M03 reconsiders arbitrary addressing. No known static failures remain; M01-13 upscaling and M01-12 CPU/persistence/lifecycle fixtures have not been compiled or run by the agent. RendererDeferred did not exist at M01-05: the manual minimal-renderer fixture covers the intermediate lifecycle, with the actual deferred/settings replacement required in M01-15.
 
@@ -2206,3 +2217,154 @@ operator* in its operands. Existing shared owners, null guards, dynamic-type and
 detached-owner checks remain unchanged. Static diff/call-site checks only; no
 compilation/runtime execution. M07-07 corrections remain awaiting lead validation;
 this compiler output does not establish tracing or scene-loading runtime results.
+
+## 2026-10-20 — Exact tracing capacity up to 16384 delivered
+
+The lead explicitly selects the smaller of the device budget and 16384 and asks
+for both native implementations and consistent plan references. This is a scoped
+M07-07 correction, not a request to advance to M07-08 or acceptance of all prior
+UI/loading/runtime checks. Entry HEAD is ae0de5bbe015 with a clean working tree.
+
+ResourceArrayCapabilities::profileCapacity now returns the exact reserved-budget
+minimum, including aggregate stage limits, with zero/underflow guards. Metal
+removes the artificial 256/1024 limits and uses Tier-2 indirect texture and queried
+sampler budgets. Vulkan retains queried normal descriptor limits. AO/GI/reflection
+select `_256` deployment templates with native v2 contracts; Vulkan specializes
+array size via UInt32 ID0 and Metal encodes separate pointer-indexed argument
+records at buffers8/9 with native stride/length checks and unique residency entries.
+Custom shader replacements must adopt v2; settings/reflection persistence IDs are
+unchanged. No per-object material ownership, clone/import/export, neutral overflow
+fallback, production render or CMake behavior is changed.
+
+The [capacity report](milestone_07_bg2e_composer/tracing-capacity-16384.md) records
+actual arithmetic/native contracts, sampler-budget caveat, retained primitive
+probe templates and deferred refactor. Root index/operative decisions, M03 source
+notes and four step contracts, M07 review/documentation handoff and M08/M09/M10
+owning steps are reconciled. Historical delivery/review/progress entries explicitly
+retain original provenance instead of claiming old code had these capacities.
+Maintained tracing/effect/GPU references and native validation matrices are updated.
+
+Static checks cover source/native API spellings, specialization data lifetime,
+binding/record/residency agreement, capability arithmetic, licenses/style, includes,
+local paths and diff whitespace. Manual probes add 16384/1021/132/aggregate/zero
+capacity boundaries and non-power-of-two snapshot capacity37; they were not run.
+No configure/build, shader compilation, C++ fixture, app/GPU or package execution.
+Lead should rebuild engine and paired native shaders, run the named probes and
+reopen the supplied Composer scene with enabled GI/reflections on available Metal/
+Vulkan, checking exact capacity, overflow, no-RT/raster fallback and native
+diagnostics/lifetime. M07-07 correction awaits validation; M07-08 remains the
+conditional successor. No later milestone implementation is started.
+### Shared clone typeid compiler warnings corrected
+
+The lead reports Clang potentially-evaluated-expression warnings in
+CameraComponent::clone and Node::clone. Both now extract raw pointers with get()
+before typeid, avoiding overloaded smart-pointer dereference inside its operand.
+Null/independence/owner and concrete dynamic-type checks remain unchanged, with
+the original shared owners retaining lifetime. Static call-site/diff checks only;
+no compilation or runtime execution. M07-07 remains awaiting lead validation;
+the reported compilation progress is not scene/tracing runtime evidence.
+## 2026-10-20 — Direct query-shadow table expansion delivered
+
+This corrects the immediately preceding M07-07 report, which described the
+eight-pair limit as still present. That previous statement is superseded; the
+older initial-capacity diagnosis is retained only as chronological evidence.
+
+Code/documentation baseline for this follow-up: inherited M07 capacity expansion
+started at `ae0de5bbe015`, with current pre-correction source changes preserved.
+
+The lead reports Model Edit projects shadows correctly but Composer scenes with
+more objects do not. Static comparison found identical renderer configurations,
+but SoftShadowPass still retained a separate eight-pair alpha table and whole-
+scene neutral fallback. The supplied primitives_scene materials omit alphaCutoff,
+so the default 0.5 flags even untextured materials for alpha queries; independent
+white fallback textures can exceed eight slots with only two six-submesh cubes.
+This source/data analysis is not a runtime reproduction; the lead's positive
+Model Edit/negative Composer report does not establish cross-backend coverage.
+
+The lead directs expansion of remaining needed limits and postpones texture-count
+improvements until after API migration. Preserve all inherited uncommitted work;
+this correction changes no app configuration, material defaults, object-local
+ownership, texture creation/canonicalization, production render or CMake files.
+
+SoftShadowPass now selects exact capacity via profileCapacity(2,1,9), bounded by
+16384 and device budgets. Query kernels use native v2: Vulkan specializes ID0 with
+image/sampler arrays at bindings16/24; Metal uses record buffers5/6. The existing
+alphaTextureLimit diagnostic now reports alphaTextureCapacity(). Larger scenes
+below that limit retain alpha-aware direct shadows. If a texture pair cannot fit,
+its sentinel means neutral alpha with authored scalar alpha/cutoff retained; all
+instances and the rest of the scene's shadows stay active. Warning/status replaces
+the old ShadowTextureCapacityError/whole-scene neutral path; sceneSupported remains
+true for an available degraded pass. No-query/no-array/format/kernel availability
+failure retains explicit status and ordinary raster lighting. Immutable table
+owners, completed-slot buffers and per-invocation descriptors remain retained.
+
+Updated the query table fixture for more than eight pairs, forced capacity9 and
+fallback/index/instance accounting; added its missing full GPL header and made its
+intended opaque first material explicit. The CPU capacity helper checks shadow
+reserves yielding 1023 from a 1024-sampler budget. Source/native API/binding/record/
+ABI/lifetime/license/style and static arithmetic/link/whitespace checks only;
+no compilation, shader tools, C++ fixture, application/GPU or package execution.
+Maintained renderer/architecture guidance, test matrices and affected plan notes
+are reconciled; texture-count optimization is a separately authorized post-
+migration task, not hidden in this correction or scheduled as current migration.
+
+Lead validation: rebuild engine and paired query/tracing shaders; open the same
+Composer scene with shadow-casting light and more than eight alpha pairs, compare
+Model Edit, inspect alphaTextureLimit/status, retained cutout holes and native
+Metal/Vulkan diagnostics where available. Also check genuine overflow, scalar
+alpha fallback, no-query/no-array, resize/reload/retained-slot ownership. M07-07
+remains awaiting validation; M07-08 is still the conditional successor.
+## 2026-10-20 — Composer Environment selection and editing correction
+
+The lead requires loaded-scene Environment selection, HDR assignment/clearing,
+procedural RGB edits, default sky after active-component removal, and ignored
+additions while a component is assigned. This reopens M07-07 correction work, not
+M07-08. Preserve inherited uncommitted source/native-table/shadow changes.
+
+Implemented opt-in explicit Scene::setMainEnvironment, including intentional null
+selection and weak component/node ownership with enabled membership validation.
+Composer removes its hidden stage Environment, selects the first eligible authored
+component on fresh adoption, retains valid selection over additions, and returns
+to renderer defaults after removal without promoting ignored components. Newly
+eligible components can fill an empty selection. Failed import rollback restores
+the old selection/known-candidate snapshot. RendererDeferred, queue extraction and
+live settings all honor that same source; non-opt-in Scene clients preserve their
+previous automatic behavior and Model Edit workflow is unchanged.
+
+Inspector updates built-in Environment fields in place at the stopped boundary,
+retaining author/widget identity. Arbitrary edited clones no longer directly
+publish generator resources or revert colors on a generation exception. Only the
+selected source is synchronized by the renderer. HDR errors retain requested
+fields/last-good resources and appear in status/inspector; clearing HDR restores
+stored procedural colors. Both image property alias and legacy JSON reference load,
+and missing/empty references clear old state. No new active-ID serialization format:
+initial Open of multiple eligible components chooses first enabled depth-first.
+
+The [source-backed report](milestone_07_bg2e_composer/environment-synchronization.md)
+also corrects earlier chat hypotheses: CubemapRenderer::cleanup does not clear its
+settings, synchronize already includes rebuild intent, and prepare runs while
+presentation is paused. SceneInputs failed to reset the attached Scene's explicit
+Environment selection on new root adoption; fixed. Automatic Scene selection now
+skips disabled branches and captures default/null explicitly. The supplied
+renderer startup lookup before root attachment remains implicit, so it cannot
+freeze the default sky before Composer adopts the new scene. ResourcePicker Clear
+is opt-in and accepts empty selection only for the HDR property, while Browse
+cancellation preserves the current path. Fresh Open resets the generator source
+cache and rereads even an identical HDR path. The supplied
+primitives_scene points to black.jpg, an 8-bit JPEG incompatible with the
+floating-point HDR loader; this can leave the procedural sky visible. Other
+reported HDR inputs were not inspected and are not assumed invalid.
+
+Extended CPU schema probe covers explicit/legacy selection, ignored precedence,
+removal/default, disabled/detached/foreign sources, new selection, root release and
+image alias/clearing, disabled auto-selection and stale-root reset. ResourcePicker
+Clear is metadata opt-in; cancelled Browse preserves its selected resource and HDR
+filters are `.hdr`/`.exr`; automatic selection skips disabled branches. Fresh Open
+resets the generator source cache to reread an
+identical path. The Composer matrix covers requested runtime cases, invalid sources,
+visible generation error, save/reopen and import rollback. Static signatures/ownership,
+selection/publication/serialization/style/license/link/whitespace checks only; no
+configure/build, shader compiler, C++ fixture, application/GPU or packaging run.
+No CMake, shader, GPU API, native table limit or texture-count optimization changes
+are made by this correction. M07-07 remains awaiting lead validation; M07-08 is
+the unchanged conditional successor.

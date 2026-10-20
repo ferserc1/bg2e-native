@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/vk/RayTracingScene.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/vk/RayTracingMesh.hpp>
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
@@ -185,9 +186,12 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
 
 void RayTracingScene::build(VkCommandBuffer cmd)
 {
+    base::CpuProfileScope profile("vulkan.tlas.buildEncode");
+    base::CpuProfileScope stageProfile("vulkan.tlas.ensureCapacity");
     const uint32_t instanceCount = static_cast<uint32_t>(_instances.size());
 
     ensureCapacity(instanceCount);
+    stageProfile.next("vulkan.tlas.fillInstances");
 
     // --- Fill the instance buffer ---
     if (instanceCount > 0 && _instanceMapped != nullptr)
@@ -223,6 +227,7 @@ void RayTracingScene::build(VkCommandBuffer cmd)
         vmaFlushAllocation(_device->allocator(), _instanceAlloc, 0, VK_WHOLE_SIZE);
     }
 
+    stageProfile.next("vulkan.tlas.encodeBuildAndBarrier");
     // --- Build the TLAS ---
     VkAccelerationStructureGeometryKHR geometry{};
     geometry.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_GEOMETRY_KHR;

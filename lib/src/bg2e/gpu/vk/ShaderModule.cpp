@@ -30,6 +30,23 @@ namespace vk {
 ShaderModule::ShaderModule(gpu::Device* gpuDevice, VkDevice device, const gpu::ShaderModuleDescription& description)
     : gpu::ShaderModule(gpuDevice), _device(device), _stage(description.stage), _entryPoint(description.entryPoint)
 {
+    for (const auto& constant : description.constants)
+    {
+        for (const auto& entry : _constantEntries)
+        {
+            if (entry.constantID == constant.id)
+            {
+                throw std::invalid_argument("Duplicate shader specialization constant ID");
+            }
+        }
+        _constantEntries.push_back({constant.id,
+            static_cast<uint32_t>(_constantValues.size() * sizeof(uint32_t)), sizeof(uint32_t)});
+        _constantValues.push_back(constant.value);
+    }
+    _specialization.mapEntryCount = static_cast<uint32_t>(_constantEntries.size());
+    _specialization.pMapEntries = _constantEntries.data();
+    _specialization.dataSize = _constantValues.size() * sizeof(uint32_t);
+    _specialization.pData = _constantValues.data();
     std::ifstream file(description.filePath, std::ios::ate | std::ios::binary);
     if (!file.is_open())
     {

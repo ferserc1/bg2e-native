@@ -42,6 +42,21 @@ For a new chat, referencing **this index and progress.md is sufficient**. The ag
 
 ## Cross-cutting checkpoints
 
+### Later lead-directed tracing capacity policy
+
+The [M07 capacity correction](milestone_07_bg2e_composer/tracing-capacity-16384.md)
+supersedes historical 32/128/256 effect profiles and the artificial Metal 256
+ceiling: use the exact minimum of 16384 and device budgets after effect reserves.
+Vulkan specializes fixed array extents; Metal uses Tier-2 argument record tables.
+This also applies to direct SoftShadowPass: its separate eight-pair table is now
+replaced by device-clamped arrays with reserves (2,1,9), preserving scene shadows
+when individual textures overflow. Texture-count optimizations wait until after
+the API migration; do not change material defaults or globalize object ownership.
+Keep materials independently owned/importable/exportable and retain warning plus
+neutral-texture fallback on exhaustion. This is not a global material catalog or
+the deferred future resource-architecture refactor. Older delivery histories remain
+evidence of their original state, not instructions to restore those small limits.
+
 | Requirement | First contract | First working integration | Later completion |
 |---|---|---|---|
 | Public namespaces/configurable pass objects | M01-01 | M01-08/M01-10 | M03/M04 and M10. |
@@ -88,6 +103,11 @@ That review was followed by M04-08 cumulative documentation. Use
 
 
 ## M07 review handoff
+
+[Environment selection/synchronization correction](milestone_07_bg2e_composer/environment-synchronization.md)
+records explicit active Scene selection, renderer-default fallback without a hidden
+Composer component, HDR clearing/colors, ignored additions and retained error
+diagnostics. It supersedes earlier first-traversal/hidden-fixture assumptions.
 
 [Actual Composer contracts and remaining-plan impacts](milestone_07_bg2e_composer/review.md)
 record shared root/clone/parser APIs, guarded CPU/HTTP import publication,

@@ -100,3 +100,10 @@ of their results and existing Bg2Mesh CPU data. Reuse these DB entry points wher
 assembly needs them. They do not provide a batch scheduler, filesystem snapshot,
 job cancellation or protected output publication. Keep factories/GPU work with
 the initialized standalone context and do not depend on Composer's HTTP/job classes.
+## Later resource-table policy
+
+Preserve independently owned/importable/exportable scene-object materials.
+[M07 tracing tables](../milestone_07_bg2e_composer/tracing-capacity-16384.md) are
+execution bindings with a 16384/device-clamped ceiling, not a global material
+catalog or a requirement to deduplicate objects/materials before scene assembly.
+Keep the explicit warning/neutral-texture overflow policy.

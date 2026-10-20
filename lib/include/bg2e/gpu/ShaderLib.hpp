@@ -76,6 +76,9 @@ class BG2E_API ShaderLib {
     std::shared_ptr<ShaderModule> anyHit(
         const std::string& shaderName, Device* device, const std::string& debugName = "");
 
+    std::shared_ptr<ShaderModule> specialized(const std::string& shaderName,
+        ShaderStage stage, Device* device, const std::vector<ShaderConstant>& constants);
+
   private:
     std::filesystem::path _basePath;
     BackendType _backendType;

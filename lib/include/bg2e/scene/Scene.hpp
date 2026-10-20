@@ -24,6 +24,7 @@
 #include <bg2e/scene/LightComponent.hpp>
 
 #include <vector>
+#include <memory>
 
 namespace bg2e {
 
@@ -35,6 +36,8 @@ namespace scene {
 
 class BG2E_API Scene {
   public:
+    ~Scene();
+
     static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
         SceneLoadProgress* progress = nullptr);
     static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
@@ -43,6 +46,15 @@ class BG2E_API Scene {
 
     void setSceneRoot(std::shared_ptr<Node> scene);
     void setMainCamera(CameraComponent* camera);
+
+    // nullptr explicitly selects the renderer default, not another Environment.
+    // In-place edits preserve selection; component edits notify the owning Scene.
+    void setMainEnvironment(EnvironmentComponent* environment);
+    void resetMainEnvironmentSelection();
+    bool hasExplicitMainEnvironment() const
+    {
+        return _explicitEnvironment;
+    }
 
     // Detaches the complete root for adoption by another Scene, clearing its
     // back-pointer and this Scene's cached component references.
@@ -102,6 +114,9 @@ class BG2E_API Scene {
     std::shared_ptr<Node> _sceneRoot;
     Node* _mainCameraNode = nullptr;
     Node* _mainEnvironment = nullptr;
+    bool _explicitEnvironment = false;
+    std::weak_ptr<Node> _selectedEnvironmentNode;
+    std::weak_ptr<EnvironmentComponent> _selectedEnvironment;
     std::vector<std::shared_ptr<LightComponent>> _lightComponents;
     std::vector<base::Light*> _lights;
 

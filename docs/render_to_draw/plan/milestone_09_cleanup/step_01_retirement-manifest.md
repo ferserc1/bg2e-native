@@ -87,9 +87,11 @@ mode selects IBL/AO/GI separately from reflections. Existing examples inject
 optional disabled FSR and SMAA. FinalProcessor/SMAAProcessor apply final scene AA
 after color/reconstruction and before overlays/UI, with standalone borrowed/owned
 output and retired-slot contracts. Reuse shared noise and explicit invalidation.
-Legacy query shadows retain an eight-pair limit but degrade the entire scene to
-neutral visibility with sceneSupported/status on overflow; advanced tables remain
-independent and never truncated. Review no-RT/partial support and the manual matrix.
+Direct query shadows now use the M07 device-clamped 16384 policy and v2 kernels;
+overflow degrades only alpha slots, not whole-scene shadows. Do not preserve the
+removed eight-pair bindings or ShadowTextureCapacityError as current behavior.
+Review no-query/no-array/partial support and the manual matrix; texture-count
+optimizations remain a separately authorized post-migration task.
 Keep official AreaTex/SearchTex bytes and original licenses in iryku_smaa during
 production retirement: draw SMAA now consumes those resources. Do not use spatial
 AA or denoised histories as bake averages. Runtime checks remain lead-owned.

@@ -42,7 +42,11 @@ class BG2E_API EnvironmentGenerator {
     }
     std::shared_ptr<const EnvironmentResources> build(const std::filesystem::path& hdrSource = {});
     std::shared_ptr<const EnvironmentResources> build(std::shared_ptr<gpu::Image> linearEquirectangular);
+    // Shader-independent black environment for a failed initial generation.
+    // Publishes only after all minimum resources are valid. Explicit opt-in.
+    std::shared_ptr<const EnvironmentResources> buildFallback();
     void requestRebuild(); // Marks generation intent; synchronize consumes it at a safe boundary.
+    void resetSourceCache(); // Force a fresh file read/source conversion on next synchronize.
     bool synchronize(const scene::EnvironmentComponent* component);
     std::shared_ptr<const EnvironmentResources> resources() const
     {

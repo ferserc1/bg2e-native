@@ -20,6 +20,12 @@ The estimator uses cosine hemisphere rays, nearest accepted hits, radius falloff
 
 ## Shared geometry and materials
 
+Later [M07 capacity/shader amendment](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+supersedes this original handoff's fixed 32/128/256 profiles and Metal buffer8
+layout: exact device-clamped counts up to 16384, shader interfaces v2, Vulkan
+specialization ID0 and separate Metal record buffers8/9 are now authoritative.
+Excess texture pairs use the explicit warning/neutral fallback, not an exception.
+
 `TracingSceneResources(Device&, capacity)` selects an explicit 32/128/256 bounded profile. RTAO selects from resourceArrayCapabilities after reserving four images, two samplers and thirteen resources. Preparation collects traceable opaque/cutout items, excludes blended classes, validates all material/transform/geometry resources, and rejects overflow before publishing the snapshot. Image and sampler tables deduplicate independently and retain actual native resource owners. All six source texture slots, UV0/UV1, color/scalar decoding and MaterialData are preserved. AO currently evaluates only albedo alpha for cutout acceptance. Existing SoftShadowPass still has its separate eight-cutout-pair limit; disable that legacy shadow consumer when validating larger AO tables. Its migration remains downstream integration work.
 
 Packed ABI: TracingVertex is 64 bytes (position/normal/UV0+UV1/tangent vec4); TracingInstanceData is 160 (model, inverse-transpose normal, indexBase/vertexBase/triangleCount/materialIndex, canonical object/submesh/mirrored identity); TracingMaterialData is 256 (192-byte MaterialData plus two uvec4 image indices and two sampler indices). Dense TLAS instance IDs address the snapshot; canonical IDs are retained separately. Packed indices remain local and vertexBase is applied once. Mesh CPU data is immutable after build; reload creates new DrawMesh identity. Geometry buffers are cached by retained mesh identity, while transforms/materials/TLAS are fresh per snapshot. Source tangent XYZ has no handedness; packed W is one, with mirrored-instance identity recorded separately for future consumers.

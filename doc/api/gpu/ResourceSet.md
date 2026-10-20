@@ -357,9 +357,21 @@ MRT attachments, explicit views/layouts, capability limits and synchronous IO.
 
 `setSampledImages(ShaderBinding, std::span<const ImageView>)` and `setSamplers(ShaderBinding, std::span<gpu::Sampler* const>)` assign complete fixed-size arrays matching `ResourceBinding::count`. Every element, including unused entries, must contain a valid same-device resource. `update()` rejects incomplete arrays. Scalar setters still address scalar bindings; storage images/buffers and acceleration structures remain scalar. Color 2D sampled views are the portable array profile.
 
-`Device::resourceArrayCapabilities()` reports enabled nonuniform indexing and conservative image/sampler/resource/storage-buffer limits. Its `profileCapacity(reservedImages, reservedSamplers, reservedResources)` chooses 256/128/32 or zero after other resources are reserved. Shader declared counts must match the layout. Zero is unavailable, and a scene exceeding a supported capacity is an explicit error; no truncation or implicit texture substitution occurs.
+`Device::resourceArrayCapabilities()` reports enabled nonuniform indexing and image/sampler/resource/storage-buffer limits. Its `profileCapacity(I,S,R)` returns the exact minimum of 16384, `maxSampledImages-I`, `maxSamplers-S` and `(maxResourcesPerStage-R)/2`, or zero for unsupported/exhausted budgets. Subtraction is checked before use. Shader declared counts must match the layout; Vulkan specialization constants can provide exact extents. Complete descriptor arrays remain mandatory; higher-level draw tracing applies its explicit neutral-texture policy when its table fills.
 
 Vulkan uses fixed descriptors and nonuniform shader indices. On Metal, set `ResourceBinding::metalArgumentBuffer` to an explicit compute/RT buffer slot (1..30); `binding.metal` then selects the first `id` inside that argument buffer. Image/sampler arrays may share the buffer using disjoint ID ranges. Tier-2 support and argument-buffer-compatible samplers are required; GPU sampler construction enables that compatibility. Array graphics-stage bindings are currently rejected on Metal. `additionalStages` is native Vulkan visibility; Metal additional stages must share one native encoder domain.
+
+Alternatively, `metalArgumentRecordArray=true` encodes a pointer-indexed array of
+single-resource argument records. It requires an exclusive group and `binding.metal=0`.
+Each record is encoded using the encoder's native stride, with checked allocation
+against maxBufferLength. Draw tracing uses image/sampler record buffers8/9. Metal
+exposes the Tier-2 indirect texture bound and queried maxArgumentBufferSamplerCount
+without the old 256 clamp; its unique-sampler application limit is conservatively
+used as an entry budget, not an allocation guarantee for arbitrary sampler states.
+When `metalArgumentRecordsIndexable=false`, Metal encodes the fixed descriptor
+arrays into one ordinary argument buffer and binds it at the declared buffer slot.
+Set it true only when the MSL function receives a Tier-2 pointer-indexed record
+array; the records are then exposed through the direct pointer-buffer binding.
 
 The set borrows source resources through GPU completion and owns its native descriptor/argument storage. Keep the device/layout and every source owner alive. Update only at a retired slot or drained edit boundary. Metal declares indirect texture residency at command encoding; array updates re-encode owned buffers and preserve direct scalar bindings. No partial binding/update-after-bind, texture atlas, unbounded bindless allocation or higher-level material policy is implied.
 

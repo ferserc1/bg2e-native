@@ -34,6 +34,7 @@
 #include <memory>
 #include <functional>
 #include <vector>
+#include <map>
 
 namespace bg2e_composer {
 
@@ -77,6 +78,7 @@ class StageScene {
     void discardCandidate(const std::shared_ptr<bg2e::scene::Node>& candidate) noexcept;
     void releaseRetired();
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
+    std::shared_ptr<bg2e::scene::Node> createPrimitive(unsigned kind);
     bool contains(bg2e::scene::Node* node) const;
     void duplicate(const std::shared_ptr<bg2e::scene::Node>& node);
     void remove(const std::shared_ptr<bg2e::scene::Node>& node);
@@ -97,6 +99,8 @@ class StageScene {
     }
     float floorHeight() const;
     std::shared_ptr<bg2e::scene::Node> environmentNode() const;
+    // Inspector clone replacement is an edit, not a newly added candidate.
+    void environmentComponentReplaced(bg2e::scene::Node& node);
     std::shared_ptr<bg2e::scene::Node> environmentPreset() const;
     void validateEnvironmentPreset(const std::shared_ptr<bg2e::scene::Node>& preset) const;
     void restoreEnvironment(const std::shared_ptr<bg2e::scene::Node>& preset);
@@ -126,6 +130,7 @@ class StageScene {
         bool requireCamera, bg2e::scene::SceneProgressCallback progress,
         std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
     void prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) const;
+    void refreshEnvironment(bool reset = false);
 
     void addDrawable(const char* name, std::shared_ptr<bg2e::draw::Drawable> drawable,
         const glm::vec3& position);
@@ -139,6 +144,7 @@ class StageScene {
     bg2e::draw::Engine* _engine;
     std::shared_ptr<bg2e::scene::Node> _root;
     std::shared_ptr<bg2e::scene::Node> _camera;
+    std::map<std::string, std::weak_ptr<bg2e::scene::EnvironmentComponent>> _knownEnvironmentNodes;
     std::vector<std::shared_ptr<bg2e::draw::Drawable>> _drawables;
     std::unique_ptr<bg2e::utils::ViewpointAnalyzer> _viewpointAnalyzer;
 };

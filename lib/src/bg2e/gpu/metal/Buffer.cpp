@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/Buffer.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 
@@ -150,6 +151,7 @@ void Buffer::createUniformBuffer(const void* data, uint64_t byteSize)
 
 void Buffer::createStorageBuffer(const void* data, uint64_t byteSize)
 {
+    base::CpuProfileScope profile("metal.buffer.createStorage");
     createSharedBuffer(_device, _buffer, data, byteSize);
     _usage = BufferUsage::Storage;
     _byteSize = byteSize;

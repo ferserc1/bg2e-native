@@ -35,16 +35,31 @@ namespace {
 constexpr char preferencesContext[] = "app";
 constexpr char backgroundLimitEnabledKey[] = "backgroundFrameRateLimitEnabled";
 constexpr char backgroundMaxFrameRateKey[] = "backgroundMaxFrameRate";
+constexpr char foregroundSceneFrameRateKey[] = "foregroundSceneMaxFrameRate";
+constexpr char backgroundSceneFrameRateKey[] = "backgroundSceneMaxFrameRate";
 }
 
-void UISettingsWindow::init(bool showBackgroundFrameRateSettings)
+void UISettingsWindow::init(bool showBackgroundFrameRateSettings, bool sceneFrameRateSettings)
 {
     _showBackgroundFrameRateSettings = showBackgroundFrameRateSettings;
+    _sceneFrameRateSettings = sceneFrameRateSettings;
     setTitle("UI Settings");
     setSize(320, _showBackgroundFrameRateSettings ? 430 : 350);
     close();
 
-    if (_showBackgroundFrameRateSettings)
+    if (_sceneFrameRateSettings)
+    {
+        if (auto* mainLoop = app::MainLoop::current())
+        {
+            auto& preferences = app::PreferencesStore::instance().preferences(preferencesContext);
+            const auto foreground = preferences.get(foregroundSceneFrameRateKey, 0.0);
+            const auto background = preferences.get(backgroundSceneFrameRateKey, 1.0);
+            mainLoop->setSceneFrameRateLimits(
+                std::isfinite(foreground) && foreground >= 0.0 ? foreground : 0.0,
+                std::isfinite(background) && background >= 0.0 ? background : 1.0);
+        }
+    }
+    else if (_showBackgroundFrameRateSettings)
     {
         if (auto* mainLoop = app::MainLoop::current())
         {
@@ -76,7 +91,11 @@ void UISettingsWindow::drawUI()
         UserInterface::setScale(scale);
     }
 
-    if (_showBackgroundFrameRateSettings)
+    if (_sceneFrameRateSettings)
+    {
+        drawSceneFrameRateSection();
+    }
+    else if (_showBackgroundFrameRateSettings)
     {
         drawBackgroundFrameRateSection();
     }
@@ -179,6 +198,30 @@ void UISettingsWindow::drawBackgroundFrameRateSection()
     {
         mainLoop->setBackgroundMaxFrameRate(static_cast<double>(maxFrameRate));
         preferences.set(backgroundMaxFrameRateKey, static_cast<double>(maxFrameRate));
+    }
+}
+
+void UISettingsWindow::drawSceneFrameRateSection()
+{
+    auto* mainLoop = app::MainLoop::current();
+    if (!mainLoop)
+    {
+        return;
+    }
+    Text::separator("Scene Performance");
+    Text::text("0 = unlimited. UI always runs at presentation speed.");
+    float foreground = static_cast<float>(mainLoop->foregroundSceneMaxFrameRate());
+    float background = static_cast<float>(mainLoop->backgroundSceneMaxFrameRate());
+    bool changed = Numeric::drag("Maximum foreground scene FPS", &foreground, 1.0f, 0.0f, 1000.0f);
+    changed = Numeric::drag("Maximum background scene FPS", &background, 0.1f, 0.0f, 1000.0f) || changed;
+    if (changed && std::isfinite(foreground) && foreground >= 0.0f &&
+        std::isfinite(background) && background >= 0.0f)
+    {
+        mainLoop->setSceneFrameRateLimits(foreground, background);
+        auto& preferences = app::PreferencesStore::instance().preferences(preferencesContext);
+        preferences.set(foregroundSceneFrameRateKey, static_cast<double>(foreground));
+        preferences.set(backgroundSceneFrameRateKey, static_cast<double>(background));
+        preferences.save();
     }
 }
 

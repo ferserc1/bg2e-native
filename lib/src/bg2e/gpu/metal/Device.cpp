@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/Buffer.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #include <bg2e/gpu/metal/PhysicalDevice.hpp>
@@ -68,10 +69,15 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
     _renderingCapabilities = metalPhysDevice->properties()->rendering;
     _rayTracingCapabilities = metalPhysDevice->properties()->rayTracing;
     const bool tier2 = _device->argumentBuffersSupport() == MTL::ArgumentBuffersTier2;
-    // Conservative engine ceilings, below Tier-2 native texture limits.
-    _resourceArrayCapabilities = {tier2, tier2 ? 256u : 0u,
-        tier2 ? static_cast<uint32_t>(std::min<NS::UInteger>(256, _device->maxArgumentBufferSamplerCount())) : 0u,
-        tier2 ? 1024u : 0u, _device->maxBufferLength()};
+    // Tier-2 argument buffers expose up to 1,000,000 textures per stage.
+    // Keep the native sampler budget separate from the engine's tracing ceiling;
+    // never confuse these indirect resources with the small direct-binding tables.
+    const uint32_t samplerBudget = tier2 ? static_cast<uint32_t>(
+        std::min<NS::UInteger>(UINT32_MAX, _device->maxArgumentBufferSamplerCount())) : 0;
+    // Tier 2 has no Vulkan-style combined descriptor-count budget to subtract;
+    // validate the individual types and actual argument-buffer byte lengths.
+    _resourceArrayCapabilities = {tier2, tier2 ? 1000000u : 0u, samplerBudget,
+        tier2 ? UINT32_MAX : 0u, _device->maxBufferLength()};
 
     auto* gfxQueue = _device->newCommandQueue();
     auto* presentQueue = _device->newCommandQueue();
@@ -138,8 +144,11 @@ void Device::cleanup()
 
 void Device::waitIdle()
 {
+    base::CpuProfileScope profile("metal.device.waitIdle");
     if (_device)
     {
+        base::CpuProfileScope drainProfile("metal.device.drainSubmissions");
+        base::CpuProfileScope::count("metal.device.drainCalls", 1);
         _submissions->drain();
     }
 }

@@ -62,6 +62,13 @@ Memory is O(64*V + 4*I + 160*N + 256*M) plus descriptors, TLAS/BLAS and effect i
 
 ## Material resources: alternatives and recommended limits
 
+**Superseded capacity policy:** the profile and throwing-overflow proposal below
+records the original M03 checkpoint. The later lead-directed [M07 correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+uses exact device-clamped counts up to 16384, Vulkan specialization ID0, Metal
+argument-record buffers8/9 and explicit warning/neutral-texture overflow. Object
+materials remain independently owned/importable/exportable. Do not reinstate the
+old profiles or strict table-overflow rejection from this historical proposal.
+
 | Option | Complexity / fidelity | Recommendation |
 |---|---|---|
 | Extend static switch over image/sampler pairs | Small implementation, grows shader code and consumes native slots; arbitrary scenes repeatedly hit a small fixed limit | Keep existing shadows only; not the advanced ABI |

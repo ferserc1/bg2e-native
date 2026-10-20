@@ -97,7 +97,7 @@ void SceneTree::handleClick(scene::Node* node)
         return;
     }
 
-    const bool additive = _selectionManager->multiSelection() && ImGui::GetIO().KeyCtrl;
+    const bool additive = _selectionManager->multiSelection() && ImGui::GetIO().KeyShift;
 
     if (_onSelect)
     {

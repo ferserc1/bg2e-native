@@ -130,6 +130,17 @@ std::shared_ptr<ShaderModule> ShaderLib::anyHit(const std::string& shaderName, D
         debugName.empty() ? shaderName + " any hit shader" : debugName, device);
 }
 
+std::shared_ptr<ShaderModule> ShaderLib::specialized(const std::string& shaderName,
+    ShaderStage stage, Device* device, const std::vector<ShaderConstant>& constants)
+{
+    if (!device)
+    {
+        throw std::invalid_argument("ShaderLib requires a device");
+    }
+    return device->createShaderModule({stagePath(shaderName, stage).string(),
+        entryPoint(_backendType, stage), stage, shaderName, constants});
+}
+
 std::shared_ptr<ShaderModule> ShaderLib::_load(
     const std::string& shaderName,
     ShaderStage stage,

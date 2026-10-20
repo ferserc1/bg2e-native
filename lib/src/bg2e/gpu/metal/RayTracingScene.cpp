@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/RayTracingScene.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/RayTracingMesh.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
@@ -70,6 +71,8 @@ MTL::PackedFloat4x3 toPackedFloat4x3(const glm::mat4& m)
 
 void RayTracingScene::build(MTL::CommandBuffer* cmd)
 {
+    base::CpuProfileScope profile("metal.tlas.buildEncode");
+    base::CpuProfileScope stageProfile("metal.tlas.collectAndDescriptors");
     const NS::UInteger instanceCount = static_cast<NS::UInteger>(_instances.size());
 
     // --- Collect the unique referenced primitive acceleration structures ---
@@ -143,7 +146,9 @@ void RayTracingScene::build(MTL::CommandBuffer* cmd)
     descriptor->setInstanceDescriptorStride(descSize);
     descriptor->setInstancedAccelerationStructures(primitiveArray);
 
+    stageProfile.next("metal.tlas.querySizes");
     MTL::AccelerationStructureSizes sizes = _device->handle()->accelerationStructureSizes(descriptor);
+    stageProfile.next("metal.tlas.allocateASAndScratch");
 
     if (!_instanceAS || _asSize < sizes.accelerationStructureSize)
     {
@@ -166,6 +171,7 @@ void RayTracingScene::build(MTL::CommandBuffer* cmd)
         _scratchSize = sizes.buildScratchBufferSize;
     }
 
+    stageProfile.next("metal.tlas.encodeBuild");
     MTL::AccelerationStructureCommandEncoder* encoder = cmd->accelerationStructureCommandEncoder();
     encoder->buildAccelerationStructure(_instanceAS, descriptor, _scratchBuffer, 0);
     encoder->endEncoding();

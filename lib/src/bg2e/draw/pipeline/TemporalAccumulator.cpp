@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <algorithm>
@@ -151,6 +152,7 @@ void TemporalAccumulator::beginFrame(uint32_t slotIndex, uint64_t serial, uint64
 
 TemporalResult TemporalAccumulator::record(const TemporalInput& input)
 {
+    base::CpuProfileScope profile("effect.temporal.record");
     if (!_device || input.command.hasActiveScope() || input.signal.device() != _device || !input.signal.isValid() ||
         input.signal.size().isZero() || input.signal.imageType() != gpu::ImageType::Image2D ||
         !gpu::hasFlag(input.signal.usage(),gpu::ImageUsage::Sampled) ||
@@ -191,7 +193,22 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     }
     const bool consecutive = previous && previous->sequence < input.sceneFrameNumber &&
         input.sceneFrameNumber-previous->sequence == 1;
-    if (!consecutive || previous->generation != input.generation || previous->reset != _generation ||
+    // Match the production accumulator: compare unjittered camera matrices,
+    // not input events or the sampling jitter used by the current frame.
+    bool cameraChanged = false;
+    if (previous)
+    {
+        const auto before = previous->view.projection * previous->view.view;
+        const auto current = input.view.projection * input.view.view;
+        for (int column = 0; column < 4; ++column)
+        {
+            for (int row = 0; row < 4; ++row)
+            {
+                cameraChanged = cameraChanged || std::abs(before[column][row] - current[column][row]) > 0.001f;
+            }
+        }
+    }
+    if (!consecutive || cameraChanged || previous->generation != input.generation || previous->reset != _generation ||
         previous->signal->size() != input.signal.size() || previous->surfaceExtent != input.surface.extent() ||
         previous->profile != input.surface.profile || previous->view.reproject != input.view.reproject ||
         previous->view.projection != input.view.projection || previous->maxRoughness != input.maxRoughness)

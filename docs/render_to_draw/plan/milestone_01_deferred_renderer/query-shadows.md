@@ -1,5 +1,19 @@
 # M01-11 actual alpha-aware query shadows
 
+## Current indexed shadow implementation (supersedes UV-table details below)
+
+The owner-approved v3 query kernel fetches UV0/UV1 from the immutable shared
+tracing geometry's vertex/index buffers. The per-frame UV triple packing and
+dedicated shadow triangle buffer described in the historical M01 delivery below
+have been removed. Lightweight ShadowInstanceData keeps the shared first index,
+triangle count, alpha slot, object ID, UV selection/scale, cutoff and vertex base.
+The independent alpha table preserves its current device-clamped admission and
+scalar fallback policy. Standalone SoftShadowPass uses retained tracing snapshots
+as well. Shared vertices bind at Vulkan2/Metal buffer3, indices Vulkan9/Metal
+buffer7; alpha arrays remain Vulkan16/24 and Metal records5/6. Reserves are
+(2,1,10), contract `draw.query.softShadows.v3`. Rebuild native shaders and library
+together. No compilation/native runtime verification was performed for this change.
+
 ## Reviewed lead corrections and acceptance
 
 The lead fixed M01-10's Metal name collision by renaming the texture argument to `irradianceImage`, keeping texture(9), sampler(9), its sample expression, and the sampled float3 irradiance calculation unchanged. The rename preserves shader behavior and is retained in both the original and new query-lighting variant. The explicit CommandBuffer.hpp include in RenderTarget.hpp supplies its public parameter type. The lead reports that these corrections compile; the agent reviewed source behavior and did not compile. M01-10 is accepted under that instruction; runtime/backend coverage is unspecified.
@@ -67,3 +81,12 @@ Existing paired native source discovery/deployment handles the new files. No CMa
 [Manual fixtures/checks](../../../../tests/draw/soft_shadows/README.md) cover table identity/UV ranges, actual cutout transmission and continued traversal, light lanes/sample softness, both transparent classes as receivers, no-RT/forced-disable fallback, explicit capacity failure, acquired-slot lifetime, resize/replacement, native creation/status and shader variants. The previous [deferred pixel probe](../../../../tests/draw/deferred/README.md) remains applicable. The agent performed only static source/include/delimiter/native-binding/table/layout/link/whitespace checks; project lead owns compilation and native runtime checks.
 
 M01-12 reflects live settings and available/status/usesQueryShadows separately; enabled alone does not establish effective support. M01-15 demonstrates these controls and no-RT behavior. M03-01 revisits the eight-pair UV-only mechanism and native opacity before choosing arbitrary material addressing/advanced effects. M03-02 can reuse identity and opacity primitives but must not mistake this minimal alpha table for full ray material/geometry data. M04/M08 still need their actual arbitrary bake shading tables and contexts. Production ray-query examples and render implementations remain untouched references.
+## Later M07 direct-shadow capacity correction
+
+This original M01 delivery's eight-pair table and binding map below are historical.
+The [M07 capacity policy](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
+now also applies to SoftShadowPass: exact device-clamped capacity up to 16384 with
+reserves (2,1,9), v2 query kernels, Vulkan specialization and Metal records5/6.
+Overflow warns and omits only excess alpha texture sampling, preserving scalar
+alpha/cutoff and all other shadows. The old capacity exception/whole-scene neutral
+fallback is removed. Texture-count improvements wait until after API migration.

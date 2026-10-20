@@ -23,6 +23,9 @@
 #include <bg2e/ui/Group.hpp>
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/app/MainLoop.hpp>
+#include <bg2e/base/CpuProfile.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 #include <atomic>
 #include <algorithm>
 #include <cctype>
@@ -235,6 +238,73 @@ void GraphicsSettingsWindow::draw()
 
 void GraphicsSettingsWindow::drawContents()
 {
+    Text::separator("CPU profiling");
+    bool profiling = base::CpuProfiler::enabled();
+    if (Button::checkBox("Enable CPU profiling", &profiling))
+    {
+        if (profiling)
+        {
+            try
+            {
+                const auto* loop = app::MainLoop::current();
+                if (!loop)
+                {
+                    throw std::runtime_error("CPU profiling requires an active application");
+                }
+                auto name = loop->appId();
+                if (name.empty())
+                {
+                    throw std::runtime_error("CPU profiling requires a nonempty application ID");
+                }
+                // An application ID is a filename, never a relative path.
+                for (auto& c : name)
+                {
+                    if (c == '/' || c == '\\' || c == ':')
+                    {
+                        c = '_';
+                    }
+                }
+                const auto home = base::PlatformTools::homePath();
+                if (home.empty() || !home.is_absolute())
+                {
+                    throw std::runtime_error("CPU profiling requires an absolute home directory");
+                }
+                const auto path = home / (name + "-cpu-profile.log");
+                if (!base::CpuProfiler::start(path))
+                {
+                    report("cpu_profile_failed", base::CpuProfiler::error());
+                }
+            }
+            catch (const std::exception& error)
+            {
+                report("cpu_profile_failed", error.what());
+            }
+        }
+        else
+        {
+            base::CpuProfiler::stop();
+        }
+    }
+    Text::text("Set the effect variant first; then enable profiling and leave settings unchanged during the capture.");
+    const auto profilePath = base::CpuProfiler::outputPath();
+    if (!profilePath.empty())
+    {
+        Text::text("CPU profile file: " + profilePath.string());
+    }
+    const auto profileSession = base::CpuProfiler::sessionInfo();
+    if (!profileSession.empty())
+    {
+        Text::text("CPU profile session: " + profileSession);
+    }
+    if (base::CpuProfiler::enabled())
+    {
+        Text::text("Runtime backend, resolutions, effect states and frame counters are included automatically. You may close this window now.");
+    }
+    const auto profileError = base::CpuProfiler::error();
+    if (!profileError.empty())
+    {
+        Text::text("CPU profile error: " + profileError);
+    }
     if (!_preferences || _preferences->catalog().rendererId().empty())
     {
         Text::text("Graphics settings are waiting for an active renderer.");
@@ -251,7 +321,7 @@ void GraphicsSettingsWindow::drawContents()
     if (!_diagnostics)
     {
         Group::beginDisabled(pending());
-        if (Button::button("Import settings"))
+        if (Button::button("Restore preferences from file"))
         {
             app::FileDialog picker;
             picker.setFilters({{"Graphics settings", "json"}});
@@ -261,7 +331,7 @@ void GraphicsSettingsWindow::drawContents()
                 importFile(path);
             }
         }
-        if (Button::button("Export settings", true))
+        if (Button::button("Save preferences to file", true))
         {
             app::FileDialog picker;
             picker.setFilters({{"Graphics settings", "json"}});
@@ -271,16 +341,6 @@ void GraphicsSettingsWindow::drawContents()
                 exportFile(path);
             }
         }
-        Group::beginDisabled(!_preferences->hasPersistence());
-        if (Button::button("Save preferences"))
-        {
-            persist();
-        }
-        if (Button::button("Restore preferences", true))
-        {
-            restore();
-        }
-        Group::endDisabled();
         Group::endDisabled();
         if (!_preferences->hasPersistence())
         {
