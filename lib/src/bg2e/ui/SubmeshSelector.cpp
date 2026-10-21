@@ -41,10 +41,7 @@ void SubmeshSelector::init(std::shared_ptr<manipulation::SelectionManager> sm)
                                 {
                                     if (!item->drawable.expired())
                                     {
-                                        _currentSelection.node = item->node;
-                                        _currentSelection.drawable = item->drawable;
-                                        _currentSelection.mesh = item->mesh;
-                                        _currentSelection.submesh = item->submesh;
+                                        _currentSelection = *item;
                                         break;
                                     }
                                 }
@@ -53,24 +50,14 @@ void SubmeshSelector::init(std::shared_ptr<manipulation::SelectionManager> sm)
                             });
 }
 
-std::shared_ptr<scene::Drawable> SubmeshSelector::editDrawable()
+std::shared_ptr<draw::Drawable> SubmeshSelector::editDrawable()
 {
-    auto drawable = _currentSelection.drawable.lock();
-    if (drawable)
-    {
-        return drawable->drawable();
-    }
-    return std::shared_ptr<scene::Drawable>();
+    return _currentSelection.lockMesh();
 }
 
-std::shared_ptr<scene::Drawable> SubmeshSelector::editDrawable() const
+std::shared_ptr<draw::Drawable> SubmeshSelector::editDrawable() const
 {
-    auto drawable = _currentSelection.drawable.lock();
-    if (drawable)
-    {
-        return drawable->drawable();
-    }
-    return std::shared_ptr<scene::Drawable>();
+    return _currentSelection.lockMesh();
 }
 
 int32_t SubmeshSelector::selectedItem() const

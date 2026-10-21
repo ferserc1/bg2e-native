@@ -29,7 +29,7 @@ namespace draw {
 
 class Engine;
 
-// Experimental draw render loop delegate. Resources updated per in-flight
+// Draw render loop delegate. Resources updated per in-flight
 // frame belong to the objects using them; there is no central per-frame
 // descriptor allocation callback.
 class BG2E_API RenderLoopDelegate {

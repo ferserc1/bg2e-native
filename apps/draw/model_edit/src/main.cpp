@@ -80,7 +80,7 @@ int main(int argc, char** argv)
         model_edit::Application application;
         application.init(argc, argv);
         const auto delegate = std::weak_ptr<model_edit::AppDelegate>(
-            std::static_pointer_cast<model_edit::AppDelegate>(application.drawDelegate()));
+            std::static_pointer_cast<model_edit::AppDelegate>(application.renderDelegate()));
         if (auto active = delegate.lock())
         {
             active->setQuitCallback([&loop]

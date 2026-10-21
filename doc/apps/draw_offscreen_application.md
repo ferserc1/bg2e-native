@@ -1,4 +1,4 @@
-# Experimental offscreen scene CLI
+# Draw offscreen scene CLI
 
 Target: `draw_offscreen_application`. Source:
 [examples/draw/13_offscreen_application](../../examples/draw/13_offscreen_application/README.md).

@@ -1,9 +1,9 @@
-# Tutorial 01: Window and UI with the Experimental Draw API
+# Tutorial 01: Window and UI with the Draw Draw API
 
 This tutorial walks through the `01_window_ui` example: opening a window,
 clearing a retained scene image with `bg2e::gpu` commands, and presenting an
 interactive interface through `bg2e::ui`. It introduces the application and
-render delegate lifecycle used by the experimental `bg2e::draw` framework.
+render delegate lifecycle used by the `bg2e::draw` framework.
 
 **Source:** [examples/draw/01_window_ui/src/main.cpp](../../../examples/draw/01_window_ui/src/main.cpp)
 
@@ -32,9 +32,9 @@ The control window displays the selected backend, a UI frame counter, and a
 scene update counter. It also provides Background, Pause scene, and Refresh
 scene controls.
 
-`bg2e::draw` is an experimental framework built over `bg2e::gpu`.
-`bg2e::render` remains the production rendering API. These examples use draw's
-explicit configuration overload without changing the production render path.
+`bg2e::draw` is built over `bg2e::gpu`. Both MainLoop overloads now use draw.
+These examples pass configuration explicitly to support backend overrides.
+Legacy shared engine APIs remain until subsequent cleanup.
 
 The scene is rendered into a retained image. On subsequent presentation frames,
 draw copies that image to the acquired presentation image and composes the UI.
@@ -128,7 +128,7 @@ Do not store references from `FrameContext` for later frames.
 ```cpp
 void init(draw::Engine*, ui::UserInterface*) override
 {
-    _window.setTitle("Experimental draw controls");
+    _window.setTitle("Draw draw controls");
     _window.setPosition(20, 20);
     _window.setSize(380, 300);
     _window.options.noClose = true;
@@ -219,7 +219,7 @@ loop.initWindowConfig(bg2e::app::WindowConfig::withSize("bg2e draw: window and U
 return loop.run(&application, application.config());
 ```
 
-Passing `draw::EngineConfig` explicitly to `run()` selects the experimental draw
+Passing `draw::EngineConfig` explicitly to `run()` configures the draw
 execution path. MainLoop creates the window and draw engine, initializes the
 delegates, processes events, presents frames, and coordinates shutdown.
 

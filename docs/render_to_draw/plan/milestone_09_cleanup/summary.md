@@ -120,3 +120,42 @@ after normal documentation acceptance; reconcile final API/targets and surviving
 data contracts with these authored pages during cleanup and M09-08. Preserve
 explicit native/profiling evidence provenance. No production removal is implied
 by documentation delivery.
+
+## M09-01 inventory handoff
+
+[Actual manifest](retirement-manifest.md) selects final entrypoint/accessor/target
+names and assigns 1620 source/build/resource files with incoming include and text
+evidence. M08-07 closure is accepted by continuation; M09-01 awaits lead validation.
+No implementation is retired or promoted by the inventory. M09-02 is next, followed
+by ordered shared/native/build cleanup; retain all preservation and evidence gates.
+
+## M09-02 delivery — 2026-10-21
+
+[Actual entrypoints and validation handoff](entrypoints.md) records sole draw
+Application/MainLoop/OffscreenApplication paths, unchanged product identities,
+removed old apps/registrations and required old offscreen adapter retirement.
+The input target is ported early to keep registration coherent. Existing draw
+frame/completion/cleanup behavior is preserved; native checks remain lead-owned.
+M09-01 accepted by continuation; M09-02 awaits validation and M09-03 is next.
+
+## M09-03 shared API handoff
+
+[Delivered shared contracts](shared-api.md) retire production overloads/native
+scene resources and migrate canonical accessors, factories, weak selection/widgets
+and root bake exports. Dependent rendering consumers are removed in the explicit
+delta; remaining native render wrappers and UI/platform graphics seams are next.
+M09-03 awaits validation; no complete render retirement or native execution is
+claimed. No CMake/shader changes were required by this step.
+
+## M09-07 review delivery
+
+[Final review](review.md) reconciles the accepted corrected M09-06 source with
+the original per-file manifest and maintained-documentation inventory. The review
+awaits lead acceptance; next is M09-08 cumulative documentation. No milestone
+closure or M10 entry is implied by this technical delivery.
+
+## M09-08 documentation delivery
+
+[Cumulative documentation](documentation.md) records 83 updated, 137 retained,
+12 retired and nine added pages, source mappings and static validation. M09-07
+is accepted by continuation; M09-08 awaits lead acceptance before M10-01.

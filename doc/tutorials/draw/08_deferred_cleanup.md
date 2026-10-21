@@ -27,8 +27,7 @@ submitted frames may still reference them.
 - The Metal compiler toolchain on macOS
 
 The example needs no ray tracing support or external textures. It uses the
-experimental draw/GPU path with procedural geometry and a 2x2 texture,
-independently of the production `bg2e::render` API.
+draw/GPU path with procedural geometry and a 2x2 texture.
 
 ## Understanding deferred cleanup
 

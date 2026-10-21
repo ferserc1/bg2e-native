@@ -1,4 +1,4 @@
-# Experimental draw model editor
+# Draw draw model editor
 
 `draw_model_edit` is the independent editor in `apps/draw/model_edit`, using the
 draw renderer and its own application identity/preferences. The production

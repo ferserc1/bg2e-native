@@ -1,6 +1,6 @@
 # DenoiseFilter
 
-`<bg2e/draw/pipeline/DenoiseFilter.hpp>` provides public scalar/HDR bilateral filtering in experimental draw, independently of production render. draw/all.hpp includes it.
+`<bg2e/draw/pipeline/DenoiseFilter.hpp>` provides public scalar/HDR bilateral filtering in draw, independently of production render. draw/all.hpp includes it.
 
 RendererConfiguration::denoise accepts a compatible shared component; null selects an enabled default filter with radius two. RendererDeferred::denoise() exposes it. Active effects flow through raw tracing, temporal accumulation, spatial denoise, then lighting composition. Filtered images never replace temporal history or exact bake accumulators. Disabled temporal accumulation can still feed raw signals into the filter; disabled/unsupported filtering preserves the accumulated signal.
 

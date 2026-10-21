@@ -2,7 +2,7 @@
 
 Headers: `bg2e/draw/pipeline/SMAAProcessor.hpp`,
 `bg2e/draw/pipeline/FinalProcessor.hpp`. Namespace: `bg2e::draw::pipeline`.
-These are optional draw API components; production render remains separate.
+These are optional production draw components.
 
 Inject a shared SMAAProcessor into RendererConfiguration::finalProcessor before
 initializing RendererDeferred. It starts disabled; setEnabled(true) or use the

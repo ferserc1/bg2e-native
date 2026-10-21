@@ -22,11 +22,6 @@
 
 namespace bg2e::scene {
 
-void ChainJointComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
-{
-    deserialize(jsonData, basePath);
-}
-
 void ChainJointComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
     deserializeCommon(jsonData);

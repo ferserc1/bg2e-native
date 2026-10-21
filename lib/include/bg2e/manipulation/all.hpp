@@ -20,6 +20,6 @@
 
 #include <bg2e/manipulation/GizmoAndSelectionRenderer.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
-#include <bg2e/manipulation/PickSelectionVisitor.hpp>
+#include <bg2e/manipulation/PickKind.hpp>
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/manipulation/SelectionManager.hpp>

@@ -133,7 +133,7 @@ TypeRegistration<T>(...)                     auto* info = TypeRegistry::get().ty
 
 | Depends on | Forbidden |
 |------------|-----------|
-| `bg2e/common.hpp` (`BG2E_API`) | `bg2e::render` |
+| `bg2e/common.hpp` (`BG2E_API`) | `bg2e::draw` |
 | `bg2e/math/base.hpp` (GLM vector/matrix types) | `bg2e::scene` |
 | `bg2e/base/Color.hpp` | `bg2e::db`, `bg2e::ui`, `bg2e::utils` |
 | `<any>`, `<functional>`, `<optional>`, `<filesystem>`, … | (any higher-level engine namespace) |

@@ -36,8 +36,7 @@ are created. On macOS, the Vulkan error suggests trying Metal on a compatible
 Mac. There is no fallback rendering mode.
 
 The example uses only procedural geometry and requires no texture assets.
-Rendering uses the experimental draw/GPU path independently of the production
-`bg2e::render` API.
+Rendering uses production draw over the selected GPU backend.
 
 ## Understanding the example
 

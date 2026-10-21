@@ -27,13 +27,11 @@
 #ifdef BG2E_LINUX
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
 #include <SDL2/SDL_syswm.h>
 
 #else
 
 #include <SDL.h>
-#include <SDL_vulkan.h>
 
 #endif
 
@@ -149,7 +147,7 @@ int32_t MainLoop::run(app::Application* application)
     {
         throw std::invalid_argument("MainLoop::run: application must not be null.");
     }
-    return runInternal(application, detail::createRenderGraphicsExecution());
+    return run(application, draw::EngineConfig{});
 }
 
 int32_t MainLoop::run(app::Application* application, const draw::EngineConfig& config)

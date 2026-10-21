@@ -19,7 +19,6 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/Engine.hpp>
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <SDL2/SDL.h>
 
@@ -45,16 +44,13 @@ class BG2E_API UserInterface {
     UserInterface(const UserInterface&) = delete;
     UserInterface& operator=(const UserInterface&) = delete;
 
-    void init(render::Engine*);
     void init(draw::Engine*);
     bool initialized() const;
 
     void processEvent(SDL_Event* event);
 
-    void newFrame();
     void newFrame(gpu::CommandBuffer&, gpu::SurfaceFrame&);
 
-    void draw(VkCommandBuffer cmd, VkImageView targetImageView);
     void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&);
 
     void cleanup();
@@ -78,9 +74,8 @@ class BG2E_API UserInterface {
     static void setScale(float scale);
 
   protected:
-    render::Engine* _engine = nullptr;
     struct Impl;
-    std::shared_ptr<Impl> _impl; // Production cleanup closures retain this state.
+    std::shared_ptr<Impl> _impl;
 
     std::shared_ptr<UserInterfaceDelegate> _delegate;
 

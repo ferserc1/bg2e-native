@@ -3,9 +3,8 @@
 **Header:** `<bg2e/draw/EngineConfig.hpp>`  
 **Namespace:** `bg2e::draw`
 
-An aggregate configuration for experimental draw execution. The backend field
-selects the low-level GPU API; the MainLoop run or typed OffscreenApplication
-init overload selects the high-level framework.
+An aggregate configuration for draw execution in MainLoop and OffscreenApplication.
+The backend field selects the low-level GPU API. Both MainLoop overloads use draw.
 
 | Field | Type | Default |
 |-------|------|---------|
@@ -33,10 +32,10 @@ the actual acquired image extent/format and surface generation for retained colo
 and UI compatibility. The scene FrameContext is color-only even though
 the surface may own depth resources.
 
-See [framework scope and maturity](index.md#production-and-experimental-frameworks)
-for the distinction between render and draw.
+The application entry points now use draw exclusively. Legacy shared render
+APIs remain during ordered engine cleanup; no legacy application path remains.
 
-The [draw offscreen path](../app/OffscreenApplication.md#experimental-draw-execution)
+The [draw offscreen path](../app/OffscreenApplication.md#draw-execution)
 uses the same backend/name/debug/format values with an appId fallback. Omitting
 surface depth selects Undefined. It owns an OffscreenSurface and needs no SDL
 video driver; formats and backend support still require actual device creation.

@@ -32,7 +32,7 @@ class BG2E_API PolarTransformControllerComponent : public Component {
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
     std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath) override;
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine& engine) override;
+
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override;
 
     inline bool enabled() const

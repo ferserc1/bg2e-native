@@ -15,64 +15,30 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
-#include <bg2e.hpp>
+#include <bg2e/app/Application.hpp>
+#include <bg2e/app/MainLoop.hpp>
+#include <bg2e/draw/RenderLoopDelegate.hpp>
+#include <bg2e/ui/Window.hpp>
+#include <bg2e/ui/Text.hpp>
 #include <bg2e/app/Keyboard.hpp>
 #include <bg2e/app/Mouse.hpp>
 
-#include <iostream>
+#include <memory>
+#include <string>
 
-class TestKeyMouseDelegate : public bg2e::render::RenderLoopDelegate,
+class TestKeyMouseDelegate : public bg2e::draw::RenderLoopDelegate,
                              public bg2e::app::InputDelegate,
                              public bg2e::ui::UserInterfaceDelegate {
   public:
-    void init(bg2e::render::Engine* vulkan) override
+    void render(const bg2e::draw::FrameContext& context) override
     {
-        using namespace bg2e::render::vulkan;
-        RenderLoopDelegate::init(vulkan);
-    }
-
-    void initScene() override
-    {
-    }
-
-    void swapchainResized(VkExtent2D newExtent) override
-    {
-    }
-
-    VkImageLayout render(
-        VkCommandBuffer cmd,
-        uint32_t currentFrame,
-        const bg2e::render::vulkan::Image* colorImage,
-        const bg2e::render::vulkan::Image* depthImage,
-        const bg2e::render::vulkan::Image* msaaDepthImage,
-        bg2e::render::vulkan::FrameResources& frameResources) override
-    {
-        using namespace bg2e::render::vulkan;
-
-        Image::cmdTransitionImage(
-            cmd,
-            colorImage->handle(),
-            VK_IMAGE_LAYOUT_UNDEFINED,
-            VK_IMAGE_LAYOUT_GENERAL);
-
-        VkClearColorValue clearValue{{0.0f, 0.0f, 0.0f, 1.0f}};
-        auto clearRange = Image::subresourceRange(VK_IMAGE_ASPECT_COLOR_BIT);
-        vkCmdClearColorImage(
-            cmd,
-            colorImage->handle(),
-            VK_IMAGE_LAYOUT_GENERAL,
-            &clearValue, 1, &clearRange);
-
-        Image::cmdTransitionImage(
-            cmd, colorImage->handle(),
-            VK_IMAGE_LAYOUT_GENERAL,
-            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-        return VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        context.commandBuffer.beginRendering(&context.colorTarget);
+        context.commandBuffer.clearColor(0, {0.0f, 0.0f, 0.0f, 1.0f});
+        context.commandBuffer.endRendering();
     }
 
     // ============ User Interface Delegate Functions =========
-    void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override
+    void init(bg2e::draw::Engine*, bg2e::ui::UserInterface*) override
     {
         _window.setTitle("Keyboard & Mouse Test");
         _window.options.noClose = true;

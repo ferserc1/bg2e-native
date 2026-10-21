@@ -29,7 +29,7 @@
 
 // One precomputed rank source during production/draw coexistence. This private
 // header contains bytes/metadata only; no render API or native Vulkan dependency.
-#include "../render/blue_noise_data.h"
+#include "blue_noise_data.h"
 
 namespace bg2e::utils {
 namespace {

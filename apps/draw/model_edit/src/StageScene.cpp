@@ -254,7 +254,7 @@ void cleanupTree(bg2e::scene::Node& node)
     }
     if (auto component = node.getComponent<bg2e::scene::DrawableComponent>())
     {
-        if (auto drawable = component->drawDrawable())
+        if (auto drawable = component->drawable())
         {
             release([&]
             {
@@ -408,7 +408,6 @@ void StageScene::releaseRetired()
     }
 }
 
-
 namespace {
 void visitNodes(const std::shared_ptr<bg2e::scene::Node>& node,
     const std::function<void(const std::shared_ptr<bg2e::scene::Node>&)>& callback)
@@ -456,7 +455,7 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
         using namespace bg2e;
         if (auto component = node->template getComponent<scene::DrawableComponent>())
         {
-            if (auto drawable = component->drawDrawable())
+            if (auto drawable = component->drawable())
             {
                 if (drawables.contains(drawable.get()) || meshes.contains(drawable->mesh().get()))
                 {
@@ -484,10 +483,7 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
             // gizmos only for lights in the model editor.
             if (auto gizmo = node->template getComponent<manipulation::GizmoComponent>())
             {
-                if (gizmo->manipulationMode() == manipulation::ToolExecutionMode::Draw)
-                {
-                    gizmo->cleanupDrawResources();
-                }
+                gizmo->cleanupDrawResources();
                 node->removeComponent(gizmo->shared_from_this());
             }
             return;

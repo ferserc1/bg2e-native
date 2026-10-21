@@ -40,9 +40,8 @@ unavailable properties reject by default; `SkipUnknownOrUnavailable` is explicit
 frame. Edits/import/restore queue changes; pending edits block export/persist.
 Its diagnostics and native editor IDs follow catalog generations, while
 availability refreshes independently. `ReflectionWidget::editValue` uses transient
-proxies without following raw object pointers. Production RenderSettingsWindow
-remains separate. The minimal HDR picker is ResourcePicker; this delivery does
-not adapt all production material/texture/picking widgets.
+proxies without following raw object pointers. Draw material, texture and picking widgets share this production UI session.
+Use ResourcePicker for HDR selection and clear preview owners before teardown.
 
 ## Resolution and optional reconstruction
 

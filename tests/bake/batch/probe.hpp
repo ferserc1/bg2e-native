@@ -113,8 +113,8 @@ inline void runLightmapOutputProbe(draw::Engine& engine, std::shared_ptr<scene::
     LightmapPixels pixels{2, 2, LightmapPixelFormat::RGB32F,
         std::vector<float>{0, 100000, 2.5f, 1, 2, 3, 4, 5, 6, 7, 8, 9}};
     const auto sourceBytes = batchFileBytes(inputModel);
-    const auto originalMode = target->drawable()->drawDrawable()->material().indirectTextureMode();
-    const auto originalTexture = target->drawable()->drawDrawable()->material().aoTexture();
+    const auto originalMode = target->drawable()->drawable()->material().indirectTextureMode();
+    const auto originalTexture = target->drawable()->drawable()->material().aoTexture();
     std::vector<LightmapOutputWriter::OutputPaths> outputs;
     {
         LightmapOutputWriter writer(engine, directory, settings);
@@ -138,8 +138,8 @@ inline void runLightmapOutputProbe(draw::Engine& engine, std::shared_ptr<scene::
         });
     }
     batchRequire(batchFileBytes(inputModel) == sourceBytes &&
-        target->drawable()->drawDrawable()->material().indirectTextureMode() == originalMode &&
-        target->drawable()->drawDrawable()->material().aoTexture() == originalTexture,
+        target->drawable()->drawable()->material().indirectTextureMode() == originalMode &&
+        target->drawable()->drawable()->material().aoTexture() == originalTexture,
         "Export mutated a source asset/material");
     const auto image = db::readTextureArchive(outputs[0].imagePath);
     float hdr;

@@ -3,7 +3,7 @@
 `bg2e_composer` exposes a localhost-only HTTP service that lets external tools
 (DCC applications, scripts, Postman during development) push glTF scenes into
 the running Composer session without user interaction. All of the service code
-lives at application level (`apps/bg2e_composer/src`); the engine itself is
+lives at application level (`apps/draw/bg2e_composer/src`); the engine itself is
 untouched except for one small UI helper.
 
 ## Part 1 — Using the service
@@ -132,7 +132,7 @@ leave any previous imported node intact.
 waiting imports and no application-level timeout. The service's request ID
 prevents a late completion from answering a request after stop and restart.
 
-## Experimental draw Composer
+## Draw draw Composer
 
 `draw_bg2e_composer` now provides the same localhost `/import` and `/status`
 protocol with app-owned asynchronous parsing and stopped main-thread realization.

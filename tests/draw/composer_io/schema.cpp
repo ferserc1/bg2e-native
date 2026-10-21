@@ -47,11 +47,6 @@ class CustomTransform final : public bg2e::scene::TransformComponent {
         return result;
     }
 
-    void deserializeWithProgress(std::shared_ptr<bg2e::json::JsonNode>, const std::filesystem::path&,
-        bg2e::render::Engine&, bg2e::scene::SceneLoadProgress*) override
-    {
-        throw std::logic_error("Schema IO must never call a production creator");
-    }
 };
 
 class SlicedTransform final : public bg2e::scene::TransformComponent {

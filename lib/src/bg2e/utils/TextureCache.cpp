@@ -40,83 +40,23 @@ void TextureCache::destroy()
     }
 }
 
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const std::filesystem::path& filePath)
-{
-    return load(engine, filePath.string());
-}
-
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const std::filesystem::path& filePath, const std::string& fileName)
-{
-    auto fullPath = filePath;
-    fullPath.append(fileName);
-    return load(engine, fullPath);
-}
-
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const std::string& filePath)
-{
-    base::Texture defaultSettings;
-    defaultSettings.setAddressMode(base::Texture::AddressModeRepeat);
-    defaultSettings.setMagFilter(base::Texture::FilterLinear);
-    defaultSettings.setMinFilter(base::Texture::FilterLinear);
-    defaultSettings.setUseMipmaps(true);
-    defaultSettings.setImageFilePath(filePath);
-    return load(engine, defaultSettings);
-}
-
-std::shared_ptr<render::Texture> TextureCache::load(render::Engine* engine, const base::Texture& settings)
-{
-    auto filePath = settings.imageFilePath();
-    if (filePath == "")
-    {
-        throw std::runtime_error("TextureCache: could not load texture because the texture data does not contains an image file path");
-    }
-
-    // A single image file can be used by views with different sampler settings.
-    const auto key = filePath + "|" +
-                     std::to_string(settings.magFilter()) + "|" +
-                     std::to_string(settings.minFilter()) + "|" +
-                     std::to_string(settings.useMipmaps()) + "|" +
-                     std::to_string(settings.addressModeU()) + "|" +
-                     std::to_string(settings.addressModeV()) + "|" +
-                     std::to_string(settings.addressModeW()) + "|" +
-                     std::to_string(settings.maxLod()) + "|" +
-                     std::to_string(settings.minLod()) + "|" +
-                     std::to_string(settings.colorType());
-    if (_textures.find(key) == _textures.end())
-    {
-        std::cout << "Texture not found in cache: " << filePath << std::endl;
-        auto texture = std::make_shared<base::Texture>(filePath);
-        texture->setMagFilter(settings.magFilter());
-        texture->setMinFilter(settings.minFilter());
-        texture->setMaxLod(settings.maxLod());
-        texture->setMinLod(settings.minLod());
-        texture->setMinLod(settings.minLod());
-        texture->setImageFilePath(filePath);
-        texture->setMagFilter(settings.magFilter());
-        texture->setMinFilter(settings.minFilter());
-        texture->setUseMipmaps(settings.useMipmaps());
-        texture->setAddressMode(settings.addressModeU(), settings.addressModeV(), settings.addressModeW());
-        texture->setColorType(settings.colorType());
-        auto result = std::make_shared<render::Texture>(engine, texture);
-        _textures[key] = result;
-    }
-    return _textures.find(key)->second;
-}
-
 std::shared_ptr<draw::Texture> TextureCache::load(draw::Engine* engine, const std::filesystem::path& filePath)
 {
     return load(engine, filePath.string());
 }
+
 std::shared_ptr<draw::Texture> TextureCache::load(draw::Engine* engine, const std::filesystem::path& filePath, const std::string& fileName)
 {
     return load(engine, filePath / fileName);
 }
+
 std::shared_ptr<draw::Texture> TextureCache::load(draw::Engine* engine, const std::string& filePath)
 {
     base::Texture settings(filePath);
     settings.setMinFilter(base::Texture::FilterLinear);
     return load(engine, settings);
 }
+
 std::shared_ptr<draw::Texture> TextureCache::load(draw::Engine* engine, const base::Texture& settings)
 {
     if (!engine || settings.type() != base::Texture::TypeFilesystem || settings.imageFilePath().empty())
@@ -147,7 +87,6 @@ std::shared_ptr<draw::Texture> TextureCache::load(draw::Engine* engine, const ba
 
 void TextureCache::emptyCache()
 {
-    _textures.clear();
     _drawTextures.clear();
 }
 

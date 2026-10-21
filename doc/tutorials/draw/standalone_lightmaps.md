@@ -1,14 +1,14 @@
 # Bake a model or prefab without a camera
 
-The experimental `bg2e::bake` standalone path runs completed UV AO/GI samples on
-an initialized windowless draw Engine. Production render baking remains separate.
+The production `bg2e::bake` standalone path runs completed UV AO/GI samples on
+an initialized windowless draw Engine. Both standalone and integrated jobs use these public contracts.
 This tutorial uses delivered APIs; it creates no viewport renderer or camera
 history. For a ready executable see [draw_lightmap_generator](../../apps/draw_lightmap_generator.md).
 
 ## Choose the owner
 
-Use `<bg2e/bake/all.hpp>` explicitly. The current root `<bg2e.hpp>` / all.hpp does
-not export bake/all.hpp and still exposes production/shared branches. A caller
+Use `<bg2e/bake/all.hpp>` for explicit bake includes; the root umbrella also
+exports draw and bake. A caller
 owns an initialized [offscreen draw Engine](../../api/draw/Engine.md#headless-initialization)
 and keeps it/Device alive through all native owners and cleanup. Stop frame,
 background/resource and scene producers. The CLI uses a typed

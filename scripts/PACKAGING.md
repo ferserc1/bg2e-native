@@ -110,3 +110,36 @@ other image decoders remain separate lead checks. See the
 No backend/package success or measured performance is implied by registration or
 synthetic inspector tests. Package scripts retain their existing clean-checkout,
 destination and platform-generator requirements.
+
+## Canonical renderer and standalone refresh
+
+The engine now builds and deploys only the paired `shaders/draw/` and
+`shaders/bake/` libraries. Native Vulkan/Metal SDK files, optional FidelityFX
+linkage and SMAA tables/licenses remain required. Engine shader compilation uses
+separate tree targets with the shared `bg2e_paired_shaders` aggregate; app bundles
+refresh both trees on shader-only rebuilds. Flat legacy shaders and old example
+sources/compiler frontends have been retired. Reconfigure existing build trees
+before building after this source removal.
+
+New packages collect the three registered `draw_model_edit`, `draw_bg2e_composer`
+and `draw_lightmap_generator` products. Their IDs/preferences/server behavior are
+unchanged. Non-Apple install rules copy the authoritative assets and paired engine
+trees, plus any target-specific shader directory; stale flat build outputs are
+not engine distribution inputs. Apple retains native bundle/SDK resource rules.
+
+Standalone creators copy canonical headers, the deferred draw template and only
+the two paired engine shader trees. They require representative G-buffer and UV
+surface SPIR-V files; macOS also requires their Metal libraries. macOS library
+lookup accepts the root output or Xcode Release/Debug output (root first, then
+Release, then Debug). Rebuild current sources before creating a project: these
+checks establish file presence, not binary/header ABI compatibility.
+
+Both library updaters now refresh headers, the current-platform library, complete
+draw/bake shader trees and standalone_utils.cmake together. The shader source is
+PRODUCT_DIR/shaders even with multi-configuration binary subdirectories. draw/
+and bake/ are engine-owned and replaced; custom application resources outside
+those two trees are preserved. Historical flat/custom files in an existing
+standalone project are left alone and no longer bundled as engine shaders.
+The update is not transactional: a copy failure can require rerunning it. Existing
+build-producing behavior is unchanged; do not execute an updater merely to inspect
+its source. Build/package/standalone launch validation remains project-lead-owned.

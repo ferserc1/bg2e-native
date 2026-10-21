@@ -4,12 +4,12 @@
 `<bg2e/manipulation/GizmoComponent.hpp>`,
 `<bg2e/manipulation/GizmoAndSelectionRenderer.hpp>`
 
-See the [module overview](index.md) for mode and lifetime boundaries.
+See the [module overview](index.md) for resource lifetime boundaries.
 
 ## SelectionManager
 
-Construct with either `render::Engine*` or `draw::Engine*`, then call `init()`.
-The selected execution mode is fixed by that constructor. The manager owns the
+Construct with `draw::Engine*`, then call `init()` (CPU selection needs no GPU
+allocation; picking requires a live device at a stopped boundary). The manager owns the
 selection state; selected objects are represented by weak, typed
 `SelectionItem`s, so selection does not keep scene objects alive.
 
@@ -34,7 +34,7 @@ upscaler jitter.
 
 ### Draw picking
 
-The draw overload extracts the visible render queue, assigns temporary
+The picker extracts the visible render queue, assigns temporary
 submission-local IDs, renders an RGBA8 ID image with D32 depth, and synchronously
 reads back the requested pixel. These temporary IDs are not persistent
 `SelectableComponent` IDs and must not be used for TLAS ordering or saved
@@ -79,3 +79,9 @@ configured through the static helpers declared by the header.
 `RendererConfiguration::overlays`. It draws selection highlights and gizmos
 after scene rendering. Retain the pass in the renderer configuration and
 release gizmo resources before the draw engine is destroyed.
+
+SelectionItem::mesh/lockMesh()/meshPtr() and SelectionManager::selectedMesh()
+address draw::Drawable only. Locks validate node/component membership, resource
+identity, submesh count and pick identifiers. Replacement invalidates stale items.
+GizmoComponent::transformDrawable() returns its instance-owned draw resource;
+cleanupDrawResources releases resources before device teardown.

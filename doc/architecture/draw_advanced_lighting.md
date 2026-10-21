@@ -1,8 +1,8 @@
 # Advanced lighting in the draw renderer
 
-`bg2e::draw` is the experimental high-level path over gpu; production
-`bg2e::render` remains separate and supported. The [production deferred reference](../deferred_render_model.md)
-describes render, not interchangeable draw settings or bindings.
+`bg2e::draw` is the production high-level renderer over Vulkan and Metal GPU
+backends. The [deferred model](../deferred_render_model.md) introduces its frame
+flow; native bindings and effect contracts below remain explicit.
 
 The actual scene graph order is G-buffer/cutout-aware shadows, raw AO/GI/reflection
 signals, independent temporal histories, spatial denoise, lighting/composition,

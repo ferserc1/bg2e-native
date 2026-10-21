@@ -153,3 +153,8 @@ These are internal mechanisms, not public application synchronization objects.
 
 See [rendering/subresources and transfer](Subresources_and_rendering.md) for
 MRT attachments, explicit views/layouts, capability limits and synchronous IO.
+
+## Native GUI/window integration
+
+See [GuiRenderer, drawableSize and StandaloneGuiWindow](Gui_bridges.md) for the
+primitive-only native interoperability and explicit ownership contracts.

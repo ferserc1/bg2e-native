@@ -339,7 +339,7 @@ void AppDelegate::applyLightmapBake()
             return;
         }
         auto* component = target->drawable();
-        auto drawable = component ? component->drawDrawable() : nullptr;
+        auto drawable = component ? component->drawable() : nullptr;
         if (!drawable || !drawable->isLoaded())
         {
             owner->_status = "Lightmap target no longer has a loaded drawable";

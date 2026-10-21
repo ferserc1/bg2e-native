@@ -223,7 +223,7 @@ struct StandaloneLightmapBaker::Impl {
             found = found || ancestor == state->configuration.sceneRoot.get();
         }
         auto* component = node->drawable();
-        auto drawable = component ? component->drawDrawable() : nullptr;
+        auto drawable = component ? component->drawable() : nullptr;
         const auto world = node->worldMatrix();
         if (!found || !drawable || !geometry || drawable != geometry->target || drawable->drawMesh() != geometry->drawMesh ||
             std::memcmp(&world,&nodeWorld,sizeof(glm::mat4)) != 0)
@@ -522,7 +522,7 @@ void StandaloneLightmapBaker::resetAccumulation()
     state.checkSources();
     configuration().validate();
     auto* component = configuration().target->drawable();
-    auto drawable = component ? component->drawDrawable() : nullptr;
+    auto drawable = component ? component->drawable() : nullptr;
     if (!drawable || !drawable->isLoaded() || drawable->engine() != state.engine)
     {
         throw std::invalid_argument("Standalone target needs a loaded same-Engine draw Drawable");

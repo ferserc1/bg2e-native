@@ -23,7 +23,6 @@
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
-#include <bg2e/scene/Drawable.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/geo/sphere.hpp>
 #include <bg2e/base/PlatformTools.hpp>
@@ -35,9 +34,6 @@
 #include <stdexcept>
 
 namespace bg2e::manipulation {
-
-std::unordered_map<GizmoType, std::shared_ptr<scene::Drawable>> GizmoComponent::_gizmoCache;
-bool GizmoComponent::_cleanupRegistered = false;
 
 std::weak_ptr<GizmoComponent> GizmoComponent::_currentTransform;
 bool GizmoComponent::_scaleUniformVisible = true;
@@ -74,25 +70,8 @@ std::unordered_map<GizmoType, float> GizmoComponent::_gizmoScaleSensitivity = {
     {GizmoType::Transform, 100.0f},
 };
 
-GizmoComponent::GizmoComponent(render::Engine* engine)
-    : _engine{engine}, _mode{ToolExecutionMode::Production}
-{
-    if (!engine)
-    {
-        throw std::invalid_argument("GizmoComponent requires a production engine");
-    }
-    if (!_cleanupRegistered)
-    {
-        _cleanupRegistered = true;
-        engine->cleanupManager().pushStatic([](VkDevice)
-                                            {
-                                                GizmoComponent::cleanupStatic();
-                                            });
-    }
-}
-
 GizmoComponent::GizmoComponent(draw::Engine* engine)
-    : _drawEngine{engine}, _mode{ToolExecutionMode::Draw}
+    : _drawEngine{engine}
 {
     if (!engine)
     {
@@ -107,9 +86,7 @@ std::shared_ptr<scene::Component> GizmoComponent::clone() const
     // handle, drag-start data) and is rebuilt from the owner node on update(). The
     // clone is therefore a brand new gizmo bound to the same engine, not a copy of
     // the source's interaction state.
-    auto result = _mode == ToolExecutionMode::Draw
-        ? std::make_shared<GizmoComponent>(_drawEngine)
-        : std::make_shared<GizmoComponent>(_engine);
+    auto result = std::make_shared<GizmoComponent>(_drawEngine);
     result->setPriority(priority());
     result->setIgnoreSerialization(ignoreSerialization());
     return result;
@@ -171,132 +148,11 @@ GizmoType GizmoComponent::resolveGizmoType() const
     return GizmoType::None;
 }
 
-std::shared_ptr<scene::Drawable> GizmoComponent::getCachedGizmo(GizmoType type, render::Engine* engine)
-{
-    auto it = _gizmoCache.find(type);
-    if (it != _gizmoCache.end())
-    {
-        return it->second;
-    }
-
-    std::shared_ptr<geo::Mesh> mesh;
-    auto assetsPath = base::PlatformTools::assetPath();
-
-    // The transform gizmo is loaded from a multi-submesh asset and needs
-    // per-axis unlit materials assigned by submesh name. It is handled here
-    // separately from the simple single-mesh type gizmos below.
-    if (type == GizmoType::Transform)
-    {
-        std::shared_ptr<scene::Drawable> drawable;
-        try
-        {
-            drawable = db::loadDrawableBg2(assetsPath, "transformGizmo.bg2", engine);
-        }
-        catch (const std::exception& e)
-        {
-            // Loading the transform gizmo asset is an unrecoverable error: show
-            // it to the user and re-throw so the program aborts cleanly.
-            app::MessageBox::showError(
-                "Fatal error",
-                std::string("Could not load the transform gizmo asset "
-                            "'transformGizmo.bg2'. This is an unrecoverable error.\n\n") +
-                    e.what());
-            throw;
-        }
-
-        // Assign unlit, axis-colored materials by submesh name. Naming maps:
-        //   *A -> X (red), *C -> Y (green), *B -> Z (blue); scale* stays white.
-        auto count = drawable->submeshesCount();
-        for (uint32_t i = 0; i < count; ++i)
-        {
-            const auto name = drawable->submeshName(i);
-            const auto group = drawable->submeshGroupName(i);
-            auto has = [&](const char* token)
-            {
-                return name.find(token) != std::string::npos ||
-                       group.find(token) != std::string::npos;
-            };
-
-            base::Color color = base::Color::White();
-            if (has("translateA") || has("rotateA"))
-            {
-                color = base::Color::Red(); // X
-            }
-            else if (has("translateC") || has("rotateC"))
-            {
-                color = base::Color::Green(); // Y
-            }
-            else if (has("translateB") || has("rotateB"))
-            {
-                color = base::Color::Blue(); // Z
-            }
-            // scaleUniform / scaleA / scaleB / scaleC stay white
-
-            drawable->material(i).setIsUnlit(true);
-            drawable->material(i).setAlbedo(color);
-        }
-        drawable->setRayTracingEnabled(false);
-        drawable->updateMaterials();
-
-        _gizmoCache[type] = drawable;
-        return drawable;
-    }
-
-    switch (type)
-    {
-    case GizmoType::DirectionalLight: {
-        auto meshData = db::loadMeshBg2(assetsPath, "dir-light-gizmo.bg2");
-        mesh = meshData->mesh;
-        break;
-    }
-    case GizmoType::SpotLight: {
-        auto meshData = db::loadMeshBg2(assetsPath, "spot-light-gizmo.bg2");
-        mesh = meshData->mesh;
-        break;
-    }
-    case GizmoType::PointLight: {
-        mesh = std::shared_ptr<geo::Mesh>(geo::createSphere(0.5f, 10, 10));
-        break;
-    }
-    case GizmoType::Camera: {
-        auto meshData = db::loadMeshBg2(assetsPath, "camera.bg2");
-        mesh = meshData->mesh;
-        break;
-    }
-    case GizmoType::Environment: {
-        auto meshData = db::loadMeshBg2(assetsPath, "environment.bg2");
-        mesh = meshData->mesh;
-        break;
-    }
-    default:
-        return nullptr;
-    }
-
-    auto drawable = std::make_shared<scene::Drawable>();
-    drawable->setMesh(mesh);
-    drawable->load(engine);
-    drawable->material(0).setIsUnlit(true);
-    drawable->setRayTracingEnabled(false);
-    drawable->updateMaterials();
-
-    _gizmoCache[type] = drawable;
-    return drawable;
-}
-
 void GizmoComponent::loadGizmo(GizmoType type)
 {
-    if (_mode == ToolExecutionMode::Draw)
+    if (auto resource = getDrawGizmo(type))
     {
-        if (auto resource = getDrawGizmo(type))
-        {
-            setDrawable(resource);
-        }
-        return;
-    }
-    auto cachedDrawable = getCachedGizmo(type, _engine);
-    if (cachedDrawable)
-    {
-        setDrawable(cachedDrawable);
+        setDrawable(resource);
     }
 }
 
@@ -307,32 +163,11 @@ void GizmoComponent::unloadGizmo()
 
 void GizmoComponent::ensureTransformGizmoLoaded()
 {
-    if (_mode == ToolExecutionMode::Draw)
-    {
-        getDrawGizmo(GizmoType::Transform);
-    }
-    else
-    {
-        getCachedGizmo(GizmoType::Transform, _engine);
-    }
+    getDrawGizmo(GizmoType::Transform);
 }
 
-std::shared_ptr<scene::Drawable> GizmoComponent::transformDrawable() const
+std::shared_ptr<draw::Drawable> GizmoComponent::transformDrawable() const
 {
-    if (_mode != ToolExecutionMode::Production)
-    {
-        throw std::logic_error("Use transformDrawDrawable for a draw gizmo");
-    }
-    auto it = _gizmoCache.find(GizmoType::Transform);
-    return it != _gizmoCache.end() ? it->second : nullptr;
-}
-
-std::shared_ptr<draw::Drawable> GizmoComponent::transformDrawDrawable() const
-{
-    if (_mode != ToolExecutionMode::Draw)
-    {
-        throw std::logic_error("Use transformDrawable for a production gizmo");
-    }
     auto it = _drawGizmoCache.find(GizmoType::Transform);
     return it != _drawGizmoCache.end() ? it->second : nullptr;
 }
@@ -410,10 +245,6 @@ std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
 
 void GizmoComponent::cleanupDrawResources()
 {
-    if (_mode != ToolExecutionMode::Draw)
-    {
-        throw std::logic_error("cleanupDrawResources requires a draw gizmo");
-    }
     endTransform();
     clearDrawable();
     _drawGizmoCache.clear();
@@ -481,14 +312,17 @@ bool GizmoComponent::isScaleUniformVisible()
 {
     return _scaleUniformVisible;
 }
+
 void GizmoComponent::setScaleUniformVisible(bool visible)
 {
     _scaleUniformVisible = visible;
 }
+
 bool GizmoComponent::isScaleAxisVisible()
 {
     return _scaleAxisVisible;
 }
+
 void GizmoComponent::setScaleAxisVisible(bool visible)
 {
     _scaleAxisVisible = visible;
@@ -567,9 +401,8 @@ TransformHandle GizmoComponent::handleForSubmesh(const std::string& name, const 
 
 uint32_t GizmoComponent::transformSubmeshIdentifier(uint32_t submeshIndex)
 {
-    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
-    auto resource = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
-    auto count = drawResource ? drawResource->submeshesCount() : resource ? resource->submeshesCount() : 0;
+    auto drawResource = transformDrawable();
+    auto count = drawResource ? drawResource->submeshesCount() : 0;
     if (submeshIndex >= count)
     {
         return 0;
@@ -645,20 +478,14 @@ void GizmoComponent::beginTransform(TransformHandle handle, int mouseX, int mous
     }
 
     // Highlight active handle: store original color, set yellow
-    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
-    auto drw = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
+    auto drawResource = transformDrawable();
     int submeshIdx = activeSubmeshIndex();
     if (drawResource && submeshIdx >= 0)
     {
         _originalHandleColor = drawResource->material(submeshIdx).albedo();
         drawResource->material(submeshIdx).setAlbedo(base::Color::Yellow());
     }
-    if (drw && submeshIdx >= 0)
-    {
-        _originalHandleColor = drw->renderMaterial(submeshIdx)->materialAttributes().albedo();
-        drw->material(submeshIdx).setAlbedo(base::Color::Yellow());
-        drw->updateMaterials();
-    }
+
 }
 
 void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY)
@@ -746,18 +573,13 @@ void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY
 void GizmoComponent::endTransform()
 {
     // Restore original handle color
-    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
-    auto drw = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
+    auto drawResource = transformDrawable();
     int submeshIdx = activeSubmeshIndex();
     if (drawResource && submeshIdx >= 0)
     {
         drawResource->material(submeshIdx).setAlbedo(_originalHandleColor);
     }
-    if (drw && submeshIdx >= 0)
-    {
-        drw->material(submeshIdx).setAlbedo(_originalHandleColor);
-        drw->updateMaterials();
-    }
+
     _activeHandle = TransformHandle::None;
 }
 
@@ -788,13 +610,12 @@ int GizmoComponent::activeSubmeshIndex() const
     {
         return -1;
     }
-    auto drawResource = _mode == ToolExecutionMode::Draw ? transformDrawDrawable() : nullptr;
-    auto drw = _mode == ToolExecutionMode::Production ? transformDrawable() : nullptr;
-    auto count = drawResource ? drawResource->submeshesCount() : drw ? drw->submeshesCount() : 0;
+    auto drawResource = transformDrawable();
+    auto count = drawResource ? drawResource->submeshesCount() : 0;
     for (uint32_t i = 0; i < count; ++i)
     {
-        if (handleForSubmesh(drawResource ? drawResource->submeshName(i) : drw->submeshName(i),
-            drawResource ? drawResource->submeshGroupName(i) : drw->submeshGroupName(i)) == _activeHandle)
+        if (handleForSubmesh(drawResource->submeshName(i),
+            drawResource->submeshGroupName(i)) == _activeHandle)
         {
             return static_cast<int>(i);
         }
@@ -875,7 +696,7 @@ void GizmoComponent::setGizmoScaleSensitivity(GizmoType type, float sensitivity)
 void GizmoComponent::update(float)
 {
     const bool needsTransform = _transformVisible &&
-        (_mode == ToolExecutionMode::Draw ? !transformDrawDrawable() : !transformDrawable());
+        !transformDrawable();
     if (_resourceUpdatePending || (resolveGizmoType() == _currentGizmoType && !needsTransform))
     {
         return;
@@ -989,9 +810,7 @@ void GizmoComponent::setGizmoVisible(GizmoType type, bool visible)
 
 void GizmoComponent::cleanupStatic()
 {
-    _gizmoCache.clear();
     _currentTransform.reset();
-    _cleanupRegistered = false;
 }
 
 }

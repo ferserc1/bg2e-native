@@ -25,9 +25,6 @@
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/draw/Drawable.hpp>
 
-#include <bg2e/scene/Drawable.hpp>
-#include <bg2e/render/Engine.hpp>
-
 #include <filesystem>
 #include <functional>
 #include <iostream>
@@ -99,15 +96,6 @@ extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableObj(
     std::function<void()> onTextureLoaded = nullptr);
 extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableObj(
     const std::filesystem::path& basePath, const std::string& fileName, draw::Engine& engine);
-
-extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
-    const std::filesystem::path& filePath,
-    bg2e::render::Engine* engine);
-
-extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableObj(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    bg2e::render::Engine* engine);
 
 }
 }

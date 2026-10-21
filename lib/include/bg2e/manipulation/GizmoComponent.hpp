@@ -19,10 +19,8 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/manipulation/ToolExecutionMode.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
-#include <bg2e/scene/Drawable.hpp>
 #include <bg2e/base/Light.hpp>
 #include <bg2e/base/Color.hpp>
 #include <bg2e/math/base.hpp>
@@ -72,31 +70,25 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
   public:
     BG2E_COMPONENT_TYPE_NAME("Gizmo");
 
-    explicit GizmoComponent(render::Engine* engine);
     explicit GizmoComponent(draw::Engine* engine);
+    virtual ~GizmoComponent() = default;
+
     bool isSceneGeometry() const override
     {
         return false;
     }
 
-    ToolExecutionMode manipulationMode() const
-    {
-        return _mode;
-    }
     // Optional tools attach to scene nodes, not to Renderer. Call at a stopped
     // scene boundary when using an application loop other than MainLoop.
     void synchronizeResources();
     void cleanupDrawResources();
-    virtual ~GizmoComponent() = default;
 
     // Gizmos are runtime-only helpers: a clone is a fresh gizmo for the same
     // engine, not a literal copy of the source's transient interaction state.
     std::shared_ptr<scene::Component> clone() const override;
 
     // No serialization — gizmos are runtime-only
-    void deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine&) override
-    {
-    }
+
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path&) override
     {
         return nullptr;
@@ -141,10 +133,10 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
         _transformVisible = visible;
     }
 
-    // Lazily-loaded shared transform gizmo drawable. Returns nullptr until the
+    // Lazily-loaded instance-owned transform gizmo drawable. Returns nullptr until the
     // asset has been loaded (see ensureTransformGizmoLoaded()).
-    [[nodiscard]] std::shared_ptr<scene::Drawable> transformDrawable() const;
-    [[nodiscard]] std::shared_ptr<draw::Drawable> transformDrawDrawable() const;
+
+    [[nodiscard]] std::shared_ptr<draw::Drawable> transformDrawable() const;
 
     // Current transform node management. setCurrentTransform hides the previous
     // transform gizmo, resets the tracked component and, if the given node owns
@@ -212,9 +204,7 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
 
   private:
     std::weak_ptr<scene::Node> _ownerReference;
-    render::Engine* _engine = nullptr;
     draw::Engine* _drawEngine = nullptr;
-    ToolExecutionMode _mode = ToolExecutionMode::Uninitialized;
     // Instance-owned draw resources never cross device/context or clone lifetimes.
     std::unordered_map<GizmoType, std::shared_ptr<draw::Drawable>> _drawGizmoCache;
     std::shared_ptr<draw::Drawable> getDrawGizmo(GizmoType type);
@@ -262,14 +252,12 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
     void loadGizmo(GizmoType type);
     void unloadGizmo();
 
-    // Ensures the shared transform gizmo asset is loaded. The actual load is
+    // Ensures this instance's transform gizmo asset is loaded. The actual load is
     // deferred to a safe scene-update point to avoid creating GPU buffers
     // mid-render. Loading failures are unrecoverable (see implementation).
     void ensureTransformGizmoLoaded();
 
-    // Static mesh cache: shared across all GizmoComponent instances
-    static std::unordered_map<GizmoType, std::shared_ptr<scene::Drawable>> _gizmoCache;
-    static std::shared_ptr<scene::Drawable> getCachedGizmo(GizmoType type, render::Engine* engine);
+    // Shared appearance settings; GPU mesh resources remain instance-owned.
 
     static std::unordered_map<GizmoType, float> _gizmoScales;
     static std::unordered_map<GizmoType, float> _gizmoOpacities;
@@ -283,7 +271,6 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
     static bool _scaleUniformVisible;
     static bool _scaleAxisVisible;
 
-    static bool _cleanupRegistered;
 };
 
 }

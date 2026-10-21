@@ -1,8 +1,8 @@
 # Deferred renderer and runtime ownership
 
 Headers: `<bg2e/draw/Renderer.hpp>`, `<bg2e/draw/RendererDeferred.hpp>` and
-`<bg2e/draw/DefaultRenderLoopDelegate.hpp>`. This is the experimental draw path;
-production `bg2e::render` remains supported.
+`<bg2e/draw/DefaultRenderLoopDelegate.hpp>`. This is the draw path;
+draw is the production renderer.
 
 ## Lifecycle
 
@@ -76,7 +76,7 @@ by the project lead. A separately reported transparency issue remains explicitly
 deferred; transparency implementation is not a claim of complete runtime acceptance.
 Public AO/GI/reflection tracing, effect histories, spatial filtering and manipulation
 are available. [Integrated bake](../bake/index.md) now supplies completed RGB UV2
-maps through [explicit material modes](BakedIndirectMaps.md). [Windowless draw frame execution](../app/OffscreenApplication.md#experimental-draw-execution)
+maps through [explicit material modes](BakedIndirectMaps.md). [Windowless draw frame execution](../app/OffscreenApplication.md#draw-execution)
 and [exact camera-image averaging](DefaultOffscreenApplicationDelegate.md)
 are available; standalone bake scheduling remains a separate product. See [advanced lighting](../../architecture/draw_advanced_lighting.md).
 

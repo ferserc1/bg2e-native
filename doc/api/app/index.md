@@ -36,50 +36,21 @@ Application
 runtime objects and is a singleton while it exists; code running inside an
 application can access it through `MainLoop::current()`.
 
-## Production and experimental frameworks
+## Production framework
 
-The terms **production** and **experimental** describe the maturity and scope of
-bg2 engine's graphics APIs, not build configurations, deployment environments
-or compiler optimization settings.
-
-- **Production: `bg2e::render`.** This is the maintained framework used by the
-  engine's applications. It provides Vulkan rendering and integrates with the
-  production scene, material and UI components. Use it for applications that
-  need those established high-level facilities. Production does not imply that
-  an application must run on a server or use a Release build.
-- **Experimental: `bg2e::draw`.** This is a high-level framework built on the
-  backend-neutral `bg2e::gpu` API. Its windowed path supports Vulkan and Metal,
-  retained scene color and separate UI composition. Its high-level scene and
-  resource contracts have a narrower scope than render and can evolve as the
-  API develops; render components cannot simply be passed to draw. Use it when
-  evaluating the multi-backend architecture or building against its GPU-based
-  delegate contract. Experimental does not mean the code is only a mock or that
-  its window/UI path is unavailable.
-
-Draw is intended to become the successor to render. Both APIs coexist; render
-remains supported and is not deprecated. `bg2e::gpu` provides lower-level devices,
-queues, commands and resources; it does not supply render's high-level scene
-framework. Choosing Vulkan in draw does not select render.
+Draw is the production high-level renderer. GPU supplies devices, queues, commands
+and resources beneath draw; selecting Vulkan selects a backend, not another
+application framework. Scene, DB, manipulation and UI consume draw resources.
 
 ## Framework and backend selection
 
-The `MainLoop::run()` overload selects the high-level framework:
-
-| Call | Framework | Low-level backend |
-|---|---|---|
-| `run(application)` | `bg2e::render` | Vulkan on every supported platform |
-| `run(application, draw::EngineConfig{})` | `bg2e::draw` | Metal on macOS, Vulkan elsewhere by default |
-
-Explicitly assigning EngineConfig::backend overrides draw's default. MainLoop
-owns common window/event handling, input, scheduling, timers, preferences and
-queued work. A private graphics execution strategy owns the selected Engine and
-rendering coordinator; applications do not construct it.
-
-Both routes validate delegates before SDL/GPU allocation. Draw initializes the
-selected GPU and UI backends, preserving scene color while paused so UI and
-presentation can continue independently. See
-[execution selection](MainLoop.md#execution-selection-and-validation) and
-[draw API](../draw/index.md).
+Both `run(application)` and `run(application, draw::EngineConfig{})` use draw.
+The default backend is Metal on macOS and Vulkan elsewhere; an explicit backend
+assignment overrides it. MainLoop owns window/events/input/scheduling, preferences
+and queued work. Its private execution adapter owns Engine and coordination.
+Validate graphics, input and UI delegates before allocation. Retained scene color
+allows UI/presentation to continue while scene work is paused.
+See [MainLoop](MainLoop.md) and [draw](../draw/index.md).
 
 ## Background frame-rate limiting
 
@@ -116,7 +87,7 @@ for scheduling details and the asynchronous-work contract.
 | Commands | `Shortcuts`, `ShortcutData` |
 | Persistence | [`Preferences`, `PreferencesStore`](Preferences.md), [`FileHistory`](Platform_services.md#filehistory) |
 | Native services | [`FileDialog`, `MessageBox`](Platform_services.md), `GPUSelectionDialog` |
-| Headless rendering | [`OffscreenApplication`](OffscreenApplication.md), `OffscreenApplicationDelegate`, `OffscreenApplicationConfig` |
+| Headless rendering | [`OffscreenApplication`](OffscreenApplication.md), `DrawOffscreenApplicationDelegate`, `DrawOffscreenApplicationConfig` |
 | Standalone tool | [`lightmap_generator`](LightmapGenerator.md) — headless model/prefab lightmap CLI |
 | Safe UV2 editor reload | [`Uv2SafeReload`](Uv2SafeReload.md) |
 
@@ -140,12 +111,11 @@ asynchronous work and synchronization boundaries.
 
 ## Windowless draw jobs
 
-The typed [OffscreenApplication](OffscreenApplication.md) overload accepts
+[OffscreenApplication](OffscreenApplication.md) accepts
 DrawOffscreenApplicationDelegate. Its default scene bridge performs exactly N
 completed linear camera samples before one final conversion and completed-output
 callback. The [offscreen scene CLI](../../apps/draw_offscreen_application.md)
-exports a verified PNG without window/UI initialization. Backend selection and
-explicit draw execution are separate choices; production render remains supported.
+exports a verified PNG without window/UI initialization. Backend selection changes the low-level GPU API within the sole draw execution path.
 
 
 The [standalone draw lightmap CLI](../../apps/draw_lightmap_generator.md) uses that

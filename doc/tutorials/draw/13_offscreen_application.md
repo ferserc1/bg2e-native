@@ -9,9 +9,8 @@ finished image. You will also add command-line validation and cleanup after erro
 Only basic C++ knowledge is assumed: variables, functions, classes, loops and
 exceptions. Engine concepts and the additional C++ facilities are introduced where
 used. You do not need previous bg2e tutorials, GPU programming, Vulkan/Metal commands
-or shader-writing knowledge. bg2e::draw is the experimental rendering framework
-used here. bg2e::gpu is its low-level backend abstraction; bg2e::render is a separate
-production framework that this application does not initialize.
+or shader-writing knowledge. bg2e::draw is the production rendering framework
+used here. Draw is the production rendering API over GPU backends.
 
 The numbered C++ blocks are **consecutive pieces of one source file**. Append each
 block directly after the previous one, in order, without extra wrappers. Several
@@ -899,8 +898,7 @@ Engine remains the application's owner, not a field duplicated in our subclass.
 
 main is the process entry point. Parse options early so --help exits without GPU
 initialization. Construct our shared OffscreenScene delegate and OffscreenApplication.
-The typed init overload is selected from the delegate type; it selects draw instead
-of the separate production render delegate contract. appId identifies this
+The sole init overload accepts the typed DrawOffscreenApplicationDelegate. appId identifies this
 application and provides a graphics application-name fallback.
 
 During init the driver calls initConfig, creates the headless Engine/Device/surface,

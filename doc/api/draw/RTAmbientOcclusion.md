@@ -1,6 +1,6 @@
 # RTAmbientOcclusion
 
-`<bg2e/draw/pipeline/RTAmbientOcclusion.hpp>` exposes the experimental draw AO pass; `<bg2e/draw/all.hpp>` includes it.
+`<bg2e/draw/pipeline/RTAmbientOcclusion.hpp>` exposes the draw AO pass; `<bg2e/draw/all.hpp>` includes it.
 
 ```cpp
 auto ao = std::make_shared<bg2e::draw::pipeline::RTAmbientOcclusion>();

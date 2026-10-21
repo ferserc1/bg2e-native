@@ -175,3 +175,13 @@ source. Preserve this authored baseline while refreshing the retirement inventor
 canonical accessor/umbrella/target changes must update those real pages and probes,
 not only historical plan notes. Documentation delivery does not itself authorize
 removing production source; the ordinary acceptance/manifest steps still apply.
+
+## M09-01 delivery — 2026-10-21
+
+[Actual manifest and decisions](retirement-manifest.md) and its reproducible
+per-file/include/reference/M08-comparison TSVs cover HEAD
+1889bdb12ade85d820eaab4a7365760fa9c34f50. There are 1620 assigned files, including
+all 1338 M08 candidates, with explicit incoming consumers, preservation gates and
+selected final names. M08-07 is accepted by lead continuation. No source deletion,
+CMake edit, native execution or draw promotion occurred. Awaiting lead validation;
+M09-02 is the successor. Current source hashes must be refreshed as migration runs.

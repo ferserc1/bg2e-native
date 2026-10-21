@@ -14,49 +14,39 @@ class Application {
 public:
     virtual void init(int argc, char** argv) = 0;
 
-    void setRenderDelegate(std::shared_ptr<render::RenderLoopDelegate>);
     void setRenderDelegate(std::shared_ptr<draw::RenderLoopDelegate>);
-    void setRenderDelegate(std::nullptr_t);
     void setInputDelegate(std::shared_ptr<InputDelegate>);
     void setUiDelegate(std::shared_ptr<ui::UserInterfaceDelegate>);
 };
 ```
 
-Call the three setters from the derived application's `init()` implementation.
-In production, a common application delegate can implement all three interfaces
-and be shared by the corresponding setters.
+Call all three setters from the derived application's `init()` implementation.
+A common delegate may implement all three interfaces, or each role may have a
+separate owner.
 
 ## Graphics delegate registration
 
-The render and draw delegates are distinct types with distinct contracts.
-Register either through `setRenderDelegate()`. Each overload sets its own
-slot and clears the other, so the last registration wins. Passing `nullptr`
-clears both graphics slots, including when a typed empty shared pointer is used.
-Input/UI registration is independent.
+Application stores one draw graphics delegate. `setRenderDelegate(nullptr)` clears
+that slot through the shared-pointer parameter. Input/UI registration is independent.
 
 ```cpp
-std::shared_ptr<render::RenderLoopDelegate>& renderDelegate();
-std::shared_ptr<draw::RenderLoopDelegate>& drawDelegate();
+std::shared_ptr<draw::RenderLoopDelegate>& renderDelegate();
 std::shared_ptr<InputDelegate>& inputDelegate();
 std::shared_ptr<ui::UserInterfaceDelegate>& uiDelegate();
 ```
 
-The getters return mutable references. Direct assignment can bypass the setter
-invariant and populate both graphics slots; MainLoop rejects that configuration.
-Prefer setters. The getter return type cannot select a run overload for you.
+The getters return mutable references; prefer the setters for registration.
+`MainLoop::run(application)` uses draw with platform defaults. Pass an explicit
+`draw::EngineConfig` to override the backend or initial formats. Both overloads
+require non-null graphics, UI and input delegates and validate before window/GPU
+allocation. Call the application's `init(argc, argv)` before `run()`.
 
-Use `run(application)` with a production delegate and
-`run(application, draw::EngineConfig{})` with a draw delegate. Both
-require non-null input and UI delegates. A valid draw run initializes the selected
-GPU backend, window, scene coordinator and UI after configuration validation.
+See [draw::RenderLoopDelegate](../draw/RenderLoopDelegate.md) for callbacks without
+Vulkan frame resources or a central descriptor allocation callback. Implement
+`UserInterfaceDelegate::init(draw::Engine*, UserInterface*)` for UI initialization
+and use engine UI wrappers. The remaining legacy shared scene/UI resource
+overloads are scheduled for cleanup; they do not select another application path.
 
-See [draw::RenderLoopDelegate](../draw/RenderLoopDelegate.md) for the experimental
-contract. It does not expose Vulkan frame resources or a central descriptor
-allocation callback. UserInterfaceDelegate has separate production and draw
-initialization overloads; implement `init(draw::Engine*, UserInterface*)` for the
-draw path and draw widgets through UI wrappers. Vulkan/Metal interoperability
-is private to ui. Widgets using render scene/resources require compatible render
-objects.
 ## InputDelegate
 
 Override only the events the application needs:

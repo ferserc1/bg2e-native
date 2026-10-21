@@ -103,11 +103,6 @@ void PolarTransformControllerComponent::update([[maybe_unused]] float delta)
     }
 }
 
-void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
-{
-    deserialize(jsonData, basePath);
-}
-
 void PolarTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
     deserializeCommon(jsonData);

@@ -34,10 +34,6 @@ namespace draw {
 class Engine;
 }
 
-namespace render {
-class Engine;
-}
-
 namespace scene {
 
 class Node;
@@ -126,8 +122,6 @@ class BG2E_API Component : public std::enable_shared_from_this<Component> {
     // Synchronous resource realization; stop frame/background producers first.
     virtual void loadResources(draw::Engine& engine, SceneLoadProgress* progress = nullptr);
 
-    virtual void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine);
-    virtual void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress);
     virtual std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath);
 
   protected:

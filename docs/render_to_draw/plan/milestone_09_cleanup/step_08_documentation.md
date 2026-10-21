@@ -47,3 +47,74 @@ usage pages without losing their still-valid CPU/file concepts or independent
 verification guidance. The M08 review's original production/experimental labels
 remain historical evidence; final maintained pages reflect actual M09 promotion,
 with no compatibility shims, synthetic-as-native claims or optimization rollbacks.
+
+## M09-03 actual prerequisite and delta
+
+Use [the shared API delivery](shared-api.md) and [per-file changes](shared-api-changes.tsv)
+alongside the historical manifest and M09-02 delta. Shared render Engine overloads,
+scene native resources/bindings/visitors, DB specialized writer and obsolete widgets
+are already retired. 153 dependent production renderer headers/sources are also
+removed to close incoming dependencies; 23 render files remain, including native
+wrappers and authoritative blue-noise data. Do not restore old interfaces to make
+remaining source compile.
+
+DrawableComponent::drawable(), SelectionItem::mesh/lockMesh()/meshPtr(),
+SelectionManager::selectedMesh() and GizmoComponent::transformDrawable() now address
+draw types only. Factory registration accepts name + defaultCreator. GPUSelectionDialog
+accepts caller-provided gpu properties; its standalone OpenGL setup remains a native
+confinement seam. Generic UI/preview cleanup is draw-only; retain native Vulkan/Metal
+work pending proper GPU bridge relocation, without higher-level GPU dependencies.
+
+Registered UV/integrated test targets now call existing public bake probes through
+retirement_harness.hpp; old native main bodies are replaced without CMake changes.
+M09-05 audits original fixture-specific numerical/material coverage and removes
+the stale test_02 private render include path. M09-06 owns actual execution and
+full no-RT/optional/deployment/performance matrices. Shared documentation already
+updates 27 maintained pages; preserve current accessors and standalone IO coverage.
+
+## M09-04 actual documentation baseline
+
+[Native retirement](native-retirement.md) supersedes the M09-03 pending-native
+notes above: both render trees are gone, data lives at utils/blue_noise_data.h,
+and UI's native implementation has moved to gpu/vk and gpu/metal GuiRenderer.cpp.
+Document public gpu::GuiRenderer primitive borrowing/explicit shutdown and native
+texture generation, StandaloneGuiWindow RAII/context order and drawableSize.
+Maintained GPU bridge/API, UserInterface and MainLoop architecture pages already
+reflect these contracts; retain those corrections during the full cleanup.
+No ImGui/native types enter public headers or higher-level dependency enters GPU.
+
+## M09-05 actual build/template documentation baseline
+
+[Product delivery](products-distribution.md) supersedes earlier pending example/
+shader/template notes. Old example groups, GLSL tree and shaders/build.sh/build.bat
+are gone. Keep current scripts/PACKAGING.md, examples/README.md and registered
+probe references. Audit maintained docs for stale shader-frontend links, removed
+example paths, static macOS library claims and old standalone template APIs.
+Document paired compilation and authoritative install/bundle trees, shader-only
+refresh, config-specific binary/shared shader paths and updater replacement of
+engine draw/bake directories while preserving custom app resources. Reused output
+directories are not purged by this migration; clean artifacts establish absence.
+Do not claim executed configure/package/standalone/native results from static scans.
+
+## M09-06 actual catalog and compatibility evidence
+
+Use [final-product-validation.md](final-product-validation.md), final-products.tsv,
+public-api-evidence.tsv and umbrella-closure.tsv after M09-07 reconciles actual
+contracts. Document 3 apps, 26 draw/GPU examples and 4 registered probes separately
+from manual fixtures. Portable umbrella closure has 255 project headers; the full
+public catalog has 317, including explicit/backend headers outside that union.
+The actual canonical offscreen names still include DrawOffscreenApplicationConfig/
+Delegate; do not invent renamed types or forwarding aliases. Preserve generic
+CPU/data IO and authored Drawable component identity while documenting deliberate
+application source/ABI/settings/output-layout breaks. Source declaration/export
+markers and template projection are not binary/native product validation.
+
+## M09-07 concrete authoring input
+
+Use [review.md](review.md), [documentation-handoff.tsv](documentation-handoff.tsv),
+[retirement-reconciliation.tsv](retirement-reconciliation.tsv), final-products.tsv
+and public-api-evidence.tsv. Account for every inventoried maintained page, new
+API page and redirected/deleted page in documentation.md. Author all final
+contracts and product/build/tutorial coverage specified in the review and updated
+M10 steps now; M10 is a localized audit. Preserve independent foundation and
+profiling documentation. Source-only package/native evidence must stay labeled.

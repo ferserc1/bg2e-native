@@ -1,3 +1,21 @@
+/*
+ *    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include <bg2e/manipulation/SelectionManager.hpp>
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
@@ -11,7 +29,7 @@ void require(bool value)
 {
     if (!value)
     {
-        throw std::runtime_error("Dual-mode selection check failed");
+        throw std::runtime_error("Draw selection check failed");
     }
 }
 
@@ -21,7 +39,6 @@ int main()
     draw::Engine engine;
     manipulation::SelectionManager manager(&engine);
     manager.init();
-    require(manager.executionMode() == manipulation::ToolExecutionMode::Draw);
     auto geometry = std::make_shared<draw::Drawable>();
     geometry->setMesh(geo::createCube(1.0f, 1.0f, 1.0f));
     auto node = std::make_shared<scene::Node>();
@@ -37,9 +54,8 @@ int main()
     require(manager.addToSelectedItems(node.get(), drawable.get(), 0));
     require(manager.addToSelectedItems(node.get(), drawable.get(), 1));
     require(manager.selectedNodes().size() == 1);
-    require(manager.selectedMesh() == nullptr);
-    require(manager.selectedDrawMesh() == geometry.get());
-    require(manager.selectedItem()->lockDrawMesh() == geometry);
+    require(manager.selectedMesh() == geometry.get());
+    require(manager.selectedItem()->lockMesh() == geometry);
     require(selectable->isSelected(0) && selectable->isSelected(1));
     bool pickRejected = false;
     try
@@ -69,7 +85,7 @@ int main()
     require(manager.addToSelectedItems(node.get(), drawable.get(), 0));
     auto second = manager.selectedItem();
     node->removeComponent(drawable); // External owners deliberately keep it alive.
-    require(second->expired() && !second->lockDrawMesh());
+    require(second->expired() && !second->lockMesh());
     require(manager.selectedNode() == nullptr);
     manager.refreshSelection();
     require(manager.selectedNodes().empty());
@@ -99,40 +115,11 @@ int main()
     manager.refreshSelection();
     require(manager.selectedNodes().empty());
 
-    // Selecting a production resource through a draw manager is rejected.
-    auto legacyNode = std::make_shared<scene::Node>();
-    auto legacyResource = std::make_shared<scene::Drawable>();
-    legacyResource->setMesh(geo::createCube(1.0f, 1.0f, 1.0f));
-    auto legacyComponent = std::make_shared<scene::DrawableComponent>(legacyResource);
-    legacyNode->addComponent(legacyComponent);
-    legacyNode->addComponent(std::make_shared<manipulation::SelectableComponent>());
-    bool crossModeRejected = false;
-    try
-    {
-        manager.addToSelectedItems(legacyNode.get(), legacyComponent.get(), 0);
-    }
-    catch (const std::logic_error&)
-    {
-        crossModeRejected = true;
-    }
-    require(crossModeRejected);
-
     manipulation::GizmoComponent gizmo(&engine);
     auto gizmoClone = std::dynamic_pointer_cast<manipulation::GizmoComponent>(gizmo.clone());
-    require(gizmoClone && gizmoClone->manipulationMode() == manipulation::ToolExecutionMode::Draw);
-    require(!gizmo.transformDrawDrawable());
-    bool rejected = false;
-    try
-    {
-        (void)gizmo.transformDrawable();
-    }
-    catch (const std::logic_error&)
-    {
-        rejected = true;
-    }
-    require(rejected);
+    require(!gizmo.transformDrawable());
+    require(gizmoClone && !gizmoClone->drawable() && !gizmoClone->transformDrawable());
     manipulation::GizmoAndSelectionRenderer overlay;
     overlay.init(&engine);
-    require(overlay.executionMode() == manipulation::ToolExecutionMode::Draw);
     return 0;
 }

@@ -36,10 +36,9 @@ ComponentFactoryRegistry& ComponentFactoryRegistry::get()
 
 void ComponentFactoryRegistry::registerComponent(
     const std::string& componentName,
-    Creator creator,
     DefaultCreator defaultCreator)
 {
-    _registry[componentName] = {std::move(creator), std::move(defaultCreator)};
+    _registry[componentName] = {std::move(defaultCreator)};
 }
 
 bool ComponentFactoryRegistry::contains(const std::string& componentName) const
@@ -101,49 +100,6 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
     }
     result->loadResources(engine, progress);
     return result.release();
-}
-
-Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine)
-{
-    return create(data, basePath, engine, nullptr);
-}
-
-Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
-{
-    json::ObjectReader reader(data);
-    if (!reader.isValid())
-    {
-        bg2e_log_warning << "Skipping component: expected a JSON object" << bg2e_log_end;
-        return nullptr;
-    }
-
-    auto componentType = reader.getString("type");
-    if (!componentType || componentType->empty())
-    {
-        bg2e_log_warning << "Skipping component: missing or invalid type" << bg2e_log_end;
-        return nullptr;
-    }
-
-    auto it = _registry.find(*componentType);
-    if (it == _registry.end())
-    {
-        bg2e_log_warning << "component type not found: " << *componentType << bg2e_log_end;
-        return nullptr;
-    }
-    else if (bg2e::base::Log::isDebug())
-    {
-        bg2e_log_debug << "Deserialize component: " << *componentType << bg2e_log_end;
-    }
-
-    try
-    {
-        return it->second.deserialize(data, basePath, engine, progress);
-    }
-    catch (const std::exception& error)
-    {
-        bg2e_log_warning << "Skipping component " << *componentType << ": " << error.what() << bg2e_log_end;
-        return nullptr;
-    }
 }
 
 }

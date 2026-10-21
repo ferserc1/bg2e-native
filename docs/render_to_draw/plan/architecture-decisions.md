@@ -257,3 +257,53 @@ exports/targets and native UI/app migration, updating actual callers and schemas
 without permanent source/ABI shims. See the per-file retirement impact; no native
 backend deletion or source rewrite is authorized by this review. M08-07 authoring
 precedes M09 and M10 remains a final audit of already maintained documentation.
+
+
+## M09-04 implemented native confinement
+
+[Native retirement](milestone_09_cleanup/native-retirement.md) removes the final
+render files after exact blue-noise relocation to utils. Public gpu::GuiRenderer
+borrows GPU primitives and caller context; UI keeps session/preview ownership.
+The private UI adapter only supplies Engine GPU accessors. Native pool/renderer/
+encoder/texture work lives in gpu/vk and gpu/metal. gpu::StandaloneGuiWindow owns
+the chooser's native GL presentation with RAII; app retains device/widget logic.
+gpu::drawableSize owns SDL Vulkan/Metal pixel queries. These are native interop
+bridges, with no GPU-to-draw/UI/scene dependency or new engine rendering backend.
+
+
+## M09-05 implemented product and shader retirement
+
+[Product delivery](milestone_09_cleanup/products-distribution.md) removes legacy
+example groups, old engine GLSL and flat compiler frontends. Canonical paired
+draw/bake trees and native SDK/vendor resources remain; bundling/install avoids
+stale flat engine outputs. Default standalone code now uses RendererDeferred;
+updaters refresh its matching engine shaders and helper with headers/library.
+Registered UV/integrated fixtures retain numerical/material coverage through
+public contracts, with explicit baked mode, typed UV identity and indirect-only
+alpha-one output. These ports do not restore the retired settings/native frame
+implementation or imply native validation.
+
+
+## M09-06 final source gate and evidence attribution
+
+[Final product validation](milestone_09_cleanup/final-product-validation.md)
+records canonical API/product catalogs, transitive portable umbrella closure and
+the final retirement-ledger reconciliation. Source-only checks pass without
+retired renderer dependencies; no implementation/CMake change is made. Binary
+exports, backend/data-output behavior and installed/generated product operation
+are separate lead-owned checks. Continuation accepts M09-05 under the agreed
+convention; it does not identify individual scenarios or certify independent
+optimization/profiling measurements. M09-07 reviews this actual evidence before
+M09-08 updates cumulative production documentation.
+
+## M09-07 final production review — 2026-10-21
+
+M09-06 and its scene reference-count, Metal GUI declaration and VMA implementation
+corrections are accepted by the project lead's continuation instruction. Draw is
+the production API; no retired render compatibility is retained. See the
+[final contract review](milestone_09_cleanup/review.md), original-manifest
+reconciliation and complete maintained-page handoff linked there. M09-07 is
+awaiting lead acceptance; M09-08 must author cumulative documentation before
+M09 closure. M10 audits that delivery. R01–R14 optimization/profiling source and
+manual probes remain preserved; no new native coverage or performance result is
+claimed by this review. Historical planning assumptions above remain historical.

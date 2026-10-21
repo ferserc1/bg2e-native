@@ -3,8 +3,8 @@
 **Header:** `<bg2e/draw/RenderLoopDelegate.hpp>`  
 **Namespace:** `bg2e::draw`
 
-A separate experimental delegate. It does not inherit from or modify
-`render::RenderLoopDelegate`, and its signatures contain no native backend types.
+The production graphics delegate. Its signatures use GPU abstractions and
+contain no native backend types.
 
 ```cpp
 virtual ~RenderLoopDelegate() = default;
@@ -34,8 +34,8 @@ scene-loading operations above the delegate contract.
 ## Registration and execution
 
 Register with Application::setRenderDelegate(shared_ptr<draw::RenderLoopDelegate>),
-then choose MainLoop's two-argument run overload. Using the production run
-overload with this delegate is a configuration error. See
+then use either MainLoop run overload. The one-argument overload uses platform
+defaults; the explicit EngineConfig overload configures the same draw path. See
 [Application](../app/Application_and_input.md#graphics-delegate-registration).
 
 RenderLoop invokes init, initScene and resize before update/render.
@@ -49,8 +49,8 @@ init callback. Repeated RenderLoop cleanup does not invoke it again. Producers
 must be stopped before teardown; the loop drains GPU work before releasing
 scene resources.
 
-See [framework scope and maturity](index.md#production-and-experimental-frameworks)
-for the distinction between render and draw.
+See [framework scope and maturity](index.md#production-framework)
+for the relationship between draw and GPU backends.
 
 ## Runtime renderer delegate
 

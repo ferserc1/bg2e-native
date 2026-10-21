@@ -33,11 +33,6 @@ std::shared_ptr<Component> FixedScaleTransformControllerComponent::clone() const
     return copy;
 }
 
-void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
-{
-    deserialize(jsonData, basePath);
-}
-
 void FixedScaleTransformControllerComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
     deserializeCommon(jsonData);

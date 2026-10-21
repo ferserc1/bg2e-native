@@ -41,11 +41,6 @@ std::shared_ptr<Component> OrbitCameraComponent::clone() const
     return copy;
 }
 
-void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
-{
-    deserialize(jsonData, basePath);
-}
-
 void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
     deserializeCommon(jsonData);
@@ -500,14 +495,7 @@ void OrbitCameraComponent::centerOnTarget(bg2e::scene::Node* target)
         };
         if (auto component = target->drawable())
         {
-            if (component->executionMode() == DrawableComponent::ExecutionMode::Draw)
-            {
-                centerDrawable(component->drawDrawable());
-            }
-            else
-            {
-                centerDrawable(component->drawable());
-            }
+            centerDrawable(component->drawable());
         }
 
         _rotation.x = 45.0f;

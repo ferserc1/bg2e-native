@@ -86,7 +86,7 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
     {
         if (auto component = node->template getComponent<scene::DrawableComponent>())
         {
-            auto mesh = component->drawDrawable();
+            auto mesh = component->drawable();
             if (mesh)
             {
                 for (uint32_t sub = 0; sub < mesh->submeshesCount(); ++sub)
@@ -149,9 +149,9 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
             delegate->removeSelection();
         }
     }
-    if (auto item = selection->selectedItem(); item && item->lockDrawMesh())
+    if (auto item = selection->selectedItem(); item && item->lockMesh())
     {
-        auto mesh = item->lockDrawMesh();
+        auto mesh = item->lockMesh();
         auto name = mesh->submeshName(item->submesh);
         auto group = mesh->submeshGroupName(item->submesh);
         auto visible = mesh->submeshVisibility(item->submesh);
@@ -163,7 +163,7 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
                 const auto snapshot = *current;
                 delegate->queueNodeEdit(current->node, [snapshot, operation](auto&)
                 {
-                    if (auto mesh = snapshot.lockDrawMesh())
+                    if (auto mesh = snapshot.lockMesh())
                     {
                         operation(*mesh, snapshot.submesh);
                     }

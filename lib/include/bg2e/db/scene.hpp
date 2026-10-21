@@ -26,10 +26,6 @@
 
 namespace bg2e {
 
-namespace render {
-class Engine;
-}
-
 namespace db {
 
 // Representation IO preserves unknown fields/components without constructing a
@@ -51,35 +47,12 @@ extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::p
 extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& basePath,
     const std::string& fileName, draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
 
-extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
-    const std::filesystem::path& filePath,
-    bg2e::render::Engine& engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr);
-
-extern BG2E_API std::shared_ptr<bg2e::scene::Scene> loadScene(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    bg2e::render::Engine& engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr);
-
 // Complete resource snapshot. Call at a stopped submission boundary. Unique
 // sidecars are published first and the main document is replaced atomically last.
 // Returns false and logs the error on failure; never propagates exceptions.
 extern BG2E_API bool saveScene(scene::Node* root, draw::Engine& engine,
     const std::filesystem::path& path, scene::SceneProgressCallback progress = nullptr) noexcept;
 
-// Writes to the supplied path without imposing scene-directory naming rules.
-// Throws on output-open, write, or close failure.
-extern BG2E_API void saveScene(
-    bg2e::scene::Node* sceneRoot,
-    const std::filesystem::path& filePath,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr);
-
-extern BG2E_API void saveScene(
-    bg2e::scene::Node* sceneRoot,
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
 }
 }

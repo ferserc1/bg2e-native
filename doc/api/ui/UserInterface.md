@@ -4,7 +4,7 @@
 **Namespace:** `bg2e::ui`
 
 `UserInterface` manages the Dear ImGui context, SDL2 and a private UI renderer,
-with render/Vulkan and draw/Vulkan or draw/Metal entry points,
+with draw/Vulkan or draw/Metal initialization,
 and exposes the four lifecycle hooks that `app::MainLoop` calls per frame.
 `UserInterfaceDelegate` is the application-side interface injected into it.
 
@@ -13,13 +13,10 @@ class BG2E_API UserInterface {
 public:
     UserInterface();
     ~UserInterface();
-    void init(render::Engine *);
     void init(draw::Engine *);
     bool initialized() const;
     void processEvent(SDL_Event * event);
-    void newFrame();
     void newFrame(gpu::CommandBuffer&, gpu::SurfaceFrame&);
-    void draw(VkCommandBuffer cmd, VkImageView targetImageView);
     void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&);
     void cleanup();
 
@@ -37,7 +34,6 @@ class BG2E_API UserInterfaceDelegate {
     friend class app::MainLoop;
 public:
     virtual ~UserInterfaceDelegate() = default;
-    virtual void init(bg2e::render::Engine*, UserInterface*) {}
     virtual void init(bg2e::draw::Engine*, UserInterface*) {}
     virtual void drawUI();                       // default: DemoWindow::draw()
 
@@ -63,65 +59,29 @@ void drawUI() override        // called between NewFrame() and Render()
 
 - `init(engine, ui)` runs once after `UserInterface::init()`;
   `uiWidth()`/`uiHeight()` already report the current viewport (updated by
-  `MainLoop` on resize, so `swapchainResized` can drive `Workspace::resize`).
+  `MainLoop` on resize, so the resize callback can drive `Workspace::resize`).
 - The **default** `drawUI()` shows `DemoWindow` — always override it in real
   applications.
 - Capture `this` freely in UI callbacks: the delegate lives as long as the
   `Application`.
 
-The generic UI infrastructure can be initialized for draw/Vulkan or
-draw/Metal, but many composite widgets remain production-render widgets. In
-particular, use [`DrawMaterialEditor`](Material_Editors.md#drawmaterialeditor)
-and [`DrawTextureWidgets`](DrawTextureWidgets.md) for their explicitly
-supported draw workflows; `MaterialEditor`, `DrawableEditor` and
-`TextureWidgets` still consume production resources.
-
----
+Use DrawMaterialEditor, DrawTextureWidgets and BakeLightmapPreview with draw
+resources. Old MaterialEditor/TextureWidgets/UvMapPreview variants are removed.
 
 ## Lifecycle
 
 The instance is owned by `app::MainLoop`; applications interact only through
 the delegate. Timeline (see `lib/src/bg2e/app/MainLoop.cpp`):
 
-```
-run(application)
-  ui->setDelegate(application->uiDelegate())
-  ui->init(&engine)            // reads "ui" preferences, builds ImGui,
-                               // then delegate->init(engine, ui)
-  per frame:
-    SDL event -> input delegate -> ui->processEvent(&event)
-    ui->newFrame()             // ImGui::NewFrame + drawUI (or frame override) + Render
-    render loop acquire/present:
-      scene pass ...
-      ui->draw(cmd, swapchainImageView)   // via renderUICallback
-  ui->cleanup()                // writes uiScale back to preferences
-```
+After acquisition and slot synchronization, MainLoop calls newFrame(command, frame)
+before scene recording. It prepares backend metadata and SDL/ImGui, runs drawUI or
+frameOverride and prepares draw data. After scene copy, draw(command, frame) composes
+the same prepared pair. It opens/closes an overlay scope without submitting or
+presenting. RenderLoop owns surrounding transitions and completion.
 
-This is the lifecycle of a rendered frame, not an unconditional iteration
-rate. If `app::MainLoop` background limiting is active while the window is
-unfocused, entire UI frames are skipped together with scene update, rendering,
-and presentation. SDL events continue to be processed between deadlines, and
-the next UI frame reflects the accumulated application state. Code that needs
-a prompt background frame can call `app::MainLoop::requestFrame()`.
-
-`draw()` opens its own dynamic-rendering pass on the provided image view
-(single color attachment), so it must be called **after** the scene has been
-rendered into that view and while the command buffer is recording — which is
-exactly what `RenderLoop::renderUICallback` guarantees.
-
-### What `init()` creates
-
-- A resettable command pool + one command buffer (destroyed via the engine
-  `CleanupManager`).
-- A signaled `VkFence` for UI synchronization.
-- A dedicated `VkDescriptorPool` (1000 sets, all types) used by ImGui and by
-  `TextureWidgets` descriptor bindings.
-- ImGui context + `ImGui_ImplSDL2_InitForVulkan` + `ImGui_ImplVulkan_Init`
-  configured for **dynamic rendering** with the swapchain color format.
-- The base style (captured once) and the engine font
-  `assets/DidactGothic-Regular.ttf` at 16 px.
-
----
+Background limiting skips complete frames; SDL events still accumulate. Use
+MainLoop::requestFrame for a prompt presentation wakeup. Scene pause retains scene
+color while UI continues. The font/style and uiScale preferences remain shared.
 
 ## Frame override
 
@@ -165,13 +125,13 @@ verify the UI is not capturing input before acting (see
 
 ---
 
-## Experimental draw integration
+## Draw draw integration
 
 `init(draw::Engine*)` configures UI rendering for Vulkan or Metal; Metal requires
-macOS. UserInterfaceDelegate supplies `init(draw::Engine*, UserInterface*)` and
-`init(render::Engine*, UserInterface*)` overloads for the respective engine
-contexts. Both use drawUI() to describe widgets.
-UI backend storage lives in PImpl, with no Metal or ImGui declarations in public
+macOS. UserInterfaceDelegate supplies `init(draw::Engine*, UserInterface*)`
+and drawUI() to describe widgets.
+UI session storage lives in PImpl; private adapters delegate native rendering to
+[gpu::GuiRenderer](../gpu/Gui_bridges.md), with no Metal or ImGui declarations in public
 UI headers and no dependency from gpu to ui.
 
 After successful acquisition and slot synchronization, MainLoop's draw adapter
@@ -194,35 +154,32 @@ Vulkan uses the actual surface color format and swapchain image count rather
 than frames in flight. Surface capabilities determine a minimum image count
 satisfying ImGui's requirement of at least two. A format/count change drains
 GPU work before reinitializing the renderer. Pointer-backed configuration stays
-alive in the private backend state. Unavailable drawables do not prepare UI;
+alive in GPU bridge state. Unavailable drawables do not prepare UI;
 scene pause does not suppress UI preparation. Viewport dimensions remain logical
 window units.
 
 ## Context ownership and shutdown
 
-For production, `cleanup()` persists preferences and the engine's registered
-callback performs renderer, SDL and context shutdown in the registered lifecycle order.
-The callback retains lifecycle state without capturing the UserInterface
-wrapper. For draw, stop producers and call `cleanup()` before destroying Engine;
-cleanup waits for completion and shuts down only initialized backend stages.
+Stop producers and call cleanup() before destroying Engine. It persists preferences,
+drains the live device, unregisters previews, shuts down started renderer/SDL stages
+and destroys the ImGui context. Partial failures preserve the original exception.
 
 Context destruction resets static style/font bookkeeping. Initialization
 failures clean started stages and preserve the original exception; repeated
 cleanup is safe. `processEvent` and frame operations guard an uninitialized
 context. UserInterface owns its lifecycle and cannot be copied. Only one ImGui
-context is active at a time. Scene/texture editors that consume render resources
-require render-compatible objects; selecting draw does not adapt those widgets.
+context is active at a time. Draw material/texture/UV preview widgets retain their guarded queued ownership.
 
 ## See also
 
-- [index.md — Integration with the main loop](index.md#integration-with-the-main-loop)
+- [index.md — Integration with the main loop](index.md#lifecycle)
 - [quick_start — Recipe 1](quick_start.md#recipe-1-wire-a-ui-into-an-application)
 - [Loader](Loader.md) — the frame-override use case.
 - [Window](Window.md) — what delegates typically draw.
 
 ## Architecture reference
 
-See [MainLoop/draw integration](../../architecture/MainLoop_render_draw_gpu.md#ui-interoperability-lives-in-ui)
+See [MainLoop/draw integration](../../architecture/MainLoop_render_draw_gpu.md#ui-coordination-and-gpu-native-interoperability)
 for private Vulkan/Metal source excerpts, acquired-frame preparation/composition,
 encoder ownership, context lifetime and render shutdown ownership.
 Scene-dependent UI components must use resources compatible with their engine
@@ -234,6 +191,5 @@ contract.
 [BakeLightmapPreview](../bake/BakeLightmapPreview.md) registers retained completed
 bake/UV diagnostic images through the draw UI session. Use
 [bake::UvMapPreviewRenderer](../bake/UvMapPreviewRenderer.md) for CPU UV1/UV2
-inspection and rebind images after geometry/resolution/session changes. Production
-UvMapPreview remains a separate render-compatible widget. Clear draw preview
+inspection and rebind images after geometry/resolution/session changes. Clear draw preview
 handles before UI/Engine teardown; no ImGui/native type enters application code.

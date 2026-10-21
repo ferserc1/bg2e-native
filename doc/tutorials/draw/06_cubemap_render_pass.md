@@ -28,7 +28,7 @@ roughness-dependent mip chain. A rotating cube displays the selected map.
 
 Image loading uses `bg2e::db` in application code. Rendering resources and
 commands use `bg2e::gpu`, with lifecycle and presentation managed by
-`bg2e::draw`. The production `bg2e::render` path remains separate.
+`bg2e::draw`. Draw is the production rendering API over GPU backends.
 
 ## Understanding the example
 

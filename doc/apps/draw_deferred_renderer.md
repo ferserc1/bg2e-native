@@ -1,4 +1,4 @@
-# Experimental deferred renderer example and distribution
+# Draw deferred renderer example and distribution
 
 `examples/draw/10_deferred_renderer` registers target `draw_deferred_renderer`.
 See the [tutorial](../tutorials/draw/10_deferred_renderer.md) for the scene
@@ -26,8 +26,7 @@ a fresh Distribution tree and emits unpacked content plus an archive. Standalone
 creation uses precompiled libraries; update_libraries uses a dedicated build tree.
 Do not copy only the executable while omitting shaders/assets/runtime libraries.
 This documentation pass did not run builds or packaging, or certify packaged
-backend/FSR availability. Production apps and their documented workflows remain
-under `bg2e::render`.
+backend/FSR availability. Production app workflows use the same draw API.
 
 ## Delivered advanced effect controls
 

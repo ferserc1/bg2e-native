@@ -15,128 +15,96 @@
  *    You should have received a copy of the GNU General Public License
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
+
 #include <bg2e.hpp>
+#include <exception>
+#include <iostream>
+#include <memory>
 
-class RotateCameraComponent : public bg2e::scene::Component {
-public:
-    BG2E_COMPONENT_TYPE_NAME("RotateCamera")
+namespace {
+using namespace bg2e;
 
-    void update(float delta) override
+class CameraProjection final : public math::PerspectiveProjection {
+  public:
+    void apply(glm::mat4& matrix) override
     {
-        auto transform = ownerNode()->transform();
+        matrix = glm::perspectiveRH_ZO(glm::radians(fov()),
+            _viewport.width / _viewport.height, near(), far());
+    }
+};
 
-        if (transform)
+class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
+  public:
+    SceneDelegate() : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>())
+    {
+    }
+
+  protected:
+    std::shared_ptr<scene::Node> createScene() override
+    {
+        auto root = std::make_shared<scene::Node>("Scene");
+        root->addComponent(new scene::EnvironmentComponent(base::PlatformTools::assetPath(), "HDR_multi_nebulae_1.hdr"));
+        auto modelResource = std::make_shared<draw::Drawable>();
+        modelResource->setMesh(std::shared_ptr<geo::Mesh>(geo::createCube(2, 2, 2)));
+        modelResource->load(_engine);
+        auto model = std::make_shared<scene::Node>("Cube");
+        model->addComponent(std::make_shared<scene::DrawableComponent>(modelResource));
+        root->addChild(model);
+        auto camera = std::make_shared<scene::Node>("Camera");
+        camera->addComponent(scene::TransformComponent::makeTranslated(0, 0, 6));
+        camera->addComponent(new scene::CameraComponent());
+        camera->camera()->setProjection(new CameraProjection());
+        root->addChild(camera);
+        return root;
+    }
+
+};
+
+class UiDelegate final : public ui::UserInterfaceDelegate {
+  public:
+    void init(draw::Engine*, ui::UserInterface*) override
+    {
+        _window.setTitle("Deferred scene");
+        _window.options.noClose = true;
+        _window.setPosition(20, 20);
+        _window.setSize(260, 100);
+    }
+
+    void drawUI() override
+    {
+        _window.draw([]
         {
-            transform->rotate(0.02f * delta / 10.0f, 0.0f, 1.0f, 0.0f);
-        }
-    }
-};
-
-class BasicSceneDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
-	public bg2e::app::InputDelegate,
-	public bg2e::ui::UserInterfaceDelegate
-{
-public:
-
-	// ============ User Interface Delegate Functions =========
-	void init(bg2e::render::Engine*, bg2e::ui::UserInterface*) override {
-		_window.setTitle("Basic forward renderer");
-		_window.options.noClose = true;
-		_window.options.minWidth = 190;
-		_window.options.minHeight = 90;
-		_window.setPosition(0, 0);
-		_window.setSize(200, 100);
-	}
-
-	void drawUI() override
-	{
-        auto drawSkybox = renderer()->drawSkybox();
-        _window.draw([&]() {
-            bg2e::ui::Button::checkBox("Draw Skybox", &drawSkybox);
+            ui::Text::text("bg2e draw / deferred renderer");
         });
-        renderer()->setDrawSkybox(drawSkybox);
-	}
-
-protected:
-	bg2e::ui::Window _window;
-
-    std::shared_ptr<bg2e::scene::Node> createScene() override
-    {
-        auto sceneRoot = std::make_shared<bg2e::scene::Node>("Scene Root");
-        sceneRoot->addComponent(new bg2e::scene::EnvironmentComponent(bg2e::base::PlatformTools::assetPath(), "country_field_sun.jpg"));
-
-        auto anotherNode = new bg2e::scene::Node("Transform Node");
-        anotherNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 1.0f, 0.0f));
-        sceneRoot->addChild(anotherNode);
-
-        auto drawable = std::shared_ptr<bg2e::scene::DrawableBase>(loadDrawable());
-        auto drawableComponent = std::make_shared<bg2e::scene::DrawableComponent>(drawable);
-        auto modelNode = std::make_shared<bg2e::scene::Node>("3D Model");
-        modelNode->addComponent(drawableComponent);
-        modelNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(2.0f, 0.0f, 0.0f));
-        anotherNode->addChild(modelNode);
-
-        auto secondModel = new bg2e::scene::Node("Second 3D model");
-        auto anotherDrawable = new bg2e::scene::DrawableComponent(drawable);
-
-        secondModel->addComponent(anotherDrawable);
-        secondModel->addComponent(bg2e::scene::TransformComponent::makeTranslated(-2.0f, 0.0f, 0.0f ));
-        sceneRoot->addChild(secondModel);
-
-        auto cameraNode = std::shared_ptr<bg2e::scene::Node>(new bg2e::scene::Node("Camera"));
-        cameraNode->addComponent(bg2e::scene::TransformComponent::makeTranslated(0.0f, 0.0f, 10.0f ));
-        cameraNode->addComponent(new bg2e::scene::CameraComponent());
-        auto projection = new bg2e::math::OpticalProjection();
-        cameraNode->camera()->setProjection(projection);
-
-        auto cameraRotation = new bg2e::scene::Node("Camera Rotation");
-        cameraRotation->addComponent(new bg2e::scene::TransformComponent());
-        cameraRotation->addComponent(new RotateCameraComponent());
-        cameraRotation->addChild(cameraNode);
-        sceneRoot->addChild(cameraRotation);
-
-        return sceneRoot;
     }
 
-	bg2e::scene::DrawableBase * loadDrawable()
-	{
-        std::filesystem::path modelPath = bg2e::base::PlatformTools::assetPath();
-        modelPath.append("two_submeshes.obj");
-
-        auto innerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
-            bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_inner_albedo.jpg"
-        );
-
-        auto outerAlbedoTexture = std::make_shared<bg2e::base::Texture>(
-            bg2e::base::PlatformTools::assetPath(),
-            "two_submeshes_outer_albedo.jpg"
-        );
-
-        auto drawable = new bg2e::scene::Drawable();
-        drawable->setMesh(bg2e::db::loadMeshObj<bg2e::geo::Mesh>(modelPath));
-        drawable->material(0).setAlbedoTexture(outerAlbedoTexture);
-        drawable->material(1).setAlbedoTexture(innerAlbedoTexture);
-        drawable->load(_engine);
-
-        return drawable;
-	}
+  private:
+    ui::Window _window;
 };
 
-class MyApplication : public bg2e::app::Application {
-public:
-	void init(int argc, char** argv) override
-	{
-		auto delegate = std::make_shared<BasicSceneDelegate>();
-		setRenderDelegate(delegate);
-		setInputDelegate(delegate);
-		setUiDelegate(delegate);
-	}
+class Application final : public app::Application {
+  public:
+    void init(int, char**) override
+    {
+        setRenderDelegate(std::make_shared<SceneDelegate>());
+        setInputDelegate(std::make_shared<app::InputDelegate>());
+        setUiDelegate(std::make_shared<UiDelegate>());
+    }
 };
+}
 
-int main(int argc, char** argv) {
-	bg2e::app::MainLoop mainLoop("org.bg2engine.myapp");
-	MyApplication app;
-	app.init(argc, argv);
-	return mainLoop.run(&app);
+int main(int argc, char** argv)
+{
+    try
+    {
+        bg2e::app::MainLoop loop("org.bg2engine.myapp");
+        Application application;
+        application.init(argc, argv);
+        return loop.run(&application);
+    }
+    catch (const std::exception& error)
+    {
+        std::cerr << error.what() << '\n';
+        return 1;
+    }
 }

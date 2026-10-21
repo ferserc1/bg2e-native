@@ -9,14 +9,14 @@
 - `lib/include/bg2e/app/Application.hpp`
 - `lib/include/bg2e/app/MainLoop.hpp`
 - `lib/include/bg2e/app/OffscreenApplication.hpp`
-- `lib/src/bg2e/app/detail/RenderGraphicsExecution.cpp`
+- `lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp`
 - `apps/draw/model_edit/`
 - `apps/draw/bg2e_composer/`
 - `apps/draw/lightmap_generator/`
 
 Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
 
-Current sources to inspect: [lib/include/bg2e/app/Application.hpp](../../../../lib/include/bg2e/app/Application.hpp), [lib/include/bg2e/app/MainLoop.hpp](../../../../lib/include/bg2e/app/MainLoop.hpp), [lib/include/bg2e/app/OffscreenApplication.hpp](../../../../lib/include/bg2e/app/OffscreenApplication.hpp), [lib/src/bg2e/app/detail/RenderGraphicsExecution.cpp](../../../../lib/src/bg2e/app/detail/RenderGraphicsExecution.cpp).
+Current sources to inspect: [lib/include/bg2e/app/Application.hpp](../../../../lib/include/bg2e/app/Application.hpp), [lib/include/bg2e/app/MainLoop.hpp](../../../../lib/include/bg2e/app/MainLoop.hpp), [lib/include/bg2e/app/OffscreenApplication.hpp](../../../../lib/include/bg2e/app/OffscreenApplication.hpp), [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../../../lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp).
 
 ## Implementation work
 
@@ -77,3 +77,25 @@ Preserve both workloads: camera exact completed-frame rendering and the standalo
 CLI's no-camera finish/batch path with 1x1 context surface and UV-resolution bake.
 All scene/baker owners must release before Engine cleanup; preserve signal/error
 and committed-manifest reporting boundaries. See the M08 review/removal table.
+
+## M09-01 selected entrypoint contract
+
+Follow the [actual manifest](retirement-manifest.md), not speculative app renames.
+Keep apps/draw locations and current draw_* target/app/preference/import identities.
+Application renderDelegate()/setRenderDelegate() become draw::RenderLoopDelegate
+only; remove the dual drawDelegate() slot/accessor and update actual execution and
+app/probe consumers. MainLoop::run(Application*) selects draw defaults; retain the
+explicit draw::EngineConfig overload. Keep DrawOffscreenApplicationDelegate and
+DrawOffscreenApplicationConfig as the sole typed offscreen path; remove obsolete
+production delegates/config, mode enum/header/export and execution branch.
+Preserve no-camera standalone finish and exact-frame camera workloads separately.
+No compatibility aliases or silent stored settings identity migration.
+
+## M09-02 delivery — 2026-10-21
+
+[Actual entrypoints and validation handoff](entrypoints.md) records sole draw
+Application/MainLoop/OffscreenApplication paths, unchanged product identities,
+removed old apps/registrations and required old offscreen adapter retirement.
+The input target is ported early to keep registration coherent. Existing draw
+frame/completion/cleanup behavior is preserved; native checks remain lead-owned.
+M09-01 accepted by continuation; M09-02 awaits validation and M09-03 is next.

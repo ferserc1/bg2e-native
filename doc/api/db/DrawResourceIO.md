@@ -36,7 +36,7 @@ between frames and drains the device before saving.
   its virtual draw `loadResources`. BG2/VWGLB and OBJ Drawable references are
   realized with that context. Import a glTF hierarchy through `loadGltf` first,
   then save it as a scene. A hierarchy cannot be represented by one Drawable
-  resource reference. Production and draw resources cannot be mixed implicitly.
+  resource reference. Resource realization requires the initialized draw Engine.
 
 Callbacks report synchronous parsing/resource work. OBJ texture counts are
 estimated during scene realization and may increase as resources are discovered.
@@ -105,9 +105,9 @@ atomicity, not a power-loss durability guarantee. Old generations
 remain on disk: export deliberately does not delete possibly shared resources.
 Keep the main file and its generated sidecars together when moving a document.
 
-`.bg2tex` is a draw resource format; production texture loaders do not decode it.
-Existing production DB overloads remain available for their own formats. Do not
-feed a draw resource generation to a production renderer expecting PNG/HDR paths.
+`.bg2tex` is the native texture archive format consumed by draw resource loading.
+Keep complete generated archives alongside their model/scene references; exporting
+sampler metadata alone does not materialize GPU-only image content.
 
 ## Native texture archive version 1
 
@@ -149,7 +149,7 @@ and groups. `loadDrawableObj(model, drawEngine, callback)` copies its editable m
 and texture descriptions before upload. `loadMeshBg2(path)` remains the existing
 CPU reader; `loadSceneBg2(path, const Bg2Mesh&, drawEngine, progress)` realizes that
 model, including chain joints. Existing path-taking draw overloads delegate to
-these parser/realization boundaries; production overloads remain available.
+these parser/realization boundaries; all realization overloads use draw.
 
 These CPU readers can run on an owned worker with independent inputs. They do
 not touch a live scene, graph factories or GPU objects. Consume their completed

@@ -70,11 +70,6 @@ void ChainComponent::animate([[maybe_unused]] float delta)
     }
 }
 
-void ChainComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
-{
-    deserialize(jsonData, basePath);
-}
-
 void ChainComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
     deserializeCommon(jsonData);

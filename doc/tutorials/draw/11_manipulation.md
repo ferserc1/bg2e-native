@@ -21,8 +21,7 @@ the same as in [tutorial 10](10_deferred_renderer.md); the new subject here is
 how to make that scene interactive.
 
 You need C++20, a bg2e checkout with its dependencies, and the platform graphics
-toolchain. We use the experimental `bg2e::draw` API throughout. The production
-`bg2e::render` API has different resource types.
+toolchain. We use the production `bg2e::draw` API throughout. GPU supplies its native backend resources.
 
 ## 1. Prepare one source file and the assets
 
@@ -991,7 +990,7 @@ resource. Add a `"Group: body/front"` button and use this as its action:
 ```cpp
 auto item = delegate->selection()->selectedItem();
 auto component = item ? item->drawable.lock() : nullptr;
-auto drawable = component ? component->drawDrawable() : nullptr;
+auto drawable = component ? component->drawable() : nullptr;
 if (drawable)
 {
     const utils::MaterialModifier patch(std::string{R"({"roughness":0.6})"});
@@ -1074,8 +1073,8 @@ void releaseGizmos(scene::Node* root)
         {
             if (auto* gizmo = node->getComponent<manipulation::GizmoComponent>())
             {
-                auto drawable = gizmo->drawDrawable();
-                auto transform = gizmo->transformDrawDrawable();
+                auto drawable = gizmo->drawable();
+                auto transform = gizmo->transformDrawable();
                 if (drawable)
                 {
                     drawable->cleanup();

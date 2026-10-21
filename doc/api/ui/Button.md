@@ -43,4 +43,4 @@ if (Button::button("Export"))                     { exportScene(); }
 - [Layout](Layout.md) — placement and button measurement.
 - [Group](Group.md) — disabled groups and ID stack.
 - [reference.md — Button](reference.md#button)
-- `examples/02_ui/src/main.cpp`
+- `examples/draw/01_window_ui/src/main.cpp`

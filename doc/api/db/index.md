@@ -7,15 +7,15 @@ production database formats. Its umbrella header is `<bg2e/db/all.hpp>`.
 
 - [`ImageFormat`](ImageFormat.md) discovers PNG, JPEG, BMP, and TGA formats
   from extensions and filesystem paths.
-- [`LightmapOutputWriter`](LightmapOutputWriter.md) preflights batch output
-  paths and writes lightmap images and optional `.bg2` target copies.
+- [bake::LightmapOutputWriter](../bake/LightmapOutputWriter.md) owns protected batch
+  output; the obsolete DB-specialized writer is removed.
 
 ## See also
 
-- [Render API](../render/index.md)
-- [Standalone lightmap generator CLI](../app/LightmapGenerator.md)
+- [Draw API](../draw/index.md)
+- [Standalone draw lightmap CLI](../../apps/draw_lightmap_generator.md)
 
-## Representation and experimental draw
+## Representation and draw
 
 [Scene references and draw resource loading](SceneReferences.md) explains raw
 document preservation, graphics-free typed graphs and synchronous realization.

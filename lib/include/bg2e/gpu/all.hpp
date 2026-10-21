@@ -49,3 +49,7 @@
 #include <bg2e/gpu/Mesh.hpp>
 #include <bg2e/gpu/RayTracingMesh.hpp>
 #include <bg2e/gpu/RayTracingScene.hpp>
+
+#include <bg2e/gpu/GuiRenderer.hpp>
+#include <bg2e/gpu/WindowGraphics.hpp>
+#include <bg2e/gpu/StandaloneGuiWindow.hpp>

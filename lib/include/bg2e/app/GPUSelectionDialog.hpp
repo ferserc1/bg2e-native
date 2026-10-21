@@ -19,7 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/render/vulkan/PhysicalDevice.hpp>
+#include <bg2e/gpu/PhysicalDevice.hpp>
 
 #include <string>
 #include <memory>
@@ -31,12 +31,12 @@ class BG2E_API GPUSelectionDialog {
   public:
     GPUSelectionDialog(const std::string& appId);
 
-    std::shared_ptr<render::vulkan::PhysicalDeviceProperties> run();
+    std::shared_ptr<gpu::PhysicalDeviceProperties> run(const std::vector<std::shared_ptr<gpu::PhysicalDeviceProperties>>& devices);
 
   protected:
     std::string _appId;
 
-    std::shared_ptr<render::vulkan::PhysicalDeviceProperties> _selectedDevice;
+    std::shared_ptr<gpu::PhysicalDeviceProperties> _selectedDevice;
 };
 
 }

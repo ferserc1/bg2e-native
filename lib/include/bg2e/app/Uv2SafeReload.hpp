@@ -45,39 +45,11 @@ struct Uv2RegenerationResult {
     float utilization = 0.0f;
 };
 
-// Narrow application-facing helper that regenerates the UV2 atlas of a loaded
-// scene Drawable and reloads its GPU resources safely. The CPU work
-// (geo::GenerateUv2AtlasModifier::apply) and Drawable::reload() run inside
-// MainLoop::safeUpdateScene, i.e. after Engine::device().waitIdle(), so no
-// in-flight GPU resource is modified.
-//
-// Usage:
-//   _token = Uv2SafeReload::regenerate(weakNode, options,
-//       [this](const Uv2RegenerationResult & r) { ... });
-//
-// The returned token cancels the pending work when the caller releases its
-// last reference (scene swap, window destruction). For a live node, the
-// callback runs on the main thread after the reload or a reported failure. If
-// the weak node is already expired at entry, the failure callback runs
-// immediately on the calling thread.
-// Submesh count and material attributes are preserved by Drawable::reload();
-// the helper verifies the submesh count and reports failure otherwise. After a
-// successful reload, callers must invalidate any active bake accumulation and
-// refresh UV previews (UvMapPreview::refresh) through the completion callback.
-// The description above is for production regenerate(). regenerateDraw() below
-// uses the draw delegate boundary and publishes an independent replacement.
+// Regenerates UV2 using an independent draw realization at a stopped delegate
+// boundary. The returned weak cancellation token prevents stale publication.
 class BG2E_API Uv2SafeReload {
   public:
     using CompletionCallback = std::function<void(const Uv2RegenerationResult&)>;
-
-    // Schedules regeneration of the standard scene::Drawable directly attached
-    // to targetNode. Returns the cancellation token (never null). The callback
-    // runs on success or failure unless the token is destroyed before queued
-    // work begins. A node that expires before execution is reported as failure.
-    static std::shared_ptr<SafeUpdateToken> regenerate(
-        std::weak_ptr<scene::Node> targetNode,
-        const geo::Uv2AtlasOptions& options = {},
-        CompletionCallback onComplete = nullptr);
 
     // Draw-specific queued edit; retains no renderer pointer. Generation/root,
     // component/mesh identity and weak cancellation are checked before mutation.

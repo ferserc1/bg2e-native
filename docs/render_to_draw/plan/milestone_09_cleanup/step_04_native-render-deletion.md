@@ -68,3 +68,51 @@ SDL_Vulkan_GetDrawableSize coordination. Move only required native implementatio
 behind GPU primitive/native bridges without adding GPU-to-UI/scene/draw dependencies;
 keep UI wrappers and imgui header privacy. Do not delete gpu/vk, Vulkan SDK/runtime,
 current v3/v5 tables/pools/residency or legitimate binding indices/backend casts.
+
+## M09-01 data/native preservation order
+
+Apply [the per-file manifest](retirement-manifest.md) after incoming migrations.
+Move authoritative render/blue_noise_data.h to utils/blue_noise_data.h, preserve
+exact bytes/hash/metadata and update utils/BlueNoise.cpp before deleting its old
+parent. Keep vendored SMAA tables/licenses. ImGui Vulkan pools/commands and Metal
+preparation/handle work must move behind gpu implementation bridges; preserve UI
+coordination without introducing gpu dependencies on ui/draw/scene. Also resolve
+GPUSelectionDialog's render::vulkan properties and DrawGraphicsExecution's native
+SDL drawable-size call. Native SDK assets and optimized gpu/draw/bake helpers are
+KEEP, not obsolete render. Recheck graph/reference evidence after source changes.
+
+## M09-02 implemented prerequisite
+
+[Entrypoint delivery](entrypoints.md) and [actual hash delta](entrypoint-changes.tsv)
+record changes to the M09-01 snapshot. Old apps, RenderGraphicsExecution,
+OffscreenExecution and production DefaultOffscreenApplicationDelegate pair/export
+are already removed; do not recreate them or assume old manifest paths still exist.
+Application::renderDelegate now returns draw, and MainLoop/offscreen use draw only.
+Old example registrations are retired but their sources remain M09-05 work.
+The key/mouse display is already ported and registered; retain its neutral input
+behavior. Shared scene/DB/UI/accessors/native bridges, templates and full distribution
+validation remain owned by their pending steps. Preserve current source and evidence.
+
+## M09-03 actual prerequisite and delta
+
+Use [the shared API delivery](shared-api.md) and [per-file changes](shared-api-changes.tsv)
+alongside the historical manifest and M09-02 delta. Shared render Engine overloads,
+scene native resources/bindings/visitors, DB specialized writer and obsolete widgets
+are already retired. 153 dependent production renderer headers/sources are also
+removed to close incoming dependencies; 23 render files remain, including native
+wrappers and authoritative blue-noise data. Do not restore old interfaces to make
+remaining source compile.
+
+DrawableComponent::drawable(), SelectionItem::mesh/lockMesh()/meshPtr(),
+SelectionManager::selectedMesh() and GizmoComponent::transformDrawable() now address
+draw types only. Factory registration accepts name + defaultCreator. GPUSelectionDialog
+accepts caller-provided gpu properties; its standalone OpenGL setup remains a native
+confinement seam. Generic UI/preview cleanup is draw-only; retain native Vulkan/Metal
+work pending proper GPU bridge relocation, without higher-level GPU dependencies.
+
+Registered UV/integrated test targets now call existing public bake probes through
+retirement_harness.hpp; old native main bodies are replaced without CMake changes.
+M09-05 audits original fixture-specific numerical/material coverage and removes
+the stale test_02 private render include path. M09-06 owns actual execution and
+full no-RT/optional/deployment/performance matrices. Shared documentation already
+updates 27 maintained pages; preserve current accessors and standalone IO coverage.

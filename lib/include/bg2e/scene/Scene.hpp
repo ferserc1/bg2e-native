@@ -28,10 +28,6 @@
 
 namespace bg2e {
 
-namespace render {
-class Engine;
-}
-
 namespace scene {
 
 class BG2E_API Scene {
@@ -42,7 +38,6 @@ class BG2E_API Scene {
         SceneLoadProgress* progress = nullptr);
     static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
         draw::Engine& engine, SceneLoadProgress* progress = nullptr);
-    static std::shared_ptr<Scene> deserialize(std::shared_ptr<json::JsonNode>, const std::filesystem::path&, render::Engine& engine, SceneLoadProgress* progress = nullptr);
 
     void setSceneRoot(std::shared_ptr<Node> scene);
     void setMainCamera(CameraComponent* camera);

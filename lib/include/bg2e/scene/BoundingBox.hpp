@@ -20,7 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/geo/AABoundingBox.hpp>
-#include <bg2e/scene/Mesh.hpp>
+#include <bg2e/geo/Mesh.hpp>
 
 namespace bg2e {
 namespace scene {
@@ -39,7 +39,7 @@ class BG2E_API BoundingBox : public geo::AABoundingBoxBase {
 
   private:
     void processNode(Node* node, const Options& options);
-    void addSubmesh(const geo::AABoundingBox<scene::Mesh>& box, const glm::mat4& transform);
+    void addSubmesh(const geo::AABoundingBox<geo::MeshPNUUT>& box, const glm::mat4& transform);
     void addPoint(const glm::vec3& point);
 };
 

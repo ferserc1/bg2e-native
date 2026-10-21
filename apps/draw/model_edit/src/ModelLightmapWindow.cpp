@@ -40,7 +40,7 @@ std::shared_ptr<bg2e::scene::Node> findFirstDrawable(const std::shared_ptr<bg2e:
         return nullptr;
     }
     if (auto component = root->getComponent<bg2e::scene::DrawableComponent>();
-        component && component->drawDrawable())
+        component && component->drawable())
     {
         return root;
     }
@@ -128,7 +128,7 @@ void ModelLightmapWindow::draw()
 void ModelLightmapWindow::refreshUvPreview(const std::shared_ptr<bg2e::scene::Node>& target)
 {
     auto component = target ? target->getComponent<bg2e::scene::DrawableComponent>() : nullptr;
-    auto drawable = component ? component->drawDrawable() : nullptr;
+    auto drawable = component ? component->drawable() : nullptr;
     if (!drawable || !drawable->mesh() || !_uv0Renderer || !_uv1Renderer || !_ui || !_engine)
     {
         _uvWarning.clear();
@@ -180,7 +180,7 @@ void ModelLightmapWindow::drawContents()
         auto sourceDrawable = _uv2Drawable.lock();
         auto* component = uvTarget ? uvTarget->drawable() : nullptr;
         if (!uvTarget || !delegate->stage()->contains(uvTarget.get()) || !sourceDrawable || !component ||
-            component->drawDrawable() != sourceDrawable)
+            component->drawable() != sourceDrawable)
         {
             _uv2Token.reset();
             _uv2Target.reset();
@@ -192,7 +192,7 @@ void ModelLightmapWindow::drawContents()
 
     auto selected = delegate->selection() ? delegate->selection()->selectedNode() : nullptr;
     auto target = selected ? selected->shared_from_this() : nullptr;
-    if (!target || !target->drawable() || !target->drawable()->drawDrawable())
+    if (!target || !target->drawable() || !target->drawable()->drawable())
     {
         target = findFirstDrawable(delegate->document()->root);
     }
@@ -222,7 +222,7 @@ void ModelLightmapWindow::drawContents()
         options.paddingPixels = static_cast<uint32_t>(std::max(_padding, 0));
         _uv2Generating = true;
         _uv2Target = target;
-        _uv2Drawable = target->drawable()->drawDrawable();
+        _uv2Drawable = target->drawable()->drawable();
         _message.clear();
         const auto weakTarget = std::weak_ptr<bg2e::scene::Node>(target);
         _uv2Token = delegate->regenerateUv2(target, options, [this, weakTarget](const auto& result)

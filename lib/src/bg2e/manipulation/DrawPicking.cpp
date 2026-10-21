@@ -118,8 +118,7 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
         SelectionItem selection;
         selection.node = node;
         selection.drawable = std::dynamic_pointer_cast<scene::DrawableComponent>(component->shared_from_this());
-        selection.drawMesh = component->drawDrawable();
-        selection.mode = ToolExecutionMode::Draw;
+        selection.mesh = component->drawable();
         selection.submesh = item.submeshIndex;
         selection.selectionIdentifier = selectable->identifier(item.submeshIndex);
         entries.push_back({selection, item.drawMesh, item.worldMatrix, item.objectId, {}});
@@ -143,12 +142,12 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
     const auto appendTool = [&](const std::shared_ptr<scene::Node>& node, PickKind kind)
     {
         auto* gizmo = node->getComponent<GizmoComponent>();
-        if (!gizmo || gizmo->manipulationMode() != ToolExecutionMode::Draw)
+        if (!gizmo)
         {
             return;
         }
         const bool transform = kind == PickKind::TransformGizmo;
-        auto resource = transform ? gizmo->transformDrawDrawable() : gizmo->drawDrawable();
+        auto resource = transform ? gizmo->transformDrawable() : gizmo->drawable();
         if (!resource || !resource->isLoaded())
         {
             return;
@@ -171,7 +170,6 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
             }
             SelectionItem selection;
             selection.node = node;
-            selection.mode = ToolExecutionMode::Draw;
             selection.kind = kind;
             selection.submesh = i;
             entries.push_back({selection, resource->drawMesh(), world * resource->submeshTransform(i), nextId++,

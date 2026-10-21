@@ -182,12 +182,28 @@ if [ "${CURRENT_PLATFORM}" = "linux" ]; then
     [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
 elif [ "${CURRENT_PLATFORM}" = "macos" ]; then
     LIB_FILE="${REPO_ROOT}/bin/macos/libbg2e.dylib"
+    if [ ! -f "${LIB_FILE}" ]; then
+        for config in Release Debug; do
+            candidate="${REPO_ROOT}/bin/macos/${config}/libbg2e.dylib"
+            if [ -f "${candidate}" ]; then
+                LIB_FILE="${candidate}"
+                break
+            fi
+        done
+    fi
     [ -f "${LIB_FILE}" ] || die "Cannot find pre-compiled library: ${LIB_FILE}\n  Build the project first: cmake --build build"
 fi
 
 [ -d "${SHADER_DIR}" ] || die "Cannot find compiled shaders at ${SHADER_DIR}\n  Build the project first: cmake --build build"
-SPV_COUNT=$(find "${SHADER_DIR}" -name "*.spv" 2>/dev/null | wc -l)
-[ "${SPV_COUNT}" -gt 0 ] || die "No .spv files found in ${SHADER_DIR}\n  Build the project first: cmake --build build"
+# Require the canonical paired engine trees, not stale flat outputs.
+for stage in draw/raster/gbuffer.frag.spv bake/uv_surface.frag.spv; do
+    [ -f "${SHADER_DIR}/${stage}" ] || die "Missing engine shader: ${SHADER_DIR}/${stage}. Rebuild bg2e first."
+done
+if [ "${CURRENT_PLATFORM}" = "macos" ]; then
+    for stage in draw/raster/gbuffer.frag.metallib bake/uv_surface.frag.metallib; do
+        [ -f "${SHADER_DIR}/${stage}" ] || die "Missing Metal engine shader: ${SHADER_DIR}/${stage}. Rebuild bg2e first."
+    done
+fi
 
 [ -d "${TARGET_PATH}" ] && die "Target directory already exists: ${TARGET_PATH}"
 
@@ -219,7 +235,9 @@ cp -r "${REPO_ROOT}/assets/"* "${TARGET_PATH}/assets/"
 
 echo "Copying compiled shaders..."
 # Preserve native shader libraries and nested pipeline names.
-cp -R "${SHADER_DIR}/." "${TARGET_PATH}/shaders/"
+for tree in draw bake; do
+    cp -R "${SHADER_DIR}/${tree}" "${TARGET_PATH}/shaders/${tree}"
+done
 
 echo "Copying CMake modules..."
 cp "${REPO_ROOT}/cmake/FindVulkan.cmake" "${TARGET_PATH}/cmake/"
@@ -251,7 +269,7 @@ elif [ "${CURRENT_PLATFORM}" = "macos" ]; then
     # -----------------------------------------------------------------------
 
     echo "Copying pre-compiled library (macos)..."
-    cp "${REPO_ROOT}/bin/macos/libbg2e.dylib" "${TARGET_PATH}/lib/macos/"
+    cp "${LIB_FILE}" "${TARGET_PATH}/lib/macos/"
     if [ -f "${REPO_ROOT}/bin/macos/libSDL2.dylib" ]; then
         cp "${REPO_ROOT}/bin/macos/libSDL2.dylib" "${TARGET_PATH}/lib/macos/"
     fi
@@ -262,8 +280,7 @@ elif [ "${CURRENT_PLATFORM}" = "macos" ]; then
         mkdir -p "${TARGET_PATH}/vulkan/explicit_layer.d"
         cp -r "${VULKAN_SDK}/share/vulkan/icd.d/"* "${TARGET_PATH}/vulkan/icd.d/" 2>/dev/null || true
         cp -r "${VULKAN_SDK}/share/vulkan/explicit_layer.d/"* "${TARGET_PATH}/vulkan/explicit_layer.d/" 2>/dev/null || true
-        for dylib in libMoltenVK.dylib libvulkan.*.dylib; do
-            src="${VULKAN_SDK}/lib/${dylib}"
+        for src in "${VULKAN_SDK}/lib"/libMoltenVK.dylib "${VULKAN_SDK}/lib"/libvulkan.*.dylib; do
             if [ -f "${src}" ]; then
                 cp "${src}" "${TARGET_PATH}/lib/macos/"
             fi

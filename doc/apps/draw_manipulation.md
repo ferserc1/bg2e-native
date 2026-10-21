@@ -1,7 +1,7 @@
-# Experimental manipulation example
+# Draw manipulation example
 
 `examples/draw/11_manipulation` registers the `draw_manipulation` target. It
-demonstrates experimental draw selection, gizmo overlays, camera input routing,
+demonstrates draw selection, gizmo overlays, camera input routing,
 partial material edits and best-view analysis. Follow the
 [tutorial](../tutorials/draw/11_manipulation.md) for the interaction sequence
 and API references.

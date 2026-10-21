@@ -20,7 +20,6 @@
 
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/scene/ChainJoint.hpp>
-#include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
@@ -91,78 +90,6 @@ std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
 {
     auto model = std::unique_ptr<Bg2Mesh>(loadMeshBg2(path));
     return loadSceneBg2(path, *model, engine, std::move(onProgress));
-}
-
-std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& filePath,
-    render::Engine* engine)
-{
-    return loadSceneBg2(filePath, engine, true);
-}
-
-std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& filePath,
-    render::Engine* engine,
-    bool loadGpuResources)
-{
-    auto model = std::unique_ptr<Bg2Mesh>(loadMeshBg2(filePath));
-
-    auto drawable = std::make_shared<scene::Drawable>();
-    drawable->setName(filePath.stem().string());
-    drawable->setMesh(model->mesh);
-    for (uint32_t index = 0; index < model->materials.size(); ++index)
-    {
-        auto& material = model->materials[index];
-        drawable->setMaterial(material, index);
-        drawable->setSubmeshName(material.name(), index);
-        drawable->setSubmeshGroupName(material.groupName(), index);
-        drawable->setSubmeshVisibility(material.visible(), index);
-    }
-    if (loadGpuResources)
-    {
-        if (!engine)
-        {
-            throw std::invalid_argument("loadSceneBg2(): an engine is required for GPU loading");
-        }
-        drawable->load(engine);
-    }
-
-    auto result = std::make_shared<scene::Node>(filePath.stem().string());
-    result->addComponent(std::make_shared<scene::DrawableComponent>(drawable));
-    result->addComponent(std::make_shared<scene::TransformComponent>());
-
-    if (model->inputJoint)
-    {
-        auto component = std::make_shared<scene::InputChainJointComponent>();
-        component->setJoint(*model->inputJoint);
-        result->addComponent(component);
-    }
-
-    if (model->outputJoint)
-    {
-        auto component = std::make_shared<scene::OutputChainJointComponent>();
-        component->setJoint(*model->outputJoint);
-        result->addComponent(component);
-    }
-
-    return result;
-}
-
-std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine)
-{
-    return loadSceneBg2(basePath / fileName, engine, true);
-}
-
-std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine,
-    bool loadGpuResources)
-{
-    return loadSceneBg2(basePath / fileName, engine, loadGpuResources);
 }
 
 }

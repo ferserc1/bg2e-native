@@ -27,9 +27,8 @@
 namespace bg2e {
 namespace draw {
 
-// Configuration for the experimental draw engine. The backend field selects
-// the low-level GPU API only; the high-level execution path is selected by
-// the MainLoop run or typed OffscreenApplication init overload.
+// Configuration for the draw engine used by MainLoop and OffscreenApplication.
+// The backend field selects the low-level GPU API.
 struct EngineConfig {
     // Prefer the native Metal backend on macOS; use Vulkan elsewhere.
 #ifdef BG2E_IS_MAC

@@ -90,4 +90,4 @@ scale changes.
 - [Text](Text.md) — labels and separators.
 - [Button](Button.md) — the controls typically placed with these helpers.
 - [reference.md — Layout](reference.md#layout)
-- `examples/02_ui/src/main.cpp`
+- `examples/draw/01_window_ui/src/main.cpp`

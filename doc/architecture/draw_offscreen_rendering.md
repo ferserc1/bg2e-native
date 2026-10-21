@@ -1,6 +1,6 @@
 # Headless draw rendering and accumulated camera output
 
-The experimental draw path supports a windowless Engine and a typed
+The draw path supports a windowless Engine and a typed
 [OffscreenApplication](../api/app/OffscreenApplication.md). Production render's
 offscreen overload remains separate and supported. Backend selection within draw
 chooses Vulkan or Metal; it does not select the high-level render framework.

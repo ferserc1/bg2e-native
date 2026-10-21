@@ -292,30 +292,47 @@ function(bundle_resources)
         set(BL_SUBPATH "Resources")
     endif()
 
-    if (APPLE)
-        message(STATUS "Copy resources from ${BL_SRC_PATH} to ${BL_SUBPATH} inside bundle")
-
-        add_custom_command(
-            TARGET ${BL_TARGET_NAME}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory
-                "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${BL_SRC_PATH}"
-                "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}"
-        )
+    if("${BL_SRC_PATH}" STREQUAL "${BG2E_SHADER_DIR}")
+        if(APPLE)
+            set(ENGINE_SHADER_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}")
+        else()
+            set(ENGINE_SHADER_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}")
+        endif()
+        if(APPLE OR CMAKE_CONFIGURATION_TYPES OR NOT "${BL_SRC_PATH}" STREQUAL "${PRODUCT_DIR}/${BL_SUBPATH}")
+            foreach(TREE IN ITEMS draw bake)
+                add_custom_command(TARGET ${BL_TARGET_NAME} POST_BUILD
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory
+                        "${BL_SRC_PATH}/${TREE}" "${ENGINE_SHADER_DST}/${TREE}"
+                    VERBATIM)
+            endforeach()
+        endif()
     else()
-        message(STATUS "Copy resources from ${BL_SRC_PATH}")
+        if (APPLE)
+            message(STATUS "Copy resources from ${BL_SRC_PATH} to ${BL_SUBPATH} inside bundle")
 
-        add_custom_command(
-            TARGET ${BL_TARGET_NAME}
-            POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E make_directory
-                "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}"
-            COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${BL_SRC_PATH}"
-                "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}"
-        )
+            add_custom_command(
+                TARGET ${BL_TARGET_NAME}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}"
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${BL_SRC_PATH}"
+                    "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}"
+            )
+        else()
+            message(STATUS "Copy resources from ${BL_SRC_PATH}")
+
+            add_custom_command(
+                TARGET ${BL_TARGET_NAME}
+                POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E make_directory
+                    "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}"
+                COMMAND ${CMAKE_COMMAND} -E copy_directory
+                    "${BL_SRC_PATH}"
+                    "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}"
+            )
+        endif()
+
     endif()
 
     # Shader-only edits do not relink an app, so POST_BUILD alone leaves bundle

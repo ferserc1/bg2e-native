@@ -50,3 +50,17 @@ between targets and output manifest resolution. Keep camera exact-N offscreen an
 UV accumulation examples separate. Show real mode/format/model-copy limits and
 controlled pixel/geometry reload checks; no unimplemented native capability or
 future compatibility recipe may replace the delivered tutorial.
+
+## Final M09-07 source baseline and handoff
+
+Use [the final review](../milestone_09_cleanup/review.md) and its
+[page inventory](../milestone_09_cleanup/documentation-handoff.tsv). M09-06 and
+its scene/Metal/VMA corrections are accepted by continuation. Production is
+`bg2e::draw`; GPU is its low-level backend abstraction. Retired render APIs and
+old application targets have no compatibility promise. The source catalog lists
+33 products; native scenario/backend/performance coverage remains unspecified.
+M09-08 authors the complete cumulative maintained documentation before M10.
+M10 audits that delivered documentation and makes localized corrections; do not
+defer missing API, tutorial, build or application authoring to this milestone.
+
+Audit examples/draw/01..13 and examples/gpu targets using final-products.tsv, not old numbered legacy tutorials. Cover no-RT behavior, portable upscaler fallback, paired native custom shaders and metadata-backed settings. Baking uses one live target/context and a global submission serial; camera PNG offscreen rendering is a separate workflow.

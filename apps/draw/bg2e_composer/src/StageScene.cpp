@@ -380,7 +380,7 @@ void cleanupTree(bg2e::scene::Node& node)
     }
     if (auto component = node.drawable())
     {
-        if (auto drawable = component->drawDrawable())
+        if (auto drawable = component->drawable())
         {
             release([&]
             {
@@ -763,7 +763,6 @@ void StageScene::publishImport(const std::shared_ptr<bg2e::scene::Node>& candida
     markModified();
 }
 
-
 void StageScene::insert(std::shared_ptr<bg2e::scene::Node> candidate,
     const std::shared_ptr<bg2e::scene::Node>& parent)
 {
@@ -808,7 +807,6 @@ void StageScene::validateEditingGraph()
     }
     prepareCameras(_document.root);
 }
-
 
 void StageScene::refreshCamera()
 {
@@ -954,7 +952,7 @@ bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Nod
             throw std::invalid_argument("Model export target is no longer in the document");
         }
         auto component = node->drawable();
-        if (!component || !component->drawDrawable())
+        if (!component || !component->drawable())
         {
             if (!batch)
             {
@@ -1001,7 +999,7 @@ bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Nod
         // Export this node's model only: no descendants, scene components or
         // placement transform. The live drawable is borrowed for snapshot IO.
         auto model = std::make_shared<scene::Node>(node->name());
-        model->addComponent(new scene::DrawableComponent(component->drawDrawable()));
+        model->addComponent(new scene::DrawableComponent(component->drawable()));
         if (auto joint = node->getComponent<scene::InputChainJointComponent>())
         {
             model->addComponent(joint->clone());
@@ -1052,7 +1050,6 @@ void StageScene::releaseRetired()
     }
 }
 
-
 namespace {
 void visitNodes(const std::shared_ptr<bg2e::scene::Node>& node,
     const std::function<void(const std::shared_ptr<bg2e::scene::Node>&)>& callback)
@@ -1100,7 +1097,7 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
         using namespace bg2e;
         if (auto component = node->drawable())
         {
-            if (auto drawable = component->drawDrawable())
+            if (auto drawable = component->drawable())
             {
                 if (drawables.contains(drawable.get()) || meshes.contains(drawable->mesh().get()))
                 {

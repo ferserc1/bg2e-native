@@ -133,3 +133,67 @@ scripts and copied include/shader trees, not only package executable collection.
 Keep the neutral blue-noise generator while fixing its old output-path example.
 Shared GLSL includes, paired draw/bake refresh, RuntimeShaders, optional SDK assets
 and native loader formats must remain valid after legacy stages are removed.
+
+## M09-01 concrete test/build/template dispositions
+
+[The manifest](retirement-manifest.md) assigns each actual source/build/resource
+file. Keep test_04_uv2_atlas and its CPU assertions/target. Port test_01 input
+assertions and test_02/test_03 UV/RGB material/sample/reset/readback assertions
+before retiring old native harnesses; existing replacement filenames alone are
+not coverage proof. Retire legacy debug/01–18 examples and old app targets; keep
+all delivered examples/draw, examples/gpu and apps/draw products with current
+draw_* target names. Update real standalone templates/main.cpp and registrations,
+package/install/runtime paths and blue-noise generator usage. Paired shader include
+roots are independent: draw/gbuffer/probe.frag.glsl resolves draw/lib/pbr.glsl,
+not the identically named retired GLSL helper. Preserve paired stages/runtime
+resources, SDK/Metal/Vulkan deployment and original SMAA data/licenses.
+
+## M09-02 implemented prerequisite
+
+[Entrypoint delivery](entrypoints.md) and [actual hash delta](entrypoint-changes.tsv)
+record changes to the M09-01 snapshot. Old apps, RenderGraphicsExecution,
+OffscreenExecution and production DefaultOffscreenApplicationDelegate pair/export
+are already removed; do not recreate them or assume old manifest paths still exist.
+Application::renderDelegate now returns draw, and MainLoop/offscreen use draw only.
+Old example registrations are retired but their sources remain M09-05 work.
+The key/mouse display is already ported and registered; retain its neutral input
+behavior. Shared scene/DB/UI/accessors/native bridges, templates and full distribution
+validation remain owned by their pending steps. Preserve current source and evidence.
+
+## M09-03 actual prerequisite and delta
+
+Use [the shared API delivery](shared-api.md) and [per-file changes](shared-api-changes.tsv)
+alongside the historical manifest and M09-02 delta. Shared render Engine overloads,
+scene native resources/bindings/visitors, DB specialized writer and obsolete widgets
+are already retired. 153 dependent production renderer headers/sources are also
+removed to close incoming dependencies; 23 render files remain, including native
+wrappers and authoritative blue-noise data. Do not restore old interfaces to make
+remaining source compile.
+
+DrawableComponent::drawable(), SelectionItem::mesh/lockMesh()/meshPtr(),
+SelectionManager::selectedMesh() and GizmoComponent::transformDrawable() now address
+draw types only. Factory registration accepts name + defaultCreator. GPUSelectionDialog
+accepts caller-provided gpu properties; its standalone OpenGL setup remains a native
+confinement seam. Generic UI/preview cleanup is draw-only; retain native Vulkan/Metal
+work pending proper GPU bridge relocation, without higher-level GPU dependencies.
+
+Registered UV/integrated test targets now call existing public bake probes through
+retirement_harness.hpp; old native main bodies are replaced without CMake changes.
+M09-05 audits original fixture-specific numerical/material coverage and removes
+the stale test_02 private render include path. M09-06 owns actual execution and
+full no-RT/optional/deployment/performance matrices. Shared documentation already
+updates 27 maintained pages; preserve current accessors and standalone IO coverage.
+
+## M09-04 implemented native/data prerequisite
+
+[Native retirement](native-retirement.md) and [source delta](native-changes.tsv)
+record deletion of the final 23 render files. There is no render implementation
+to restore for an obsolete target. Keep gpu::GuiRenderer (Vulkan/Metal),
+gpu::StandaloneGuiWindow and gpu::drawableSize and their new globbed GPU sources.
+UI files are thin primitive-only adapters; the standalone chooser's OpenGL
+backend remains required. Preserve vendor renderer linkage, native SDK/MoltenVK
+assets, and byte-identical utils/blue_noise_data.h plus SMAA tables/licenses.
+Generator usage now names utils; do not reintroduce the old output path.
+The inventory supports --output-dir and all three delta ledgers; preserve historical
+TSVs and include untracked new files when refreshing evidence. Full obsolete
+example/template/shader/package/test cleanup still belongs to this step.

@@ -1,8 +1,7 @@
 # StandaloneBakerContext
 
 **Header:** `<bg2e/bake/StandaloneBakerContext.hpp>`; also in `<bg2e/bake/all.hpp>`.
-**Namespace:** `bg2e::bake`. This is the experimental draw/bake path; production
-render baking remains available separately.
+**Namespace:** `bg2e::bake`. This is the draw/bake path; integrated and standalone jobs share these contracts.
 
 The context borrows an initialized **windowless draw Engine** and owns a private
 serial UV job lifecycle. It neither creates another Engine nor obtains effects

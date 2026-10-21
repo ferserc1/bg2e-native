@@ -5,8 +5,7 @@ familiarity with opening files and entering numbers. For implementing a C++ draw
 application, begin with [tutorial 10](10_deferred_renderer.md); for the baker APIs,
 use [tutorial 12](12_lightmaps.md).
 
-The editor uses the experimental `bg2e::draw` rendering path. The production
-`model_edit` application remains available with its own preferences.
+The editor uses the production `bg2e::draw` rendering path. Application preference identities are preserved.
 
 ## 1. Launch the editor with its resources
 

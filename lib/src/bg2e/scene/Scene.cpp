@@ -85,48 +85,6 @@ std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> data, 
     return result;
 }
 
-std::shared_ptr<Scene> Scene::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress)
-{
-    json::ObjectReader reader(jsonData);
-    if (!reader.isValid())
-    {
-        return nullptr;
-    }
-
-    // Read and log version
-    if (auto version = reader.getObject("version"))
-    {
-        int major = version->getInteger<int>("major").value_or(0);
-        int minor = version->getInteger<int>("minor").value_or(0);
-        int rev = version->getInteger<int>("rev").value_or(0);
-        bg2e_log_debug << "Loading scene file version " << major << "." << minor << "." << rev << bg2e_log_end;
-    }
-
-    // Create root node
-    auto sceneRoot = std::make_shared<Node>("scene root");
-
-    // Deserialize nodes from scene array
-    if (auto sceneList = reader.getArray("scene"))
-    {
-        for (std::size_t i = 0; i < sceneList->size(); ++i)
-        {
-            auto nodeData = sceneList->getObject(i);
-            if (!nodeData)
-            {
-                bg2e_log_warning << "Skipping invalid scene node at index " << i << bg2e_log_end;
-                continue;
-            }
-            auto node = std::make_shared<Node>();
-            node->deserialize(nodeData->node(), basePath, engine, progress);
-            sceneRoot->addChild(node);
-        }
-    }
-
-    auto scene = std::make_shared<Scene>();
-    scene->setSceneRoot(sceneRoot);
-    return scene;
-}
-
 bool Scene::sceneHasCamera(Node* rootNode)
 {
     if (!rootNode)

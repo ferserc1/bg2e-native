@@ -104,11 +104,6 @@ void EnvironmentComponent::setSkyboxBlur(float blur)
     _skyboxBlur = blur;
 }
 
-void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
-{
-    deserialize(jsonData, basePath);
-}
-
 void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath)
 {
     deserializeCommon(jsonData);
@@ -125,39 +120,6 @@ void EnvironmentComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData,
     }
     setEnvironmentImage(!textureName || textureName->empty() ? std::string{} :
         std::filesystem::absolute(basePath / *textureName).lexically_normal().string());
-}
-
-void EnvironmentComponent::deserializeWithProgress(
-    std::shared_ptr<json::JsonNode> jsonData,
-    const std::filesystem::path& basePath,
-    render::Engine& engine,
-    SceneLoadProgress* progress)
-{
-    deserialize(jsonData, basePath, engine);
-
-    if (!_environmentImage.empty())
-    {
-        auto extension = std::filesystem::path(_environmentImage).extension().string();
-        std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char value)
-        {
-            return static_cast<char>(std::tolower(value));
-        });
-        if (extension != ".hdr")
-        {
-            // Scene resources continue to register supported raster formats
-            // with the legacy cache. HDR environment decoding is owned by the
-            // draw environment generator at its safe preparation boundary.
-            utils::TextureCache::get().load(&engine, _environmentImage);
-        }
-        if (progress && progress->callback)
-        {
-            progress->callback(_environmentImage, progress->loaded, progress->total);
-        }
-        if (progress)
-        {
-            ++progress->loaded;
-        }
-    }
 }
 
 std::shared_ptr<json::JsonNode> EnvironmentComponent::serialize(const std::filesystem::path& basePath)

@@ -18,10 +18,8 @@ textures, and lighting. The engine-specific concepts are introduced below.
 You do not need to write Vulkan or Metal commands, shaders, or a rendering
 pipeline for this example.
 
-The application uses `bg2e::draw`, the experimental scene rendering path built
-on `bg2e::gpu`. The existing production API is `bg2e::render`. These are distinct
-paths; this tutorial consistently uses `draw` types and the corresponding
-`MainLoop::run` overload.
+The application uses production `bg2e::draw` over `bg2e::gpu`. Use draw scene,
+material and renderer types with compatible public pipeline bindings.
 
 ## 1. Prepare the project and assets
 

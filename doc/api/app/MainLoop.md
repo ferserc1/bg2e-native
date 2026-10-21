@@ -27,69 +27,45 @@ int32_t run(Application* application);
 int32_t run(Application* application, const draw::EngineConfig& config);
 ```
 
-The one-argument overload always selects production `bg2e::render`, with Vulkan.
-This route uses render graphics delegates and Vulkan resources.
-The two-argument overload selects experimental `bg2e::draw`; it has no default
-second argument. Pass `draw::EngineConfig{}` to use Metal on macOS or Vulkan on
-Linux/Windows, or set `config.backend` explicitly. See
-[EngineConfig](../draw/EngineConfig.md) for all configuration fields.
+Both overloads select `bg2e::draw`. The one-argument overload uses
+`draw::EngineConfig{}`: Metal on macOS, Vulkan elsewhere. Pass the configuration
+explicitly to override the backend, validation or formats. Selecting Vulkan also
+uses draw. MainLoop copies the configuration into its private execution object.
+See [EngineConfig](../draw/EngineConfig.md).
 
-The run overload, not the registered delegate or low-level backend, selects
-the high-level framework. Selecting Vulkan in EngineConfig still selects draw.
-`MainLoop` copies the supplied configuration into its private execution object.
-
-Call the application's `init(argc, argv)` in the launcher before `run()`.
-`MainLoop` does not call it automatically.
+Call the application's `init(argc, argv)` in the launcher before `run()`;
+MainLoop does not call it automatically.
 
 ### Configuration errors
 
 Before initializing SDL or creating a window, `run()` throws
-`std::invalid_argument` for:
+`std::invalid_argument` for a null application, missing draw graphics delegate,
+missing UI/input delegate, or Metal selected outside macOS, in that order.
+Application has one graphics slot, exposed through `renderDelegate()`.
+See [registration](Application_and_input.md#graphics-delegate-registration).
 
-- a null application pointer;
-- a graphics delegate from the other framework, including two populated graphics slots;
-- a missing graphics delegate for the selected framework;
-- a missing UI or input delegate;
-- Metal selected for draw on a platform other than macOS.
+### Draw execution
 
-Validation follows this order: application pointer, opposite graphics slot,
-required graphics slot, UI delegate, input delegate, then the experimental
-platform restriction. Registering a draw delegate and calling `run(application)`
-does not switch frameworks; it reports the mismatch. See
-[Application registration](Application_and_input.md#graphics-delegate-registration).
-
-### Experimental execution
-
-Draw initializes the GPU context and coordinates retained scene color and
-presentation. After validation, MainLoop prepares and retains the configured
-backend before creating its SDL window. Empty EngineConfig::applicationName uses
-MainLoop's appId.
-
-The draw path initializes UserInterface with Vulkan or Metal.
-UI preparation happens after presentation-image acquisition, even when the scene
-is paused. Event forwarding and loader frame overrides run only when the
-selected UI backend is initialized.
-The render route uses its Vulkan UI callback.
+After validation, MainLoop prepares and retains the backend before creating its
+SDL window. Empty EngineConfig::applicationName uses MainLoop's appId. The draw
+coordinator owns retained scene color and presentation. UI preparation happens
+after presentation-image acquisition, including while the scene is paused.
+Event forwarding and loader overrides require an initialized UI backend.
 
 ### Common loop and graphics execution
 
-`MainLoop` owns the input manager, UserInterface, Loader, timers and common
-scheduling. The private graphics execution implementation owns Engine and
-RenderLoop and handles initialization, scene startup, resize requests, frame
-work, GPU waiting, scene pause/resume and cleanup. It is not public API.
+MainLoop owns input, UserInterface, Loader, timers, background scheduling and
+joined async workers. The private DrawGraphicsExecution owns Engine and RenderLoop
+and handles initialization, scene startup, resize, frame work, GPU waiting,
+pause/resume and cleanup. MainLoop passes milliseconds; the adapter converts to
+seconds for draw callbacks.
 
-The render implementation initializes its descriptor pool and uses its
-Vulkan UI callback. During resize debounce it prepares UI frames but suppresses
-scene acquisition/presentation. MainLoop passes elapsed milliseconds to the
-execution implementation; the draw adapter converts to seconds for its
-RenderLoop contract. Render frame callbacks use milliseconds.
-
-Safe updates wait through the active graphics execution before invoking queued
-work. Async loading pauses/resumes that execution while Loader/frame override
-and worker completion remain common MainLoop behavior in both execution paths.
-In draw, executed safe updates also invalidate the retained scene; canceled
-callbacks do not. Async loading retains the last valid scene while Loader/UI
-continues, then resumes scene refresh on the main thread. The render coordinator defines its own pause behavior.
+Safe updates wait through the graphics execution before invoking queued work;
+executed callbacks invalidate retained scene, canceled callbacks do not.
+Async loading pauses scene refresh while Loader/UI continues, then completes
+on the main thread. Workers join before normal or exceptional teardown.
+The renderer's separately typed final-color update path retains its narrow
+synchronization rules; this migration adds no blanket per-frame drain.
 
 ## WindowConfig
 
@@ -172,9 +148,7 @@ Call these methods on the main thread during an active run; otherwise they throw
 pending until resume. `requestFrame()` alone does not dirty the scene.
 `pauseScene()` preserves the last valid scene and stores a clear color for a
 replacement target (for example, after resize). UI preparation/composition keeps
-running. `resumeScene()` requests a scene refresh. Production forwards pause and
-resume to its existing coordinator; its scene already updates every frame.
-Do not mix manual pause ownership with an overlapping asyncLoad operation:
+running. `resumeScene()` requests a scene refresh. Do not mix manual pause ownership with an overlapping asyncLoad operation:
 async completion resumes the scene unconditionally.
 
 See the [window/UI example](../../../examples/draw/README.md).
@@ -229,8 +203,8 @@ or exceptional graphics/UI cleanup and expires completion tokens when run exits.
 A worker must return without depending on a future main-thread completion.
 A successful example run does not imply arbitrary cross-thread scene access.
 
-## Experimental draw scene path
+## Draw scene path
 
 The separate [draw renderer lifecycle](../draw/RendererDeferred.md) and [live settings contract](../draw/Settings.md)
 cover deferred scene ownership, public injection and queued safe changes.
-Production render behavior described above remains supported.
+The former render application execution path is removed.

@@ -18,7 +18,7 @@ and `serializeReferences(path)`; `loadResources(draw::Engine&, progress)` is the
 separate realization stage.
 
 `loadScene(path, drawEngine)` realizes supported references synchronously using
-that context. Production Engine overloads remain distinct. `loadDrawableObj(path,
+that context. Production Engine overloads are removed. `loadDrawableObj(path,
 drawEngine)` reuses CPU geometry parsing and imports supported MTL maps/settings.
 `loadDrawableBg2(path, drawEngine)` realizes supported geometry/material resources.
 [Complete draw resource IO](DrawResourceIO.md) adds static glTF import, native
@@ -27,7 +27,7 @@ an explicit draw Engine and remains separate from reference-only saving. Raw
 preservation is broader than typed component construction.
 
 Stop scene/GPU producers for realization or replacement, retain Engine/device
-until resources are released, and use the matching DrawableComponent mode.
+until resources are released, and use DrawableComponent::drawable() for its sole draw resource.
 See [draw resources](../draw/Resources.md).
 
 ## Detached scene roots and custom component copies

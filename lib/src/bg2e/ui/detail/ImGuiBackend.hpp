@@ -24,14 +24,14 @@
 
 namespace bg2e::ui::detail {
 
-// UI owns the session; GPU backend helpers handle native texture registration.
+// UI owns the session; GPU bridges own native rendering and texture registration.
 class ImGuiBackend {
   public:
     virtual ~ImGuiBackend() = default;
-    virtual void initialize(render::Engine&) = 0;
+
     virtual void initialize(draw::Engine&) = 0;
     virtual void prepareFrame(gpu::CommandBuffer*, gpu::SurfaceFrame*) = 0;
-    virtual void draw(VkCommandBuffer, VkImageView) = 0;
+
     virtual void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&) = 0;
     virtual void shutdown() = 0;
 

@@ -59,7 +59,7 @@ behavior.
 
 - **Only** `setMessage()` / `setProgress()` touch the loader; both lock the
   mutex.
-- Do not call into `render::Engine`, the scene graph, or VMA from the worker.
+- Do not call into `draw::Engine`, the scene graph, or VMA from the worker.
   Cross-thread scene changes must be posted with
   `MainLoop::safeUpdateScene(fn)` (runs at a safe point between frames).
 - The thread is **detached**: `fn` must complete; it cannot be cancelled, and

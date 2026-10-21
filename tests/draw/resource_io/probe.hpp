@@ -79,7 +79,7 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
     db::saveScene(node.get(), engine, path);
     require(node->getComponent<scene::DrawableComponent>()->resourcePath().empty());
     auto loaded = db::loadScene(path, engine);
-    auto output = loaded->rootNode()->children().at(0)->getComponent<scene::DrawableComponent>()->drawDrawable();
+    auto output = loaded->rootNode()->children().at(0)->getComponent<scene::DrawableComponent>()->drawable();
     const auto& material = output->material(0);
     require(output->name() == name && material.aoUVSet() == 1 && material.aoScale() == glm::vec2(2, 3));
     require(material.indirectTextureMode() == base::MaterialAttributes::IndirectTextureMode::BakedGlobalIllumination);
@@ -119,7 +119,7 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
         node->getComponent<scene::DrawableComponent>()->resourcePath().empty());
     auto recovered = db::loadScene(path, engine);
     require(recovered->rootNode()->children().size() == 1);
-    recovered->rootNode()->children().at(0)->getComponent<scene::DrawableComponent>()->drawDrawable()->cleanup();
+    recovered->rootNode()->children().at(0)->getComponent<scene::DrawableComponent>()->drawable()->cleanup();
     engine.device()->waitIdle();
     output->cleanup();
     drawable->cleanup();

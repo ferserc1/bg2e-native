@@ -19,7 +19,6 @@
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
-#include <bg2e/scene/Drawable.hpp>
 #include <limits>
 #include <stdexcept>
 
@@ -51,21 +50,11 @@ void SelectableComponent::update(float)
     std::shared_ptr<void> drawableIdentity;
     std::shared_ptr<void> meshIdentity;
     uint32_t count = 0;
-    if (component && component->executionMode() == scene::DrawableComponent::ExecutionMode::Draw)
+    if (auto drawable = component ? component->drawable() : nullptr)
     {
-        auto drawable = component->drawDrawable();
         drawableIdentity = drawable;
         meshIdentity = drawable->mesh();
         count = drawable->submeshesCount();
-    }
-    else if (component && component->executionMode() == scene::DrawableComponent::ExecutionMode::Production)
-    {
-        if (auto drawable = component->drawable())
-        {
-            drawableIdentity = drawable;
-            meshIdentity = drawable->mesh();
-            count = drawable->submeshesCount();
-        }
     }
     if (_drawableIdentity.lock() != drawableIdentity || _meshIdentity.lock() != meshIdentity || count != _submeshCount)
     {

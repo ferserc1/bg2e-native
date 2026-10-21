@@ -71,13 +71,13 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
         }
         return;
     }
-    if (!target || !target->drawable() || !target->drawable()->drawDrawable())
+    if (!target || !target->drawable() || !target->drawable()->drawable())
     {
         ui::Text::text("No drawable selected");
         return;
     }
     auto* component = target->drawable();
-    auto drawable = component->drawDrawable();
+    auto drawable = component->drawable();
     ui::Text::text(target->name());
     ui::Text::separator("Submeshes");
     if (ui::SelectableList::beginList())
@@ -92,9 +92,9 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
         }
         ui::SelectableList::endList();
     }
-    if (auto item = selection->selectedItem(); item && item->lockDrawMesh())
+    if (auto item = selection->selectedItem(); item && item->lockMesh())
     {
-        auto mesh = item->lockDrawMesh();
+        auto mesh = item->lockMesh();
         auto name = mesh->submeshName(item->submesh);
         auto group = mesh->submeshGroupName(item->submesh);
         auto visible = mesh->submeshVisibility(item->submesh);
@@ -106,7 +106,7 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
                 const auto snapshot = *current;
                 delegate->queueNodeEdit(current->node, [snapshot, operation](auto&)
                 {
-                    if (auto mesh = snapshot.lockDrawMesh())
+                    if (auto mesh = snapshot.lockMesh())
                     {
                         operation(*mesh, snapshot.submesh);
                     }

@@ -1,280 +1,52 @@
-# MainLoop architecture: production render and experimental draw
+# MainLoop architecture: draw application execution
 
-MainLoop connects application delegates, window/event handling and graphics
-execution in bg2 engine. This document explains the two high-level rendering
-paths and their integration with the GPU abstraction and UI framework. Source
-excerpts include file paths and line ranges; line numbers can shift as source
-files evolve.
+MainLoop connects application delegates, window/events, draw coordination and UI.
+The windowed and headless application entry points now use draw exclusively.
 
-## Production and experimental frameworks
+## Production framework
 
-The terms **production** and **experimental** describe the maturity and scope of
-bg2 engine's graphics APIs, not build configurations, deployment environments
-or compiler optimization settings.
-
-- **Production: `bg2e::render`.** This is the maintained framework used by the
-  engine's applications. It provides Vulkan rendering and integrates with the
-  production scene, material and UI components. Use it for applications that
-  need those established high-level facilities. Production does not imply that
-  an application must run on a server or use a Release build.
-- **Experimental: `bg2e::draw`.** This is a high-level framework built on the
-  backend-neutral `bg2e::gpu` API. Its windowed path supports Vulkan and Metal,
-  retained scene color and separate UI composition. Its high-level scene and
-  resource contracts have a narrower scope than render and can evolve as the
-  API develops; render components cannot simply be passed to draw. Use it when
-  evaluating the multi-backend architecture or building against its GPU-based
-  delegate contract. Experimental does not mean the code is only a mock or that
-  its window/UI path is unavailable.
-
-Draw is intended to become the successor to render. Both APIs coexist; render
-remains supported and is not deprecated. `bg2e::gpu` provides lower-level devices,
-queues, commands and resources; it does not supply render's high-level scene
-framework. Choosing Vulkan in draw does not select render.
+Draw is the sole application rendering path. Selecting Vulkan selects the GPU
+backend beneath draw. Retired rendering wrappers and old application APIs have
+been removed.
 
 ## Responsibilities and API boundaries
 
-`bg2e::app` is the application entry point; `bg2e::ui` provides widgets and UI
-composition. Applications select a high-level framework through the run overload
-and a low-level backend through EngineConfig. Render uses its own Vulkan device
-implementation and waiting mechanism. Draw uses gpu interfaces, including their
-submission registry. Draw's retained scene/resource model is independent of
-render's frame resource model; it is not a one-to-one mapping of render classes.
-
-```mermaid
-flowchart TD
-    A[Application: delegates] --> M[MainLoop: window, events, scheduling]
-    M --> E[private GraphicsExecution]
-    E --> R[RenderGraphicsExecution]
-    E --> D[DrawGraphicsExecution]
-    R --> RE[render Engine and RenderLoop]
-    RE --> V[Production Vulkan implementation]
-    D --> DE[draw Engine: GPU context]
-    D --> DL[draw RenderLoop: retained scene and composition]
-    DE --> G[gpu interfaces]
-    G --> GV[gpu vk]
-    G --> GM[gpu metal]
-    M --> U[ui UserInterface]
-    D --> U
-    U --> I[private Vulkan or Metal ImGui adapter]
-```
+MainLoop owns window/input/timers/background scheduling, UserInterface and joined
+async work. DrawGraphicsExecution owns draw Engine/RenderLoop; Engine owns the
+GPU context, and RenderLoop coordinates retained scene color and presentation.
+Applications supply draw graphics, input and UI delegates. GPU primitives remain
+independent of higher-level draw/scene/UI engine namespaces.
 
 ## Public selection and delegate contracts
 
-The application calls `init(argc, argv)` before `run`; MainLoop does not call it.
-`run(Application*)` selects production on every platform, including
-macOS. The explicit config overload selects draw, even if config selects Vulkan.
-There is no default second argument and no backend fallback on failure.
-
-Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 133–139. Exact excerpt:
-
 ```cpp
-int32_t MainLoop::run(app::Application * application) {
-    if (!application)
-    {
-        throw std::invalid_argument("MainLoop::run: application must not be null.");
-    }
-    return runInternal(application, detail::createRenderGraphicsExecution());
-}
+MainLoop loop("org.example.editor");
+application.init(argc, argv);
+return loop.run(&application); // Metal on macOS, Vulkan elsewhere.
 ```
 
-Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 141–147. Exact excerpt:
-
-```cpp
-int32_t MainLoop::run(app::Application * application, const draw::EngineConfig& config) {
-    if (!application)
-    {
-        throw std::invalid_argument("MainLoop::run: application must not be null.");
-    }
-    return runInternal(application, detail::createDrawGraphicsExecution(config));
-}
-```
-
-The default configuration prefers Metal on macOS and Vulkan elsewhere. Platform
-macros come from PlatformTools; public draw contracts contain no Metal types.
-
-Source: [lib/include/bg2e/draw/EngineConfig.hpp](../../lib/include/bg2e/draw/EngineConfig.hpp), lines 33–48. Exact excerpt:
-
-```cpp
-struct EngineConfig {
-    // Prefer the native Metal backend on macOS; use Vulkan elsewhere.
-#ifdef BG2E_IS_MAC
-    gpu::BackendType backend = gpu::BackendType::Metal;
-#else
-    gpu::BackendType backend = gpu::BackendType::Vulkan;
-#endif
-    bool debug = false;
-
-    // Empty by default: the MainLoop appId is used as the fallback.
-    std::string applicationName = "";
-
-    gpu::PixelFormat colorFormat = gpu::PixelFormat::B8G8R8A8_UNORM;
-    gpu::PixelFormat depthFormat = gpu::PixelFormat::D32_SFLOAT;
-};
-```
-
-Application stores separate render/draw delegate slots. Overloaded setters clear
-the opposite slot, while `nullptr` clears both. Mutable getters can bypass that
-invariant; adapter validation rejects opposite/both slots. The selected graphics
-delegate, UI delegate and input delegate must all exist. Null application,
-contract mismatch and Metal outside macOS are rejected before SDL/GPU allocation.
-Draw's delegate does not inherit render::RenderLoopDelegate. It receives abstract GPU
-commands, a retained color target and frame metadata; there is no Vulkan frame
-resource or central descriptor initialization contract.
-
-Source: [lib/include/bg2e/draw/RenderLoopDelegate.hpp](../../lib/include/bg2e/draw/RenderLoopDelegate.hpp), lines 33–52. Exact excerpt:
-
-```cpp
-class BG2E_API RenderLoopDelegate {
-public:
-    virtual ~RenderLoopDelegate() = default;
-
-    virtual void init(Engine* engine) { _engine = engine; }
-
-    virtual void initScene() {}
-
-    virtual void resize(gpu::Size2D /* newExtent */) {}
-
-    virtual void update(const FrameContext& /* frameContext */) {}
-
-    virtual void render(const FrameContext& frameContext) = 0;
-
-    virtual void cleanup() {}
-
-protected:
-    Engine* _engine = nullptr;
-};
-```
-
-The UI delegate supplies distinct initialization overloads for
-`render::Engine*` and `draw::Engine*`, each with a UserInterface pointer. Applications implement the selected
-contract. It is not necessary to expose GraphicsExecution to users. See the
-[complete example](../../examples/draw/01_window_ui/src/main.cpp) for argument
-validation and delegate registration.
+The explicit EngineConfig overload overrides backend/formats/validation.
+Application stores one draw::RenderLoopDelegate, accessed by renderDelegate()
+and setRenderDelegate(). Input/UI slots remain separate; passing nullptr clears
+the graphics slot. No opposite-framework slot or experimental opt-in remains.
+Validation rejects null application/graphics/UI/input and Metal outside macOS
+before SDL/window allocation. Backend preparation fills an empty applicationName
+from appId and retains the backend through context lifetime.
 
 ## Graphics execution strategies and shared responsibilities
 
-The strategy is private to app's implementation. It owns the selected engine
-and coordinator and abstracts only the hooks MainLoop needs. Factory functions
-instantiate concrete strategies from run overloads. MainLoop
-owns input routing, shortcuts, preferences, UserInterface, Loader, timeout
-scheduler, window configuration, focus limits, resize debounce, safe updates
-and queued main-thread work.
+The private GraphicsExecution interface and DrawGraphicsExecution implementation
+provide validation, preparation, initialization, scene startup, resize, frame,
+waitIdle, scene invalidation/pause/resume and cleanup. They are implementation
+services, not a public replacement renderer API. MainLoop supplies milliseconds;
+the draw adapter converts to seconds. Renderer switching/live settings remain
+inside the existing draw delegate, with generation guards and stopped updates.
 
-Source: [lib/src/bg2e/app/detail/GraphicsExecution.hpp](../../lib/src/bg2e/app/detail/GraphicsExecution.hpp), lines 46–88. Exact excerpt:
-
-```cpp
-class GraphicsExecution {
-public:
-    virtual ~GraphicsExecution() = default;
-
-    virtual gpu::WindowType windowType() const = 0;
-    virtual bool userInterfaceReady() const { return true; }
-
-    // Inspects the configured delegates without allocating SDL/GPU resources.
-    virtual void validate(const Application& application) const = 0;
-
-    // Invoked after successful validation, before the SDL window is created.
-    // Reports whether the selected runtime path is available.
-    virtual void ensureRuntimeAvailable() const = 0;
-
-    // Called after the runtime boundary and before SDL/window allocation.
-    // Production execution needs no preparation.
-    virtual void prepare(const std::string&) {}
-
-    virtual void initialize(
-        SDL_Window* window,
-        Application& application,
-        ui::UserInterface& userInterface
-    ) = 0;
-
-    virtual void initializeScene() = 0;
-
-    // Records a resize request. The surface is not recreated during SDL
-    // event dispatch.
-    virtual void requestResize() = 0;
-
-    // deltaMilliseconds keeps the production frame time unit.
-    virtual void frame(float deltaMilliseconds, bool renderingAllowed) = 0;
-
-    virtual void waitIdle() = 0;
-
-    // Production scenes are continuously updated; draw overrides invalidation.
-    virtual void requestSceneFrame() {}
-    virtual void pauseScene(const glm::vec4& clearColor) = 0;
-    virtual void resumeScene() = 0;
-
-    virtual void cleanup() = 0;
-};
-```
-
-`prepare` and scene invalidation default to no-ops for production. Draw overrides
-preparation to acquire a backend lease and invalidation to mark the retained
-scene dirty. `userInterfaceReady` guards event forwarding and loader overrides.
-No delegate adaptation is attempted across the two scene contracts.
-
-The start of runInternal shows validation and backend preparation order:
-
-Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 149–153. Exact excerpt:
-
-```cpp
-int32_t MainLoop::runInternal(app::Application * application, std::unique_ptr<detail::GraphicsExecution> execution) {
-    execution->validate(*application);
-    execution->ensureRuntimeAvailable();
-    execution->prepare(_appId);
-```
-
-Preparation creates a backend wrapper and retains it before window creation,
-without initializing a native GPU instance. SDL window flags come from the
-strategy's `windowType`. Window ownership is RAII; a local execution cleanup
-guard releases established graphics stages before the SDL window during exception
-unwinding. Normal shutdown explicitly waits/cleans/resets execution and then
-releases the owned window. Destructors attempt cleanup without throwing; explicit
-cleanup is the path for reporting errors.
-
-## Render adapter: Vulkan rendering
-
-RenderGraphicsExecution owns `render::Engine` and `render::RenderLoop`, initializes
-production UI and installs its native Vulkan callback. Scene startup
-initializes the production descriptor allocator. Frame timing is in
-milliseconds. Resize debounce can suppress scene acquisition/presentation while
-UI preparation continues.
-
-Source: [lib/src/bg2e/app/detail/RenderGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/RenderGraphicsExecution.cpp), lines 122–127. Exact excerpt:
-
-```cpp
-    void initializeScene() override
-    {
-        // Initialize the main descriptor set allocator before executing the first frame
-        _engine.descriptorSetAllocator().initPool();
-        _renderLoop.initScene();
-    }
-```
-
-Source: [lib/src/bg2e/app/detail/RenderGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/RenderGraphicsExecution.cpp), lines 137–152. Exact excerpt:
-
-```cpp
-    void frame(float deltaMilliseconds, bool renderingAllowed) override
-    {
-        if (renderingAllowed && _engine.newFrame())
-        {
-            _renderLoop.swapchainResized();
-        }
-
-        _renderLoop.setDelta(deltaMilliseconds);
-
-        _userInterface->newFrame();
-
-        if (renderingAllowed)
-        {
-            _renderLoop.acquireAndPresent();
-        }
-    }
-```
-
-Render cleanup proceeds through coordinator, UI cleanup request, UI callback removal,
-then Engine cleanup. The production UI backend shutdown is registered with the
-production Engine cleanup manager; its closure captures shared UI implementation
-state so that it does not dereference a destroyed UserInterface wrapper.
+MainLoop event polling and Loader remain active while scene refresh is paused.
+Safe-update callbacks drain conservatively and invalidate retained scene only
+when executed. Async workers join before normal/exceptional graphics teardown.
+CPU/GPU profiling association and narrowly typed final-color drain elision are
+preserved; promotion introduces no new timing waits or resource rebuild policy.
 
 ## Draw Engine: context and ownership
 
@@ -417,7 +189,7 @@ Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/a
         _engine.init(window, *_backend, _config);
         _engineInitialized = true;
         _userInterface = &userInterface;
-        _renderLoop.setDelegate(application.drawDelegate());
+        _renderLoop.setDelegate(application.renderDelegate());
         _renderLoop.init(&_engine);
         _lastDrawableSize = drawableSize();
         int width = 0, height = 0;
@@ -518,7 +290,7 @@ image index, frame slot and monotonically increasing frame number are distinct.
 There is no central create/destroy-per-frame descriptor phase. This does not
 remove GPU synchronization requirements for shared or cross-queue resources.
 
-## UI interoperability lives in ui
+## UI coordination and GPU native interoperability
 
 UserInterface selects the SDL platform backend and private renderer from
 Engine::backendType. Shared implementation state stores the context, selected
@@ -526,22 +298,28 @@ renderer, initialized/prepared flags and borrowed draw Engine. New-frame and dra
 calls require the same acquired command/frame pair. Only one current ImGui
 context is supported. UI wrappers keep ImGui types out of public headers.
 
-Vulkan UI uses gpu::vk native instance/device/queue handles, a UI-owned descriptor
-pool and dynamic rendering configuration. Surface generation, count and format
+The UI adapters delegate to gpu::GuiRenderer using borrowed GPU primitives.
+The Vulkan bridge owns its descriptor pool, native instance/device/queue handles
+and dynamic rendering configuration. Surface generation, count and format
 changes refresh backend state; renderer recreation drains GPU users first.
 `materializeRenderPass()` starts the GPU wrapper's lazy dynamic render pass
-before the native ImGui draw call. Render UI uses its native callback API.
+before the native ImGui draw call. No render callback API remains.
 
 
-Source: [lib/src/bg2e/ui/ImGuiVulkanBackend.cpp](../../lib/src/bg2e/ui/ImGuiVulkanBackend.cpp), lines 130–140. Exact excerpt:
+Source: [lib/src/bg2e/gpu/vk/GuiRenderer.cpp](../../lib/src/bg2e/gpu/vk/GuiRenderer.cpp). Exact excerpt:
 
 ```cpp
     void draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame) override
     {
-        if (!_draw || !frame.isValid() || !frame.colorImage())
+        if (!_device || !frame.isValid() || !frame.colorImage())
+        {
             throw std::logic_error("Draw UI requires a valid presentation target.");
+        }
         auto& vkCommand = require<gpu::vk::CommandBuffer>(&command, "UI commands must use Vulkan.");
-        if (command.hasActiveScope()) throw std::logic_error("UI overlay requires closed scene scopes.");
+        if (command.hasActiveScope())
+        {
+            throw std::logic_error("UI overlay requires closed scene scopes.");
+        }
         command.beginRendering(frame.colorImage()); // Color-only LOAD/STORE, no clear.
         vkCommand.materializeRenderPass();
         ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), vkCommand.handle());
@@ -549,20 +327,25 @@ Source: [lib/src/bg2e/ui/ImGuiVulkanBackend.cpp](../../lib/src/bg2e/ui/ImGuiVulk
     }
 ```
 
-Metal UI uses guarded metal-cpp accessors in private source, derives a color-only
+The Metal GPU bridge uses guarded metal-cpp accessors in its source, derives a color-only
 preparation descriptor from the acquired texture and caches generation/format/
 sample count. Composition opens a distinct pass with no depth/stencil and LOAD/
-STORE color actions. GPU owns the encoder and ends it once; UI borrows it:
+STORE color actions. GPU owns the encoder and ends it once; the GPU GUI bridge borrows it:
 
-Source: [lib/src/bg2e/ui/ImGuiMetalBackend.cpp](../../lib/src/bg2e/ui/ImGuiMetalBackend.cpp), lines 95–115. Exact excerpt:
+Source: [lib/src/bg2e/gpu/metal/GuiRenderer.cpp](../../lib/src/bg2e/gpu/metal/GuiRenderer.cpp). Exact excerpt:
 
 ```cpp
     void draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame) override
     {
         auto* metalCommand = dynamic_cast<gpu::metal::CommandBuffer*>(&command);
-        if (!_engine || !_preparation || !metalCommand || !frame.isValid() || !frame.colorImage())
+        if (!_device || !_preparation || !metalCommand || !frame.isValid() || !frame.colorImage())
+        {
             throw std::invalid_argument("Metal UI composition requires a prepared Metal frame.");
-        if (command.hasActiveScope()) throw std::logic_error("Metal UI composition requires closed scene scopes.");
+        }
+        if (command.hasActiveScope())
+        {
+            throw std::logic_error("Metal UI composition requires closed scene scopes.");
+        }
         {
             AutoreleaseScope autoreleaseScope;
             command.beginRendering(frame.colorImage()); // Color-only LOAD/STORE.
@@ -570,11 +353,13 @@ Source: [lib/src/bg2e/ui/ImGuiMetalBackend.cpp](../../lib/src/bg2e/ui/ImGuiMetal
             auto* texture = pass->colorAttachments()->object(0)->texture();
             if (!texture || texture->pixelFormat() != _format || texture->sampleCount() != _sampleCount ||
                 pass->depthAttachment()->texture() || pass->stencilAttachment()->texture())
+            {
                 throw std::logic_error("Metal UI preparation and overlay pass configurations differ.");
+            }
             auto* encoder = metalCommand->materializeRenderEncoder();
             ImGui_ImplMetal_RenderDrawData(ImGui::GetDrawData(),
-                metalCommand->handle(),
-                encoder);
+                                           metalCommand->handle(),
+                                           encoder);
             command.endRendering(); // GPU owns and ends the encoder exactly once.
         }
     }
@@ -586,8 +371,8 @@ dependency on ui. Metal framework types do not appear in portable draw/app
 contracts. The vendored Objective-C++ ImGui backend is selected only on Apple
 and compiled with ARC; its provenance/local compatibility patches are recorded
 in [METAL_BACKEND_ORIGIN](../../lib/third_party/imgui/METAL_BACKEND_ORIGIN.md).
-UI components using render scene/resources require that framework
-and cannot automatically consume draw resources.
+UI components use canonical draw resources. ImGui/native implementation types
+remain absent from public engine headers.
 
 ## Invalidation, pause and asynchronous work
 
@@ -714,20 +499,20 @@ void Engine::cleanup()
 | Responsibility | Primary source |
 |---|---|
 | Shared lifecycle and scheduling | `lib/src/bg2e/app/MainLoop.cpp` |
-| Strategy interface / adapters | `lib/src/bg2e/app/detail/GraphicsExecution.hpp`, `RenderGraphicsExecution.cpp`, `DrawGraphicsExecution.cpp` |
+| Strategy interface / adapters | `lib/src/bg2e/app/detail/GraphicsExecution.hpp`, `DrawGraphicsExecution.cpp` |
 | Context and leases | `lib/src/bg2e/draw/Engine.cpp`, `lib/src/bg2e/gpu/Factory.cpp` |
 | Retained scene and composition | `lib/src/bg2e/draw/RenderLoop.cpp` |
-| UI context and native adapters | `lib/src/bg2e/ui/UserInterface.cpp`, `ImGuiVulkanBackend.cpp`, `ImGuiMetalBackend.cpp` |
+| UI context and coordination | `lib/src/bg2e/ui/UserInterface.cpp`, `ui/detail/GpuImGuiBackend.hpp` |
+| Native GUI rendering | `lib/src/bg2e/gpu/vk/GuiRenderer.cpp`, `gpu/metal/GuiRenderer.cpp` |
 | Completion registry and frame reuse | `lib/include/bg2e/gpu/detail/SubmissionState.hpp`, `gpu/SurfaceFrame.hpp`, backend Queue/Surface sources |
 
 Draw scene callbacks expose retained color. RendererDeferred now owns the
 internal depth/G-buffer graph and DefaultRenderLoopDelegate owns the runtime
-renderer. DrawableComponent provides typed production/draw resource access;
+renderer. DrawableComponent provides its canonical draw resource access;
 GraphicsSettingsWindow uses the live draw facade. See the current
 [renderer reference](../api/draw/RendererDeferred.md). Earlier abbreviated base
 delegate excerpts omit its prepareFrame/surfaceChanged hooks.
-[OffscreenApplication](../api/app/OffscreenApplication.md) retains its production
-render overload and adds a typed draw overload owning a serial windowless job.
+[OffscreenApplication](../api/app/OffscreenApplication.md) owns a typed draw serial windowless job.
 The [headless architecture](draw_offscreen_rendering.md) covers exact camera
 samples, final-only conversion and completed readback outside MainLoop. There is no automatic multi-context backend
 management or UI thread. Multiple layers currently call waitIdle during cleanup
@@ -763,3 +548,11 @@ Assembly and all job owners release before Engine cleanup; output uses its own
 protected final-manifest contract. See [standalone ownership](draw_standalone_lightmaps.md)
 for source/generation/complete model publication. Production/default branches
 remain present; this addition does not remove render or promote draw globally.
+
+
+The standalone device chooser keeps its preferences/widgets/selection in app.
+`gpu::StandaloneGuiWindow` owns its native OpenGL window/context, SDL platform
+backend and presentation. The chooser destroys it before its temporary ImGui
+context and restores any previous context. `gpu::drawableSize` owns Vulkan/Metal
+pixel-size queries used by DrawGraphicsExecution. See
+[GPU native GUI/window bridges](../api/gpu/Gui_bridges.md) for ownership and limits.

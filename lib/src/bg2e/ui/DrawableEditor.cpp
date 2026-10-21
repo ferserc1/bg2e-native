@@ -35,7 +35,7 @@ void DrawableEditor::init(const std::shared_ptr<manipulation::SelectionManager>&
 
 bool DrawableEditor::draw()
 {
-    std::shared_ptr<scene::Drawable> drawable = _submeshSelector.editDrawable();
+    std::shared_ptr<draw::Drawable> drawable = _submeshSelector.editDrawable();
     auto drawableName = drawable.get() && !drawable->name().empty() ? drawable->name() : "Drawable";
     auto changed = false;
 

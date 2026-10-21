@@ -103,10 +103,6 @@ void DrawMaterialEditor::init(draw::Engine* engine, const std::shared_ptr<draw::
 
 void DrawMaterialEditor::setSelectionManager(const std::shared_ptr<manipulation::SelectionManager>& selection)
 {
-    if (selection && selection->executionMode() != manipulation::ToolExecutionMode::Draw)
-    {
-        throw std::invalid_argument("Draw editor requires draw selection");
-    }
     ++_state->binding;
     _state->pending = false;
     _state->error.clear();
@@ -279,7 +275,7 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
     {
         for (const auto& item : selection->selectedItems())
         {
-            if (item && item->lockDrawMesh())
+            if (item && item->lockMesh())
             {
                 targets.push_back(*item);
             }
@@ -329,7 +325,7 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
                 {
                     belongs = belongs || ancestor == root.get();
                 }
-                auto drawable = target.lockDrawMesh();
+                auto drawable = target.lockMesh();
                 if (!belongs || !drawable || !drawable->isLoaded() || drawable->engine() != state->engine)
                 {
                     continue;
@@ -392,7 +388,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         {
             if (item)
             {
-                if (auto mesh = item->lockDrawMesh(); mesh && mesh->isLoaded())
+                if (auto mesh = item->lockMesh(); mesh && mesh->isLoaded())
                 {
                     if (!material)
                     {

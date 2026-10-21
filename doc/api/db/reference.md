@@ -8,7 +8,7 @@ Image-format and lightmap-output symbols declared by `<bg2e/db/all.hpp>`:
 | `imageFormatFromExtension`, `imageFormatFromPath` | `db/image.hpp` | [ImageFormat](ImageFormat.md#format-discovery) |
 | `extensionsForImageFormat`, `canonicalImageExtension` | `db/image.hpp` | [ImageFormat](ImageFormat.md#extension-mapping) |
 | `saveImage` | `db/image.hpp` | [ImageFormat](ImageFormat.md#saving-images) |
-| `LightmapOutputWriter` | `db/LightmapOutputWriter.hpp` | [LightmapOutputWriter](LightmapOutputWriter.md) |
 
 See [SceneReferences](SceneReferences.md) for the separate representation and
-draw Engine overloads; full production IO coverage is not implied for draw.
+draw Engine IO. Complete resource saves return bool noexcept and require explicit
+false handling; the specialized output writer lives in bake.

@@ -282,8 +282,8 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
                     {
                         if (auto* gizmo = node->getComponent<manipulation::GizmoComponent>())
                         {
-                            auto drawable = gizmo->drawDrawable();
-                            auto transformDrawable = gizmo->transformDrawDrawable();
+                            auto drawable = gizmo->drawable();
+                            auto transformDrawable = gizmo->transformDrawable();
                             if (drawable)
                             {
                                 drawable->cleanup();
@@ -320,8 +320,8 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
                 {
                     if (auto* gizmo = node->getComponent<manipulation::GizmoComponent>())
                     {
-                        auto drawable = gizmo->drawDrawable();
-                        auto transformDrawable = gizmo->transformDrawDrawable();
+                        auto drawable = gizmo->drawable();
+                        auto transformDrawable = gizmo->transformDrawable();
                         if (drawable)
                         {
                             drawable->cleanup();
@@ -842,7 +842,7 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
             {
                 auto item = delegate->selection()->selectedItem();
                 auto component = item ? item->drawable.lock() : nullptr;
-                auto drawable = component ? component->drawDrawable() : nullptr;
+                auto drawable = component ? component->drawable() : nullptr;
                 if (drawable)
                 {
                     const utils::MaterialModifier patch(std::string{R"({"roughness":0.6})"});
@@ -857,7 +857,7 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
             {
                 auto item = delegate->selection()->selectedItem();
                 auto component = item ? item->drawable.lock() : nullptr;
-                auto drawable = component ? component->drawDrawable() : nullptr;
+                auto drawable = component ? component->drawable() : nullptr;
                 if (drawable)
                 {
                     const utils::MaterialModifier patch(std::string{R"({"metalness":0.1})"});

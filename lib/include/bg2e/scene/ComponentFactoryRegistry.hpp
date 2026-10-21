@@ -29,40 +29,29 @@
 
 namespace bg2e {
 
-namespace render {
-class Engine;
-}
-
 namespace scene {
 
 class BG2E_API ComponentFactoryRegistry {
   public:
-    using Creator = std::function<Component*(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path&, render::Engine&, SceneLoadProgress*)>;
     using DefaultCreator = std::function<Component*()>;
 
     static ComponentFactoryRegistry& get();
 
     void registerComponent(
         const std::string& componentName,
-        Creator creator,
         DefaultCreator defaultCreator);
 
     bool contains(const std::string& componentName) const;
     Component* createDefault(const std::string& componentName) const;
 
-    // Schema/draw paths use registered defaults and the graphics-free parser,
-    // never a production Creator. Unknown types warn and return nullptr; callers
+    // Construction uses registered defaults and the graphics-free parser. Unknown types warn and return nullptr; callers
     // skip them. Invalid registered constructors/data/resources still fail.
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath);
     Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath,
         draw::Engine& engine, SceneLoadProgress* progress = nullptr);
 
-    Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine);
-    Component* create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&, render::Engine& engine, SceneLoadProgress* progress);
-
   private:
     struct FactoryEntry {
-        Creator deserialize;
         DefaultCreator createDefault;
     };
 
@@ -77,13 +66,6 @@ class RegisterComponent {
     {
         ComponentFactoryRegistry::get().registerComponent(
             ComponentT::staticTypeName(),
-            [](std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& path,
-               render::Engine& engine, SceneLoadProgress* progress)
-            {
-                auto result = std::make_unique<ComponentT>();
-                result->deserializeWithProgress(jsonData, path, engine, progress);
-                return result.release();
-            },
             []
             {
                 return new ComponentT();

@@ -31,92 +31,37 @@
 
 namespace bg2e::scene {
 
-DrawableComponent::ExecutionMode DrawableComponent::executionMode() const
+std::shared_ptr<bg2e::draw::Drawable> DrawableComponent::drawable()
 {
-    return _drawDrawable ? ExecutionMode::Draw : _drawable ? ExecutionMode::Production : ExecutionMode::Uninitialized;
+    return _drawable;
 }
 
-std::shared_ptr<bg2e::draw::Drawable> DrawableComponent::drawDrawable()
+std::shared_ptr<const bg2e::draw::Drawable> DrawableComponent::drawable() const
 {
-    if (_drawable)
-    {
-        throw std::logic_error("DrawableComponent contains a production drawable");
-    }
-    return _drawDrawable;
-}
-std::shared_ptr<const bg2e::draw::Drawable> DrawableComponent::drawDrawable() const
-{
-    if (_drawable)
-    {
-        throw std::logic_error("DrawableComponent contains a production drawable");
-    }
-    return _drawDrawable;
+    return _drawable;
 }
 
 void DrawableComponent::setDrawable(std::shared_ptr<bg2e::draw::Drawable> drw)
 {
-    if (_drawable)
-    {
-        throw std::logic_error("Clear DrawableComponent before selecting draw execution");
-    }
-    if (_drawDrawable && drw && _drawDrawable->engine() && drw->engine() &&
-        _drawDrawable->engine() != drw->engine())
+    if (_drawable && drw && _drawable->engine() && drw->engine() &&
+        _drawable->engine() != drw->engine())
     {
         throw std::logic_error("Clear DrawableComponent before selecting a different draw context");
     }
-    if (_drawDrawable && _drawDrawable->engine())
+    if (_drawable && _drawable->engine())
     {
-        _drawDrawable->engine()->device()->waitIdle();
+        _drawable->engine()->device()->waitIdle();
     }
-    _drawDrawable = std::move(drw);
+    _drawable = std::move(drw);
 }
 
 void DrawableComponent::clearDrawable()
 {
-    // Production callers retain their existing safe-update synchronization rule.
-    if (_drawDrawable && _drawDrawable->engine())
+    if (_drawable && _drawable->engine())
     {
-        _drawDrawable->engine()->device()->waitIdle();
+        _drawable->engine()->device()->waitIdle();
     }
-    _drawDrawable.reset();
     _drawable.reset();
-}
-
-std::shared_ptr<DrawableBase> DrawableComponent::drawableBase()
-{
-    if (_drawDrawable)
-    {
-        throw std::logic_error("DrawableComponent contains a draw drawable");
-    }
-    return _drawable;
-}
-
-const std::shared_ptr<DrawableBase> DrawableComponent::drawableBase() const
-{
-    if (_drawDrawable)
-    {
-        throw std::logic_error("DrawableComponent contains a draw drawable");
-    }
-    return _drawable;
-}
-
-std::shared_ptr<Drawable> DrawableComponent::drawable()
-{
-    return std::dynamic_pointer_cast<Drawable>(drawableBase());
-}
-
-const std::shared_ptr<Drawable> DrawableComponent::drawable() const
-{
-    return std::dynamic_pointer_cast<Drawable>(drawableBase());
-}
-
-void DrawableComponent::setDrawable(std::shared_ptr<DrawableBase> drw)
-{
-    if (_drawDrawable)
-    {
-        throw std::logic_error("Clear DrawableComponent before selecting production execution");
-    }
-    _drawable = std::move(drw);
 }
 
 std::shared_ptr<Component> DrawableComponent::clone() const
@@ -125,15 +70,11 @@ std::shared_ptr<Component> DrawableComponent::clone() const
 
     // Deep copy the drawable so the duplicated component owns an independent mesh,
     // materials and GPU resources. This is the whole point of cloning by copy: the
-    // two DrawableComponents must never share the same DrawableBase instance.
+    // two DrawableComponents must never share the same Drawable instance.
+
     if (_drawable)
     {
         copy->_drawable = _drawable->clone();
-    }
-
-    if (_drawDrawable)
-    {
-        copy->_drawDrawable = _drawDrawable->clone();
     }
 
     copy->_resourcePath = _resourcePath;
@@ -143,21 +84,6 @@ std::shared_ptr<Component> DrawableComponent::clone() const
     return copy;
 }
 
-void DrawableComponent::draw(
-    const glm::mat4& nodeTransform,
-    VkCommandBuffer cmd,
-    VkPipelineLayout layout,
-    std::function<std::vector<VkDescriptorSet>(render::MaterialBase*, const glm::mat4&, uint32_t submIndex)> cb,
-    VkPipelineBindPoint bp)
-{
-    auto drawable = drawableBase().get();
-    if (drawable)
-    {
-        drawable->setTransform(nodeTransform);
-        drawable->draw(cmd, layout, cb, bp);
-    }
-}
-
 void DrawableComponent::setResourcePath(const std::filesystem::path& path)
 {
     _resourcePath = path.empty() ? path : std::filesystem::absolute(path).lexically_normal();
@@ -165,7 +91,7 @@ void DrawableComponent::setResourcePath(const std::filesystem::path& path)
 
 void DrawableComponent::deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
 {
-    if (_drawable || _drawDrawable)
+    if (_drawable)
     {
         throw std::logic_error("Clear DrawableComponent before reading a resource reference");
     }
@@ -209,9 +135,9 @@ std::shared_ptr<json::JsonNode> DrawableComponent::serializeReferences(const std
     auto result = Component::serialize(basePath);
     const auto base = basePath.empty() ? std::filesystem::current_path() : std::filesystem::absolute(basePath);
     const auto relative = _resourcePath.lexically_relative(base.lexically_normal());
-    if (_drawDrawable)
+    if (_drawable)
     {
-        result->objectValue()["resourceName"] = json::JSON(_drawDrawable->name());
+        result->objectValue()["resourceName"] = json::JSON(_drawable->name());
     }
     else if (_resourceName)
     {
@@ -225,15 +151,11 @@ void DrawableComponent::loadResources(bg2e::draw::Engine& engine, SceneLoadProgr
 {
     if (_drawable)
     {
-        throw std::logic_error("Cannot load draw resources into a production DrawableComponent");
-    }
-    if (_drawDrawable)
-    {
-        if (!_drawDrawable->isLoaded())
+        if (!_drawable->isLoaded())
         {
-            _drawDrawable->load(&engine);
+            _drawable->load(&engine);
         }
-        else if (_drawDrawable->engine() != &engine)
+        else if (_drawable->engine() != &engine)
         {
             throw std::logic_error("DrawableComponent belongs to another draw engine");
         }
@@ -265,94 +187,13 @@ void DrawableComponent::loadResources(bg2e::draw::Engine& engine, SceneLoadProgr
     }
     if (_resourceName)
     {
-        _drawDrawable->setName(*_resourceName);
+        _drawable->setName(*_resourceName);
     }
-}
-
-void DrawableComponent::deserialize(
-    std::shared_ptr<json::JsonNode> data,
-    const std::filesystem::path& basePath,
-    render::Engine& engine)
-{
-    deserializeWithProgress(data, basePath, engine, nullptr);
-}
-
-void DrawableComponent::deserializeWithProgress(
-    std::shared_ptr<json::JsonNode> data,
-    const std::filesystem::path& basePath,
-    render::Engine& engine,
-    SceneLoadProgress* progress)
-{
-    if (_drawDrawable)
-    {
-        throw std::logic_error("Cannot deserialize production data into a draw DrawableComponent");
-    }
-    // Resolve through the same CPU parser, preserving the existing live object
-    // if reading or realizing its replacement fails.
-    DrawableComponent reference;
-    reference.deserialize(data, basePath);
-    auto onTextureLoaded = [progress]()
-    {
-        if (progress)
-        {
-            progress->total = std::max(progress->total, progress->loaded + 1);
-            if (progress->callback)
-            {
-                progress->callback("texture", progress->loaded, progress->total);
-            }
-            ++progress->loaded;
-        }
-    };
-    std::shared_ptr<DrawableBase> result;
-    if (reference.resourcePath().extension() == ".bg2")
-    {
-        result = db::loadDrawableBg2(reference.resourcePath(), &engine, onTextureLoaded);
-    }
-    else if (reference.resourcePath().extension() == ".obj")
-    {
-        result = db::loadDrawableObj(reference.resourcePath(), &engine);
-    }
-    else
-    {
-        throw std::invalid_argument("Unsupported production drawable resource: " + reference.resourcePath().string());
-    }
-    deserializeCommon(data);
-    _resourcePath = reference.resourcePath();
-    _drawable = std::move(result);
 }
 
 std::shared_ptr<json::JsonNode> DrawableComponent::serialize(const std::filesystem::path& basePath)
 {
-    if (_drawDrawable)
-    {
-        throw std::logic_error("Draw resource export is not implemented; use saveSceneReferences for references only");
-    }
-    if (!_drawable && !_resourcePath.empty())
-    {
-        throw std::logic_error("Unresolved drawable requires saveSceneReferences or explicit resource loading");
-    }
-    using namespace bg2e::json;
-    auto compData = Component::serialize(basePath);
-    JsonObject& obj = compData->objectValue();
-
-    Drawable* drawable = dynamic_cast<Drawable*>(_drawable.get());
-    if (drawable)
-    {
-        if (_drawable->name() == "")
-        {
-            _drawable->setName(utils::uniqueId());
-        }
-
-        obj["name"] = JSON(_drawable->name());
-
-        auto filePath = basePath;
-        filePath.append(_drawable->name());
-        filePath.replace_extension(".bg2");
-
-        db::storeDrawableBg2(filePath, this);
-    }
-
-    return compData;
+    return serializeReferences(basePath);
 }
 
 BG2E_SCENE_REGISTER_COMPONENT(DrawableComponent);

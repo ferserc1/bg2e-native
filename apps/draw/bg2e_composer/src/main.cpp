@@ -80,7 +80,7 @@ int main(int argc, char** argv)
         bg2e_composer::Application application;
         application.init(argc, argv);
         const auto delegate = std::weak_ptr<bg2e_composer::AppDelegate>(
-            std::static_pointer_cast<bg2e_composer::AppDelegate>(application.drawDelegate()));
+            std::static_pointer_cast<bg2e_composer::AppDelegate>(application.renderDelegate()));
         if (auto active = delegate.lock())
         {
             active->setQuitCallback([&loop]

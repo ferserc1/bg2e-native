@@ -38,4 +38,4 @@ emit the call.
 - [Layout](Layout.md) — placement and measurement of display widgets.
 - [Button](Button.md) — interactive controls.
 - [reference.md — Text](reference.md#text)
-- `examples/02_ui/src/main.cpp` — a tour of most `Text` calls.
+- `examples/draw/01_window_ui/src/main.cpp` — a tour of most `Text` calls.

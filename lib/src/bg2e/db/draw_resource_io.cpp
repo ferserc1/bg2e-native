@@ -177,7 +177,7 @@ const TextureSetter Setters[] = {
 Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publication)
 {
     auto* component = node.getComponent<scene::DrawableComponent>();
-    auto drawable = component ? component->drawDrawable() : nullptr;
+    auto drawable = component ? component->drawable() : nullptr;
     if (!drawable || !drawable->isLoaded() || drawable->engine() != &engine)
     {
         throw std::invalid_argument("Complete export requires a realized drawable from the supplied draw Engine");
@@ -330,11 +330,13 @@ try
     publication.commit(main);
     return true;
 }
+
 catch (const std::exception& error)
 {
     std::fprintf(stderr, "Resource export failed: %s\n", error.what());
     return false;
 }
+
 catch (...)
 {
     std::fprintf(stderr, "Resource export failed: unknown error\n");
@@ -378,11 +380,13 @@ try
     publication.commit(main);
     return true;
 }
+
 catch (const std::exception& error)
 {
     std::fprintf(stderr, "Resource export failed: %s\n", error.what());
     return false;
 }
+
 catch (...)
 {
     std::fprintf(stderr, "Resource export failed: unknown error\n");

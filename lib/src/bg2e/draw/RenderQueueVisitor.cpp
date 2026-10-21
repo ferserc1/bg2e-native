@@ -30,6 +30,7 @@ RenderQueueVisitor::RenderQueueVisitor()
 {
     _ignoreDisabled = true;
 }
+
 void RenderQueueVisitor::enqueue(scene::Node* root, Engine& engine, RenderQueue& queue)
 {
     if (!root || _queue)
@@ -80,6 +81,7 @@ void RenderQueueVisitor::enqueue(scene::Node* root, Engine& engine, RenderQueue&
     _world = glm::mat4{1};
     queue = std::move(next);
 }
+
 void RenderQueueVisitor::visit(scene::Node* node)
 {
     if (!_queue)
@@ -93,11 +95,7 @@ void RenderQueueVisitor::visit(scene::Node* node)
     }
     if (auto* component = node->drawable())
     {
-        if (component->executionMode() == scene::DrawableComponent::ExecutionMode::Production)
-        {
-            throw std::invalid_argument("Draw visitor cannot consume a production Drawable or alternate legacy mesh layout");
-        }
-        auto drawable = component->drawDrawable();
+        auto drawable = component->drawable();
         if (drawable)
         {
             if (!drawable->isLoaded())
@@ -162,6 +160,7 @@ void RenderQueueVisitor::visit(scene::Node* node)
         _queue->setEnvironment(std::move(intent));
     }
 }
+
 void RenderQueueVisitor::didVisit(scene::Node*)
 {
     if (!_queue || _stack.empty())

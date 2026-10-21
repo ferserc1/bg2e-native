@@ -3,7 +3,7 @@
 **Header:** `<bg2e/utils/ViewpointAnalyzer.hpp>`  
 **Namespace:** `bg2e::utils`
 
-`ViewpointAnalyzer` is an experimental draw/GPU-backed utility for scoring
+`ViewpointAnalyzer` is an draw/GPU-backed utility for scoring
 camera candidates from scene geometry. It borrows a `draw::Engine*`; call
 `init()` before analysis and `cleanup()` before engine teardown.
 
@@ -32,6 +32,6 @@ ranking value. Empty or non-analyzable scenes may yield no best candidate.
 The draw overload of `applyViewpointToOrbitCamera()` updates orbit parameters
 for the selected candidate while preserving the camera's existing projection
 and its FOV/near/far settings. Candidate projection values are used only by the
-analysis render. The production overload remains separate. See
+analysis render. See
 [`SceneCameraUtils`](SceneCameraUtils.md) and the
 [manipulation tutorial](../../tutorials/draw/11_manipulation.md).

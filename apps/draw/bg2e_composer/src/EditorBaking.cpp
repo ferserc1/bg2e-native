@@ -273,7 +273,7 @@ void AppDelegate::startLightmapBatch(bool wholeScene, const bg2e::bake::Lightmap
         {
             return;
         }
-        if (auto component = node->drawable(); component && component->drawDrawable())
+        if (auto component = node->drawable(); component && component->drawable())
         {
             targets.push_back(node);
         }
@@ -330,7 +330,7 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
                 {
                     auto target = weakTarget.lock();
                     auto component = target ? target->drawable() : nullptr;
-                    auto drawable = component ? component->drawDrawable() : nullptr;
+                    auto drawable = component ? component->drawable() : nullptr;
                     if (!target || !owner->_stage->contains(target.get()) || !drawable || !drawable->isLoaded())
                     {
                         throw std::logic_error("A batch target is no longer loaded in this document");
@@ -478,7 +478,7 @@ void AppDelegate::applyLightmapBake()
                 auto target = job.node.lock();
                 auto component = target ? target->drawable() : nullptr;
                 if (!target || !owner->_stage->contains(target.get()) || !component ||
-                    component->drawDrawable() != job.drawable || !job.result || !job.pixels)
+                    component->drawable() != job.drawable || !job.result || !job.pixels)
                 {
                     throw std::logic_error("Completed batch target or drawable is stale");
                 }

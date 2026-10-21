@@ -87,11 +87,11 @@ inline void runStandaloneAssemblyProbe(draw::Engine& engine, const std::filesyst
         }
     };
     auto& registry = scene::ComponentFactoryRegistry::get();
-    registry.registerComponent(Helper::staticTypeName(),{},[]
+    registry.registerComponent(Helper::staticTypeName(),[]
     {
         return new Helper();
     });
-    registry.registerComponent(BadSchema::staticTypeName(),{},[]
+    registry.registerComponent(BadSchema::staticTypeName(),[]
     {
         return new BadSchema();
     });
@@ -140,7 +140,7 @@ inline void runStandaloneAssemblyProbe(draw::Engine& engine, const std::filesyst
     auto cpu = assembler.assembleModel(context,model,options,false);
     require(cpu.targets.size() == 1 && cpu.targets[0].node == cpu.targetRoot && cpu.targets[0].uv2.valid &&
         cpu.targets[0].generatedUv2.has_value(),"CPU model/UV2 metadata mismatch");
-    require(!cpu.targetRoot->drawable()->drawDrawable()->isLoaded(),"CPU target mode unexpectedly loaded GPU resources");
+    require(!cpu.targetRoot->drawable()->drawable()->isLoaded(),"CPU target mode unexpectedly loaded GPU resources");
     auto* joint = cpu.targetRoot->getComponent<scene::InputChainJointComponent>();
     require(joint && joint->joint().offset() == glm::vec3(1,2,3),"Model chain joint was lost");
     require(cpu.sourcePaths.size() == 2 && bytes(model) == originalBytes,"Assembly mutated source files/dependencies");
@@ -158,14 +158,14 @@ inline void runStandaloneAssemblyProbe(draw::Engine& engine, const std::filesyst
     }
     auto one = assembler.assemblePrefab(context,single,options,true);
     require(one.targets.size() == 1 && one.targetRoot == one.targets[0].node &&
-        one.targetRoot->drawable()->drawDrawable()->isLoaded(),"Single Node adapter/realization failed");
+        one.targetRoot->drawable()->drawable()->isLoaded(),"Single Node adapter/realization failed");
     // Explicitly realize a CPU candidate using the shared component hook before context preparation.
     cpu.targetRoot->loadResources(engine);
-    require(cpu.targetRoot->drawable()->drawDrawable()->isLoaded(),"Deferred target realization failed");
-    const auto sourceMesh = cpu.targetRoot->drawable()->drawDrawable()->mesh();
+    require(cpu.targetRoot->drawable()->drawable()->isLoaded(),"Deferred target realization failed");
+    const auto sourceMesh = cpu.targetRoot->drawable()->drawable()->mesh();
     auto copy = cpu.targetRoot->clone();
-    require(copy->drawable()->drawDrawable()->mesh() != sourceMesh &&
-        copy->drawable()->drawDrawable()->drawMesh() != cpu.targetRoot->drawable()->drawDrawable()->drawMesh(),
+    require(copy->drawable()->drawable()->mesh() != sourceMesh &&
+        copy->drawable()->drawable()->drawMesh() != cpu.targetRoot->drawable()->drawable()->drawMesh(),
         "Assembly clone shared mutable CPU/GPU geometry");
     copy.reset();
     auto invalid = JSON(JsonObject{{"scene",JSON(JsonList{JSON(JsonObject{
@@ -175,7 +175,7 @@ inline void runStandaloneAssemblyProbe(draw::Engine& engine, const std::filesyst
     {
         assembler.assemblePrefab(context,prefab,options,false);
     });
-    require(one.targets[0].node->drawable()->drawDrawable()->isLoaded() && bytes(model) == originalBytes,
+    require(one.targets[0].node->drawable()->drawable()->isLoaded() && bytes(model) == originalBytes,
         "Failed candidate changed an earlier assembly/source");
     reject([&]
     {

@@ -244,11 +244,6 @@ glm::mat4 TransformComponent::invertedWorldMatrix()
     return glm::inverse(worldMatrix());
 }
 
-void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine&)
-{
-    deserialize(jsonData, basePath);
-}
-
 void TransformComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& /* basePath */)
 {
     deserializeCommon(jsonData);

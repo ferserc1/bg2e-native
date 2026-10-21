@@ -53,7 +53,7 @@ inline void runEditorToolsProbe(const std::shared_ptr<AppDelegate>& delegate, bg
     delegate->prepareFrame();
     delegate->selectNode(node, 0, false);
     delegate->prepareFrame();
-    require(delegate->selection()->selectedDrawMesh() == drawable.get());
+    require(delegate->selection()->selectedMesh() == drawable.get());
 
     const auto albedo = drawable->material().albedo();
     ui::DrawMaterialEditor editor;
@@ -86,7 +86,7 @@ inline void runEditorToolsProbe(const std::shared_ptr<AppDelegate>& delegate, bg
     delegate->duplicateSelection();
     delegate->prepareFrame();
     require(root->children().size() == 2);
-    auto copy = root->children().back()->drawable()->drawDrawable();
+    auto copy = root->children().back()->drawable()->drawable();
     require(copy != drawable && copy->mesh() != drawable->mesh());
     require(copy->drawMaterial(0)->normalTexture()->image() != image.get());
     const auto sourceX = drawable->mesh()->vertices.at(0).position.x;

@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 3.18)
-
-set(APP_TARGET_NAME setup)
-set(APP_SHADERS "${CMAKE_CURRENT_SOURCE_DIR}/shaders/src")
-bundle_app(TARGET_NAME ${APP_TARGET_NAME} SHADERS_SRC ${APP_SHADERS})

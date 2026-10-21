@@ -1,6 +1,24 @@
+/*
+ *    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 /* Periodic void-and-cluster blue-noise rank generator for bg2e.
  * Build: cc -O3 -std=c11 scripts/generate_blue_noise.c -lm -o generate_blue_noise
- * Usage: generate_blue_noise lib/src/bg2e/render/blue_noise_data.h
+ * Usage: generate_blue_noise lib/src/bg2e/utils/blue_noise_data.h
  */
 #include <math.h>
 #include <stdint.h>
@@ -30,9 +48,11 @@ static uint64_t random64(void)
 static void update(double *density, int index, double sign)
 {
     int x = index % WIDTH, y = index / WIDTH;
-    for (int dy = -RADIUS; dy <= RADIUS; ++dy) {
+    for (int dy = -RADIUS; dy <= RADIUS; ++dy)
+    {
         int yy = (y + dy + HEIGHT) % HEIGHT;
-        for (int dx = -RADIUS; dx <= RADIUS; ++dx) {
+        for (int dx = -RADIUS; dx <= RADIUS; ++dx)
+        {
             int xx = (x + dx + WIDTH) % WIDTH;
             density[yy * WIDTH + xx] += sign * kernel[dy + RADIUS][dx + RADIUS];
         }
@@ -43,9 +63,14 @@ static int extreme(const uint8_t *occupied, const double *density, int cluster)
 {
     int best = -1;
     double value = cluster ? -INFINITY : INFINITY;
-    for (int i = 0; i < COUNT; ++i) {
-        if (occupied[i] != cluster) continue;
-        if (best < 0 || (cluster ? density[i] > value : density[i] < value)) {
+    for (int i = 0; i < COUNT; ++i)
+    {
+        if (occupied[i] != cluster)
+        {
+            continue;
+        }
+        if (best < 0 || (cluster ? density[i] > value : density[i] < value))
+        {
             best = i;
             value = density[i];
         }
@@ -59,14 +84,17 @@ static void generate(uint8_t *data, int layer, int channel,
     memset(occupied, 0, COUNT);
     memset(density, 0, COUNT * sizeof(*density));
     /* Uniform random half-filled seed, followed by void-and-cluster relaxation. */
-    for (int i = 0, selected = 0; i < COUNT; ++i) {
-        if ((int)(random64() % (uint64_t)(COUNT - i)) < COUNT / 2 - selected) {
+    for (int i = 0, selected = 0; i < COUNT; ++i)
+    {
+        if ((int)(random64() % (uint64_t)(COUNT - i)) < COUNT / 2 - selected)
+        {
             occupied[i] = 1;
             update(density, i, 1.0);
             ++selected;
         }
     }
-    for (int i = 0; i < SWAPS; ++i) {
+    for (int i = 0; i < SWAPS; ++i)
+    {
         int cluster = extreme(occupied, density, 1);
         occupied[cluster] = 0;
         update(density, cluster, -1.0);
@@ -79,52 +107,68 @@ static void generate(uint8_t *data, int layer, int channel,
     double lower_density[COUNT];
     memcpy(lower, occupied, COUNT);
     memcpy(lower_density, density, sizeof(lower_density));
-    for (int r = COUNT / 2 - 1; r >= 0; --r) {
+    for (int r = COUNT / 2 - 1; r >= 0; --r)
+    {
         int i = extreme(lower, lower_density, 1);
         rank[i] = r;
         lower[i] = 0;
         update(lower_density, i, -1.0);
     }
-    for (int r = COUNT / 2; r < COUNT; ++r) {
+    for (int r = COUNT / 2; r < COUNT; ++r)
+    {
         int i = extreme(occupied, density, 0);
         rank[i] = r;
         occupied[i] = 1;
         update(density, i, 1.0);
     }
     for (int i = 0; i < COUNT; ++i)
+    {
         data[((size_t)layer * COUNT + i) * CHANNELS + channel] =
             (uint8_t)(rank[i] * 256 / COUNT);
+    }
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 2) {
+    if (argc != 2)
+    {
         fprintf(stderr, "Usage: %s <output_header.h>\n", argv[0]);
         return 1;
     }
     for (int y = -RADIUS; y <= RADIUS; ++y)
+    {
         for (int x = -RADIUS; x <= RADIUS; ++x)
+        {
             kernel[y + RADIUS][x + RADIUS] = exp(-(x * x + y * y) / (2.0 * 1.9 * 1.9));
+        }
+    }
 
     uint8_t *data = malloc((size_t)COUNT * CHANNELS * LAYERS);
     uint8_t *occupied = malloc(COUNT);
     double *density = malloc(COUNT * sizeof(*density));
     int *rank = malloc(COUNT * sizeof(*rank));
-    if (!data || !occupied || !density || !rank) {
+    if (!data || !occupied || !density || !rank)
+    {
         fprintf(stderr, "Out of memory\n");
         free(data); free(occupied); free(density); free(rank);
         return 1;
     }
     for (int layer = 0; layer < LAYERS; ++layer)
+    {
         for (int channel = 0; channel < CHANNELS; ++channel)
+        {
             generate(data, layer, channel, occupied, density, rank);
+        }
+    }
 
     FILE *out = fopen(argv[1], "w");
-    if (!out) {
+    if (!out)
+    {
         perror(argv[1]);
         free(data); free(occupied); free(density); free(rank);
         return 1;
     }
+    fputs("/*\n *    business grade graphic engine (bg2 engine)\n *    Copyright (C) 2026  Fernando Serrano Carpena\n *\n *    This program is free software: you can redistribute it and/or modify\n *    it under the terms of the GNU General Public License as published by\n *    the Free Software Foundation, either version 3 of the License, or\n *    (at your option) any later version.\n *\n *    This program is distributed in the hope that it will be useful,\n *    but WITHOUT ANY WARRANTY; without even the implied warranty of\n *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the\n *    GNU General Public License for more details.\n *\n *    You should have received a copy of the GNU General Public License\n *    along with this program.  If not, see <https://www.gnu.org/licenses/>.\n */\n\n", out);
     fprintf(out,
         "/* Generated by scripts/generate_blue_noise.c: periodic void-and-cluster ranks. */\n"
         "#ifndef BG2E_BLUE_NOISE_DATA_H\n#define BG2E_BLUE_NOISE_DATA_H\n\n"
@@ -133,16 +177,24 @@ int main(int argc, char **argv)
         "static const unsigned char bg2e_blue_noise_data[%d] = {\n",
         WIDTH, HEIGHT, CHANNELS, LAYERS, COUNT * CHANNELS * LAYERS);
     size_t total = (size_t)COUNT * CHANNELS * LAYERS;
-    for (size_t i = 0; i < total; ++i) {
-        if (i % 16 == 0) fputs("    ", out);
+    for (size_t i = 0; i < total; ++i)
+    {
+        if (i % 16 == 0)
+        {
+            fputs("    ", out);
+        }
         fprintf(out, "%3u,", (unsigned)data[i]);
         fputc(i % 16 == 15 ? '\n' : ' ', out);
     }
     fputs("};\n\n#endif /* BG2E_BLUE_NOISE_DATA_H */\n", out);
     int ok = !ferror(out);
-    if (fclose(out) != 0) ok = 0;
+    if (fclose(out) != 0)
+    {
+        ok = 0;
+    }
     free(data); free(occupied); free(density); free(rank);
-    if (!ok) {
+    if (!ok)
+    {
         fprintf(stderr, "Error writing %s\n", argv[1]);
         return 1;
     }

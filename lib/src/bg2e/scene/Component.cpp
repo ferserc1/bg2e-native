@@ -46,14 +46,6 @@ std::string componentName(Component* component)
     return typeid(*component).name();
 }
 
-void Component::deserialize(
-    std::shared_ptr<json::JsonNode> jsonData,
-    [[maybe_unused]] const std::filesystem::path& basePath,
-    [[maybe_unused]] render::Engine& engine)
-{
-    deserializeCommon(jsonData);
-}
-
 void Component::deserializeCommon(std::shared_ptr<json::JsonNode> jsonData)
 {
     json::ObjectReader reader(jsonData);
@@ -75,15 +67,6 @@ std::shared_ptr<json::JsonNode> Component::serializeReferences(const std::filesy
 
 void Component::loadResources(draw::Engine&, SceneLoadProgress*)
 {
-}
-
-void Component::deserializeWithProgress(
-    std::shared_ptr<json::JsonNode> jsonData,
-    const std::filesystem::path& basePath,
-    render::Engine& engine,
-    [[maybe_unused]] SceneLoadProgress* progress)
-{
-    deserialize(jsonData, basePath, engine);
 }
 
 std::shared_ptr<json::JsonNode> Component::serialize(const std::filesystem::path& /* basePath */)

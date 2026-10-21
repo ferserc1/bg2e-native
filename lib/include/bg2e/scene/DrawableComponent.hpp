@@ -21,7 +21,6 @@
 #include <optional>
 #include <string>
 
-#include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/draw/Drawable.hpp>
 #include <utility>
@@ -34,16 +33,10 @@ class BG2E_API DrawableComponent : public Component {
     BG2E_COMPONENT_TYPE_NAME("Drawable");
 
     DrawableComponent() = default;
-    DrawableComponent(std::shared_ptr<DrawableBase> drw) : _drawable{drw}
+    DrawableComponent(std::shared_ptr<bg2e::draw::Drawable> drw) : _drawable{std::move(drw)}
     {
     }
-    DrawableComponent(DrawableBase* drw) : _drawable{std::shared_ptr<DrawableBase>(drw)}
-    {
-    }
-    DrawableComponent(std::shared_ptr<bg2e::draw::Drawable> drw) : _drawDrawable{std::move(drw)}
-    {
-    }
-    DrawableComponent(bg2e::draw::Drawable* drw) : _drawDrawable{std::shared_ptr<bg2e::draw::Drawable>(drw)}
+    DrawableComponent(bg2e::draw::Drawable* drw) : _drawable{std::shared_ptr<bg2e::draw::Drawable>(drw)}
     {
     }
     DrawableComponent(std::nullptr_t)
@@ -58,36 +51,17 @@ class BG2E_API DrawableComponent : public Component {
         return true;
     }
 
-    enum class ExecutionMode
-    {
-        Uninitialized, Production, Draw
-    };
-    ExecutionMode executionMode() const;
-    std::shared_ptr<bg2e::draw::Drawable> drawDrawable();
-    std::shared_ptr<const bg2e::draw::Drawable> drawDrawable() const;
+    std::shared_ptr<bg2e::draw::Drawable> drawable();
+    std::shared_ptr<const bg2e::draw::Drawable> drawable() const;
     void setDrawable(std::shared_ptr<bg2e::draw::Drawable> drw);
     void setDrawable(std::nullptr_t)
     {
         clearDrawable();
     }
-    // Call at a coordinated boundary; releases this component's references.
-    // Other owners retain their realizations. Reinitialization may select a new mode.
+    // Call at a coordinated boundary; other owners retain their realizations.
     void clearDrawable();
 
-    std::shared_ptr<DrawableBase> drawableBase();
-    [[nodiscard]] const std::shared_ptr<DrawableBase> drawableBase() const;
-    std::shared_ptr<Drawable> drawable();
-    [[nodiscard]] const std::shared_ptr<Drawable> drawable() const;
-    void setDrawable(std::shared_ptr<DrawableBase> drw);
-
     std::shared_ptr<Component> clone() const override;
-
-    void draw(
-        const glm::mat4& nodeTransform,
-        VkCommandBuffer cmd,
-        VkPipelineLayout layout,
-        std::function<std::vector<VkDescriptorSet>(render::MaterialBase*, const glm::mat4&, uint32_t submIndex)> cb,
-        VkPipelineBindPoint bp = VK_PIPELINE_BIND_POINT_GRAPHICS);
 
     // Resolved source reference; setting it does not replace live resources.
     void setResourcePath(const std::filesystem::path& path);
@@ -104,15 +78,13 @@ class BG2E_API DrawableComponent : public Component {
     std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath) override;
     void loadResources(bg2e::draw::Engine& engine, SceneLoadProgress* progress = nullptr) override;
 
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
-    void deserializeWithProgress(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine, SceneLoadProgress* progress) override;
+    // Reference-only representation. Complete export requires engine-aware DB IO.
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
 
   protected:
     std::filesystem::path _resourcePath;
     std::optional<std::string> _resourceName;
-    std::shared_ptr<DrawableBase> _drawable;
-    std::shared_ptr<bg2e::draw::Drawable> _drawDrawable;
+    std::shared_ptr<bg2e::draw::Drawable> _drawable;
 };
 
 }

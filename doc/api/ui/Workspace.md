@@ -137,7 +137,7 @@ void AppDelegate::swapchainResized(VkExtent2D extent)
 void AppDelegate::drawUI() { _workspace.draw(); }
 ```
 
-Reference implementation: `apps/model_edit/src/AppDelegate.cpp`
+Reference implementation: `apps/draw/model_edit/src/AppDelegate.cpp`
 (`initWorkspace`, `swapchainResized`, `drawUI`).
 
 ---

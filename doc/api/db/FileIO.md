@@ -29,7 +29,7 @@ BG2TEX01 version 1 stores native format/type/width/height/mip count and length-
 prefixed subresources. Current byte order support is little endian. Format bits,
 HDR values and authored mips/layers are not gamma-converted or quantized. Reads
 validate lengths/truncation/trailing bytes. The draw texture loader recognizes
-`.bg2tex`; ordinary image codecs and production texture loaders are separate.
+`.bg2tex`; ordinary image codecs remain distinct from native texture archive decoding.
 Native format enum interpretation follows the current engine archive contract.
 
 ## publishFile

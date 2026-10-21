@@ -25,4 +25,4 @@ must be scheduled separately through [`app::Uv2SafeReload`](../app/Uv2SafeReload
 - [`UvAtlasValidator`](UvAtlasValidator.md)
 
 See [Lightmap baking](../../lightmap_baking.md) for the editor workflow and
-[the render API](../render/index.md) for UV previews and baking.
+[the render API](../draw/index.md) for UV previews and baking.

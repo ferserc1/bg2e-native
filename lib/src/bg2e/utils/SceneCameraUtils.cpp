@@ -20,7 +20,6 @@
 #include <bg2e/utils/ViewpointAnalyzer.hpp>
 
 #include <bg2e/math/projections.hpp>
-#include <bg2e/render/ViewpointAnalyzer.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
@@ -63,30 +62,6 @@ float cameraVerticalFieldOfView(scene::CameraComponent* camera, float fallback)
     }
 
     return fallback;
-}
-
-void applyViewpointToOrbitCamera(
-    const render::CameraCandidate& candidate,
-    scene::OrbitCameraComponent* orbitCamera,
-    scene::CameraComponent* camera)
-{
-    if (!orbitCamera)
-    {
-        return;
-    }
-
-    float orbitDistance = candidate.distance;
-    auto orbitNode = orbitCamera->ownerNode();
-    auto cameraNode = camera ? camera->ownerNode() : nullptr;
-    if (orbitNode && cameraNode && orbitNode != cameraNode)
-    {
-        const glm::mat4 cameraFromOrbit = glm::inverse(orbitNode->worldMatrix()) * cameraNode->worldMatrix();
-        orbitDistance -= cameraFromOrbit[3].z;
-    }
-
-    orbitCamera->setCenter(candidate.target);
-    orbitCamera->setDistance(orbitDistance);
-    orbitCamera->setRotation({candidate.pitch, candidate.yaw});
 }
 
 void applyViewpointToOrbitCamera(

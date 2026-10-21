@@ -162,3 +162,64 @@ pages under doc/. The review's stale standalone-index/authoring gap is addressed
 original review/evidence history remains. Documentation awaits normal acceptance;
 M09-01 actual inventory/manifest is next, with no source deletion or global draw
 promotion yet performed.
+
+## M09-01 actual retirement manifest delivered
+
+[Actual per-file decisions and incoming dependencies](milestone_09_cleanup/retirement-manifest.md)
+refresh the M08 inventory at HEAD 1889bdb12ade85d820eaab4a7365760fa9c34f50 and
+record final naming, data and preservation gates. M08-07 is accepted by lead
+continuation; M09-01 awaits validation. No retirement or draw promotion has yet
+been performed. Use progress.md for the M09-02 successor and acceptance condition.
+
+## M09-02 canonical application entrypoints delivered
+
+[Draw entrypoint contracts and actual retirement delta](milestone_09_cleanup/entrypoints.md)
+record default draw MainLoop, sole typed headless path and surviving app identities.
+Old apps/execution adapters and obsolete target registrations are retired. Shared
+scene/DB/UI/native engine cleanup is still pending; complete render removal is not
+claimed. M09-02 awaits validation; progress.md points to M09-03.
+
+## M09-03 shared API cleanup delivered
+
+[Actual shared contracts and retirement delta](milestone_09_cleanup/shared-api.md)
+record canonical draw-only scene/DB/utils/manipulation/UI APIs and public bake
+exports. Independent CPU data/IO and optimized GPU/draw behavior remain protected.
+M09-03 awaits validation; progress.md links M09-04 for remaining render/native
+retirement. Current source and both actual deltas supersede old snapshot hashes.
+
+
+M09-04 delivery: [native confinement and final render retirement](milestone_09_cleanup/native-retirement.md).
+Both render source/header trees are removed; native GUI/window operations use
+primitive-only GPU bridges. M09-05 remains responsible for obsolete examples,
+shaders, templates and distribution references. See progress for acceptance state.
+
+
+M09-05 delivery: [canonical targets, probes and distribution](milestone_09_cleanup/products-distribution.md).
+Legacy example/GLSL trees are removed; paired shader deployment and deferred
+standalone generation/update are canonical. M09-06 owns final product validation;
+source-only evidence and acceptance state remain recorded in progress.
+
+
+M09-06 delivery: [final product validation](milestone_09_cleanup/final-product-validation.md).
+Canonical target/public-header catalogs, transitive umbrella checks and source-
+backed native/regression matrix are recorded. Binary/runtime coverage remains
+accurately attributed to the lead. M09-07 technical review is the linked successor
+in progress; cumulative M09-08 documentation remains a separate required step.
+
+## M09-07 final production review — 2026-10-21
+
+M09-06 and its scene reference-count, Metal GUI declaration and VMA implementation
+corrections are accepted by the project lead's continuation instruction. Draw is
+the production API; no retired render compatibility is retained. See the
+[final contract review](milestone_09_cleanup/review.md), original-manifest
+reconciliation and complete maintained-page handoff linked there. M09-07 is
+awaiting lead acceptance; M09-08 must author cumulative documentation before
+M09 closure. M10 audits that delivery. R01–R14 optimization/profiling source and
+manual probes remain preserved; no new native coverage or performance result is
+claimed by this review. Historical planning assumptions above remain historical.
+
+## Cumulative documentation delivery — M09-08
+
+Maintained [documentation](../../../doc/index.md) now describes production draw
+and bake. [Coverage and checks](milestone_09_cleanup/documentation.md) accompany
+the delivery. M09-07 is accepted; M09-08 awaits lead acceptance before M10-01.

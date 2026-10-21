@@ -42,6 +42,44 @@
 #include <vector>
 #include <memory>
 
+// Compile VMA exactly once in the Vulkan backend, at global scope.
+#ifdef BG2E_IS_MAC
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdocumentation"
+#pragma clang diagnostic ignored "-Wdocumentation-deprecated-sync"
+#pragma clang diagnostic ignored "-Wnullability-completeness"
+#pragma clang diagnostic ignored "-Wunused-function"
+#pragma clang diagnostic ignored "-Wunused-variable"
+#pragma clang diagnostic ignored "-Wimplicit-fallthrough"
+#pragma clang diagnostic ignored "-Wunreachable-code-fallthrough"
+#elif defined(BG2E_IS_LINUX)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wunused-parameter"
+#pragma GCC diagnostic ignored "-Wimplicit-fallthrough"
+#pragma GCC diagnostic ignored "-Wmissing-field-initializers"
+#endif
+
+#define VMA_IMPLEMENTATION
+
+#if BG2E_DEBUG_LOG_VMA_ALLOCATIONS == 1
+#define VMA_DEBUG_LOG_FORMAT(format, ...) \
+    do                                    \
+    {                                     \
+        printf(format "\n", __VA_ARGS__); \
+    }                                     \
+    while (false)
+#endif
+
+#include <vma/vk_mem_alloc.h>
+
+#ifdef BG2E_IS_MAC
+#pragma clang diagnostic pop
+#elif defined(BG2E_IS_LINUX)
+#pragma GCC diagnostic pop
+#endif
+
 namespace bg2e {
 namespace gpu {
 namespace vk {

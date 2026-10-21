@@ -45,7 +45,6 @@ struct UserInterface::Impl {
     std::shared_ptr<detail::PreviewRegistry> previews;
     ImGuiContext* context = nullptr;
     draw::Engine* drawEngine = nullptr;
-    bool production = false;
     bool sdlStarted = false;
     bool ready = false;
     bool prepared = false;
@@ -109,67 +108,6 @@ bool UserInterface::initialized() const
     return _impl->ready;
 }
 
-void UserInterface::init(render::Engine* engine)
-{
-    if (!engine)
-    {
-        throw std::invalid_argument("UI requires a production Engine.");
-    }
-    if (_impl->context || ImGui::GetCurrentContext())
-    {
-        throw std::logic_error("An ImGui context is already active.");
-    }
-    _impl = std::make_shared<Impl>(); // Old engine callbacks retain only their own lifecycle.
-    _engine = engine;
-    _impl->production = true;
-    // Capture retained state, never this: the engine determines production
-    // shutdown ordering even if the UI wrapper is destroyed first.
-    engine->cleanupManager().push([state = _impl](VkDevice)
-                                  {
-                                      state->shutdown();
-                                  });
-    try
-    {
-        s_uiScale = app::PreferencesStore::instance().preferences("ui").get("uiScale", s_uiScale);
-        _impl->context = ImGui::CreateContext();
-        if (!_impl->context)
-        {
-            throw std::runtime_error("ImGui context creation failed.");
-        }
-        if (!ImGui_ImplSDL2_InitForVulkan(static_cast<SDL_Window*>(engine->windowPtr())))
-        {
-            throw std::runtime_error("ImGui SDL Vulkan initialization failed.");
-        }
-        _impl->sdlStarted = true;
-        _impl->renderer = detail::createVulkanImGuiBackend();
-        _impl->renderer->initialize(*engine);
-        if (_delegate)
-        {
-            _delegate->init(engine, this);
-        }
-        _impl->ready = true;
-    }
-    catch (...)
-    {
-        auto error = std::current_exception();
-        try
-        {
-            engine->device().waitIdle();
-        }
-        catch (...)
-        {
-        }
-        try
-        {
-            _impl->shutdown();
-        }
-        catch (...)
-        {
-        }
-        std::rethrow_exception(error);
-    }
-}
-
 void UserInterface::init(draw::Engine* engine)
 {
     if (!engine || !engine->surface())
@@ -187,9 +125,7 @@ void UserInterface::init(draw::Engine* engine)
     }
 #endif
     _impl = std::make_shared<Impl>();
-    _impl->production = false;
     _impl->drawEngine = engine;
-    _engine = nullptr;
     try
     {
         s_uiScale = app::PreferencesStore::instance().preferences("ui").get("uiScale", s_uiScale);
@@ -320,31 +256,13 @@ void UserInterface::finishFrame()
     _impl->prepared = true;
 }
 
-void UserInterface::newFrame()
-{
-    if (!initialized())
-    {
-        return;
-    }
-    if (!_impl->production)
-    {
-        throw std::logic_error("Draw UI newFrame requires an acquired frame context.");
-    }
-    ImGui::SetCurrentContext(_impl->context);
-    _impl->renderer->prepareFrame(nullptr, nullptr);
-    finishFrame();
-}
-
 void UserInterface::newFrame(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
 {
     if (!initialized())
     {
         return;
     }
-    if (_impl->production)
-    {
-        throw std::logic_error("Abstract UI frames require a draw Engine.");
-    }
+
     ImGui::SetCurrentContext(_impl->context);
     _impl->prepared = false;
     _impl->renderer->prepareFrame(&command, &frame);
@@ -352,17 +270,6 @@ void UserInterface::newFrame(gpu::CommandBuffer& command, gpu::SurfaceFrame& fra
     finishFrame();
     _impl->preparedCommand = &command;
     _impl->preparedFrame = &frame;
-}
-
-void UserInterface::draw(VkCommandBuffer command, VkImageView imageView)
-{
-    if (!initialized() || !_impl->prepared)
-    {
-        return;
-    }
-    ImGui::SetCurrentContext(_impl->context);
-    _impl->renderer->draw(command, imageView);
-    _impl->prepared = false;
 }
 
 void UserInterface::draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
@@ -395,10 +302,7 @@ void UserInterface::cleanup()
 {
     auto preferences = app::PreferencesStore::instance().preferences("ui");
     preferences.set("uiScale", s_uiScale);
-    if (_impl->production)
-    {
-        return; // The production engine owns registered shutdown.
-    }
+
     std::exception_ptr error;
     if (_impl->drawEngine)
     {

@@ -178,7 +178,7 @@ struct IntegratedLightmapBaker::Impl {
             found = found || ancestor == state->configuration.sceneRoot.get();
         }
         auto* component = node->drawable();
-        auto drawable = component ? component->drawDrawable() : nullptr;
+        auto drawable = component ? component->drawable() : nullptr;
         const auto world = node->worldMatrix();
         if (!found || !drawable || !geometry || drawable != geometry->target ||
             drawable->drawMesh() != geometry->drawMesh ||
@@ -459,7 +459,7 @@ void IntegratedLightmapBaker::resetAccumulation()
         throw std::logic_error("Notify invalidateSources before restarting after scene edits");
     }
     auto* component = configuration().target->drawable();
-    auto drawable = component ? component->drawDrawable() : nullptr;
+    auto drawable = component ? component->drawable() : nullptr;
     if (!drawable)
     {
         throw std::invalid_argument("Integrated bake target requires a loaded draw Drawable");

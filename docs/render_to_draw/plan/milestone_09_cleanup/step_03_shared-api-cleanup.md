@@ -16,7 +16,13 @@
 
 Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
 
-Current sources to inspect: [lib/include/bg2e/scene/Drawable.hpp](../../../../lib/include/bg2e/scene/Drawable.hpp), [lib/src/bg2e/scene/Drawable.cpp](../../../../lib/src/bg2e/scene/Drawable.cpp), [lib/include/bg2e/scene/DrawableComponent.hpp](../../../../lib/include/bg2e/scene/DrawableComponent.hpp), [lib/include/bg2e/scene/Mesh.hpp](../../../../lib/include/bg2e/scene/Mesh.hpp), [lib/include/bg2e/scene/vk/](../../../../lib/include/bg2e/scene/vk), [lib/include/bg2e/utils/TextureCache.hpp](../../../../lib/include/bg2e/utils/TextureCache.hpp), [lib/include/bg2e/utils/MaterialModifier.hpp](../../../../lib/include/bg2e/utils/MaterialModifier.hpp).
+Current sources to inspect: [DrawableComponent](../../../../lib/include/bg2e/scene/DrawableComponent.hpp),
+[draw Drawable](../../../../lib/include/bg2e/draw/Drawable.hpp),
+[scene umbrella](../../../../lib/include/bg2e/scene/all.hpp),
+[TextureCache](../../../../lib/include/bg2e/utils/TextureCache.hpp) and
+[MaterialModifier](../../../../lib/include/bg2e/utils/MaterialModifier.hpp).
+The native scene paths in the original scope above are now retired; see the
+[actual source delta](shared-api-changes.tsv).
 
 ## Implementation work
 
@@ -100,3 +106,39 @@ private/shared helper exclusion and detached roots. Root bg2e/all.hpp currently
 exports render but not bake/all.hpp: reconcile final umbrella exports and explicit
 bake includes here and verify no legacy type enters through app/DB/UI umbrellas.
 Do not delete a shared file solely because one overload references render.
+
+## M09-01 selected shared contract
+
+Use [the manifest and incoming include graph](retirement-manifest.md). Canonical
+DrawableComponent::drawable() returns draw::Drawable with suitable const access;
+remove production storage/accessor, drawDrawable() and execution modes. Migrate
+all supported app/reflection/probe callers and maintained snippets together. Root
+all.hpp exports bake/all.hpp and removes render; remove scene::vk/old scene
+Drawable/visitors/native mesh/sky generator exports. DrawableRegistry retains
+useful naming/registration behavior adapted to surviving types; a deleted-header
+include does not justify deleting neutral functionality. Keep ResizeViewportVisitor
+and graphics-neutral visitor operations. The include graph also catches db/all.hpp's
+obsolete specialized writer export and BoundingBox/registry dependencies that a
+qualified-type-only scan misses. Keep DrawMaterialEditor/DrawTextureWidgets names.
+
+## M09-02 implemented prerequisite
+
+[Entrypoint delivery](entrypoints.md) and [actual hash delta](entrypoint-changes.tsv)
+record changes to the M09-01 snapshot. Old apps, RenderGraphicsExecution,
+OffscreenExecution and production DefaultOffscreenApplicationDelegate pair/export
+are already removed; do not recreate them or assume old manifest paths still exist.
+Application::renderDelegate now returns draw, and MainLoop/offscreen use draw only.
+Old example registrations are retired but their sources remain M09-05 work.
+The key/mouse display is already ported and registered; retain its neutral input
+behavior. Shared scene/DB/UI/accessors/native bridges, templates and full distribution
+validation remain owned by their pending steps. Preserve current source and evidence.
+
+## M09-03 delivery — 2026-10-21
+
+[Actual shared API contracts and checks](shared-api.md) record draw-only shared
+scene/DB/utils/manipulation/UI APIs, canonical drawable/selection accessors,
+retired native scene bindings/widgets and dependent old renderer closure. The
+root umbrella exports bake. CPU/complete IO, independent cloning and optimized
+GPU/draw implementations remain protected. Registered UV/bake harnesses use public
+probes without CMake changes. M09-02 accepted by continuation; M09-03 awaits
+validation and M09-04 is next. The complete render tree is not yet retired.

@@ -39,3 +39,17 @@ and current optimization/profiling preservation. Separate ten synthetic inspecto
 tests, continuation acceptance and any later supplied native output/package/counter
 records. No unknown backend/scenario should become a fabricated successful run;
 no missed standalone authoring requirement is deferred beyond final closure.
+
+## Final M09-07 source baseline and handoff
+
+Use [the final review](../milestone_09_cleanup/review.md) and its
+[page inventory](../milestone_09_cleanup/documentation-handoff.tsv). M09-06 and
+its scene/Metal/VMA corrections are accepted by continuation. Production is
+`bg2e::draw`; GPU is its low-level backend abstraction. Retired render APIs and
+old application targets have no compatibility promise. The source catalog lists
+33 products; native scenario/backend/performance coverage remains unspecified.
+M09-08 authors the complete cumulative maintained documentation before M10.
+M10 audits that delivered documentation and makes localized corrections; do not
+defer missing API, tutorial, build or application authoring to this milestone.
+
+Close only after every M09-08 page disposition, final public extension contract, 33-product mapping and R01–R14 coverage is accounted for. Record localized audit fixes and unresolved lead-owned native/package/performance coverage without inventing results. Any missing bulk documentation remains an explicit unmet M09-08 requirement.

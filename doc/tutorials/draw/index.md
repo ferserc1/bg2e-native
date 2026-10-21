@@ -1,15 +1,15 @@
-# Experimental Draw API Tutorials
+# Draw API Tutorials
 
 This directory contains step-by-step tutorials for `bg2e::draw`, the
-experimental application rendering framework built over `bg2e::gpu`.
+application rendering framework built over `bg2e::gpu`.
 
 The numbered tutorials correspond to examples in `examples/draw/` and explain
 application setup, scene/UI delegate behavior, and GPU implementation details,
 including shader code where applicable. The series adapts selected GPU examples
 to draw's managed lifecycle and retained scene/UI composition.
 
-`bg2e::render` remains the production rendering API. The draw and GPU examples
-exercise the experimental APIs separately from that production path.
+ Draw is the production rendering API over GPU backends. The draw and GPU examples
+exercise the draw and GPU APIs.
 
 ## Tutorials
 

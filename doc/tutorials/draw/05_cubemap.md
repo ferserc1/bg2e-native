@@ -28,8 +28,7 @@ background, pause, and refresh controls from earlier draw examples.
 - The bundled [autumn_field_4k.hdr](../../../assets/autumn_field_4k.hdr) environment asset
 
 The example uses CPU image loading through `bg2e::db::loadImage()` in application
-code and creates all rendering resources through `bg2e::gpu`. It does not use
-or change the production `bg2e::render` path.
+code and creates all rendering resources through `bg2e::gpu`. Draw supplies the managed application lifecycle.
 
 ## Understanding the example
 
@@ -54,7 +53,7 @@ and rotation while the UI remains active.
 ### 1. Reuse the draw application and shared controller
 
 The application follows the same Application/MainLoop entry point as previous
-examples and selects the experimental draw path with `draw::EngineConfig`.
+examples and selects the draw path with `draw::EngineConfig`.
 The default backend is Metal on macOS and Vulkan elsewhere; the optional
 `--backend=vulkan` or `--backend=metal` argument overrides it.
 

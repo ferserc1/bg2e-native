@@ -44,7 +44,7 @@ inline void runComposerCloneProbe(Engine& engine, const std::filesystem::path& d
     original->addComponent(new scene::DrawableComponent(drawable));
     auto copy = original->clone();
     copy->setName("Independent copy");
-    auto cloned = copy->drawable()->drawDrawable();
+    auto cloned = copy->drawable()->drawable();
     require(cloned != drawable && cloned->mesh() != drawable->mesh() && cloned->drawMesh() != drawable->drawMesh(),
         "Cloned CPU/GPU geometry is shared");
     require(cloned->drawMaterial(0) != drawable->drawMaterial(0), "Cloned material is shared");
@@ -63,8 +63,8 @@ inline void runComposerCloneProbe(Engine& engine, const std::filesystem::path& d
     const auto path = directory / "composer-independent-clones.json";
     db::saveScene(root.get(), engine, path);
     auto loaded = db::loadScene(path, engine);
-    auto first = loaded->rootNode()->children().at(0)->children().at(0)->drawable()->drawDrawable();
-    auto second = loaded->rootNode()->children().at(0)->children().at(1)->drawable()->drawDrawable();
+    auto first = loaded->rootNode()->children().at(0)->children().at(0)->drawable()->drawable();
+    auto second = loaded->rootNode()->children().at(0)->children().at(1)->drawable()->drawable();
     require(first->mesh()->vertices.at(0).position != second->mesh()->vertices.at(0).position &&
         first->material().roughness() != second->material().roughness(), "Export merged independent cloned state");
     require(original->drawable()->resourcePath().empty() && copy->drawable()->resourcePath().empty(),

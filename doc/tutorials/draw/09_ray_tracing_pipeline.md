@@ -32,7 +32,7 @@ The device check preserves the source's full ray tracing capability predicate.
 Unsupported devices fail with a descriptive startup error before scene shader
 loading. On macOS, the Vulkan failure suggests Metal on a compatible Mac.
 There is no fallback renderer. All geometry and materials are procedural, with
-no external scene assets. The production `bg2e::render` API remains separate.
+no external scene assets. Draw is the production rendering API over GPU backends.
 
 ## Understanding the example
 

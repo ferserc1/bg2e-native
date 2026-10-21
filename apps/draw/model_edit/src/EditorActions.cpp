@@ -130,7 +130,7 @@ void AppDelegate::editGeometry(unsigned operation)
     std::set<bg2e::draw::Drawable*> visited;
     for (const auto& item : _selection->selectedItems())
     {
-        auto drawable = item->lockDrawMesh();
+        auto drawable = item->lockMesh();
         if (!drawable || !visited.insert(drawable.get()).second)
         {
             continue;
@@ -140,7 +140,7 @@ void AppDelegate::editGeometry(unsigned operation)
         {
             using namespace bg2e::geo;
             auto drawable = identity.lock();
-            if (!drawable || !node.drawable() || node.drawable()->drawDrawable() != drawable)
+            if (!drawable || !node.drawable() || node.drawable()->drawable() != drawable)
             {
                 return;
             }
@@ -197,7 +197,7 @@ void AppDelegate::copyMaterial()
             return;
         }
         auto node = target.node.lock();
-        auto mesh = target.lockDrawMesh();
+        auto mesh = target.lockMesh();
         if (document()->generation == generation && node && _stage->contains(node.get()) && mesh)
         {
             try
@@ -224,7 +224,7 @@ void AppDelegate::pasteMaterial()
         auto target = *item;
         queueNodeEdit(target.node, [target, snapshot = _clipboard](auto&)
         {
-            auto mesh = target.lockDrawMesh();
+            auto mesh = target.lockMesh();
             if (!mesh)
             {
                 return;
@@ -274,12 +274,12 @@ void AppDelegate::applyMaterialPatch(const std::filesystem::path& path)
         }
         for (const auto& item : _selection->selectedItems())
         {
-            const auto identity = item->drawMesh;
+            const auto identity = item->mesh;
             const auto submesh = item->submesh;
             queueNodeEdit(item->node, [identity, submesh, patch](auto& node)
             {
                 auto mesh = identity.lock();
-                if (mesh && node.drawable() && node.drawable()->drawDrawable() == mesh && submesh < mesh->submeshesCount())
+                if (mesh && node.drawable() && node.drawable()->drawable() == mesh && submesh < mesh->submeshesCount())
                 {
                     patch.apply(*mesh, submesh);
                 }

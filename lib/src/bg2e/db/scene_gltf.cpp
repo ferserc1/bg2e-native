@@ -22,7 +22,6 @@
 #include <bg2e/db/image.hpp>
 #include <bg2e/math/base.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
-#include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 
 #include <stdexcept>
@@ -371,7 +370,6 @@ static base::MaterialAttributes materialAttributes(
             result.setLightEmissionUVSet(textureUVSet(material->emissive_texture, primitive));
             result.setLightEmissionScale(textureUVScale(material->emissive_texture));
         }
-
 
         // glTF defines transparency through alphaMode. BLEND uses alpha
         // compositing; MASK stays in the opaque queue and uses alpha test.
@@ -821,12 +819,6 @@ std::shared_ptr<scene::Node> loadGltf(const GltfDocument& document, draw::Engine
         std::move(onProgress), std::static_pointer_cast<cgltf_data>(document._data)));
 }
 
-scene::Node* loadGltf(const std::filesystem::path& filePath, render::Engine* engine,
-    scene::SceneProgressCallback onProgress)
-{
-    return loadGltfImpl<scene::Drawable>(filePath, engine, std::move(onProgress));
-}
-
 std::shared_ptr<scene::Node> loadGltf(const std::filesystem::path& filePath, draw::Engine& engine,
     scene::SceneProgressCallback onProgress)
 {
@@ -837,16 +829,6 @@ std::shared_ptr<scene::Node> loadGltf(const std::filesystem::path& basePath, con
     draw::Engine& engine, scene::SceneProgressCallback onProgress)
 {
     return loadGltf(basePath / fileName, engine, std::move(onProgress));
-}
-
-extern BG2E_API bg2e::scene::Node* loadGltf(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine,
-    scene::SceneProgressCallback onProgress)
-{
-    auto fullPath = basePath / fileName;
-    return loadGltf(fullPath, engine, std::move(onProgress));
 }
 
 }

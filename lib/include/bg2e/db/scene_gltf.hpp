@@ -20,7 +20,6 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/scene/Node.hpp>
-#include <bg2e/render/Engine.hpp>
 #include <filesystem>
 #include <string>
 
@@ -52,18 +51,6 @@ extern BG2E_API std::shared_ptr<scene::Node> loadGltf(const std::filesystem::pat
     draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
 extern BG2E_API std::shared_ptr<scene::Node> loadGltf(const std::filesystem::path& basePath,
     const std::string& fileName, draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
-
-
-extern BG2E_API bg2e::scene::Node* loadGltf(
-    const std::filesystem::path& filePath,
-    render::Engine* engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr);
-
-extern BG2E_API bg2e::scene::Node* loadGltf(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine,
-    bg2e::scene::SceneProgressCallback onProgress = nullptr);
 
 }
 }

@@ -30,12 +30,10 @@ namespace bg2e::manipulation {
 
 void GizmoAndSelectionRenderer::initialize(draw::Engine& engine, const draw::pipeline::OverlayConfiguration& configuration)
 {
-    if (_overlayInitialized || (_mode != ToolExecutionMode::Uninitialized &&
-        (_mode != ToolExecutionMode::Draw || _drawEngine != &engine)))
+    if (_overlayInitialized || (_drawEngine && _drawEngine != &engine))
     {
-        throw std::logic_error("Overlay lifecycle cannot be shared or change manipulation mode/engine");
+        throw std::logic_error("Overlay lifecycle cannot be shared or change engine");
     }
-    _mode = ToolExecutionMode::Draw;
     _drawEngine = &engine;
     if (!_graphics)
     {
@@ -93,7 +91,7 @@ void GizmoAndSelectionRenderer::collectDrawNodes(scene::Node* root)
             return;
         }
     }
-    // Preserve the production visitor's filtering configuration.
+    // Preserve the visitor filtering configuration.
     const bool ignored = ignoreDisabled();
     setIgnoreDisabled(true);
     try
@@ -214,21 +212,13 @@ bool GizmoAndSelectionRenderer::prepareFrame()
         }
         if (auto* component = node->drawable())
         {
-            if (component->executionMode() != scene::DrawableComponent::ExecutionMode::Draw)
-            {
-                throw std::invalid_argument("Draw overlay cannot consume production geometry");
-            }
-            changed = cacheLines(component->drawDrawable()) || changed;
+            changed = cacheLines(component->drawable()) || changed;
         }
         if (auto* gizmo = node->getComponent<GizmoComponent>())
         {
-            if (gizmo->manipulationMode() != ToolExecutionMode::Draw)
-            {
-                throw std::invalid_argument("Draw overlay cannot consume production gizmos");
-            }
             gizmo->synchronizeResources();
-            changed = cacheLines(gizmo->drawDrawable()) || changed;
-            changed = cacheLines(gizmo->transformDrawDrawable()) || changed;
+            changed = cacheLines(gizmo->drawable()) || changed;
+            changed = cacheLines(gizmo->transformDrawable()) || changed;
         }
     }
     return changed;
@@ -284,10 +274,7 @@ void GizmoAndSelectionRenderer::update(const draw::pipeline::OverlayContext& con
         {
             continue;
         }
-        if (gizmo->manipulationMode() != ToolExecutionMode::Draw)
-        {
-            throw std::invalid_argument("Draw overlay cannot consume a production gizmo");
-        }
+
         const auto append = [&](const std::shared_ptr<draw::Drawable>& resource, bool transform)
         {
             if (!resource || !resource->isLoaded())
@@ -321,11 +308,11 @@ void GizmoAndSelectionRenderer::update(const draw::pipeline::OverlayContext& con
         };
         if (gizmo->currentGizmoType() != GizmoType::None && GizmoComponent::isGizmoVisible(gizmo->currentGizmoType()))
         {
-            append(gizmo->drawDrawable(), false);
+            append(gizmo->drawable(), false);
         }
         if (gizmo->transformVisible() && node->transform() && GizmoComponent::isGizmoVisible(GizmoType::Transform))
         {
-            append(gizmo->transformDrawDrawable(), true);
+            append(gizmo->transformDrawable(), true);
         }
     }
     slot.draws = std::move(draws);
@@ -360,8 +347,7 @@ void GizmoAndSelectionRenderer::cleanup()
     _drawNodes.clear();
     _drawScene.reset();
     _overlayInitialized = false;
-    // Production cleanup remains owned by the production Engine cleanup manager.
-    // Retain the initialized tool mode/borrowed engine for same-engine reuse.
+    // Retain the borrowed engine for same-engine reuse.
 }
 
 }

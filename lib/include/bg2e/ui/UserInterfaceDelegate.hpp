@@ -18,7 +18,8 @@
 
 #pragma once
 
-#include <bg2e/render/Engine.hpp>
+#include <bg2e/common.hpp>
+#include <cstdint>
 
 namespace bg2e {
 
@@ -41,9 +42,7 @@ class BG2E_API UserInterfaceDelegate {
 
   public:
     virtual ~UserInterfaceDelegate() = default;
-    virtual void init(bg2e::render::Engine*, UserInterface*)
-    {
-    }
+
     virtual void init(bg2e::draw::Engine*, UserInterface*)
     {
     }

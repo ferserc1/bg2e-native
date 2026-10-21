@@ -45,7 +45,7 @@ Source and validation boundaries: [M03 technical review](../milestone_03_ray_tra
 
 ## M04-07 reviewed implementation requirement
 
-Audit M04's actual contracts: one live integrated target/open frame, exact valid counts, AO/GI normalization and zero-reference policy, strict half-float raw-GI saturation rejection, nearest-seed dilation, RGB32F versus display-half limits, explicit indirectTextureMode, CPU UV preview and UI-session resource ownership. Standalone/batch/export APIs are future M08 implementations until their owning deliveries.
+Audit M04's actual contracts: one live integrated target/open frame, exact valid counts, AO/GI normalization and zero-reference policy, strict half-float raw-GI saturation rejection, nearest-seed dilation, RGB32F versus display-half limits, explicit indirectTextureMode, CPU UV preview and UI-session resource ownership. Standalone/batch/export APIs are implemented; use the final M09-07 owner and lifetime contracts.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
 ## Later tracing capacity and shader ABI audit
@@ -93,3 +93,39 @@ model snapshots. Generic db file/archive/parsed data APIs survive independently
 of the retired specialized production writer. Do not document tentative SceneAssembler
 or Batch aliases, arbitrary camera-profile import, automatic custom resource
 inference or a general ResourceManager as implemented final APIs.
+
+## M09-04 actual native interoperability contracts
+
+Use [the native retirement delivery](../milestone_09_cleanup/native-retirement.md)
+and doc/api/gpu/Gui_bridges.md as current evidence. Public headers now include
+gpu/GuiRenderer.hpp, gpu/StandaloneGuiWindow.hpp and gpu/WindowGraphics.hpp,
+exported by gpu/all.hpp. Record portable primitive borrowing, explicit shutdown
+before context/device destruction, Vulkan/Metal texture-generation and encoder
+ownership, standalone native RAII and drawable-pixel semantics. The old UI
+backend source paths are adapters; native implementations live exclusively in GPU.
+Do not reproduce retired render wrappers or expose ImGui types as public APIs.
+
+## M09-06 declaration/umbrella audit input
+
+Use public-api-evidence.tsv and umbrella-closure.tsv beside
+[final-product-validation.md](../milestone_09_cleanup/final-product-validation.md).
+They cover all public headers and eleven portable entry roots; lexical type/alias
+spelling and BG2E_API marker text require reading actual namespace/signature and
+ownership before reference authoring. Explicit/backend headers outside umbrellas
+remain supported at their documented native seams. Binary exports have not been
+inspected. Preserve actual DrawOffscreenApplicationConfig/Delegate names and
+canonical shared accessors rather than introducing planned-but-absent names.
+
+## Final M09-07 source baseline and handoff
+
+Use [the final review](../milestone_09_cleanup/review.md) and its
+[page inventory](../milestone_09_cleanup/documentation-handoff.tsv). M09-06 and
+its scene/Metal/VMA corrections are accepted by continuation. Production is
+`bg2e::draw`; GPU is its low-level backend abstraction. Retired render APIs and
+old application targets have no compatibility promise. The source catalog lists
+33 products; native scenario/backend/performance coverage remains unspecified.
+M09-08 authors the complete cumulative maintained documentation before M10.
+M10 audits that delivered documentation and makes localized corrections; do not
+defer missing API, tutorial, build or application authoring to this milestone.
+
+Read actual draw/Renderer.hpp, Upscaler.hpp, SettingsCatalog.hpp, SettingsCodec.hpp and RenderSettingsPreferences.hpp; bake/BakerContext.hpp and standalone owner headers; scene/DrawableComponent.hpp and ComponentFactoryRegistry.hpp; db/scene.hpp; GPU native GUI seams. Check exclusive renderer ownership, retained shared component owners, generation-safe settings, deep clones, live material aliases, borrowed bake devices and one live target. Concrete standalone APIs are implemented: StandaloneBakerContext, StandaloneLightmapBaker, StandaloneBakeSceneAssembler, StandaloneBakeBatch and LightmapOutputWriter.

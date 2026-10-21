@@ -19,15 +19,11 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/manipulation/ToolExecutionMode.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/draw/pipeline/OverlayPass.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/math/all.hpp>
-#include <bg2e/scene/Drawable.hpp>
-#include <bg2e/render/Engine.hpp>
 
-#include <stack>
 
 namespace bg2e {
 namespace manipulation {
@@ -38,18 +34,9 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor, publ
   public:
     explicit GizmoAndSelectionRenderer(std::shared_ptr<draw::pipeline::MeshOverlayPass> graphics = {});
 
-    void init(
-        render::Engine* engine,
-        VkSampleCountFlagBits sampleCount);
-
     // Optional application-owned tool, independent of Renderer attachment.
     // Direct draw callers also initialize the OverlayPass lifecycle before use.
     void init(draw::Engine* engine);
-
-    ToolExecutionMode executionMode() const
-    {
-        return _mode;
-    }
 
     void initialize(draw::Engine& engine, const draw::pipeline::OverlayConfiguration& configuration) override;
     void attachScene(std::shared_ptr<scene::Node> root) override;
@@ -65,12 +52,6 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor, publ
     // image), not the swapchain extent: the deferred renderer rescales, so they
     // differ. It is used to clamp the transform gizmo depth clear to the render
     // area.
-    void draw(
-        bg2e::scene::Node* sceneRoot,
-        const glm::mat4& viewMatrix,
-        const glm::mat4& projMatrix,
-        VkCommandBuffer cmd,
-        const VkExtent2D& renderExtent);
 
     void visit(bg2e::scene::Node* node) override;
     void didVisit(bg2e::scene::Node* node) override;
@@ -85,49 +66,8 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor, publ
     }
 
   protected:
-    render::Engine* _engine = nullptr;
     draw::Engine* _drawEngine = nullptr;
-    ToolExecutionMode _mode = ToolExecutionMode::Uninitialized;
-
-    VkSampleCountFlagBits _sampleCount = VK_SAMPLE_COUNT_1_BIT;
-
-    glm::mat4 _viewProjectionMatrix{1.0f};
-    glm::mat4 _currentTransform{1.0f};
-    std::stack<glm::mat4> _transformStack;
-
     float _lineIntensity = 0.8f;
-
-    struct FrameData {
-        glm::mat4 mvp;
-        glm::vec4 color;
-    };
-
-    glm::mat4 _viewMatrix{1.0f};
-    glm::mat4 _projMatrix{1.0f};
-
-    // Extent of the current render target (not the swapchain). Set in draw().
-    VkExtent2D _renderExtent{0, 0};
-
-    VkCommandBuffer _cmdBuffer = VK_NULL_HANDLE;
-    VkPipeline _currentBoundPipeline = VK_NULL_HANDLE;
-
-    VkPipeline _selectionPipeline = VK_NULL_HANDLE;
-    VkPipelineLayout _selectionPipelineLayout = VK_NULL_HANDLE;
-
-    VkPipeline _gizmoPipeline = VK_NULL_HANDLE;
-    VkPipelineLayout _gizmoPipelineLayout = VK_NULL_HANDLE;
-
-    // Opaque, depth-tested gizmo pipeline. Used by the transform gizmo so its
-    // 3D handles self-occlude correctly. Reuses _gizmoPipelineLayout (same push
-    // constant layout as _gizmoPipeline).
-    VkPipeline _opaqueGizmoPipeline = VK_NULL_HANDLE;
-
-    // The transform gizmo is drawn after the whole traversal so it is always
-    // the last thing rendered (on top of every other gizmo) and self-occludes
-    // via the opaque depth-tested pipeline. It is recorded during visit() and
-    // flushed at the end of draw().
-    GizmoComponent* _pendingTransformGizmo = nullptr;
-    glm::mat4 _pendingTransformWorld{1.0f};
 
     struct EdgeMesh {
         std::weak_ptr<draw::Drawable::DrawMesh> source;
@@ -150,10 +90,6 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor, publ
     std::vector<EdgeMesh> _edgeMeshes;
     std::vector<OverlayFrame> _overlayFrames;
 
-    void createSelectionPipeline();
-    void createGizmoPipeline();
-    void createOpaqueGizmoPipeline();
-    void flushTransformGizmo();
 };
 
 }

@@ -55,7 +55,7 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(draw::Engine& engine,
     for (const auto& target : assembly.targets)
     {
         const auto component = target.node ? target.node->drawable() : nullptr;
-        const auto drawable = component ? component->drawDrawable() : nullptr;
+        const auto drawable = component ? component->drawable() : nullptr;
         if (!drawable)
         {
             throw std::invalid_argument("Standalone batch has no prepared draw geometry");
@@ -76,7 +76,7 @@ StandaloneBakeBatch::Result StandaloneBakeBatch::run(draw::Engine& engine,
         {
             throw std::invalid_argument("Standalone batch target is detached from its assembly");
         }
-        if (!t.node->drawable() || t.node->drawable()->drawDrawable() != prepared[index] ||
+        if (!t.node->drawable() || t.node->drawable()->drawable() != prepared[index] ||
             !prepared[index]->isLoaded() || prepared[index]->engine() != &engine ||
             prepared[index]->mesh() != preparedMeshes[index])
         {

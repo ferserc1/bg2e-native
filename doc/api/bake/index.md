@@ -1,13 +1,8 @@
 # Bake contracts
 
-`<bg2e/bake/all.hpp>` exposes the new experimental `bg2e::bake` contracts.
-Production `bg2e::render` baking remains supported. The namespace provides CPU settings/pixel validation, abstract base/target
-interfaces, a Device-backed UV surface/reload primitive, and an integrated raw
-AO/GI executor with validated accumulation/composition/dilation and typed output.
-Standalone context/assembly/batch scheduling and protected typed file/model output
-are implemented over a windowless draw Engine. Use `<bg2e/bake/all.hpp>` explicitly;
-the current root all.hpp still exposes production branches and does not include
-this bake umbrella. The UI module provides
+`<bg2e/bake/all.hpp>` exposes `bg2e::bake`, also exported by the root umbrella.
+The namespace supplies CPU settings/pixel validation, Device-backed UV passes,
+integrated execution and standalone scene/batch/output owners. The UI module provides
 `BakeLightmapPreview` to display a completed `LightmapResult` through a draw UI
 session while retaining its shared GPU image owner. The geometry UV diagnostic
 is `bake::UvMapPreviewRenderer`; it rasterizes UV1/UV2 with submesh fills,
@@ -109,3 +104,6 @@ precision and interactive half-range material display remain separate limits.
 Engine/Device outlive every retained GPU owner. Source/optimization preservation
 and native evidence are distinct: ten synthetic inspector tests do not establish
 actual Vulkan/Metal, geometry reload, package or performance results.
+
+The canonical root `<bg2e/all.hpp>` now exports bake/all.hpp. Explicit
+bake/all.hpp remains available. See [shared API ownership](../../architecture/draw_shared_api_retirement.md).

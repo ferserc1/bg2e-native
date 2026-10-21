@@ -27,10 +27,7 @@
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/ui/UserInterface.hpp>
-#include <SDL2/SDL_vulkan.h>
-#ifdef BG2E_IS_MAC
-#include <SDL2/SDL_metal.h>
-#endif
+#include <bg2e/gpu/WindowGraphics.hpp>
 
 #include <exception>
 
@@ -70,27 +67,23 @@ class DrawGraphicsExecution : public GraphicsExecution {
     void validate(const Application& application) const override
     {
         auto& app = const_cast<Application&>(application);
-        if (app.renderDelegate())
+        if (!app.renderDelegate())
         {
-            throw std::invalid_argument("MainLoop selected experimental draw, but Application contains a render::RenderLoopDelegate");
-        }
-        if (!app.drawDelegate())
-        {
-            throw std::invalid_argument("MainLoop selected experimental draw, but Application does not contain a draw::RenderLoopDelegate");
+            throw std::invalid_argument("Application does not contain a draw::RenderLoopDelegate");
         }
         if (!app.uiDelegate())
         {
-            throw std::invalid_argument("MainLoop selected experimental draw, but Application does not contain a ui::UserInterfaceDelegate");
+            throw std::invalid_argument("Application does not contain a ui::UserInterfaceDelegate");
         }
         if (!app.inputDelegate())
         {
-            throw std::invalid_argument("MainLoop selected experimental draw, but Application does not contain an app::InputDelegate");
+            throw std::invalid_argument("Application does not contain an app::InputDelegate");
         }
 
 #ifndef BG2E_IS_MAC
         if (_config.backend == gpu::BackendType::Metal)
         {
-            throw std::invalid_argument("MainLoop selected experimental draw with the Metal backend, but Metal is only supported on macOS");
+            throw std::invalid_argument("MainLoop selected the Metal backend, but Metal is only supported on macOS");
         }
 #endif
     }
@@ -98,6 +91,7 @@ class DrawGraphicsExecution : public GraphicsExecution {
     void ensureRuntimeAvailable() const override
     {
     }
+
     bool userInterfaceReady() const override
     {
         return _uiInitialized;
@@ -128,7 +122,7 @@ class DrawGraphicsExecution : public GraphicsExecution {
         _engine.init(window, *_backend, _config);
         _engineInitialized = true;
         _userInterface = &userInterface;
-        _renderLoop.setDelegate(application.drawDelegate());
+        _renderLoop.setDelegate(application.renderDelegate());
         _renderLoop.init(&_engine);
         _lastDrawableSize = drawableSize();
         int width = 0, height = 0;
@@ -259,17 +253,7 @@ class DrawGraphicsExecution : public GraphicsExecution {
   protected:
     gpu::Size2D drawableSize() const
     {
-        int width = 0, height = 0;
-        auto* window = _engine.instance()->window();
-#ifdef BG2E_IS_MAC
-        if (_config.backend == gpu::BackendType::Metal)
-        {
-            SDL_Metal_GetDrawableSize(window, &width, &height);
-        }
-        else
-#endif
-            SDL_Vulkan_GetDrawableSize(window, &width, &height);
-        return {uint32_t(width > 0 ? width : 0), uint32_t(height > 0 ? height : 0)};
+        return gpu::drawableSize(_engine.instance()->window(), _config.backend);
     }
 
     gpu::Size2D _lastDrawableSize;

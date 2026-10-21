@@ -79,3 +79,67 @@ restored for old apps. Zero-legacy checks must start from all.hpp/bg2e.hpp and a
 scene, DB, UI and new CLI transitive includes, plus generated standalone projects.
 Use R01–R14 diagnostic/enabled baselines and actual work counters; synthetic
 inspector or continuation acceptance does not identify hardware/scenario evidence.
+
+## M09-03 actual prerequisite and delta
+
+Use [the shared API delivery](shared-api.md) and [per-file changes](shared-api-changes.tsv)
+alongside the historical manifest and M09-02 delta. Shared render Engine overloads,
+scene native resources/bindings/visitors, DB specialized writer and obsolete widgets
+are already retired. 153 dependent production renderer headers/sources are also
+removed to close incoming dependencies; 23 render files remain, including native
+wrappers and authoritative blue-noise data. Do not restore old interfaces to make
+remaining source compile.
+
+DrawableComponent::drawable(), SelectionItem::mesh/lockMesh()/meshPtr(),
+SelectionManager::selectedMesh() and GizmoComponent::transformDrawable() now address
+draw types only. Factory registration accepts name + defaultCreator. GPUSelectionDialog
+accepts caller-provided gpu properties; its standalone OpenGL setup remains a native
+confinement seam. Generic UI/preview cleanup is draw-only; retain native Vulkan/Metal
+work pending proper GPU bridge relocation, without higher-level GPU dependencies.
+
+Registered UV/integrated test targets now call existing public bake probes through
+retirement_harness.hpp; old native main bodies are replaced without CMake changes.
+M09-05 audits original fixture-specific numerical/material coverage and removes
+the stale test_02 private render include path. M09-06 owns actual execution and
+full no-RT/optional/deployment/performance matrices. Shared documentation already
+updates 27 maintained pages; preserve current accessors and standalone IO coverage.
+
+## M09-04 actual native bridges to validate
+
+Use [native-retirement.md](native-retirement.md), native-changes.tsv and the
+source-only audit_native_sources.py alongside prior ledgers. Both render trees
+are removed. Native Vulkan/Metal GUI recording now lives in gpu/*/GuiRenderer.cpp;
+UI owns context/preview/session coordination through a private primitive adapter.
+Validate overlay and preview generation/rebind on resize/configuration changes,
+Vulkan pool/minimum counts, Metal metadata/encoder ownership and partial shutdown.
+Also validate gpu::StandaloneGuiWindow accept/cancel/window-close/high-DPI and
+creation-failure cleanup, followed by engine startup; app no longer owns GL calls.
+gpu::drawableSize owns native window pixel queries. Verify installed exports and
+SDK/vendor backend linkage. Agent checks were static only; native/performance and
+full product/package matrices remain lead-owned.
+
+## M09-05 implemented product/distribution prerequisite
+
+[Product delivery](products-distribution.md), product-changes.tsv and
+probe-dispositions.tsv are the actual prerequisite. Legacy examples/GLSL and
+flat shader frontends are removed; all current draw/GPU examples/apps and four
+registered test targets remain. Reconfigure old build trees before compilation.
+Use audit_product_sources.py alongside audit_native_sources.py and all four
+delta ledgers; the updated lexical inventory excludes canonical DrawableComponent
+from old Drawable matches. No global legacy source matches remain in that inventory.
+
+Run test_02's new two-island/preview checks and test_03's explicit baked RGB
+G-buffer and numerical receiver/overhang AO/GI checks, plus retained lifecycle/
+chart/dilation/packing probes. Unsupported mandatory tracing profiles fail rather
+than pass a silent skip. Check thresholds on Vulkan/Metal and preserve no-RT
+raster/UV behavior. Canonical bake has no old direct-shadow toggle or alpha-validity
+composition contract; direct shadow tests stay in draw/soft_shadows.
+
+Validate clean packages/bundles contain draw/bake and no retired flat outputs;
+existing reused bundles may retain historical files until recreated. Engine
+bundling/install selects authoritative trees, preserving native SDK/vendor files.
+Generate a fresh standalone project using the deferred template, and separately
+update an existing one: match headers/binary, verify shader refresh, custom resource
+preservation, config-specific binary versus shared shader roots, macOS Xcode
+library fallback and Windows PowerShell behavior. Presence checks and shell parsing
+were static only; package/updater/creator/native execution remains lead-owned.

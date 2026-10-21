@@ -61,7 +61,6 @@ class GraphicsExecution {
     virtual void ensureRuntimeAvailable() const = 0;
 
     // Called after the runtime boundary and before SDL/window allocation.
-    // Production execution needs no preparation.
     virtual void prepare(const std::string&)
     {
     }
@@ -77,7 +76,7 @@ class GraphicsExecution {
     // event dispatch.
     virtual void requestResize() = 0;
 
-    // deltaMilliseconds keeps the production frame time unit.
+    // MainLoop passes milliseconds; the draw coordinator converts to seconds.
     virtual void frame(float deltaMilliseconds, bool renderingAllowed) = 0;
 
     virtual void waitIdle() = 0;
@@ -86,7 +85,7 @@ class GraphicsExecution {
     {
     }
 
-    // Production scenes are continuously updated; draw overrides invalidation.
+    // Request another scene frame independently of presentation.
     virtual void requestSceneFrame()
     {
     }
@@ -95,8 +94,6 @@ class GraphicsExecution {
 
     virtual void cleanup() = 0;
 };
-
-std::unique_ptr<GraphicsExecution> createRenderGraphicsExecution();
 
 std::unique_ptr<GraphicsExecution> createDrawGraphicsExecution(const draw::EngineConfig& config);
 

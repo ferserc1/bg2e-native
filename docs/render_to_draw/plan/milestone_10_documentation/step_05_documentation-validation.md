@@ -45,3 +45,17 @@ byte-clamped float claims, skipped-required-target success, interchangeable came
 UV samples and old production callback examples. Keep explicitly historical
 production descriptions distinct from final usage. Verify read-only artifact
 inspection is not described as full geometry reload or native/performance proof.
+
+## Final M09-07 source baseline and handoff
+
+Use [the final review](../milestone_09_cleanup/review.md) and its
+[page inventory](../milestone_09_cleanup/documentation-handoff.tsv). M09-06 and
+its scene/Metal/VMA corrections are accepted by continuation. Production is
+`bg2e::draw`; GPU is its low-level backend abstraction. Retired render APIs and
+old application targets have no compatibility promise. The source catalog lists
+33 products; native scenario/backend/performance coverage remains unspecified.
+M09-08 authors the complete cumulative maintained documentation before M10.
+M10 audits that delivered documentation and makes localized corrections; do not
+defer missing API, tutorial, build or application authoring to this milestone.
+
+Check all delivered links, names, snippets, diagrams and shader paths against current source and the 317-header evidence catalog. Separate syntax/source checks from executed examples. Preserve exact capacity 16384, bindings and interface versions where documented; never infer performance measurements from retained profiling probes.

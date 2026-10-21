@@ -1,35 +1,19 @@
 # OffscreenApplication
 
-Headers: `<bg2e/app/OffscreenApplication.hpp>`,
-`<bg2e/app/DrawOffscreenApplicationDelegate.hpp>`,
-`<bg2e/app/OffscreenExecution.hpp>`. Namespace: `bg2e::app`.
+Headers: `<bg2e/app/OffscreenApplication.hpp>` and
+`<bg2e/app/DrawOffscreenApplicationDelegate.hpp>`. Namespace: `bg2e::app`.
 
-`OffscreenApplication` owns a windowless application run. The delegate type passed
-to `init(argc, argv, appId, sharedDelegate)` selects its graphics framework:
+`OffscreenApplication` owns a windowless draw application. Its sole
+`init(argc, argv, appId, sharedDelegate)` accepts DrawOffscreenApplicationDelegate.
+Set DrawOffscreenApplicationConfig::engine.backend to select Vulkan or Metal.
+There is no execution-mode selector or production Vulkan delegate/configuration.
+The destructor releases initialized but unrun jobs; explicit run/cleanup errors
+can propagate, while destruction suppresses cleanup errors.
 
-| Delegate | Execution mode | Graphics |
-|---|---|---|
-| `OffscreenApplicationDelegate` | `ProductionRender` | Production render/Vulkan |
-| `DrawOffscreenApplicationDelegate` | `ExperimentalDraw` | Experimental draw over Vulkan or Metal |
+## Draw execution
 
-`executionMode()` reports the selected mode. Production remains supported; passing
-a draw delegate explicitly selects the new path. Neither route creates an
-interactive MainLoop. The destructor releases initialized but unrun draw jobs;
-errors during run, including cleanup, can propagate, while destructor cleanup
-suppresses them.
-
-## Production configuration and delegate
-
-`OffscreenApplicationConfig` defaults to width=1920, height=1080, color/depth
-creation enabled and `VK_FORMAT_R8G8B8A8_UNORM`. This production configuration
-uses native Vulkan types. Its delegate receives `initConfig`, `init`,
-`initFrameResources`, `initScene`, `resize`, then `frame`/`render` and
-`didRenderFrame` after completion, followed by `cleanup`. The production
-`render` callback returns true to continue and false to finish. Existing production
-examples and [lightmap generator](../../apps/lightmap_generator/index.md) retain
-this separate API.
-
-## Experimental draw execution
+This existing section anchor is retained for links; the typed draw lifecycle is
+now the ordinary offscreen application path.
 
 `DrawOffscreenApplicationConfig` is defined with the typed delegate:
 
@@ -99,5 +83,4 @@ finish to run StandaloneBakeBatch. No surface camera render callback is recorded
 UV surfaces use job resolution. Assembly/context/baker native owners are local
 to that operation and release before driver cleanup. Config is validated against
 actual bake settings before GPU initialization rather than camera graphics targets.
-This does not change the default scene delegate's exact-N camera mean or production
-overload. See [ownership architecture](../../architecture/draw_standalone_lightmaps.md).
+This preserves the default scene delegate's exact-N camera mean. See [ownership architecture](../../architecture/draw_standalone_lightmaps.md).

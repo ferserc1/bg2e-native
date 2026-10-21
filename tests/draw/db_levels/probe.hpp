@@ -57,14 +57,14 @@ inline void runSceneRepresentationProbe(const std::filesystem::path& directory)
     auto node = parsedScene->rootNode()->children().at(0);
     auto drawable = node->getComponent<scene::DrawableComponent>();
     auto environment = node->getComponent<scene::EnvironmentComponent>();
-    if (!drawable || !environment || drawable->executionMode() != scene::DrawableComponent::ExecutionMode::Uninitialized ||
+    if (!drawable || !environment || drawable->drawable() != nullptr ||
         drawable->priority() != 7 || drawable->resourcePath() != missingMesh || node->enabled() || !node->steady() ||
         std::filesystem::absolute(environment->environmentImage()).lexically_normal() != missingEnvironment)
     {
         throw std::runtime_error("CPU graph/reference decoding failed");
     }
     auto cloned = std::dynamic_pointer_cast<scene::DrawableComponent>(drawable->clone());
-    if (!cloned || cloned->resourcePath() != missingMesh || cloned->drawDrawable())
+    if (!cloned || cloned->resourcePath() != missingMesh || cloned->drawable())
     {
         throw std::runtime_error("Unresolved reference clone changed its state");
     }
@@ -136,13 +136,13 @@ inline void runDrawSceneLoadProbe(Engine& engine, const std::filesystem::path& f
     {
         auto node = weakNode.lock();
         auto component = node->getComponent<scene::DrawableComponent>();
-        auto drawable = component->drawDrawable();
+        auto drawable = component->drawable();
         if (!drawable || !drawable->isLoaded() || drawable->engine() != &engine || !drawable->drawMesh())
         {
             throw std::runtime_error("Scene resource was not realized on the draw engine");
         }
         loaded->rootNode()->loadResources(engine);
-        if (component->drawDrawable() != drawable)
+        if (component->drawable() != drawable)
         {
             throw std::runtime_error("Repeated same-context realization replaced live resources");
         }

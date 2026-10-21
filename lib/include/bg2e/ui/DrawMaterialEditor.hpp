@@ -33,7 +33,7 @@ class Renderer;
 namespace bg2e::ui {
 class UserInterface;
 
-// Separate from the production MaterialEditor: draw controls never mutate live
+// Queued material controls never mutate live
 // targets during UI draw. Queued edits use weak targets and renderer generations.
 class BG2E_API DrawMaterialEditor {
   public:

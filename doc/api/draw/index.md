@@ -1,38 +1,17 @@
 # bg2e::draw
 
-`bg2e::draw` is the experimental high-level graphics framework built around the
-abstract `bg2e::gpu` API. `bg2e::render` remains the production framework and is
-not deprecated. The two frameworks have separate graphics delegate contracts
-and share the application entry points in `bg2e::app`.
+`bg2e::draw` is the high-level graphics framework built on `bg2e::gpu`.
+MainLoop and OffscreenApplication now use draw exclusively, over Vulkan or Metal.
 
 ```cpp
 #include <bg2e/draw/all.hpp>
 ```
 
-## Production and experimental frameworks
+## Production framework
 
-The terms **production** and **experimental** describe the maturity and scope of
-bg2 engine's graphics APIs, not build configurations, deployment environments
-or compiler optimization settings.
-
-- **Production: `bg2e::render`.** This is the maintained framework used by the
-  engine's applications. It provides Vulkan rendering and integrates with the
-  production scene, material and UI components. Use it for applications that
-  need those established high-level facilities. Production does not imply that
-  an application must run on a server or use a Release build.
-- **Experimental: `bg2e::draw`.** This is a high-level framework built on the
-  backend-neutral `bg2e::gpu` API. Its windowed path supports Vulkan and Metal,
-  retained scene color and separate UI composition. Its high-level scene and
-  resource contracts have a narrower scope than render and can evolve as the
-  API develops; render components cannot simply be passed to draw. Use it when
-  evaluating the multi-backend architecture or building against its GPU-based
-  delegate contract. Experimental does not mean the code is only a mock or that
-  its window/UI path is unavailable.
-
-Draw is intended to become the successor to render. Both APIs coexist; render
-remains supported and is not deprecated. `bg2e::gpu` provides lower-level devices,
-queues, commands and resources; it does not supply render's high-level scene
-framework. Choosing Vulkan in draw does not select render.
+Draw is the production high-level renderer over Vulkan or Metal. Shared scene,
+DB, UI and manipulation APIs use draw resources exclusively. Retired rendering
+headers and application targets have been removed without compatibility aliases.
 
 ## Window, scene and UI rendering
 
@@ -64,16 +43,14 @@ scene result. Optional UI composition is available with Vulkan and Metal.
 
 ## Application entry point
 
-`run(application)` selects production render. `run(application, config)` selects
-draw, independent of the low-level backend. A default `EngineConfig` chooses
+Both `run(application)` and `run(application, config)` select draw. A default `EngineConfig` chooses
 Metal on macOS and Vulkan elsewhere; explicit assignment overrides this choice.
 The private execution wrapper is constructed by MainLoop, not the application.
 
 See [quick start](quick_start.md), [API reference](reference.md),
 [MainLoop selection](../app/MainLoop.md#execution-selection-and-validation) and
 [GPU API](../gpu/index.md). [OffscreenApplication](../app/OffscreenApplication.md)
-also provides an explicit typed draw path. DrawableComponent has explicit typed
-production/draw paths; resource-dependent UI migration is selective.
+uses the typed draw path exclusively. DrawableComponent::drawable() exposes the canonical draw resource.
 
 ## Implementation details
 
@@ -139,3 +116,8 @@ UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
 - [Standalone UV bake CLI](../../apps/draw_lightmap_generator.md),
   [C++ tutorial](../../tutorials/draw/standalone_lightmaps.md) and
   [batch publication architecture](../../architecture/draw_standalone_lightmaps.md).
+
+- [Renderer configuration and injection](Renderer.md)
+- [Migration](../../migration_to_draw.md)
+
+- [Upscaler extension contract](Upscaler.md)

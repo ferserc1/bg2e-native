@@ -105,6 +105,13 @@ if (-not (Test-Path "$LibDir\bg2e.lib" -PathType Leaf)) {
     Stop-WithError "Cannot find the import library at $LibDir\bg2e.lib"
 }
 
+$SourceShaders = "$Products\shaders"
+foreach ($Stage in @('draw\raster\gbuffer.frag.spv', 'bake\uv_surface.frag.spv')) {
+    if (-not (Test-Path "$SourceShaders\$Stage" -PathType Leaf)) {
+        Stop-WithError "Build finished without required shader: $Stage"
+    }
+}
+
 Write-Host "Updating engine headers..."
 $TargetHeaderTree = "$TargetIncludeDir\bg2e"
 if (Test-Path $TargetHeaderTree) {
@@ -116,6 +123,17 @@ Copy-Item "$SourceIncludeDir\bg2e" $TargetHeaderTree -Recurse -Force
 Write-Host "Updating pre-compiled libraries..."
 Copy-Item "$LibDir\bg2e.dll" "$TargetLibraryDir\bg2e.dll" -Force
 Copy-Item "$LibDir\bg2e.lib" "$TargetLibraryDir\bg2e.lib" -Force
+
+Write-Host "Updating paired engine shaders and CMake helper..."
+New-Item -ItemType Directory -Path "$ResolvedTargetPath\shaders" -Force | Out-Null
+foreach ($Tree in @('draw', 'bake')) {
+    $DestinationTree = "$ResolvedTargetPath\shaders\$Tree"
+    if (Test-Path $DestinationTree) {
+        Remove-Item $DestinationTree -Recurse -Force
+    }
+    Copy-Item "$SourceShaders\$Tree" $DestinationTree -Recurse -Force
+}
+Copy-Item "$ResolvedRepoRoot\cmake\standalone_utils.cmake" "$ResolvedTargetPath\cmake\standalone_utils.cmake" -Force
 
 Write-Host ""
 Write-Host "Standalone project libraries updated successfully."

@@ -12,7 +12,7 @@ normally use it through [`DrawTextureWidgets`](DrawTextureWidgets.md).
 Preview registrations and resources are retained until submitted UI draws have
 completed. A preview becomes invalid when its `UserInterface` session is
 cleaned up, so do not retain or draw it across UI/engine teardown. See the
-[UI overview](index.md) for the production and experimental draw widget split.
+[UI overview](index.md) for the production and draw widget split.
 
 
 ## Draw bake previews

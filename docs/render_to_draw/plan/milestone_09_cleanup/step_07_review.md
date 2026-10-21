@@ -58,3 +58,42 @@ native UI seams and template/resource registrations. Resolve every remove/migrat
 keep disposition; do not report a text-match count as a deleted-symbol proof.
 Carry P01–P11/optimization evidence by its real owner/result, with unspecified
 coverage unspecified, and update final M09-08/M10 page/source/target mappings.
+
+## M09-05 actual retirement and test contracts
+
+Review [products-distribution.md](products-distribution.md) and the four source
+delta ledgers with the original manifest. M09-05 removes 98 legacy example files,
+73 GLSL files and two flat compiler frontends. CMake changes preserve paired
+aggregate/Metal intermediates/incremental copies and install only authoritative
+engine trees; new standalone projects default to deferred draw. Updaters refresh
+shaders/helper with headers/library. All app identities and current source bodies
+remain unchanged. Reconcile test_02/test_03 fixture-specific ports and intentional
+explicit baked-mode/typed UV/indirect-only/alpha-one differences; preserved manual
+probes are not automatic or executed test suites. Record actual native/package
+evidence from the lead separately from the source audits.
+
+## M09-06 actual source/product gate
+
+[Final product validation](final-product-validation.md) supplies the authoritative
+final-products.tsv (33 targets), public-api-evidence.tsv (317 public headers),
+umbrella-closure.tsv (11 entry roots/255 reachable headers), source digest and
+validation-matrix.tsv (33 source-backed core/optimization/M08 scenarios). Four
+delta ledgers reconcile 592 unique paths, including 440 absent paths. Use the
+actual source catalog; lexical type/export-marker text is not parsed/qualified
+API or rebuilt exported-symbol proof. Non-umbrella backend/explicit headers are
+retained APIs, not deletion candidates. Standalone checks are literal template
+projection only, not executed creator/configuration/launch.
+
+M09-05 was accepted by continuation; individual backend/scenario/artifact/timing
+coverage remains unspecified. M09-06 changed only plan/evidence/audit tooling,
+with 1,327 engine/product/profiling files unchanged. Keep native/package/output
+round-trip and independent optimization/profiling evidence accurately attributed;
+no repeated confirmation or new mandatory logs are required by this handoff.
+The next step after this review remains M09-08, not M10.
+
+
+M09-06 correction input: the lead reported a missing countSceneNodes helper in
+scene reference save compilation. See the correction section of final-product-validation.md
+and validation-corrections.tsv after the four original ledgers. The neutral recursive
+helper is restored; agent source-only scans did not establish compilation success.
+Retain this failure/correction attribution when reviewing the final evidence.

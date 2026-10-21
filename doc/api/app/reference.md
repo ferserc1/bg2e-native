@@ -16,12 +16,10 @@ Class and function catalog for `bg2e::app`. The umbrella header is
 
 | Member | Description |
 |--------|-------------|
-| `MainLoop::run(Application*)` | Production render/Vulkan execution. |
-| `MainLoop::run(Application*, const draw::EngineConfig&)` | Experimental draw selection; explicit configuration argument, Metal default on macOS and Vulkan elsewhere; window, retained scene and UI composition. |
-| `Application::setRenderDelegate(shared_ptr<render::RenderLoopDelegate>)` | Registers render delegate and clears draw slot. |
-| `Application::setRenderDelegate(shared_ptr<draw::RenderLoopDelegate>)` | Registers draw delegate and clears render slot. |
-| `Application::setRenderDelegate(nullptr_t)` | Clears both graphics slots. |
-| `Application::renderDelegate()` / `drawDelegate()` | Mutable references to the separate graphics delegate slots. |
+| `MainLoop::run(Application*)` | Draw execution with platform-default EngineConfig. |
+| `MainLoop::run(Application*, const draw::EngineConfig&)` | Draw with explicit backend/format/validation configuration. |
+| `Application::setRenderDelegate(shared_ptr<draw::RenderLoopDelegate>)` | Sets the sole graphics delegate; nullptr clears it. |
+| `Application::renderDelegate()` | Mutable reference to the draw graphics delegate. |
 
 See [validation and runtime availability](MainLoop.md#execution-selection-and-validation).
 The internal graphics execution interface is not an application API.
@@ -76,25 +74,22 @@ Access the active registry through `MainLoop::shortcuts()`.
 | [`FileDialog`](Platform_services.md#filedialog) | `FileDialog.hpp` | Native open, save, and folder dialogs. |
 | [`FileHistory`](Platform_services.md#filehistory) | `FileHistory.hpp` | Per-type recent-file lists and filters. |
 | [`MessageBox`](Platform_services.md#messagebox) | `MessageBox.hpp` | Native information, warning, error, and custom-button dialogs. |
-| `GPUSelectionDialog` | `GPUSelectionDialog.hpp` | Vulkan device selection dialog. |
+| `GPUSelectionDialog` | `GPUSelectionDialog.hpp` | Standalone selection from caller-supplied gpu::PhysicalDeviceProperties. |
 | `initSdlVideoDriver()` | `SDLUtils.hpp` | Selects the suitable Linux SDL video driver before `SDL_Init`; no-op elsewhere. |
 
 ## Offscreen application
 
 | Symbol | Header | Description |
 |--------|--------|-------------|
-| [`OffscreenApplicationConfig`](OffscreenApplication.md#production-configuration-and-delegate) | `OffscreenApplication.hpp` | Fixed target dimensions, attachments, and color format. |
-| `OffscreenApplicationDelegate` | `OffscreenApplication.hpp` | Offscreen initialization, frame, render, completion, and cleanup callbacks. |
-| [`OffscreenApplication`](OffscreenApplication.md) | `OffscreenApplication.hpp` | Typed production/draw Engine and fixed-image lifecycle without a window. |
+| [`OffscreenApplication`](OffscreenApplication.md) | `OffscreenApplication.hpp` | Draw Engine and fixed-image lifecycle without a window. |
 | `DrawOffscreenApplicationConfig` | `DrawOffscreenApplicationDelegate.hpp` | Backend, output, exact-N default job, fixed time and headless import/override policy. |
 | `DrawOffscreenApplicationDelegate` | `DrawOffscreenApplicationDelegate.hpp` | Native-free recording/completion/resolve lifecycle; custom continuation. |
-| `OffscreenExecutionMode` | `OffscreenExecution.hpp` | ProductionRender or ExperimentalDraw, selected by the init overload. |
 
 ## Standalone tools
 
 | Tool | Documentation | Description |
 |------|---------------|-------------|
-| `lightmap_generator` | [LightmapGenerator](LightmapGenerator.md) | Headless model and prefab lightmap baking using the production render API. |
+| `draw_lightmap_generator` | [Standalone lightmap CLI](../../apps/draw_lightmap_generator.md) | Headless model/prefab baking through draw and bake. |
 
 ## Header catalog
 

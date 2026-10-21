@@ -8,8 +8,8 @@ labels and buttons barely need a guide — everything else is here.
 
 Working code ships in:
 
-- `examples/02_ui/src/main.cpp` — minimal delegate + `Window` demo.
-- `apps/model_edit/src/AppDelegate.cpp` — complete workspace application.
+- `examples/draw/01_window_ui/src/main.cpp` — minimal delegate + `Window` demo.
+- `apps/draw/model_edit/src/AppDelegate.cpp` — complete workspace application.
 
 ---
 
@@ -57,8 +57,8 @@ Individual headers:
 #include <bg2e/ui/Vector.hpp>          // vec2/3/4 and mat4 editors
 #include <bg2e/ui/Value.hpp>           // text fields, color picker, combos
 #include <bg2e/ui/SelectableList.hpp>  // selectable tables
-#include <bg2e/ui/TextureWidgets.hpp>  // texture previews / pickers
-#include <bg2e/ui/MaterialEditor.hpp>  // material inspector
+#include <bg2e/ui/DrawTextureWidgets.hpp>  // texture previews / pickers
+#include <bg2e/ui/DrawMaterialEditor.hpp>  // material inspector
 #include <bg2e/ui/DrawableEditor.hpp>  // drawable/submesh inspector
 #include <bg2e/ui/SceneTree.hpp>       // node hierarchy widget
 #include <bg2e/ui/NodeEditor.hpp>      // node inspector
@@ -82,12 +82,12 @@ only implement `UserInterfaceDelegate` (usually together with the render and
 input delegates) and register it with the `Application`:
 
 ```cpp
-class MyDelegate : public bg2e::render::DefaultRenderLoopDelegate<bg2e::render::RendererBasicForward>,
+class MyDelegate : public bg2e::draw::DefaultRenderLoopDelegate,
                    public bg2e::app::InputDelegate,
                    public bg2e::ui::UserInterfaceDelegate
 {
 public:
-    void init(bg2e::render::Engine* engine, bg2e::ui::UserInterface* ui) override
+    void init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* ui) override
     {
         // Called once after UserInterface::init(). The viewport size is
         // already available through uiWidth() / uiHeight().
@@ -158,7 +158,7 @@ void drawUI() override
 }
 
 // Mode 2: configure once, then draw() with no arguments
-void init(bg2e::render::Engine*, ui::UserInterface*) override
+void init(bg2e::draw::Engine*, ui::UserInterface*) override
 {
     _panel.setTitle("Document");
     _panel.options.minWidth = 250;
@@ -498,102 +498,29 @@ Vector::mat4("ModelMatrix", modelMatrix);
 
 ## Recipe 9: Texture widgets (and deferred texture swaps)
 
-`TextureWidgets` displays one texture slot (preview image + optional
-click-to-pick). Two things make it non-trivial: it manages a **Vulkan
-descriptor set**, and textures cannot be swapped mid-frame.
+Use DrawTextureWidgets to return edit intent rather than uploading during UI draw:
 
 ```cpp
-ui::TextureWidgets _albedoWidget;
-
-// Bind the texture to display (recreates the ImGui descriptor set):
-_albedoWidget.setEditTexture(material->albedoTexture());
-
-// Inside drawUI():
-if (_albedoWidget.imageButton("albedoPick", 42, 42)) {
-    auto path = app::FileDialog::getOpenFilePath(app::FileDialog::imageFilters);
-    if (!path.empty()) {
-        auto tex = engine->textureCache().get(path);      // your loader
-        _albedoWidget.setDeferredTexture(tex);            // <- NOT setEditTexture
-    }
-}
+bg2e::ui::DrawTextureWidgets textureWidget;
+// Inside the UI delegate, with a live UserInterface and shared draw::Texture:
+auto edit = textureWidget.draw(*ui, "Albedo", texture);
+// Queue edit.path or edit.cleared for the application's stopped update boundary.
 ```
 
-The convenience picker `selectTexture()` bundles the image-button, a
-file-dialog and a **Clear** button in one row:
-
-```cpp
-bool picked = _albedoWidget.selectTexture("Albedo", [&](base::Texture* tex) {
-    // tex == nullptr  => the user pressed Clear
-    // tex != nullptr  => owns the raw pointer; wrap it in a shared_ptr
-    auto owned = std::shared_ptr<base::Texture>(tex);
-    material->materialAttributes().setAlbedoTexture(owned);
-    material->updateTextures();
-    return material->albedoTexture();   // the render::Texture to display now
-});
-```
-
-**Key points:**
-- Inside a `draw()` call you are already rendering this frame: the descriptor
-  set that references the old texture may be in flight. `setEditTexture()`
-  calls `device().waitIdle()` when releasing — safe **outside** the frame,
-  expensive mid-frame. Use `setDeferredTexture()` in the latter case: the
-  swap is applied at the next `drawImage()`/`imageButton()` call.
-- The `textureCallback` in `selectTexture()` takes **ownership** of the raw
-  `base::Texture*` argument; never return without storing it somewhere.
-- `selectTexture()` returns `true` only when a file was picked (not on
-  Clear). The `label` is also the visible text unless it starts with `##`
-  (then the ID is hidden and the preview stays clickable).
-- `cleanup()` releases the descriptor set — call it from your
-  `cleanup()`/shutdown path, otherwise the ImGui Vulkan pool holds it until
-  context destruction.
-
----
+Retain the target owner/generation while queuing. Decode CPU data separately;
+realize replacement GPU resources only at a synchronized boundary, then invalidate
+histories. The widget does not mutate the material. Call cleanup() before UI and
+Engine destruction. See [DrawTextureWidgets](DrawTextureWidgets.md) and
+[TexturePreview](TexturePreview.md) for session/generation lifetime.
 
 ## Recipe 10: Material editor driven by a SelectionManager
 
-`MaterialEditor` has two operating modes; mixing them silently ignores manual
-calls.
-
-**Manual mode** — you tell it what to edit:
-
-```cpp
-ui::MaterialEditor matEditor;
-matEditor.setEditMaterial(mainMaterial);         // replace the edit list
-matEditor.addEditMaterial(otherMaterial);        // multi-edit the same values
-...
-matEditor.clearMaterial();
-```
-
-**Selection-driven mode** — give it a `manipulation::SelectionManager` once;
-the manual setters become no-ops and the editor tracks 3D picks:
-
-```cpp
-matEditor.setSelectionManager(_selectionManager);   // install onSelect() hook
-matEditor.onChanged([this]() { _document->setDirty(true); });
-
-void drawUI() override
-{
-    if (matEditor.draw()) { /* a value changed this frame */ }
-}
-```
-
-In selection-driven mode, every `onSelect` event rebuilds the edit list:
-the **first** selected item owning a `Drawable` defines the main material
-(displayed values), and all submesh materials **of that same drawable** are
-edited in lockstep — moving a slider writes the value into each material of
-the list and calls `onChanged` per material.
-
-**Key points:**
-- The selection callback lambda captures `[&]` in `setSelectionManager()`;
-  destroy/clear the editor (or the selection manager) before the captured
-  objects die — tie both to the same owning object (the delegate).
-- The widget only edits `MaterialAttributes` + texture slots; after changing
-  textures the editor calls `mat->updateTextures()` for you, but if you bind
-  materials outside the editor, remember to call it yourself.
-- Call `cleanup()` from the delegate `cleanup()` to release the six texture
-  descriptor sets (`MaterialEditor` owns one `TextureWidgets` per map).
-
----
+Use DrawMaterialEditor with the live selection manager and renderer generation.
+It queues weak-target patches rather than changing in-flight GPU bindings inside
+UI draw. Keep source definitions distinct from loaded live material() aliases;
+rebind after selection/session changes and release editor callbacks at teardown.
+Follow the actual wiring in [the manipulation tutorial](../../tutorials/draw/11_manipulation.md)
+and [material editor API](Material_Editors.md#drawmaterialeditor).
 
 ## Recipe 11: Drawable / submesh editing
 
@@ -629,7 +556,7 @@ drawableEditor.submeshSelector().addSelectedItem(2);    // programmatic select
 - `selectedItem()`/`selectedItems()` reflect the manager state each frame —
   query them in your callbacks, not from cached copies.
 - `DrawableEditor::init()` installs an `onSelect` hook capturing `[&]` — same
-  lifetime rule as `MaterialEditor` (Recipe 10).
+  lifetime rule as DrawMaterialEditor (Recipe 10).
 
 ---
 
@@ -779,5 +706,5 @@ MainLoop::current()->asyncLoad([](ui::Loader* loader) {
 - The engine UI is a *wrapper*, not a framework: when a widget does not exist,
   drop to the equivalent pattern in the per-class docs, or add a `Window`
   subclass (see [Window](Window.md)).
-- `bg2e::ui` is not usable from the experimental `bg2e::gpu` stack: it binds
-  to `render::Engine` (Vulkan) resources.
+- UI owns a draw session; standalone GPU programs use the primitive GUI bridge
+  with explicit context and shutdown ownership.

@@ -1,7 +1,7 @@
 # bg2e::app Quick Start Guide
 
-These recipes focus on `bg2e::app`, with `draw::EngineConfig` for experimental
-execution selection. Rendering, scene, and UI delegate
+These recipes focus on `bg2e::app`, with `draw::EngineConfig` for backend
+selection. Rendering, scene, and UI delegate
 implementations are intentionally outside their scope.
 
 ---
@@ -43,14 +43,14 @@ The snippets below assume `application` has already been initialized and has
 the matching graphics delegate plus non-null input and UI delegates.
 
 ```cpp
-// Existing production entry point: Vulkan on every supported platform.
+// Platform defaults: Metal on macOS, Vulkan elsewhere.
 return loop.run(&application);
 ```
 
 ```cpp
 #include <bg2e/draw/EngineConfig.hpp>
 
-// Experimental entry point: Metal on macOS, Vulkan elsewhere.
+// Explicit configuration, with the same platform defaults.
 bg2e::draw::EngineConfig config;
 return loop.run(&application, config);
 ```
@@ -61,7 +61,7 @@ To explicitly select Vulkan for draw on macOS as well:
 config.backend = bg2e::gpu::BackendType::Vulkan;
 ```
 
-Register draw, input and UI delegates before the experimental run. Draw
+Register draw, input and UI delegates before the run. Draw
 initializes a window, retained scene color and the selected UI backend. See the
 [complete window/UI example](../../../examples/draw/01_window_ui/src/main.cpp)
 and [MainLoop](MainLoop.md#execution-selection-and-validation).

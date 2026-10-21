@@ -114,6 +114,16 @@ cmake --build "${BUILD_DIR}" --config "${BUILD_CONFIG}" --target bg2e --parallel
 
 [ -f "${SOURCE_LIBRARY}" ] || die "Build finished but the library was not found at ${SOURCE_LIBRARY}"
 
+SOURCE_SHADERS="${PRODUCT_DIR}/shaders"
+for stage in draw/raster/gbuffer.frag.spv bake/uv_surface.frag.spv; do
+    [ -f "${SOURCE_SHADERS}/${stage}" ] || die "Build finished without required shader: ${stage}"
+done
+if [ "${CURRENT_PLATFORM}" = "macos" ]; then
+    for stage in draw/raster/gbuffer.frag.metallib bake/uv_surface.frag.metallib; do
+        [ -f "${SOURCE_SHADERS}/${stage}" ] || die "Build finished without required Metal shader: ${stage}"
+    done
+fi
+
 echo "Updating engine headers..."
 rm -rf "${TARGET_INCLUDE_DIR}/bg2e"
 cp "${SOURCE_INCLUDE_DIR}/bg2e.hpp" "${TARGET_INCLUDE_DIR}/bg2e.hpp"
@@ -121,6 +131,14 @@ cp -R "${SOURCE_INCLUDE_DIR}/bg2e" "${TARGET_INCLUDE_DIR}/bg2e"
 
 echo "Updating pre-compiled library..."
 cp "${SOURCE_LIBRARY}" "${TARGET_LIBRARY_DIR}/${LIBRARY_NAME}"
+
+echo "Updating paired engine shaders and CMake helper..."
+mkdir -p "${TARGET_PATH}/shaders"
+for tree in draw bake; do
+    rm -rf "${TARGET_PATH}/shaders/${tree}"
+    cp -R "${SOURCE_SHADERS}/${tree}" "${TARGET_PATH}/shaders/${tree}"
+done
+cp "${REPO_ROOT}/cmake/standalone_utils.cmake" "${TARGET_PATH}/cmake/standalone_utils.cmake"
 
 echo ""
 echo "Standalone project libraries updated successfully."

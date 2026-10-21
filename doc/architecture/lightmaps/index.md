@@ -1,32 +1,23 @@
 # Lightmap architecture
 
-This family documents the production render implementation. The experimental
-[integrated draw/bake tutorial](../../tutorials/draw/12_lightmaps.md) and
-[bake reference](../../api/bake/index.md) describe the separate delivered path.
-
-Lightmap baking evaluates illumination at surface points addressed by a UV2
-atlas. It uses the production Vulkan `bg2e::render` framework. The UV atlas is
-one image per target Drawable, including all of its submeshes; other scene
-geometry contributes to ray tracing but receives its own atlas only if selected
-as another target.
-
-This documentation follows executable C++ and GLSL. The projection, storage,
-resource lifetime and integration contracts below describe the current code.
-RTAO/RTGI are described as lighting backends; detailed lighting algorithms belong
-to the rendering pipeline documentation.
+This family describes production bake components over GPU primitives. An atlas
+addresses one target Drawable, including its submeshes; surrounding scene geometry
+contributes lighting. Vulkan and Metal use explicit paired shader implementations.
+Start with [the integrated tutorial](../../tutorials/draw/12_lightmaps.md) or
+[standalone tutorial](../../tutorials/draw/standalone_lightmaps.md).
 
 ## Reading guide
 
 | Document | Responsibility and types |
 |---|---|
 | [UV atlas construction and validation](uv_atlas.md) | `GenerateUv2AtlasModifier`, `Uv2AtlasOptions`, `Uv2AtlasResult`, `UvAtlasValidator`, `UvAtlasValidation`, `UvAtlasError`. |
-| [Atlas surface projection](uv_surface_projection.md) | `UvSurfacePass`, `Diagnostic`, depthless `GBufferManager::Configuration`; UV triangles to world-space texels. |
+| [Atlas surface projection](uv_surface_projection.md) | `UvSurfacePass`, `Diagnostic`, depthless surface contracts; UV triangles to world-space texels. |
 | [Lighting pass architecture](lighting_passes.md) | `LightmapBakeExecutor`, `LightmapCompositionPass`, UV paths in `RTAmbientOcclusion` and `RTGlobalIllumination`; shared scene bindings. |
 | [Accumulation, dilation and readback](accumulation.md) | `LightmapBaker`, `LightmapSettings`, `LightmapPixels`, `UvTemporalAccumulator`; stable atlas history. |
 | [Execution contexts](contexts.md) | `BakerContext`, `IntegratedBakerContext`, `IntegratedLightmapBaker`, `StandaloneBakerContext`, `StandaloneLightmapBaker`, private snapshots/resources. |
 | [Standalone assembly and batch](standalone_scene_and_batch.md) | `StandaloneBakeSceneAssembler`, its target/assembly records, `StandaloneBakeBatch` and callbacks. |
 | [UV preview and editor integration](preview_and_editors.md) | `UvMapPreviewRenderer`, `UvMapPreview`, `Uv2SafeReload`, `Uv2RegenerationResult`, `ModelLightmapWindow`, `SceneLightmapWindow` and delegate bake jobs. |
-| [Output and material integration](output_and_materials.md) | Production `LightmapOutputWriter`, `ImageFormat` and file/material limits; separate draw/bake RGB contract linked below. |
+| [Output and material integration](output_and_materials.md) | `bake::LightmapOutputWriter`, `ImageFormat` and file/material limits; RGB indirect contract linked below. |
 
 ```mermaid
 flowchart LR
@@ -49,8 +40,8 @@ and selected scalar AO channel in the production writer. No additional
 illumination texture slot is supplied. Current deferred shaders contain an RGB path reusing the AO texture;
 that transitional path is described explicitly in [material integration](output_and_materials.md).
 
-Public signatures and validation rules are in the [render API](../../api/render/reference.md),
-[geometry API](../../api/geo/reference.md), and [CLI guide](../../apps/lightmap_generator/index.md).
+Public signatures and validation rules are in the [render API](../../api/draw/reference.md),
+[geometry API](../../api/geo/reference.md), and [CLI guide](../../apps/draw_lightmap_generator.md).
 
 For the separate draw/bake data flow, raw-sample versus composed-output ordering,
 explicit indirect modes and precision boundaries, read
@@ -60,4 +51,4 @@ diagram and scalar-AO export discussion above describe render, not draw.
 The delivered [standalone draw/bake architecture](../draw_standalone_lightmaps.md)
 now covers private assembly, UV2, exact completed samples and protected complete
 manifest publication. [CLI and deployment](../../apps/draw_lightmap_generator.md)
-are separate from the production render context/batch pages in this family.
+use the context and batch contracts described in this family.

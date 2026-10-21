@@ -3,7 +3,7 @@
 **Header:** `<bg2e/draw/Engine.hpp>`  
 **Namespace:** `bg2e::draw`
 
-The experimental GPU context owner. The public header uses abstract gpu types
+The GPU context owner. The public header uses abstract gpu types
 and PImpl, with no Vulkan or Metal native API types. Copy construction and copy
 assignment are deleted.
 
@@ -67,8 +67,8 @@ Scene and presentation coordination belongs to RenderLoop.
 
 See [EngineConfig](EngineConfig.md) and [RenderLoop](RenderLoop.md).
 
-See [framework scope and maturity](index.md#production-and-experimental-frameworks)
-for the distinction between render and draw.
+See [framework scope and maturity](index.md#production-framework)
+for the relationship between draw and GPU backends.
 
 ## Headless initialization
 
@@ -86,7 +86,7 @@ OffscreenSurfaces use one synchronized slot. Window RenderLoop and UserInterface
 reject a headless Engine rather than dereferencing the window accessor.
 
 For actual callback/submission/completion and fixed-time policy use
-[OffscreenApplication](../app/OffscreenApplication.md#experimental-draw-execution).
+[OffscreenApplication](../app/OffscreenApplication.md#draw-execution).
 The default offscreen renderer delegate reuses ordinary Renderer ownership;
 standalone bake code can instead use Device-backed passes directly without a
 camera renderer. This Engine API does not perform image averaging or file output.

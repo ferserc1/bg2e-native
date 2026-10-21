@@ -19,7 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/scene/Drawable.hpp>
+#include <bg2e/draw/Drawable.hpp>
 
 #include <memory>
 #include <vector>
@@ -30,11 +30,11 @@ namespace scene {
 
 class BG2E_API DrawableRegistry {
   public:
-    void registerDrawable(std::shared_ptr<DrawableBase> drawable);
+    void registerDrawable(std::shared_ptr<draw::Drawable> drawable);
     void cleanup();
 
   private:
-    std::vector<std::shared_ptr<DrawableBase>> _drawables;
+    std::vector<std::shared_ptr<draw::Drawable>> _drawables;
     bool nameExists(const std::string& name) const;
 };
 

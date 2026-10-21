@@ -1,6 +1,6 @@
 # Draw API Reference
 
-The experimental high-level successor to production render uses the abstract
+The high-level successor to production render uses the abstract
 gpu backend. The umbrella header is `<bg2e/draw/all.hpp>`; production render is
 supported and is not deprecated.
 
@@ -15,10 +15,9 @@ supported and is not deprecated.
 MainLoop's config overload constructs the private draw adapter; applications do
 not initialize Factory or expose GraphicsExecution. UI initialization supports
 Vulkan and Metal using private adapters. The loop supplies retained color; RendererDeferred owns its internal depth/G-buffer graph.
-[OffscreenApplication](../app/OffscreenApplication.md) retains its production
-overload and adds a typed draw path. Production resource-dependent UI retains
-its separate render contracts. Per-object persistent resource rings replace a central transient frame
-resource allocation contract.
+[OffscreenApplication](../app/OffscreenApplication.md) accepts only its typed draw
+delegate. UI uses draw resources. Per-object persistent resource slots replace
+central transient allocation.
 
 See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_render_draw_gpu.md),
 [GPU synchronization](../gpu/Submission_tracking_and_waitIdle.md) and
@@ -27,7 +26,7 @@ See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_r
 ## Scene renderer and resources
 
 - [RendererDeferred and DefaultRenderLoopDelegate](RendererDeferred.md): runtime ownership, lifecycle and public pipeline replacement.
-- [Drawable, material, scene and bindings](Resources.md): typed coexistence, deep clones and safe edits.
+- [Drawable, material, scene and bindings](Resources.md): canonical ownership, deep clones and safe edits.
 - [Environment tools](Environment.md): public conversion/IBL and HDR precision.
 - [Settings and upscaling](Settings.md): live catalog, codec/facade/UI, resolution and optional FSR.
 

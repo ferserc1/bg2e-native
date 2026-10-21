@@ -47,3 +47,36 @@ references, generic DB file/archive, tutorial, full CLI and architecture pages a
 now authored. Final audit checks their post-M09 names/links/semantics and retained
 foundations; do not treat the earlier review's authoring gap as still absent or
 recreate parallel future guides. Native and synthetic evidence remain distinct.
+
+## M09-06 final source-to-documentation evidence
+
+[Final product validation](../milestone_09_cleanup/final-product-validation.md)
+and its header/product/umbrella catalogs identify actual source paths and targets
+for the documentation audit. The 33-scenario matrix maps core, native UI, app/CLI,
+M08 P01-P11 and optimization/profiling evidence; per-scenario native coverage is
+not specified by continuation acceptance. Do not turn source-only audits into
+runtime/exported-symbol or configured-standalone claims. M09-08 must author the
+missing maintained usage updates before M10 audits completeness.
+
+## Final M09-07 source baseline and handoff
+
+Use [the final review](../milestone_09_cleanup/review.md) and its
+[page inventory](../milestone_09_cleanup/documentation-handoff.tsv). M09-06 and
+its scene/Metal/VMA corrections are accepted by continuation. Production is
+`bg2e::draw`; GPU is its low-level backend abstraction. Retired render APIs and
+old application targets have no compatibility promise. The source catalog lists
+33 products; native scenario/backend/performance coverage remains unspecified.
+M09-08 authors the complete cumulative maintained documentation before M10.
+M10 audits that delivered documentation and makes localized corrections; do not
+defer missing API, tutorial, build or application authoring to this milestone.
+
+Reconcile every documentation-handoff.tsv row with the M09-08 delivered disposition, destination and source anchor. Inventory new pages and deleted-page incoming links as well. Report uncovered contracts instead of silently accepting a smaller page set.
+
+## Delivered M09-08 audit baseline
+
+Audit [the completed documentation handoff](../milestone_09_cleanup/documentation.md),
+documentation-dispositions.tsv and documentation-audit.json. The final set has
+229 pages, with a complete supported-product catalog and new production migration,
+build/resource, performance and public extension references. Reconcile every
+disposition and localized source/wording issue; no bulk authoring is deferred here.
+Entry requires M09-08 acceptance under the continuation convention.

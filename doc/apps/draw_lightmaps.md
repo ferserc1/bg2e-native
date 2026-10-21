@@ -2,7 +2,7 @@
 
 Source: [examples/draw/12_lightmaps](../../examples/draw/12_lightmaps/README.md).
 Target: `draw_lightmaps`. The application ID is
-`org.bg2e.examples.draw.lightmaps`. It runs through the experimental draw/bake
+`org.bg2e.examples.draw.lightmaps`. It runs through the draw/bake
 APIs and does not replace production editor/standalone bake applications.
 
 The static room displays direct light, environment/IBL, emission and transparency.

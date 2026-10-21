@@ -37,7 +37,7 @@ Additional project lead checks:
    run Metal and, if available, Vulkan/MoltenVK. Repeat no-RT raster and SDK/FSR
    unavailable cases with the real deferred scene. GPU/driver failures must throw,
    retain submitted owners through draining and never notify a false completion.
-2. Run existing windowed examples 10–12 and production offscreen examples 15–16.
+2. Run windowed draw examples 10–12 and draw offscreen example 13.
    Verify window/UI acquisition and settings replacement still work. Passing a
    headless Engine to window RenderLoop/UserInterface must fail before UI creation.
 3. With a scene-bearing DefaultOffscreenApplicationDelegate subclass, check a

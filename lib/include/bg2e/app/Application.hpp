@@ -18,27 +18,21 @@
 
 #pragma once
 
-#include <bg2e/render/RenderLoop.hpp>
 #include <bg2e/draw/RenderLoopDelegate.hpp>
 #include <bg2e/app/InputDelegate.hpp>
 #include <bg2e/ui/UserInterface.hpp>
 
-#include <cstdint>
+#include <utility>
 
-namespace bg2e {
-namespace app {
+namespace bg2e::app {
 
 class Application {
   public:
     virtual void init(int argc, char** argv) = 0;
 
-    inline std::shared_ptr<render::RenderLoopDelegate>& renderDelegate()
+    inline std::shared_ptr<draw::RenderLoopDelegate>& renderDelegate()
     {
         return _renderDelegate;
-    }
-    inline std::shared_ptr<draw::RenderLoopDelegate>& drawDelegate()
-    {
-        return _drawDelegate;
     }
     inline std::shared_ptr<app::InputDelegate>& inputDelegate()
     {
@@ -49,39 +43,23 @@ class Application {
         return _uiDelegate;
     }
 
-    // Registering a graphics delegate clears the other graphics slot: the most
-    // recent registration selects a single contract. A nullptr registration
-    // clears both slots.
-    inline void setRenderDelegate(std::shared_ptr<render::RenderLoopDelegate> delegate)
-    {
-        _renderDelegate = delegate;
-        _drawDelegate = nullptr;
-    }
     inline void setRenderDelegate(std::shared_ptr<draw::RenderLoopDelegate> delegate)
     {
-        _drawDelegate = delegate;
-        _renderDelegate = nullptr;
-    }
-    inline void setRenderDelegate(std::nullptr_t)
-    {
-        _renderDelegate = nullptr;
-        _drawDelegate = nullptr;
+        _renderDelegate = std::move(delegate);
     }
     inline void setInputDelegate(std::shared_ptr<app::InputDelegate> delegate)
     {
-        _inputDelegate = delegate;
+        _inputDelegate = std::move(delegate);
     }
     inline void setUiDelegate(std::shared_ptr<ui::UserInterfaceDelegate> delegate)
     {
-        _uiDelegate = delegate;
+        _uiDelegate = std::move(delegate);
     }
 
   protected:
-    std::shared_ptr<render::RenderLoopDelegate> _renderDelegate;
-    std::shared_ptr<draw::RenderLoopDelegate> _drawDelegate;
+    std::shared_ptr<draw::RenderLoopDelegate> _renderDelegate;
     std::shared_ptr<app::InputDelegate> _inputDelegate;
     std::shared_ptr<ui::UserInterfaceDelegate> _uiDelegate;
 };
 
-}
 }

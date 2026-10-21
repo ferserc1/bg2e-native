@@ -3,7 +3,7 @@
 **Header:** `<bg2e/draw/FrameContext.hpp>`  
 **Namespace:** `bg2e::draw`
 
-An aggregate passed to the experimental scene delegate's update/render callbacks.
+An aggregate passed to the production scene delegate's update/render callbacks.
 
 ```cpp
 struct FrameContext {
@@ -41,7 +41,7 @@ scene storage rather than the current drawable; no depth target is supplied.
 
 See [TemporalAccumulator](TemporalAccumulator.md) for independent rendered-view effect histories, borrowed public surfaces, camera motion, bounded convergence and invalidateHistories application notifications.
 
-For [offscreen execution](../app/OffscreenApplication.md#experimental-draw-execution),
+For [offscreen execution](../app/OffscreenApplication.md#draw-execution),
 both frame counters use the zero-based scene sequence, advancing only after GPU
 completion. The first delta is zero and later deltas use the configured fixed
 step (default zero). The color target is the acquired offscreen color image;

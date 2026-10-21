@@ -1,8 +1,8 @@
 # Standalone UV bake ownership and publication
 
-The experimental draw/bake standalone product borrows a windowless draw Engine,
+The draw/bake standalone product borrows a windowless draw Engine,
 reuses public tracing/UV/accumulation/composition primitives and publishes a whole
-batch through one final manifest. Production render remains available separately.
+batch through one final manifest. Integrated and standalone baking share the public bake namespace.
 The [tutorial](../tutorials/draw/standalone_lightmaps.md) and
 [CLI guide](../apps/draw_lightmap_generator.md) use these actual owners.
 

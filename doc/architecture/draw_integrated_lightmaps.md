@@ -1,9 +1,7 @@
 # Integrated draw lightmaps
 
-The experimental `bg2e::bake` path uses an initialized draw Engine and public
-Device-backed passes. Production `bg2e::render` editors and standalone tools
-remain documented in the [production lightmap family](lightmaps/index.md).
-The delivered windowed product is [draw_lightmaps](../apps/draw_lightmaps.md).
+The production `bg2e::bake` path uses an initialized draw Engine and public
+Device-backed passes. Integrated and standalone tools use these same public contracts.
 
 ## Data and execution
 

@@ -231,7 +231,7 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         DefaultRenderLoopDelegate::cleanup();
         for (auto& node : _targets)
         {
-            node->drawable()->drawDrawable()->cleanup();
+            node->drawable()->drawable()->cleanup();
         }
 
         for (auto& drawable : _sources)
@@ -489,7 +489,7 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         _engine->device()->waitIdle();
         for (size_t i = 0; i < _targets.size(); ++i)
         {
-            const auto drawable = _targets[i]->drawable()->drawDrawable();
+            const auto drawable = _targets[i]->drawable()->drawable();
             for (uint32_t submesh = 0; submesh < drawable->submeshesCount(); ++submesh)
             {
                 auto material = drawable->drawMaterial(submesh);
@@ -512,7 +512,7 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
 
     void refreshPreview()
     {
-        auto mesh = _targets[_selected]->drawable()->drawDrawable()->mesh();
+        auto mesh = _targets[_selected]->drawable()->drawable()->mesh();
         bake::UvMapPreviewRenderer preview(*_engine->device(), 256);
         preview.render(*mesh, _previewUv);
         _uvImage = preview.image();

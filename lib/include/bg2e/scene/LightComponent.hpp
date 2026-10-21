@@ -47,7 +47,7 @@ class BG2E_API LightComponent : public Component {
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;
     std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath) override;
-    void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath, render::Engine& engine) override;
+
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) override;
 
   protected:

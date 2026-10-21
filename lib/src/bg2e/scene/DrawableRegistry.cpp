@@ -33,7 +33,7 @@ bool DrawableRegistry::nameExists(const std::string& name) const
     return false;
 }
 
-void DrawableRegistry::registerDrawable(std::shared_ptr<DrawableBase> drawable)
+void DrawableRegistry::registerDrawable(std::shared_ptr<draw::Drawable> drawable)
 {
     for (const auto& d : _drawables)
     {

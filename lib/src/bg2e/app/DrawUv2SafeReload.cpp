@@ -41,7 +41,7 @@ std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerateDraw(
         }
     };
     auto* component = node ? node->drawable() : nullptr;
-    auto drawable = component ? component->drawDrawable() : nullptr;
+    auto drawable = component ? component->drawable() : nullptr;
     if (!delegate || !node || !delegate->scene() || node->sceneRoot() != delegate->scene().get() ||
         !drawable || !drawable->isLoaded())
     {
@@ -66,7 +66,7 @@ std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerateDraw(
             auto mesh = expectedMesh.lock();
             auto* component = target ? target->drawable() : nullptr;
             if (!delegate || !target || !root || delegate->scene() != root || target->sceneRoot() != root.get() ||
-                !component || !original || !mesh || component->drawDrawable() != original || original->drawMesh() != mesh)
+                !component || !original || !mesh || component->drawable() != original || original->drawMesh() != mesh)
             {
                 report({false,"UV2 draw target/scene/geometry changed before the queued edit"});
                 return;
@@ -84,7 +84,7 @@ std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerateDraw(
                     return;
                 }
                 component = target->drawable();
-                if (!component || component->drawDrawable() != original ||
+                if (!component || component->drawable() != original ||
                     target->sceneRoot() != root.get() || delegate->scene() != root || original->drawMesh() != mesh)
                 {
                     throw std::runtime_error("UV2 invalidation callback changed the target; request again");

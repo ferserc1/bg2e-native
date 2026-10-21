@@ -5,9 +5,8 @@
 
 `MaterialModifier` parses a JSON material description into a reusable partial
 PBR patch. Missing, null or incorrectly typed values are ignored; submesh
-metadata is not changed. It can patch `base::MaterialAttributes`, production
-`render::MaterialBase`/`scene::Drawable`, and experimental `draw::MaterialBase`/
-`draw::Drawable` targets.
+metadata is not changed. It patches `base::MaterialAttributes`,
+`draw::MaterialBase` and `draw::Drawable` targets. Production overloads are removed.
 
 ```cpp
 utils::MaterialModifier patch(jsonText, basePath);

@@ -1,4 +1,4 @@
-# Experimental draw Composer
+# Draw draw Composer
 
 `draw_bg2e_composer`, implemented in [apps/draw/bg2e_composer](../../apps/draw/bg2e_composer/README.md), edits complete scenes through `bg2e::draw`. Production `bg2e_composer` remains available as a separate application during migration. The standalone draw lightmap generator is not delivered by Composer.
 

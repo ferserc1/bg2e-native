@@ -27,10 +27,6 @@
 
 namespace bg2e {
 
-namespace render {
-class Engine;
-}
-
 namespace scene {
 class Node;
 }
@@ -44,27 +40,6 @@ extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem:
 
 extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
     draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
-
-
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& filePath,
-    render::Engine* engine);
-
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& filePath,
-    render::Engine* engine,
-    bool loadGpuResources);
-
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine);
-
-extern BG2E_API std::shared_ptr<scene::Node> loadSceneBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    render::Engine* engine,
-    bool loadGpuResources);
 
 }
 }

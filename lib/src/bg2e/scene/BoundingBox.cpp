@@ -18,7 +18,6 @@
 
 #include <bg2e/scene/BoundingBox.hpp>
 
-#include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/Node.hpp>
 
@@ -46,18 +45,18 @@ void BoundingBox::processNode(Node* node, const Options& options)
     }
 
     auto drawableComponent = node->drawable();
-    const auto processDrawable = [&](const auto& drawable, bool drawPath)
+    const auto processDrawable = [&](const auto& drawable)
     {
         auto mesh = drawable ? drawable->mesh() : nullptr;
 
         if (mesh)
         {
-            const auto worldMatrix = drawPath ? node->worldMatrix() * drawable->transform() : node->worldMatrix();
+            const auto worldMatrix = node->worldMatrix() * drawable->transform();
             const auto submeshCount = drawable->submeshesCount();
 
             if (mesh->submeshes.empty())
             {
-                geo::AABoundingBox<scene::Mesh> box(*mesh);
+                geo::AABoundingBox<geo::MeshPNUUT> box(*mesh);
                 addSubmesh(box, worldMatrix);
             }
             else
@@ -69,12 +68,12 @@ void BoundingBox::processNode(Node* node, const Options& options)
                 for (uint32_t submeshIndex = 0; submeshIndex < count; ++submeshIndex)
                 {
                     if (!options.includeInvisibleSubmeshes && (!drawable->submeshVisibility(submeshIndex) ||
-                        (drawPath && !drawable->material(submeshIndex).visible())))
+                        !drawable->material(submeshIndex).visible()))
                     {
                         continue;
                     }
 
-                    geo::AABoundingBox<scene::Mesh> box(*mesh, submeshIndex);
+                    geo::AABoundingBox<geo::MeshPNUUT> box(*mesh, submeshIndex);
                     auto transform = worldMatrix * drawable->localSubmeshTransform(submeshIndex);
                     addSubmesh(box, transform);
                 }
@@ -83,14 +82,7 @@ void BoundingBox::processNode(Node* node, const Options& options)
     };
     if (drawableComponent)
     {
-        if (drawableComponent->executionMode() == DrawableComponent::ExecutionMode::Draw)
-        {
-            processDrawable(drawableComponent->drawDrawable(), true);
-        }
-        else
-        {
-            processDrawable(drawableComponent->drawable(), false);
-        }
+        processDrawable(drawableComponent->drawable());
     }
 
     for (const auto& child : node->children())
@@ -99,7 +91,7 @@ void BoundingBox::processNode(Node* node, const Options& options)
     }
 }
 
-void BoundingBox::addSubmesh(const geo::AABoundingBox<scene::Mesh>& box, const glm::mat4& transform)
+void BoundingBox::addSubmesh(const geo::AABoundingBox<geo::MeshPNUUT>& box, const glm::mat4& transform)
 {
     if (!box.isValid())
     {

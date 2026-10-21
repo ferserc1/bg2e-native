@@ -16,15 +16,14 @@ texture/image/sampler ownership, including built acceleration resources. It is
 not default instancing. The Engine/device is borrowed and must outlive both copies.
 `reload`, mesh/texture edits, cloning loaded resources and cleanup are rare-edit
 operations: stop producers, synchronize outstanding users, mutate and resume.
-`utils::TextureCache` has separate typed draw/production paths with context
-validation; explicit cached sharing does not override clone independence.
+`utils::TextureCache` keeps weak draw realizations with engine/device validation;
+explicit cached sharing does not override clone independence.
 
-`scene::DrawableComponent::executionMode()` reports Uninitialized, Production or
-Draw. Production `drawableBase()`/`drawable()` and experimental `drawDrawable()`
-are typed paths; a wrong-mode accessor fails explicitly. Use the matching
-`setDrawable` overload. `clearDrawable()` releases component references at a safe
-boundary before selecting another mode. Graph cloning delegates to deep resource
-cloning. No reinterpretation between production and draw meshes is supported.
+`scene::DrawableComponent::drawable()` returns the sole draw realization; const
+component access returns a const Drawable. `setDrawable`/`clearDrawable` release
+component references at a safe boundary, checking context ownership on replacement.
+Schema source references can exist without a loaded Drawable. Graph cloning uses
+deep resource cloning; native scene Drawable types and mode tags are removed.
 
 `draw::DrawVisitor`, `RenderQueueVisitor` and `CollectRayTracingInstancesVisitor`
 consume the new geometry. Bindings live under draw: `FrameDataBinding`,

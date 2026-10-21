@@ -211,11 +211,8 @@ void readTargetDrawables(scene::Node& node, draw::Engine& engine, bool allowGpu)
         {
             continue;
         }
-        if (component->executionMode() == scene::DrawableComponent::ExecutionMode::Production)
-        {
-            throw std::invalid_argument("Standalone assembly cannot consume a production Drawable");
-        }
-        if (!component->drawDrawable())
+
+        if (!component->drawable())
         {
             const auto path = inputPath(component->resourcePath());
             // Preserve reference display names without duplicating schema parsing.
@@ -258,7 +255,7 @@ void collectTargets(const std::shared_ptr<scene::Node>& node, const std::filesys
     }
     if (auto* component = node->drawable())
     {
-        const auto drawable = component->drawDrawable();
+        const auto drawable = component->drawable();
         if (!drawable || !drawable->mesh())
         {
             throw std::invalid_argument("Standalone target has no CPU draw geometry: " + identity);
@@ -356,7 +353,7 @@ void collectDependencies(scene::Node& node, std::set<std::filesystem::path>& pat
         {
             paths.insert(std::filesystem::canonical(inputPath(component->resourcePath())));
         }
-        const auto drawable = component->drawDrawable();
+        const auto drawable = component->drawable();
         if (!drawable)
         {
             throw std::invalid_argument("Standalone authored Drawable has unresolved resources");
@@ -471,7 +468,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemble(
     {
         try
         {
-            const auto drawable = target.node->drawable()->drawDrawable();
+            const auto drawable = target.node->drawable()->drawable();
             auto replacement = drawable;
             if (uv2Options)
             {
@@ -523,7 +520,7 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemble(
         for (size_t i = 0; i < result.targets.size(); ++i)
         {
             auto* component = result.targets[i].node->drawable();
-            const auto drawable = component ? component->drawDrawable() : nullptr;
+            const auto drawable = component ? component->drawable() : nullptr;
             if (drawable != replacements[i] || drawable->mesh() != meshes[i] ||
                 !drawable->isLoaded() || drawable->engine() != _engine)
             {

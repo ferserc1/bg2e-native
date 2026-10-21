@@ -24,8 +24,6 @@
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/draw/Drawable.hpp>
-#include <bg2e/scene/Drawable.hpp>
-#include <bg2e/render/Engine.hpp>
 
 #include <filesystem>
 #include <iostream>
@@ -71,53 +69,12 @@ extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableBg2(
 extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableBg2(
     const std::filesystem::path& basePath, const std::string& fileName, draw::Engine& engine);
 
-extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
-    const std::filesystem::path& filePath,
-    bg2e::render::Engine* engine);
-extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
-    const std::filesystem::path& filePath,
-    bg2e::render::Engine* engine,
-    std::function<void()> onTextureLoaded);
-extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    bg2e::render::Engine* engine);
-
 // Complete native-resource snapshot for one realized draw model node.
 // Returns false and logs the error on failure; never propagates exceptions.
 extern BG2E_API bool storeDrawableBg2(const std::filesystem::path& path,
     draw::Engine& engine, scene::Node* node) noexcept;
 
 extern BG2E_API uint32_t countMeshTextures(const std::filesystem::path& filePath);
-
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& filePath,
-    bg2e::scene::Drawable* drawable);
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    bg2e::scene::Drawable* drawable);
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& filePath,
-    std::shared_ptr<bg2e::scene::Drawable> drawable);
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    std::shared_ptr<bg2e::scene::Drawable> drawable);
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& filePath,
-    bg2e::scene::DrawableComponent* drawable);
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    bg2e::scene::DrawableComponent* drawable);
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& filePath,
-    bg2e::scene::Node* node);
-extern BG2E_API void storeDrawableBg2(
-    const std::filesystem::path& basePath,
-    const std::string& fileName,
-    bg2e::scene::Node* node);
 
 }
 }

@@ -19,16 +19,12 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/manipulation/ToolExecutionMode.hpp>
 #include <bg2e/draw/Engine.hpp>
-#include <bg2e/render/Engine.hpp>
-#include <bg2e/scene/Drawable.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/math/projections.hpp>
 #include <bg2e/scene/Node.hpp>
-#include <bg2e/manipulation/PickSelectionVisitor.hpp>
-#include <bg2e/render/vulkan/Image.hpp>
+#include <bg2e/manipulation/PickKind.hpp>
 
 #include <memory>
 #include <algorithm>
@@ -41,21 +37,19 @@ namespace manipulation {
 struct BG2E_API SelectionItem {
     std::weak_ptr<scene::Node> node;
     std::weak_ptr<scene::DrawableComponent> drawable;
-    std::weak_ptr<scene::Drawable> mesh;
     uint32_t submesh = 0;
     PickKind kind = PickKind::Drawable;
 
-    std::weak_ptr<draw::Drawable> drawMesh;
-    ToolExecutionMode mode = ToolExecutionMode::Production;
+    std::weak_ptr<draw::Drawable> mesh;
     uint32_t selectionIdentifier = 0;
 
     // Locks validate membership/resource replacement as well as weak lifetime.
-    [[nodiscard]] std::shared_ptr<scene::Drawable> lockMesh() const;
-    [[nodiscard]] std::shared_ptr<draw::Drawable> lockDrawMesh() const;
+
+    [[nodiscard]] std::shared_ptr<draw::Drawable> lockMesh() const;
     [[nodiscard]] scene::Node* nodePtr() const;
     [[nodiscard]] scene::DrawableComponent* drawablePtr() const;
-    [[nodiscard]] scene::Drawable* meshPtr() const;
-    [[nodiscard]] draw::Drawable* drawMeshPtr() const;
+
+    [[nodiscard]] draw::Drawable* meshPtr() const;
     [[nodiscard]] bool expired() const;
 
 };
@@ -69,14 +63,8 @@ class BG2E_API SelectionManager {
         uint32_t identifier;
     };
 
-    explicit SelectionManager(render::Engine* engine);
     explicit SelectionManager(draw::Engine* engine);
     virtual ~SelectionManager() = default;
-
-    ToolExecutionMode executionMode() const
-    {
-        return _mode;
-    }
 
     void init();
     // Call at scene-update boundaries after resource/component removal or replacement.
@@ -244,13 +232,10 @@ class BG2E_API SelectionManager {
     {
         return selectedItem() ? selectedItem()->drawablePtr() : nullptr;
     }
-    [[nodiscard]] inline scene::Drawable* selectedMesh() const
+
+    [[nodiscard]] inline draw::Drawable* selectedMesh() const
     {
         return selectedItem() ? selectedItem()->meshPtr() : nullptr;
-    }
-    [[nodiscard]] inline draw::Drawable* selectedDrawMesh() const
-    {
-        return selectedItem() ? selectedItem()->drawMeshPtr() : nullptr;
     }
     [[nodiscard]] inline uint32_t selectedSubmesh() const
     {
@@ -278,7 +263,7 @@ class BG2E_API SelectionManager {
     // selected-nodes list (regardless of which/how many submeshes are selected).
     bool isSelected(const scene::Node* node);
     bool isSelected(const scene::Node* node, const scene::DrawableComponent* drawable, uint32_t submesh);
-    bool isSelected(const scene::Node* node, const scene::Drawable* drawable, uint32_t submesh);
+
     bool isSelected(const scene::Node* node, const draw::Drawable* drawable, uint32_t submesh);
 
     bool addToSelectedItems(scene::Node* node, scene::DrawableComponent* drawable, uint32_t submesh);
@@ -309,15 +294,7 @@ class BG2E_API SelectionManager {
     }
 
   protected:
-    render::Engine* _engine = nullptr;
     draw::Engine* _drawEngine = nullptr;
-    ToolExecutionMode _mode = ToolExecutionMode::Uninitialized;
-
-    VkPipeline _pipeline = VK_NULL_HANDLE;        // depth-tested (drawables, transform gizmo)
-    VkPipeline _pipelineNoDepth = VK_NULL_HANDLE; // depth-disabled (type gizmos, on top)
-    VkPipelineLayout _pipelineLayout = VK_NULL_HANDLE;
-    std::shared_ptr<render::vulkan::Image> _image;
-    std::shared_ptr<PickSelectionVisitor> _pickVisitor;
 
     bool _multiSelection = true;
     bool _clearSelectionOnEmptyPick = true;
@@ -336,17 +313,6 @@ class BG2E_API SelectionManager {
     bool pickDrawObject(scene::Node* root, const glm::mat4& view,
         const glm::mat4& projection, const math::Viewport& viewport,
         uint32_t x, uint32_t y, SelectionItem* result);
-
-    uint32_t pickObjectId(
-        scene::Node* rootNode,
-        const glm::mat4& viewMatrix,
-        const glm::mat4& projMatrix,
-        const math::Viewport& vp,
-        uint32_t x,
-        uint32_t y);
-    void createImage();
-    void createPipeline();
-    void cleanupImage();
 
     std::vector<OnSelectCallback> _onSelectCallbacks;
     void callOnChange();

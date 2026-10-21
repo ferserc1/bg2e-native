@@ -1,87 +1,11 @@
 # Material and Drawable Editors
 
-**Headers:** `<bg2e/ui/MaterialEditor.hpp>`, `<bg2e/ui/DrawableEditor.hpp>`,
-`<bg2e/ui/SubmeshSelector.hpp>`
-**Namespace:** `bg2e::ui`
-
-The editors described below are the production `render` widgets. The
-experimental draw path has a separate [`DrawMaterialEditor`](#drawmaterialeditor)
-whose edits are queued and applied at a safe renderer boundary; it does not
-make the production editor draw-compatible.
-
-The PBR editing widgets. They come in two flavors of data binding: **manual**
-(you hand them a `render::MaterialBase`) and **selection-driven** (you hand
-them a `manipulation::SelectionManager` and they follow the 3D picks).
-
----
+Use `<bg2e/ui/DrawMaterialEditor.hpp>`, `<bg2e/ui/DrawableEditor.hpp>` and
+`<bg2e/ui/SubmeshSelector.hpp>`. The old MaterialEditor class/header is removed.
 
 ## `MaterialEditor`
 
-```cpp
-class BG2E_API MaterialEditor {
-public:
-    // Manual mode
-    void setEditMaterial(std::shared_ptr<render::MaterialBase>& mat);
-    void addEditMaterial(std::shared_ptr<render::MaterialBase>& mat);
-    void clearMaterial();
-
-    // Selection-driven mode (disables the manual setters)
-    void setSelectionManager(const std::shared_ptr<manipulation::SelectionManager>& sm);
-
-    std::shared_ptr<render::MaterialBase> editMaterial();          // main material
-    bool draw();
-    void cleanup();
-    void onChanged(std::function<void()> cb);
-};
-```
-
-### What it draws
-
-A collapsing header (`"<name>'s Material Attributes"`) with one section per
-PBR map: **Albedo** (color, texture, scale, UV set, transparency, refraction),
-**Normal**, **Metallic**, **Roughness** (value, texture, channel, invert,
-scale, UV set), **Fresnel Tint**, **Sheen** (intensity, color), **Ambient
-Occlusion**, **Light Emission**. Texture slots are
-[`TextureWidgets`](TextureWidgets.md) `selectTexture()` rows — picking a file
-writes a new `base::Texture` into the material attributes and calls
-`material->updateTextures()` for every material being edited.
-
-### Multi-material editing
-
-The editor always holds a **list** of materials:
-
-- Manual mode: `setEditMaterial()` replaces the list with one material;
-  `addEditMaterial()` appends more (the first one added defines the values
-  shown in the fields).
-- Selection mode: on every selection change, the list becomes *all submesh
-  materials of the first selected drawable* — i.e. selecting two submeshes of
-  the same model edits both in lockstep.
-
-Every widget edit is applied to **all** materials in the list, and
-`onChanged()` is invoked per material. `editMaterial()` returns the main
-(first) material, or `nullptr` when nothing is selected.
-
-### Mode exclusivity
-
-Once `setSelectionManager()` is set, the manual setters are silently ignored
-(early return). If you need both behaviors, keep one editor per mode.
-
-### Lifetime gotcha
-
-`setSelectionManager()` registers a callback with `[&]` capture on the
-selection manager's `onSelect` signal. The editor must not outlive the
-selection manager — or vice versa, the manager must not fire the callback
-after the editor is destroyed. Put both under the same owner (the delegate)
-and clean the editor up first:
-
-```cpp
-void AppDelegate::cleanup()
-{
-    _materialEditor.cleanup();      // releases the 6 texture descriptor sets
-}
-```
-
----
+The legacy class is removed; use [DrawMaterialEditor](#drawmaterialeditor).
 
 ## `DrawableEditor` and `SubmeshSelector`
 
@@ -101,7 +25,7 @@ public:
 class BG2E_API SubmeshSelector {
 public:
     void init(std::shared_ptr<manipulation::SelectionManager> sm);
-    std::shared_ptr<scene::Drawable> editDrawable();      // first drawable in selection
+    std::shared_ptr<draw::Drawable> editDrawable();      // first drawable in selection
     int32_t selectedItem() const;
     std::vector<uint32_t> selectedItems() const;
     void addSelectedItem(uint32_t index) const;           // programmatic selection
@@ -171,7 +95,7 @@ descriptor-backed texture widgets. Call `cleanup()` from your delegate's
 
 **Header:** `<bg2e/ui/DrawMaterialEditor.hpp>`
 
-The draw editor is separate from `MaterialEditor`. Initialize it with the draw
+Initialize DrawMaterialEditor with the draw
 engine and a shared `draw::DefaultRenderLoopDelegate`, then optionally bind a
 `SelectionManager`. Its `draw(UserInterface&)` method renders controls but
 does not mutate the selected target inline. `queuePatch()` and

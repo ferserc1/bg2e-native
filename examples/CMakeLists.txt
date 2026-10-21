@@ -1,24 +1,3 @@
-add_subdirectory(debug-app)
-add_subdirectory(01_setup)
-add_subdirectory(02_compute_shader)
-add_subdirectory(02_ui)
-add_subdirectory(03_vertex_buffer)
-add_subdirectory(04_submeshes)
-add_subdirectory(05_sky_sphere)
-add_subdirectory(06_cubemap_renderer)
-add_subdirectory(07_environment_render)
-add_subdirectory(08_multi_color_attachments)
-add_subdirectory(09_drawable)
-add_subdirectory(10_scene_objects)
-add_subdirectory(11_scene_renderer_raw)
-add_subdirectory(12_scene_renderer)
-add_subdirectory(13_pbr_demo)
-add_subdirectory(14_bg2_model_load)
-add_subdirectory(15_offscreen_render_cli)
-add_subdirectory(16_offscreen_scene_render_cli)
-add_subdirectory(17_deferred_renderer)
-add_subdirectory(18_material_modifier)
-
 # bg2e::gpu examples
 add_subdirectory(gpu/01_instance)
 add_subdirectory(gpu/02_device)
@@ -34,7 +13,7 @@ add_subdirectory(gpu/11_ray_query_shadows)
 add_subdirectory(gpu/12_deferred_cleanup)
 add_subdirectory(gpu/13_ray_tracing_pipeline)
 
-# Experimental bg2e::draw examples
+# bg2e::draw examples
 add_subdirectory(draw/01_window_ui)
 add_subdirectory(draw/02_simple_triangle)
 add_subdirectory(draw/03_uniform_buffers)
@@ -45,10 +24,10 @@ add_subdirectory(draw/07_ray_query_shadows)
 add_subdirectory(draw/08_deferred_cleanup)
 add_subdirectory(draw/09_ray_tracing_pipeline)
 
-# M01 deferred scene product over the experimental draw API.
+# M01 deferred scene product over the draw API.
 add_subdirectory(draw/10_deferred_renderer)
 
-# M02 interactive selection and material modification over the experimental draw API.
+# M02 interactive selection and material modification over the draw API.
 add_subdirectory(draw/11_manipulation)
 
 # M04 integrated baking and applied indirect maps over the draw API.

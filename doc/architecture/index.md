@@ -14,3 +14,6 @@
 
 - [Standalone UV batch ownership and publication](draw_standalone_lightmaps.md):
   private assembly, frozen serial jobs, typed maps, complete models and final manifest.
+
+- [Production build/distribution](build_and_distribution.md)
+- [Resource reuse and profiling](production_performance.md)

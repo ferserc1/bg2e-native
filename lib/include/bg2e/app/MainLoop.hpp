@@ -176,8 +176,7 @@ class BG2E_API MainLoop {
 
     int32_t run(Application* application);
 
-    // Experimental draw execution path. Always requires an explicit
-    // configuration; there is no default EngineConfig argument.
+    // Override the default draw backend, formats and validation settings.
     int32_t run(Application* application, const draw::EngineConfig& config);
 
     void exit();
@@ -223,7 +222,6 @@ class BG2E_API MainLoop {
 
     // Main-thread only, during an active run. In draw, scene invalidation is
     // independent of presentation; while paused, refresh remains pending.
-    // Production scenes already update every frame.
     void requestSceneFrame();
     void pauseScene(const glm::vec4& clearColor = {0.f, 0.f, 0.f, 1.f});
     void resumeScene();

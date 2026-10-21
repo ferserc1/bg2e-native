@@ -6,9 +6,8 @@
 `cameraVerticalFieldOfView(camera, fallback)` returns a camera's vertical FOV
 in degrees, or the fallback when the camera/projection does not provide one.
 
-`applyViewpointToOrbitCamera(candidate, orbit, camera)` has overloads for the
-production `render::CameraCandidate` and the experimental draw
-`utils::CameraCandidate`. Both update orbit center, distance and rotation while
+`applyViewpointToOrbitCamera(candidate, orbit, camera)` accepts
+`utils::CameraCandidate` and updates orbit center, distance and rotation while
 preserving the target camera's projection and its parameters. Candidate FOV and
 near/far values describe only the analysis render; applying a candidate never
 copies them into the scene camera.

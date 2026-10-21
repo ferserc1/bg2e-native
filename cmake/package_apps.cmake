@@ -60,9 +60,15 @@ else()
             PRE_EXCLUDE_REGEXES "^linux-vdso" "^ld-linux" "^lib(c|m|pthread|dl|rt)\\.so"
             LIBRARY DESTINATION . COMPONENT Distribution)
     endif()
-    # Include the built resources, including any app-specific shaders.
-    list(GET apps 0 first_app)
-    install(DIRECTORY "$<TARGET_FILE_DIR:${first_app}>/assets"
-        "$<TARGET_FILE_DIR:${first_app}>/shaders"
-        DESTINATION . COMPONENT Distribution)
+    # Canonical engine trees only: never install stale flat legacy shaders from
+    # a reused development output directory. Apps currently have no private stages.
+    install(DIRECTORY "${ASSETS_PATH}/" DESTINATION assets COMPONENT Distribution)
+    install(DIRECTORY "${BG2E_SHADER_DIR}/draw" "${BG2E_SHADER_DIR}/bake"
+        DESTINATION shaders COMPONENT Distribution
+        FILES_MATCHING PATTERN "*.spv" PATTERN "*.metallib")
+    foreach(app IN LISTS apps)
+        install(DIRECTORY "$<TARGET_FILE_DIR:${app}>/shaders/${app}"
+            DESTINATION shaders COMPONENT Distribution OPTIONAL
+            FILES_MATCHING PATTERN "*.spv" PATTERN "*.metallib")
+    endforeach()
 endif()

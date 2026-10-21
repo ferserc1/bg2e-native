@@ -7,7 +7,7 @@ completed maps to the materials. A settings panel will let you restart or
 cancel the bake, inspect UV charts, and compare baked and unbaked lighting.
 
 The application uses `bg2e::draw` and `bg2e::bake`. It does not use the production
-`bg2e::render` lightmap application. You should be familiar with the delegates
+ Draw is the production rendering API over GPU backends. You should be familiar with the delegates
 and deferred scene in [tutorial 10](10_deferred_renderer.md), and with the UI
 pattern in [tutorial 11](11_manipulation.md).
 
@@ -334,7 +334,7 @@ objects. Both collections also need explicit cleanup.
         DefaultRenderLoopDelegate::cleanup();
         for (auto& node : _targets)
         {
-            node->drawable()->drawDrawable()->cleanup();
+            node->drawable()->drawable()->cleanup();
         }
 
         for (auto& drawable : _sources)
@@ -697,7 +697,7 @@ The direct light and emission are still evaluated separately.
         _engine->device()->waitIdle();
         for (size_t i = 0; i < _targets.size(); ++i)
         {
-            const auto drawable = _targets[i]->drawable()->drawDrawable();
+            const auto drawable = _targets[i]->drawable()->drawable();
             for (uint32_t submesh = 0; submesh < drawable->submeshesCount(); ++submesh)
             {
                 auto material = drawable->drawMaterial(submesh);
@@ -736,7 +736,7 @@ the frame callback. The settings owner outlives each baker invocation.
 ```cpp
     void refreshPreview()
     {
-        auto mesh = _targets[_selected]->drawable()->drawDrawable()->mesh();
+        auto mesh = _targets[_selected]->drawable()->drawable()->mesh();
         bake::UvMapPreviewRenderer preview(*_engine->device(), 256);
         preview.render(*mesh, _previewUv);
         _uvImage = preview.image();

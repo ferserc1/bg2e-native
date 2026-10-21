@@ -712,20 +712,11 @@ VkDevice vkDev = vkDevice->handle();
 GPU supplies backend-neutral devices, queues, commands and resources implemented
 by Vulkan and Metal. It is a lower-level API, not a scene/material framework.
 
-Render is bg2 engine's maintained production Vulkan framework, integrated with
-its scene/material/UI facilities. Draw is an experimental high-level framework
-over gpu, with GPU-based scene delegates and retained color/UI composition.
-Experimental means its high-level scope is narrower and contracts may evolve;
-it does not mean the window/UI execution path is unavailable. These are API
-maturity labels, independent of Debug/Release or deployment configuration.
-Draw is intended as render's successor; both coexist and render is not deprecated.
-
-MainLoop's config overload selects draw and initializes Factory internally;
-standalone gpu applications construct contexts explicitly. See
-[draw](../draw/index.md), [MainLoop architecture](../../architecture/MainLoop_render_draw_gpu.md)
-and [submission tracking / waitIdle](Submission_tracking_and_waitIdle.md) for
-asynchronous queues, the shared admission gate, Metal per-command completion,
-Vulkan native idle, occupied slot reuse and completion-based cleanup.
+Draw is the production scene/material/UI framework over GPU. Both MainLoop run
+overloads initialize its backend internally. Standalone GPU programs construct
+contexts explicitly. GPU code does not depend on draw, scene or UI.
+See [draw](../draw/index.md), [MainLoop](../../architecture/MainLoop_render_draw_gpu.md)
+and [submission tracking](Submission_tracking_and_waitIdle.md).
 
 See [rendering/subresources and transfer](Subresources_and_rendering.md) for
 MRT attachments, explicit views/layouts, capability limits and synchronous IO.

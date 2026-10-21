@@ -1,6 +1,6 @@
 # TemporalAccumulator and camera motion
 
-`<bg2e/draw/pipeline/TemporalAccumulator.hpp>` and `<bg2e/draw/pipeline/MotionVectorGenerator.hpp>` are included by draw/all.hpp. They provide public experimental draw histories independently of FSR's SDK context and private RendererDeferred targets.
+`<bg2e/draw/pipeline/TemporalAccumulator.hpp>` and `<bg2e/draw/pipeline/MotionVectorGenerator.hpp>` are included by draw/all.hpp. They provide public draw histories independently of FSR's SDK context and private RendererDeferred targets.
 
 RendererConfiguration::temporal accepts a compatible shared component. A null value selects the default TemporalAccumulator, enabled with maxFrames=32. RendererDeferred::temporal() exposes controls. Initialize an injected component with TemporalConfiguration containing shaderRoot/prefix, draw.temporal.v1 and a maxHistories budget (default 256). The lifecycle, beginFrame, record, invalidate and availability methods are virtual. Unsupported formats or unavailable kernels produce a raw signal pass-through; no history images are allocated in that path. Histories do not require ray-tracing support.
 

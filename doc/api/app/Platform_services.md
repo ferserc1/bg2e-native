@@ -57,7 +57,12 @@ int result = MessageBox::showWarning(
 
 ## GPUSelectionDialog
 
-`GPUSelectionDialog(appId).run()` presents the available Vulkan devices and
+`GPUSelectionDialog(appId).run(devices)` presents supplied backend-neutral GPU properties and
 returns the selected physical-device properties, or an empty pointer when no
 selection is made.
 
+
+The dialog takes a vector of shared gpu::PhysicalDeviceProperties supplied by the
+caller. It no longer enumerates devices by creating a hidden Vulkan instance/surface.
+Zero devices throws, one returns directly, multiple present the selector; cancel
+returns null. This standalone UI does not change an existing Engine's selected device.

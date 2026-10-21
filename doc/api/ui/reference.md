@@ -58,16 +58,16 @@ exported with `BG2E_API`.
 
 **Header:** `<bg2e/ui/UserInterface.hpp>` · **Guide:** [UserInterface](UserInterface.md)
 
-Owns the ImGui context and its SDL2/Vulkan backends. One instance per
+Owns the ImGui context and its SDL2 platform and Vulkan/Metal GPU adapters. One instance per
 `app::MainLoop` (not copyable, not created by applications).
 
 | Method | Description |
 |--------|-------------|
-| `void init(render::Engine*)` | Creates command pool/buffer, fence, ImGui context + backends, descriptor pool; loads `uiScale` from the `"ui"` preferences; calls `delegate->init()`. |
+| `void init(draw::Engine*)` | Creates the UI context/platform state and GPU backend adapter; loads `uiScale` from the `"ui"` preferences; calls `delegate->init()`. |
 | `void processEvent(SDL_Event*)` | Forwards the event to `ImGui_ImplSDL2_ProcessEvent`. Called by `MainLoop` **after** the input manager. |
-| `void newFrame()` | Applies pending scale changes, starts the ImGui frame, calls the frame override or `delegate->drawUI()`, then `ImGui::Render()`. |
-| `void draw(VkCommandBuffer, VkImageView targetImageView)` | Records the ImGui draw data into `cmd` in its own dynamic-rendering pass over the target (swapchain) image view. |
-| `void cleanup()` | Persists `uiScale` to preferences. Vulkan objects are released through the engine `CleanupManager`. |
+| `void newFrame(gpu::CommandBuffer&, gpu::SurfaceFrame&)` | Applies pending scale changes, starts the ImGui frame, calls the frame override or `delegate->drawUI()`, then `ImGui::Render()`. |
+| `void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&)` | Records UI draw data through the GPU GUI renderer into the supplied surface frame. |
+| `void cleanup()` | Persists `uiScale` to preferences. Releases the GPU adapter, previews and platform/context owners in order. |
 | `void setFrameOverride(std::function<void()>)` | Replaces the delegate's `drawUI()` with `fn` (used by `MainLoop::asyncLoad`). |
 | `void clearFrameOverride()` | Restores the delegate path. |
 | `void setDelegate(std::shared_ptr<UserInterfaceDelegate>)` | Installs the application UI delegate. |
@@ -87,7 +87,7 @@ Application hook invoked by `UserInterface` each frame. Owned as
 
 | Member | Description |
 |--------|-------------|
-| `virtual void init(render::Engine*, UserInterface*)` | One-shot setup after `UserInterface::init()`. Default: empty. |
+| `virtual void init(draw::Engine*, UserInterface*)` | One-shot setup after `UserInterface::init()`. Default: empty. |
 | `virtual void drawUI()` | Draw pass hook. **Default implementation draws `DemoWindow`** — override it. |
 | `uint32_t uiWidth() const` / `uint32_t uiHeight() const` | Current viewport (SDL window) size. `friend app::MainLoop` keeps them updated. |
 
@@ -399,44 +399,13 @@ Static-only table of selectable rows.
 
 ### `TextureWidgets`
 
-**Header:** `<bg2e/ui/TextureWidgets.hpp>` · **Guide:** [TextureWidgets](TextureWidgets.md)
-
-Displays one `render::Texture` slot as ImGui image. Holds a
-`VkDescriptorSet` created via `ImGui_ImplVulkan_AddTexture`.
-
-| Method | Description |
-|--------|-------------|
-| `void setEditTexture(std::shared_ptr<render::Texture>)` | Rebinds the displayed texture **now** (waits for GPU idle when releasing the old descriptor set). Do not call mid-frame. |
-| `void setDeferredTexture(std::shared_ptr<render::Texture>)` | Queues the swap for the next `drawImage`/`imageButton` call (frame-safe). |
-| `void clearTexture()` | Unbinds the texture (descriptor released, waitIdle). |
-| `void drawImage(uint32_t width, uint32_t height, bool sameLine = false)` | Plain image preview. |
-| `bool imageButton(const std::string& id, uint32_t w, uint32_t h, bool sameLine = false)` | Clickable image; returns true on click. No-op (false) while no texture is bound. |
-| `bool selectTexture(const std::string& label, std::function<std::shared_ptr<render::Texture>(base::Texture*)> cb)` | Image-button + file dialog + Clear button row. The callback receives the loaded `base::Texture*` (**takes ownership**, `nullptr` on Clear) and returns the `render::Texture` to display. Returns true when a file was picked. |
-| `void cleanup()` | Releases descriptor + texture references. |
+Use [DrawTextureWidgets](DrawTextureWidgets.md) and [TexturePreview](TexturePreview.md).
+The widget returns path/clear intent for a stopped update; preview owners belong
+to the UI session. The former native texture widget has been retired.
 
 ### `UvMapPreview`
 
-**Header:** `<bg2e/ui/UvMapPreview.hpp>` · **Guide:** [UvMapPreview](UvMapPreview.md)
-
-Embeddable UV1/UV2 mesh preview with a `UvAtlasValidator` result. It retains a
-shared CPU mesh and owns a `render::UvMapPreviewRenderer` plus its displayed
-texture widget.
-
-| Method | Description |
-|--------|-------------|
-| `void init(render::Engine*, uint32_t resolution = 256)` | Creates preview resources; required before `draw()`. |
-| `void setMesh(std::shared_ptr<geo::Mesh>)` / `mesh() const` | Selects and returns the CPU mesh. |
-| `void setUvSet(uint32_t)` / `uvSet() const` | Selects UV1 (`0`) or UV2 (`1`); values above 1 clamp to UV2. |
-| `void setResolution(uint32_t)` / `uint32_t resolution() const` | Sets/reads the render target size. |
-| `void setDisplaySize(uint32_t)` / `displaySize() const` | Sets/reads the square on-screen side length in pixels. |
-| `void refresh()` | Marks the preview and validation report dirty for the next draw. |
-| `void draw()` | Draws the controls, validation result, and image once per UI frame. |
-| `void cleanup()` | Releases UI descriptor and renderer resources before engine destruction. |
-
-The public API does not expose ImGui types; direct ImGui headers and calls stay
-inside engine UI implementation files.
-
----
+Retired; see [current shared API contracts](../../architecture/draw_shared_api_retirement.md).
 
 ## Scene editors
 
@@ -470,23 +439,9 @@ Owns a `ComponentInspector`; component sections are generated from reflection.
 
 ### `MaterialEditor`
 
-**Header:** `<bg2e/ui/MaterialEditor.hpp>` · **Guide:** [Material & Drawable editors](Material_Editors.md)
-
-| Method | Description |
-|--------|-------------|
-| `void setEditMaterial(std::shared_ptr<render::MaterialBase>&)` | Manual mode: replace the edit list with one material. Ignored with a selection manager. |
-| `void addEditMaterial(std::shared_ptr<render::MaterialBase>&)` | Manual mode: append to the multi-edit list. |
-| `void clearMaterial()` | Manual mode: drop the edit target. |
-| `void setSelectionManager(const std::shared_ptr<manipulation::SelectionManager>&)` | Selection-driven mode; installs an `onSelect` hook (first selected drawable + all submesh materials of that drawable). |
-| `std::shared_ptr<render::MaterialBase> editMaterial()` | Main (first) material being edited. |
-| `bool draw()` | Full PBR form; edits are applied to **all** materials of the list. |
-| `void cleanup()` | Releases the six texture widgets. |
-| `void onChanged(std::function<void()>)` | Fired per edited material. |
-
-Sections: Albedo (color, texture, scale, UV set, transparency, refraction),
-Normal (texture, scale, UV), Metallic / Roughness (value, texture, channel,
-invert, scale, UV), Fresnel Tint, Sheen (intensity + color), Ambient
-Occlusion, Light Emission.
+Use [DrawMaterialEditor](Material_Editors.md#drawmaterialeditor) for live draw
+materials with queued weak-target/generation-safe patches. The former class is
+retired. Keep loaded material aliases distinct from CPU material definitions.
 
 ### `DrawableEditor`
 
@@ -610,20 +565,9 @@ preferences context.
 
 ### `RenderSettingsWindow`
 
-**Header:** `<bg2e/ui/RenderSettingsWindow.hpp>` · **Guide:** [Settings windows](Settings_Windows.md)
-
-`Window` subclass, initially closed.
-
-| Method | Description |
-|--------|-------------|
-| `void init(render::RendererDeferred*, render::RenderSettingsPreferences*)` | Binds the deferred renderer and its preferences store; every change is written back to `_prefs` (persisted by the application). |
-
-Sections: final rendering mode (FSR Native AA/upscaling or Direct), live
-indirect-lighting switch and mode (RTAO / RTGI), RT-reflection switch, temporal
-accumulator and denoise filter. Disabling live indirect lighting retains IBL,
-baked lightmaps, direct lighting and direct shadows; disabling RT reflections
-retains environment-map reflections.
-
+The former class is retired. Use `<bg2e/ui/GraphicsSettingsWindow.hpp>` with
+RenderSettingsPreferences. It reads live catalog descriptors and queues validated
+changes at the pre-acquisition boundary. See [settings](../draw/Settings.md).
 
 ## Draw bake previews
 
@@ -631,7 +575,7 @@ retains environment-map reflections.
 bake/UV diagnostic images through the draw UI session. Use
 [bake::UvMapPreviewRenderer](../bake/UvMapPreviewRenderer.md) for CPU UV1/UV2
 inspection and rebind images after geometry/resolution/session changes. Production
-UvMapPreview remains a separate render-compatible widget. Clear draw preview
+The old UvMapPreview widget is removed. Clear draw preview
 handles before UI/Engine teardown; no ImGui/native type enters application code.
 
 ## Draw model editor controls

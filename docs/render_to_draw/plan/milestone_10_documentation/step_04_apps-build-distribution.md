@@ -30,15 +30,15 @@ Perform relevant static checks. Compilation/runtime validation belongs to the pr
 
 ## M05 offscreen CLI source-of-truth
 
-M05's current interim product is `draw_offscreen_application`, with a typed draw
-`OffscreenApplication` overload, explicit backend/settings/resolution/frame
-options, final R8G8B8A8_UNORM output, exact linear camera accumulation and a
-verified no-clobber PNG. Its readback is synchronous and full-subresource; no
-HDR/BGRA/sRGB conversion is supplied by `readPixelsRGBA8`. This is not M06/M07
-complete scene/resource export or M08 batch output. At M10 audit the final
-canonical executable name and docs after M09, settings precedence, exact requested
-sample count, output dimensions/format, failure/overwrite behavior and bundled
-resources against the final source; don't assume the interim target name survives.
+The final canonical camera CLI target is `draw_offscreen_application` under
+`examples/draw/13_offscreen_application`. Document the current
+DrawOffscreenApplicationConfig/Delegate and OffscreenApplication contracts,
+explicit backend/settings/resolution/frame options, final R8G8B8A8_UNORM output,
+exact requested camera accumulation and no-clobber PNG behavior. Readback is
+synchronous and full-subresource; readPixelsRGBA8 supplies no HDR/BGRA/sRGB
+conversion. Audit settings precedence, requested sample count, dimensions,
+failure/overwrite behavior and bundled resources against final source. Complete
+scene/resource export and standalone bake batch output have separate contracts.
 
 
 ## M04-07 reviewed implementation requirement
@@ -51,8 +51,8 @@ M06's source-level package review confirms `draw_model_edit` uses `bundle_app_sd
 and the recursive distribution collector installs registered apps, runtime
 dependencies, shaders and assets. It records no native package launch or feature
 parity execution. Use the [M06 product validation record](../milestone_06_model_edit/product-validation.md)
-as an outstanding evidence list, then replace interim target/resource names only
-after checking the final M09 source and native installed layout.
+as a source of historically unspecified native coverage; audit the final canonical
+names in final-products.tsv and distinguish source layout from executed installation.
 
 ## Current engine preservation requirements — 2026-10-21
 
@@ -74,3 +74,41 @@ package discovery and scripts/templates/main.cpp; binary naming does not implici
 migrate data profiles. Check actual installed/relocated paired draw/bake stages
 and full model sidecars, retaining artifact-inspector and native reload evidence
 limits. M08 source registration is not measured package/backend success.
+
+## M09-05 implemented distribution contracts
+
+Use [the product delivery](../milestone_09_cleanup/products-distribution.md),
+scripts/PACKAGING.md and current CMake/scripts as source. The only registered
+apps are draw_model_edit, draw_bg2e_composer and draw_lightmap_generator; IDs,
+preferences and Composer server behavior are unchanged. Retired examples/GLSL/
+flat compiler frontends must not appear as available instructions. Native GPU/
+ShaderLib custom-example helpers remain supported. Document paired draw/bake
+aggregate targets, unique Metal intermediates, incremental copies, RuntimeShaders
+and authoritative Distribution install resources. Standalone creation now uses
+the deferred template; updates replace headers/library/draw/bake and helper with
+custom resource preservation. Describe actual shell/PowerShell/Xcode paths and
+separate file-presence/static checks from lead-reported launch/package evidence.
+
+## M09-06 final product/verification boundary
+
+Use final-products.tsv and validation-matrix.tsv in M09, with
+[final-product-validation.md](../milestone_09_cleanup/final-product-validation.md).
+The source catalog names 33 registered targets and hashes their C++ inputs.
+Actual native installed/relocated outputs, exported symbols, generated standalone
+projects and decoded artifacts remain lead-owned scenario evidence. Literal
+standalone template substitution and source resource rules establish no launch
+result. Preserve this distinction while auditing the accepted M09-08 guidance.
+
+## Final M09-07 source baseline and handoff
+
+Use [the final review](../milestone_09_cleanup/review.md) and its
+[page inventory](../milestone_09_cleanup/documentation-handoff.tsv). M09-06 and
+its scene/Metal/VMA corrections are accepted by continuation. Production is
+`bg2e::draw`; GPU is its low-level backend abstraction. Retired render APIs and
+old application targets have no compatibility promise. The source catalog lists
+33 products; native scenario/backend/performance coverage remains unspecified.
+M09-08 authors the complete cumulative maintained documentation before M10.
+M10 audits that delivered documentation and makes localized corrections; do not
+defer missing API, tutorial, build or application authoring to this milestone.
+
+Audit draw_model_edit, draw_bg2e_composer and draw_lightmap_generator under apps/draw; draw_offscreen_application remains the camera render example. Keep configuration identities and import server protocols. Verify paired draw/bake shader trees, optional FFX/SMAA, standalone deferred default, updater scope and native SDK/runtime copies against current scripts. Reused output directories do not imply purging stale flat artifacts. Creator/package/launch behavior is source-reviewed unless lead execution evidence specifies otherwise.

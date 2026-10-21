@@ -19,10 +19,10 @@
 #pragma once
 
 #include <bg2e/common.hpp>
-#include <bg2e/scene/Drawable.hpp>
+#include <bg2e/draw/Drawable.hpp>
 #include <bg2e/ui/SelectableList.hpp>
 #include <bg2e/manipulation/SelectionManager.hpp>
-#include <bg2e/manipulation/PickSelectionVisitor.hpp>
+#include <bg2e/manipulation/PickKind.hpp>
 
 #include <vector>
 #include <string>
@@ -41,8 +41,8 @@ class BG2E_API SubmeshSelector {
     void init(std::shared_ptr<manipulation::SelectionManager> sm);
 
     // Returns the first drawable item available in the SelectionManager
-    std::shared_ptr<scene::Drawable> editDrawable();
-    std::shared_ptr<scene::Drawable> editDrawable() const;
+    std::shared_ptr<draw::Drawable> editDrawable();
+    std::shared_ptr<draw::Drawable> editDrawable() const;
 
     // Returns the index of the first submesh selected or -1 if any
     int32_t selectedItem() const;

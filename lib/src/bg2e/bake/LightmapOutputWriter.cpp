@@ -157,7 +157,7 @@ std::string sceneSignature(scene::Node* root, draw::Engine& engine, draw::Render
             append(s, c->ignoreSerialization());
             if (auto component = dynamic_cast<scene::DrawableComponent*>(c.get()))
             {
-                if (const auto d = component->drawDrawable())
+                if (const auto d = component->drawable())
                 {
                     append(s, d.get());
                     append(s, d->mesh().get());
@@ -466,7 +466,7 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
                         }
                     }
                 }
-                if (auto d = dc->drawDrawable())
+                if (auto d = dc->drawable())
                 {
                     for (uint32_t i = 0; i < d->submeshesCount(); ++i)
                     {
@@ -497,11 +497,11 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
     {
         const auto& t = targets[i];
         if (t.identity.empty() || !identities.insert(t.identity).second || !t.node ||
-            t.node->sceneRoot() != s.root.get() || !t.node->drawable() || !t.node->drawable()->drawDrawable())
+            t.node->sceneRoot() != s.root.get() || !t.node->drawable() || !t.node->drawable()->drawable())
         {
             throw std::invalid_argument("Bake output: duplicate identity or invalid scene target");
         }
-        const auto drawable = t.node->drawable()->drawDrawable();
+        const auto drawable = t.node->drawable()->drawable();
         if (!drawable->isLoaded() || !drawable->mesh() || !drawable->drawMesh() ||
             !sameGeometry(*drawable->mesh(), drawable->drawMesh()->meshData()))
         {
@@ -653,7 +653,7 @@ void LightmapOutputWriter::write(const LightmapPixels& pixels, const std::string
     }
     if (out.modelPath)
     {
-        auto drawable = it->node->drawable()->drawDrawable()->clone();
+        auto drawable = it->node->drawable()->drawable()->clone();
         auto texture = std::make_shared<base::Texture>(image);
         texture->setColorType(base::Color::TypeLinear);
         for (uint32_t i = 0; i < drawable->submeshesCount(); ++i)

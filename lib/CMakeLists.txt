@@ -93,17 +93,8 @@ if(APPLE)
     )
 endif()
 
-set(SRC_SHADER_DIR "${CMAKE_SOURCE_DIR}/shaders/src/glsl")
+# Canonical engine libraries: retain relative draw/bake paths on both backends.
 set(DST_SHADER_DIR "${PRODUCT_DIR}/shaders")
-compile_shaders(
-    ${BG2E_TARGET_NAME}
-    ${VULKAN_SDK}
-    ${SRC_SHADER_DIR}
-    ${DST_SHADER_DIR}
-)
-
-# Keep new draw/bake libraries separate from the production shader directory contents.
-# Existing app resource bundling copies BG2E_SHADER_DIR recursively.
 compile_paired_shader_tree(
     ${BG2E_TARGET_NAME}
     "${VULKAN_SDK}"

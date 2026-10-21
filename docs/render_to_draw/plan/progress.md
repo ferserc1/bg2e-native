@@ -9,26 +9,53 @@ This is the execution record for all implementation chats. The **Next step to im
 | Field | Value |
 |---|---|
 | Workflow state | `awaiting_project_lead` |
-| Current milestone | M08 — Standalone lightmap_generator on draw/bake |
-| Active step | M08-07 — Cumulative implementation documentation |
-| Last implemented step | M08-07 — Cumulative implementation documentation |
-| Last accepted step | M08-06 — accepted by project lead continuation instruction |
-| Awaiting project lead validation | M08-07 maintained documentation/source/snippet coverage; native backend/scenario details remain unspecified |
-| Next step to implement | [M09-01 — Actual dependency inventory and deletion manifest](milestone_09_cleanup/step_01_retirement-manifest.md) |
+| Current milestone | M09 — Remove render and promote draw to production |
+| Active step | M09-08 — Update cumulative implementation documentation |
+| Last implemented step | M09-08 — Update cumulative implementation documentation |
+| Last accepted step | M09-07 — accepted by project lead continuation instruction |
+| Awaiting project lead validation | M09-08 cumulative documentation |
+| Next step to implement | [M10-01 — Documentation inventory](milestone_10_documentation/step_01_documentation-inventory.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Project lead accepts M08-07 documentation closure or requests a correction; then M09-01 refreshes the actual manifest before deletion. |
-| Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
+| Condition before starting | Await M09-08 acceptance; continuation accepts documentation/milestone closure and selects M10-01. |
+| Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; current M09-01 entry HEAD `1889bdb12ade85d820eaab4a7365760fa9c34f50`, clean checkout. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
 
-Latest delivery: [M08-07 documentation coverage](milestone_08_lightmap_generator/documentation.md).
-M08-06 is accepted by continuation; compilation/checks assumed successful under
-the convention, backend/scenario detail unspecified. Nine new and twenty-two
-updated maintained pages describe delivered standalone APIs, generic DB IO,
-model/prefab tutorial, full CLI/config/deployment and ownership/publication.
-Stale availability/save instructions are corrected; production/new API scopes and
-native/synthetic evidence remain separate. No source/CMake/shader change or engine
-execution occurred. M09 has not started; its first task is the actual manifest.
+Latest delivery: [M09-08 cumulative documentation](milestone_09_cleanup/documentation.md).
+M09-07 accepted by continuation. Final maintained set: 229 pages, 1,870 checked
+local links/anchors and 111 project include occurrences; no audit errors.
+All 1,327 implementation/profiling files are preserved. No compilation/runtime.
+M09-08 awaits acceptance before M10-01. Older delivery paragraphs are historical.
+
+Latest delivery: [M09-07 final production API review](milestone_09_cleanup/review.md).
+All 1,620 original manifest paths are reconciled; all planned removals are absent.
+The 232-page handoff assigns cumulative authoring to M09-08 and localized auditing
+to M10. Final/native/product source audits pass; no compilation/runtime execution.
+M09-06 including scene/Metal/VMA corrections is accepted by continuation; native
+scenario/backend details remain unspecified. Older pending statements below are
+historical and superseded by this acceptance.
+
+Latest delivery: [M09-06 final product validation and build corrections](milestone_09_cleanup/final-product-validation.md).
+Lead next reported unresolved VMA functions at shared-library link. Restored the
+sole VMA implementation block from the removed render wrapper into existing
+gpu/vk/Device.cpp, preserving diagnostics/logging. No CMake change or agent build;
+complete build/link validation remains pending.
+The relocated Metal GUI source now enables IMGUI_IMPL_METAL_CPP locally before
+its backend header, correcting four undeclared functions reported by the lead.
+No CMake/vendor/public-header change; compilation remains lead-owned.
+Lead reported a macOS arm64 Clang failure: countSceneNodes was missing from
+db/scene.cpp after shared API cleanup. Restored the neutral recursive helper;
+source audits refreshed with validation-corrections.tsv. Agent compilation was
+not performed; correction awaits lead validation. The following paragraph records
+the original source-only delivery before this correction.
+M09-05 is accepted by continuation; compilation/checks assumed successful under
+the convention, backend/scenario details unspecified. Source checks cover 1,210
+runtime/build/profiling files, 317 public headers and 11 umbrella roots reaching
+255 headers; 33 targets and 33 source-backed validation rows are cataloged.
+Four delta ledgers reconcile 592 paths, including 440 absent files. No engine,
+app, fixture, shader, CMake, template or product script changed. No configure,
+compilation, native/test/package/standalone execution or binary/artifact inspection
+occurred. M09-07 reviews the final API/evidence before M09-08 documentation.
 
 M01-01 accepted by project lead continuation; compilation/checks assumed successful under the agreed convention. Backend/scenario coverage not specified. M01-02 accepted by project lead continuation; compilation/checks assumed successful, backend coverage unspecified. M01-03, including the Metal warning correction, accepted by project lead continuation; coverage unspecified. M01-04 accepted by project lead continuation; compilation/checks assumed successful, backend/deployment coverage unspecified. M01-05 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-06 accepted by continuation after the lead corrected compilation issues; backend coverage unspecified. M01-07 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-08 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-09 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-10 accepted after lead compilation corrections; irradianceImage rename and explicit CommandBuffer include reviewed as behavior-preserving. M01-11 accepted by continuation; compilation/checks assumed successful, backend coverage unspecified. M01-12, including its type-validation correction, accepted by project lead continuation instruction; backend coverage unspecified. M01-13 accepted by project lead continuation instruction; backend coverage unspecified. M01-14 accepted by project lead continuation after adding virtual Window destructor; backend coverage unspecified. M01-15 accepted by project lead continuation instruction; backend/scenario coverage unspecified. M01 HDR correction explicitly validated; transparency remains deferred. M01-16 explicitly validated by the lead and M01-17 documentation closed with separate validation waived. M02-01 accepted by lead continuation; lead reports validation through this state on macOS Metal and Linux Vulkan. Chronological handoffs below preserve earlier states.
 
@@ -50,6 +77,8 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 
 | Step and plan link | State | Implementation revision / working-tree scope | Agent static checks | Project lead validation / acceptance basis | Issues and handoff |
 |---|---|---|---|---|---|
+| [M09-08](milestone_09_cleanup/step_08_documentation.md) | `awaiting_project_lead` | Maintained documentation, page dispositions/audit and handoff; no runtime/CMake edits. | 229 pages, 1,870 links/anchors, 111 includes; 1,327 implementation hashes unchanged. | Pending; prior M09-07 accepted by continuation. | [documentation.md](milestone_09_cleanup/documentation.md); next M10-01. |
+| [M09-07](milestone_09_cleanup/step_07_review.md) | `accepted` | Review, 1,620-row retirement reconciliation, 232-page handoff and pending M09-08/M10 plan updates; source unchanged. | Final/native/product source audits, original-manifest reconciliation and 1,327 preservation hashes. No build/runtime execution. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | [review.md](milestone_09_cleanup/review.md); next M09-08. |
 | [M01-01](milestone_01_deferred_renderer/step_01_public-contracts.md) | `accepted` | Baseline `b955833f314d09a191de13b83c90cacc10666ae7` plus existing planning edits; new Renderer.hpp, pipeline/RenderLayer.hpp, environment/all.hpp, draw/all.hpp includes and contracts.md. Uncommitted. | Include/dependency, signatures, ownership and FrameContext call-site inspection; `git diff --check`. No builds/runtime tests. | Accepted by project lead continuation instruction; backend coverage unspecified. | Shared component ownership, borrowed per-call bindings, single-sample contracts and validated virtual dispatch; see contracts.md. |
 | [M01-02](milestone_01_deferred_renderer/step_02_gpu-rendering-primitives.md) | `accepted` | Baseline `b955833f314d09a191de13b83c90cacc10666ae7` plus preserved planning/M01-01 edits. Common/GraphicsPipeline/CommandBuffer/PhysicalDevice/Device/Image headers; Vulkan and Metal implementations, Vulkan extension loading, new gpu/Rendering.cpp and tests/gpu/mrt_probe fixtures. Uncommitted. | Diff/signatures/ownership/callers, every PixelFormat mapping, Metal vendor-header API spellings, block balance and no higher-level GPU includes; `git diff --check`. No builds, shader compilation or runtime execution. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | See gpu-rendering-primitives.md. Probe requires manual linking; CMake untouched. New attachment path is single-level 2D until M01-03. |
 | [M01-03](milestone_01_deferred_renderer/step_03_gpu-subresources.md) | `accepted` | Baseline `b955833f314d09a191de13b83c90cacc10666ae7` plus preserved earlier uncommitted work. New gpu/Image.cpp, generic ranges/views/transfer APIs, both native image/command/resource-set implementations, Rendering.cpp, samplers/capabilities and Vulkan presentation usage forwarding; example 06 and expanded manual probe. Uncommitted. | Signatures/callers, mip/layer bounds/layouts, cached-view lifetime, staging/command completion, Metal vendor-header spellings, block/conditional/whitespace/dependency checks, local links and `git diff --check`. No compilation/shader compilation/C++ probes/runtime execution. | Accepted by project lead continuation instruction after the Metal warning correction; coverage unspecified. | See gpu-subresources.md and tests/gpu/subresources/README.md. No CMake edits in M01-03. Accepted after the Metal warning correction. |
@@ -148,6 +177,17 @@ The project lead reported a Metal deprecation warning in M01-03. The texture usa
 - Maintain the explicit next-step link/action/condition at each handoff. The project lead can reference index.md and progress.md and simply request the next step. The last milestone review step is required and updates all affected pending milestones.
 
 Future entries should record actual interfaces/paths/decisions and pending-plan changes needed by the next chat. Do not use this section to keep disconnected configuration values or replace architecture-decisions.md.
+
+| [M09-01](milestone_09_cleanup/step_01_retirement-manifest.md) | `accepted` | HEAD 1889bdb plus inventory/manifest artifacts and plan handoff. | Source/path/hash/include/reference/Markdown checks; no build/native run. | Accepted by project lead continuation instruction; backend/scenario details unspecified. | Historical snapshot retained; M09-02 supplies explicit retirement delta. |
+| [M09-02](milestone_09_cleanup/step_02_canonical-entrypoints.md) | `accepted` | Canonical app/window/headless contracts, retired app/native adapter files and registrations, ported input fixture, maintained entrypoint docs and entrypoint-changes.tsv. Uncommitted over inherited M09-01 work. | Retained offscreen lifecycle equivalence; unchanged draw frame/cleanup and app identities; 14 source GPL/include/delimiter reviews; supported reference/registration, docs/hash/whitespace checks. No compile/runtime. | Accepted by project lead continuation instruction; backend/scenario details unspecified. | M09-03 next; shared/native cleanup, full templates/packages and namespace retirement remain pending. |
+
+| [M09-03](milestone_09_cleanup/step_03_shared-api-cleanup.md) | `accepted` | Inherited M09-01/02 preserved; shared schema/scene/DB/utils/tools/UI cleanup, public bake export, dependent native renderer retirements, fixtures/docs and shared-api-changes.tsv. Uncommitted. | 109-source GPL/include/delimiter/style review; 273 protected files byte-identical; 40 parser/clone/save functions unchanged modulo accessor/whitespace; shared API/member/include and docs/hash checks. No build/runtime. | Accepted by project lead continuation instruction; backend/scenario details unspecified. | M09-04 next: 23 remaining render files, noise relocation and native UI/platform confinement; full test/distribution validation remains lead-owned. |
+
+| [M09-04](milestone_09_cleanup/step_04_native-render-deletion.md) | `accepted` | Inherited work preserved; final render retirement, exact noise relocation, native GUI/window GPU bridges, source ledger/audit and docs. Uncommitted. | 704 supported-source checks, 41 delta hashes, 18 GPL/delimiter reviews, 16 native methods preserved, 308 protected files unchanged; graph/data/docs/whitespace checks. No build/runtime. | Accepted by project lead continuation instruction; backend/scenario details unspecified. | M09-05 next; see native-retirement.md for contracts, lifecycle checks and remaining distribution/test work. |
+
+| [M09-05](milestone_09_cleanup/step_05_targets-tests-packages.md) | `accepted` | Inherited work preserved; 173 retired files, five CMake repairs, canonical standalone template/scripts, extended registered probes and product ledger/audit/docs. Uncommitted. | 190 delta hashes, 1,205 runtime/build/script files, 33 resolved registrations, 292 paired outputs/290 include edges, 707 native-boundary files, protected source hashes, GPL/includes/style, shell parse and whitespace/docs checks. No build/native/product script execution. | Accepted by project lead continuation instruction; backend/scenario details unspecified. | M09-06 next; see products-distribution.md and probe-dispositions.tsv for retained coverage, contract differences and validation limits. |
+
+| [M09-06](milestone_09_cleanup/step_06_final-product-validation.md) | `accepted` | Final source/umbrella/API/product catalogs, audit tooling, 33-scenario matrix, compatibility/ownership report and pending-plan handoff; inherited runtime work untouched. Uncommitted. | 1,210 source files, 317 public headers/11 roots/255 reachable, 33 targets, 592 reconciled delta paths; existing product/native audits, unchanged 1,327-file snapshot, source paths/docs/whitespace checks. No build/native/product/artifact execution. | Corrected delivery accepted by project lead continuation instruction, including scene counter, Metal declarations and VMA linking fixes; backend/scenario coverage unspecified. | M09-07 next; final-product-validation.md distinguishes source checks, source declaration/export clues and actual native/binary/round-trip evidence. |
 
 ## Chronological history
 
@@ -2696,3 +2736,156 @@ Earlier ten synthetic inspector tests retain their original M08-05 scope; no
 backend/hardware execution detail is invented. Updated review closure, M09/M10
 coverage handoffs and progress. M08-07 awaits lead acceptance; M09-01 inventory is
 linked next and M09 deletion/promotion has not started.
+
+## 2026-10-21 — M08-07 accepted; M09-01 manifest delivered
+
+The lead requests the next step, accepting M08-07 cumulative documentation under
+the continuation convention; compilation/checks assumed successful, backend and
+scenario coverage unspecified. Actual entry HEAD is
+1889bdb12ade85d820eaab4a7365760fa9c34f50 with a clean working tree.
+
+Created a reproducible tracked-source inventory and per-file remove/migrate/keep/
+relocate manifest: 1620 files, all 1338 historical M08 candidates plus 282 newly
+covered files; 364 files with expanded direct legacy signals, 4329 resolved
+lexical includes and 6365 reference/native/registration evidence rows. Per-source
+hashes, incoming consumers and M08 disposition comparison preserve reviewability.
+This is not a semantic graph or executable deletion list. Shader include resolution
+respects each paired tree rather than confusing same-name legacy/draw helpers.
+
+Recorded ordered replacements for shared scene/DB/UI/manipulation/app APIs,
+umbrellas, old apps/examples/tests, native ImGui/device-selection/SDL seams,
+shader/package/template consumers and blue-noise data relocation. Selected final
+DrawableComponent::drawable() for draw objects, sole draw renderDelegate(), draw
+MainLoop defaults, retained typed DrawOffscreen names and current draw_* targets/
+stored identities. Neutral DrawableRegistry/CPU atlas/input/IO/data behavior,
+author assets, SDK/native backends, SMAA bytes/licenses and R01–R14 survive.
+
+Updated M09-02–05 and summary/index with concrete ownership and M08 documentation/
+P01–P11 evidence boundaries. Static source/declaration/build/resource/template,
+manifest coverage/paths/hashes/endpoints, Python syntax, links/fences and whitespace
+checks only. No C++/shader/CMake/app behavior change, source deletion, configure,
+build, fixture, package, GPU/native run or measured performance result. M09-01
+awaits lead validation; M09-02 is linked next and has not been implemented.
+
+## 2026-10-21 — M09-01 accepted; M09-02 canonical entrypoints delivered
+
+Lead continuation accepts M09-01; compilation/checks assumed successful, backend/
+scenario details unspecified. HEAD remains 1889bdb12ade85d820eaab4a7365760fa9c34f50
+with inherited uncommitted M09-01 artifacts preserved.
+
+MainLoop defaults now use draw EngineConfig; Application stores only a draw graphics
+delegate under renderDelegate. Explicit backend overrides remain. Removed production
+window execution and offscreen config/delegate/mode/native branch, retaining the
+existing draw init/run/completion/cleanup sequence. Retired the old render offscreen
+adapter pair/export to close its dependency on removed app types. No forwarding shim.
+
+Removed 53 old app implementation/build/shader files and app registrations. Retired
+legacy example registrations required by removed app contracts; their sources await
+M09-05. Surviving draw/gpu products keep names/resources/preferences/config/import
+identities. Ported the existing registered input display to draw and ordinary run.
+Only app/example registration CMake changes required by the selected step; no root/
+lib/platform/package/shader build rules changed.
+
+Eleven maintained entrypoint/reference/architecture/tutorial pages updated; offscreen
+probe guide uses surviving products. A 73-row before/after source/build hash ledger
+records actual modifications/removals; historical M09-01 TSVs preserved and generator
+allows explicitly recorded missing files. Static 14-file GPL/include/delimiter and
+structural style review, retained lifecycle equivalence, unchanged draw frame/cleanup
+and app identity comparison, supported reference/registration, docs/hash/whitespace
+checks only. No configure/build, shader compiler, native/test/app/package execution
+or measured result. R01–R14 and P01–P11 remain protected.
+
+Actual contract, removal-order refinements and lead checklist are in entrypoints.md.
+M09-02 awaits validation; M09-03 shared API cleanup is linked next.
+
+## 2026-10-21 — M09-02 accepted; M09-03 shared APIs delivered
+
+Lead continuation accepts M09-02; compilation/checks assumed successful, native
+backend/scenario coverage unspecified. HEAD remains
+1889bdb12ade85d820eaab4a7365760fa9c34f50 with inherited uncommitted inventory and
+entrypoint changes preserved.
+
+Shared scene/factory/DB/utils/manipulation/UI APIs now use draw resources only.
+DrawableComponent::drawable and canonical weak selection/gizmo accessors replace
+dual storage/modes. CPU schema/default constructors, root transfer/independent
+clones/projections, chains, helper exclusion, selected environment, bounds and
+ordinary visitors remain. Explicit reference IO and checked bool-noexcept complete
+resource saves remain distinct. Specialized DB output/native widgets and scene
+resources/bindings/visitors are retired; root all.hpp exports bake.
+
+The delta has 107 modified/187 removed/two added code files. 153 removed rendering
+consumers close dependencies on retired scene APIs, moving only that closure
+forward; 23 render/native files remain M09-04. Generic UI lifecycle no longer has
+production callbacks/closures; native ImGui/SDL and standalone selector OpenGL
+confinement remain next. GPUSelectionDialog accepts explicit generic GPU properties.
+Registered UV/bake targets reuse public probes with canonical windowless ownership;
+original fixture-specific coverage comparison remains M09-05/06. No CMake, package
+implementation, shader/ABI, material policy or new rendering algorithm changes.
+
+Updated 25 maintained pages and added two current API/ownership pages, plus probe
+guides. Static 109-file source style/license/include/delimiter checks, 273 protected
+GPU/base/draw byte comparisons, 40 CPU/parser/clone/complete-save function comparisons,
+retired-symbol/public-native/member/include checks, delta hashes and docs/whitespace
+checks only. No configure/build, shader compiler, fixture/app/GPU/package or timing
+execution. R01–R14 and P01–P11 evidence limits remain explicit.
+
+Actual contracts, source/data compatibility boundaries and lead matrix are in
+shared-api.md. M09-03 awaits validation; M09-04 is linked next and has not started.
+
+
+M09-04 delivery: M09-03 accepted by project lead continuation instruction with
+backend/scenario coverage unspecified. Native confinement and final render source
+retirement implemented; source checks only. M09-04 awaits lead validation and
+M09-05 is the linked successor.
+
+
+M09-05 delivery: M09-04 accepted by project lead continuation instruction with
+backend/scenario coverage unspecified. Canonical examples/shaders/standalone/
+distribution and registered regression ports implemented; source checks only.
+M09-05 awaits lead validation; M09-06 is the linked successor.
+
+
+M09-06 delivery: M09-05 accepted by project lead continuation instruction with
+backend/scenario coverage unspecified. Final source gate and concrete native
+regression handoff delivered; no runtime or build-system changes. M09-06 awaits
+lead acceptance; M09-07 technical review is next, followed by M09-08 documentation.
+
+
+M09-06 build correction: lead-reported macOS arm64 Clang failure in db/scene.cpp
+(countSceneNodes undeclared; JSON conversion diagnostic was cascading). Restored
+the original neutral recursive node-count helper before saveSceneReferences;
+no API/CMake/format change. Historical deltas retained, correction hash chain and
+final source evidence updated. Static checks only; correction awaits lead validation.
+Next step remains M09-07, not started.
+
+
+M09-06 second build correction: relocated gpu/metal/GuiRenderer.cpp lacked the
+IMGUI_IMPL_METAL_CPP definition formerly supplied to the UI source only. Enabled
+Metal-cpp declarations locally under the macOS guard; vendor implementation already
+has matching C++/ARC build flags. Vulkan declarations do not need that opt-in.
+Correction ledger/native/final source audits updated; no compile/native execution.
+Scene counter and Metal GUI corrections await lead validation; M09-07 stays next.
+
+
+M09-06 third build correction: lead's arm64 shared-library link lacked VMA
+implementation functions. Retirement had deleted the sole VMA_IMPLEMENTATION
+owner. Moved its unchanged implementation/configuration block to global scope in
+existing gpu/vk/Device.cpp. No new source registration/CMake or public API change.
+Native audit now checks exactly one VMA implementation owner; correction hashes
+and final source evidence refreshed. No compiler/linker execution by agent.
+M09-06 corrections await full build validation; M09-07 stays next.
+
+### M09-07 — Final production review delivery
+
+Reconciled final public contracts and retirement evidence, updated all six M10
+steps and cumulative M09-08 authoring handoff. Original evidence snapshots and
+inherited implementation remain preserved. M09-06 corrections accepted by lead
+continuation; exact scenario coverage unspecified. M09-07 awaits validation.
+
+### M09-08 — Cumulative documentation delivery
+
+M09-07 accepted by continuation. Updated API/tutorial/app/concept/build/navigation
+guidance to final production draw/bake, retired obsolete render reference pages,
+added final migration/product/extension coverage and reconciled every page hash.
+Static checks passed without build/runtime execution. Await lead acceptance,
+then enter M10-01 final documentation inventory audit.

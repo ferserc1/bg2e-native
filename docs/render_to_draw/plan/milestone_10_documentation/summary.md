@@ -99,3 +99,26 @@ bool-noexcept save behavior and final-manifest/native HDR semantics. Audit its
 final post-M09 mappings alongside M01–M09 coverage rather than postponing standalone
 authoring. The source review's original gap is closed by delivered documentation,
 not transformed into native backend/package/performance evidence.
+
+## Final M09-07 source baseline and handoff
+
+Use [the final review](../milestone_09_cleanup/review.md) and its
+[page inventory](../milestone_09_cleanup/documentation-handoff.tsv). M09-06 and
+its scene/Metal/VMA corrections are accepted by continuation. Production is
+`bg2e::draw`; GPU is its low-level backend abstraction. Retired render APIs and
+old application targets have no compatibility promise. The source catalog lists
+33 products; native scenario/backend/performance coverage remains unspecified.
+M09-08 authors the complete cumulative maintained documentation before M10.
+M10 audits that delivered documentation and makes localized corrections; do not
+defer missing API, tutorial, build or application authoring to this milestone.
+
+Audit the complete page inventory against the final review contract table, all 33 products and R01–R14. Require M09-08 documentation.md coverage evidence before starting. Preserve foundation/math/json/reflection/input pages after review; retirement is not permission to delete independent documentation.
+
+## Delivered M09-08 audit baseline
+
+Audit [the completed documentation handoff](../milestone_09_cleanup/documentation.md),
+documentation-dispositions.tsv and documentation-audit.json. The final set has
+229 pages, with a complete supported-product catalog and new production migration,
+build/resource, performance and public extension references. Reconcile every
+disposition and localized source/wording issue; no bulk authoring is deferred here.
+Entry requires M09-08 acceptance under the continuation convention.

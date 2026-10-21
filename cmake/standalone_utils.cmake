@@ -299,8 +299,11 @@ function(standalone_bundle_app)
         )
     endif()
 
-    # Engine shaders
-    bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH "${BG2E_ROOT}/shaders" SUBPATH "shaders")
+    # Copy only the canonical engine trees; retain custom app shader resources.
+    foreach(TREE IN ITEMS draw bake)
+        bundle_resources(TARGET_NAME ${BL_TARGET_NAME}
+            SRC_PATH "${BG2E_ROOT}/shaders/${TREE}" SUBPATH "shaders/${TREE}")
+    endforeach()
 
     # Assets
     bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH "${BG2E_ROOT}/assets" SUBPATH "assets")

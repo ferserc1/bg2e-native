@@ -21,103 +21,49 @@
 
 #include <bg2e/ui/SelectableList.hpp>
 
-#include <bg2e/gpu/vk/Instance.hpp>
 #include <bg2e/ui/Text.hpp>
 
 #include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
-#include <SDL2/SDL_opengl.h>
+#include <bg2e/gpu/StandaloneGuiWindow.hpp>
 
 #include <imgui.h>
-#include <imgui_impl_sdl2.h>
-#include <imgui_impl_opengl3.h>
 
 #include <vector>
-#include <iostream>
+#include <stdexcept>
 
 #include <bg2e/app/PreferencesStore.hpp>
 
 namespace bg2e::app {
 
-void getAvailableDevices(std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>>& result)
-{
-    if (SDL_Init(SDL_INIT_VIDEO) != 0)
+namespace {
+// The bridge is destroyed first, while this context is still current.
+struct GuiContextScope {
+    ImGuiContext* previous = ImGui::GetCurrentContext();
+    ImGuiContext* context = nullptr;
+
+    GuiContextScope()
     {
-        throw std::runtime_error("GPUSelectorDialog: Error initializing SDL");
+        IMGUI_CHECKVERSION();
+        context = ImGui::CreateContext();
+        ImGui::SetCurrentContext(context);
     }
-
-    SDL_Window* dummyWindow = SDL_CreateWindow(
-        "bg2e_dummy",
-        SDL_WINDOWPOS_UNDEFINED,
-        SDL_WINDOWPOS_UNDEFINED,
-        1, 1,
-        SDL_WINDOW_VULKAN | SDL_WINDOW_HIDDEN);
-
-    if (!dummyWindow)
+    ~GuiContextScope()
     {
-        SDL_Quit();
-        throw std::runtime_error("GPUSelectorDialog: Error creating dummy SDL Window");
+        ImGui::DestroyContext(context);
+        ImGui::SetCurrentContext(previous);
     }
-
-    gpu::vk::Instance instance;
-    instance.create(dummyWindow);
-
-    render::vulkan::Surface surface;
-    surface.create(instance.vkInstanceHnd(), dummyWindow);
-
-    // TODO: Get devices
-    render::vulkan::PhysicalDevice::listSuitableDevices(instance.vkInstanceHnd(), surface, result);
-    surface.cleanup();
-    instance.cleanup();
-
-    SDL_DestroyWindow(dummyWindow);
-    dummyWindow = nullptr;
-
-    SDL_Quit();
+};
 }
 
-std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
-    const std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>>& devices)
+std::shared_ptr<gpu::PhysicalDeviceProperties> showDeviceSelectorUI(
+    const std::vector<std::shared_ptr<gpu::PhysicalDeviceProperties>>& devices)
 {
-    if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) != 0)
-    {
-        throw std::runtime_error("GPUSelectorDialog: Error initializing SDL");
-    }
-
-#ifdef BG2E_IS_MACOS
-    const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
-#else
-    const char* glsl_version = "#version 130";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 0);
-#endif
-
-    uint32_t windowWidth = 300;
-    uint32_t windowHeight = 200;
-
-    SDL_Window* window = SDL_CreateWindow(
-        "Select GPU Device",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        windowWidth,
-        windowHeight,
-        SDL_WINDOW_OPENGL | SDL_WINDOW_ALLOW_HIGHDPI);
-
-    SDL_GLContext glContext = SDL_GL_CreateContext(window);
-    SDL_GL_SetSwapInterval(1); // Enable vsync
-
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
+    GuiContextScope guiContext;
+    const uint32_t windowWidth = 300;
+    const uint32_t windowHeight = 200;
+    gpu::StandaloneGuiWindow window("Select GPU Device", {windowWidth, windowHeight});
     ImGuiIO& io = ImGui::GetIO();
-
     ImGui::StyleColorsDark();
-
-    ImGui_ImplSDL2_InitForOpenGL(window, glContext);
-    ImGui_ImplOpenGL3_Init(glsl_version);
 
     // Load and apply UI scale
     // TODO: Refactor UI Scale apply (bg2e::ui::UserInterface::updateScale())
@@ -142,7 +88,7 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
         SDL_Event event;
         while (SDL_PollEvent(&event))
         {
-            ImGui_ImplSDL2_ProcessEvent(&event);
+            window.processEvent(event);
             if (event.type == SDL_QUIT)
             {
                 running = false;
@@ -150,8 +96,7 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
         }
 
         // Initialize frame imgui
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplSDL2_NewFrame();
+        window.prepareFrame();
         ImGui::NewFrame();
 
         // TODO: Refactor this into UI helpers
@@ -195,28 +140,14 @@ std::shared_ptr<render::vulkan::PhysicalDeviceProperties> showDeviceSelectorUI(
         ImGui::End();
 
         ImGui::Render();
-        glViewport(0, 0, static_cast<int>(io.DisplaySize.x), static_cast<int>(io.DisplaySize.y));
-        glClearColor(0.1f, 0.1f, 0.1f, 1.00f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-        SDL_GL_SwapWindow(window);
+        window.present();
     }
 
-    std::shared_ptr<render::vulkan::PhysicalDeviceProperties> result;
+    std::shared_ptr<gpu::PhysicalDeviceProperties> result;
     if (accepted && selectedDevice < devices.size())
     {
         result = devices[selectedDevice];
     }
-
-    // Cleanup
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplSDL2_Shutdown();
-    ImGui::DestroyContext();
-
-    SDL_GL_DeleteContext(glContext);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
 
     return result;
 }
@@ -226,16 +157,13 @@ GPUSelectionDialog::GPUSelectionDialog(const std::string& appId)
 {
 }
 
-std::shared_ptr<render::vulkan::PhysicalDeviceProperties> GPUSelectionDialog::run()
+std::shared_ptr<gpu::PhysicalDeviceProperties> GPUSelectionDialog::run(const std::vector<std::shared_ptr<gpu::PhysicalDeviceProperties>>& devices)
 {
-    std::vector<std::shared_ptr<render::vulkan::PhysicalDeviceProperties>> devices;
-    std::shared_ptr<render::vulkan::PhysicalDeviceProperties> result;
-
-    getAvailableDevices(devices);
+    std::shared_ptr<gpu::PhysicalDeviceProperties> result;
 
     if (devices.size() == 0)
     {
-        throw std::runtime_error("No Vulkan capable devices found");
+        throw std::runtime_error("No suitable GPU devices supplied");
     }
     else if (devices.size() == 1)
     {

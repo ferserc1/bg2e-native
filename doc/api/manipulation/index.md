@@ -2,10 +2,10 @@
 
 **Namespace:** `bg2e::manipulation`
 
-The manipulation module provides scene selection and viewport tools. Its
-selection and gizmo types have separate production (`bg2e::render`) and
-experimental (`bg2e::draw`) execution modes. Construct them with the engine
-that owns the target scene; do not mix resources between modes.
+The manipulation module provides draw scene selection and viewport tools.
+Construct tools with the draw Engine owning the target resources; native production
+overloads, PickSelectionVisitor and temporary mode discriminators are removed.
+PickKind remains a neutral public enum in PickKind.hpp.
 
 ## Main types
 
@@ -14,10 +14,10 @@ that owns the target scene; do not mix resources between modes.
 | [`SelectionManager`](reference.md#selectionmanager) | `<bg2e/manipulation/SelectionManager.hpp>` | Picking, typed submesh selection, selection queries and transform-input capture. |
 | [`GizmoComponent`](reference.md#gizmocomponent) | `<bg2e/manipulation/GizmoComponent.hpp>` | Runtime-only node component for camera/light gizmos and transform handles. |
 | `SelectableComponent` | `<bg2e/manipulation/SelectableComponent.hpp>` | Persistent scene identity used to validate selectable objects. |
-| `GizmoAndSelectionRenderer` | `<bg2e/manipulation/GizmoAndSelectionRenderer.hpp>` | Renderer overlay that draws selection and gizmos for the matching engine mode. |
+| `GizmoAndSelectionRenderer` | `<bg2e/manipulation/GizmoAndSelectionRenderer.hpp>` | Renderer overlay that draws selection and gizmos for the owning draw engine. |
 
 `SelectionItem` stores weak references to its node, drawable component and mesh,
-plus submesh and execution-mode identity. Call `refreshSelection()` at scene
+plus submesh and selection identifier. Call `refreshSelection()` at scene
 update boundaries after removals or resource replacement to prune stale items.
 Gizmos are transient and are not serialized. Release draw gizmo resources while
 the associated engine/device is still alive.

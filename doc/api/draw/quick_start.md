@@ -1,6 +1,6 @@
 # Draw Configuration Quick Start
 
-These snippets select the experimental draw path. The complete
+These snippets use the draw application path. The complete
 [window/UI example](../../../examples/draw/01_window_ui/src/main.cpp) registers
 all delegates, accepts backend overrides and provides retained-scene controls.
 See its [usage notes](../../../examples/draw/README.md).
@@ -22,7 +22,7 @@ An explicit override remains possible:
 config.backend = bg2e::gpu::BackendType::Vulkan;
 ```
 
-## Define the experimental delegate contract
+## Define the draw delegate contract
 
 ```cpp
 class DrawDelegate final : public bg2e::draw::RenderLoopDelegate {
@@ -42,7 +42,7 @@ Given an initialized Application with non-null input and UI delegates:
 
 ```cpp
 application.setRenderDelegate(std::make_shared<DrawDelegate>());
-bg2e::app::MainLoop loop("org.example.experimental");
+bg2e::app::MainLoop loop("org.example.draw");
 loop.initWindowConfig(bg2e::app::WindowConfig::withSize("Draw", 1280, 720));
 loop.run(&application, config);
 ```
@@ -51,13 +51,12 @@ The call validates configuration, creates the selected backend and window,
 and presents scene color. Input and UI delegates are required by the
 application contract. Both Vulkan and Metal initialize their UI backend;
 Metal is available only on macOS.
-Using `loop.run(&application)` instead selects production and throws
-std::invalid_argument for the draw delegate mismatch.
+Using `loop.run(&application)` uses draw with platform-default EngineConfig.
 
-The render entry point requires a render delegate. See [MainLoop](../app/MainLoop.md) and [EngineConfig](EngineConfig.md).
+Both overloads require the registered draw graphics delegate. See [MainLoop](../app/MainLoop.md) and [EngineConfig](EngineConfig.md).
 
-See [framework scope and maturity](index.md#production-and-experimental-frameworks)
-for the distinction between render and draw.
+See [framework scope and maturity](index.md#production-framework)
+for the relationship between draw and GPU backends.
 
 For a scene renderer rather than custom command recording, use the
 [deferred scene tutorial](../../tutorials/draw/10_deferred_renderer.md).

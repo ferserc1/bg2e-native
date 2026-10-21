@@ -101,3 +101,15 @@ old-app API compatibility; typed native HDR/complete-generation publication and
 strict required-target success are explicit new contracts. P01–P11 and R01–R14
 carry real evidence/provenance without inventing named backend results. M08-07
 owns missing maintained standalone authoring; M10 only audits final coverage.
+
+## M09-07 final production review — 2026-10-21
+
+M09-06 and its scene reference-count, Metal GUI declaration and VMA implementation
+corrections are accepted by the project lead's continuation instruction. Draw is
+the production API; no retired render compatibility is retained. See the
+[final contract review](milestone_09_cleanup/review.md), original-manifest
+reconciliation and complete maintained-page handoff linked there. M09-07 is
+awaiting lead acceptance; M09-08 must author cumulative documentation before
+M09 closure. M10 audits that delivery. R01–R14 optimization/profiling source and
+manual probes remain preserved; no new native coverage or performance result is
+claimed by this review. Historical planning assumptions above remain historical.
