@@ -91,6 +91,16 @@ struct Batch {
     std::vector<GpuProfileSample> gpu;
 };
 
+struct FileCloser {
+    void operator()(std::FILE* file) const noexcept
+    {
+        if (file)
+        {
+            std::fclose(file);
+        }
+    }
+};
+
 struct ThreadState {
     std::mutex mutex;
     std::vector<CpuProfileSample> samples;
@@ -120,7 +130,7 @@ struct Service {
     uint64_t sessionGpuAvailable = 0, sessionGpuFailed = 0, sessionGpuUnsupported = 0, sessionGpuDropped = 0;
     uint64_t unresolvedGpu = 0;
     bool closing = false;
-    std::unique_ptr<std::FILE, decltype(&std::fclose)> file{nullptr, &std::fclose};
+    std::unique_ptr<std::FILE, FileCloser> file;
     std::thread writer;
     std::filesystem::path path;
     std::string error, metadata;
@@ -635,7 +645,7 @@ bool CpuProfiler::start(const std::filesystem::path& path, bool overwrite)
 #else
         auto* opened = std::fopen(path.c_str(), overwrite ? "wb" : "wbx");
 #endif
-        std::unique_ptr<std::FILE, decltype(&std::fclose)> file(opened, &std::fclose);
+        std::unique_ptr<std::FILE, FileCloser> file(opened);
         if (!file)
         {
             throw std::runtime_error("open failed");
