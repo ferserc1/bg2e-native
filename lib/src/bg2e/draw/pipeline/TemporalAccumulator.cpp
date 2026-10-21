@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/base/PlatformTools.hpp>
@@ -148,6 +149,11 @@ void TemporalAccumulator::beginFrame(uint32_t slotIndex, uint64_t serial, uint64
             ++it;
         }
     }
+    if (_pool)
+    {
+        _pool->collect();
+    }
+
 }
 
 TemporalResult TemporalAccumulator::record(const TemporalInput& input)
@@ -187,6 +193,11 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     }
     auto found = _histories.find(input.key);
     auto previous = found != _histories.end() ? found->second : nullptr;
+    if (previous && (!previous->recording ||
+        (!previous->recording->wasSubmitted() && previous->recording != input.command.recordingCompletion())))
+    {
+        previous.reset(); // A different unsubmitted/abandoned recording is not history.
+    }
     if (previous && previous->sequence == input.sceneFrameNumber)
     {
         throw std::logic_error("Record each effect/view/layer once per rendered scene sequence");
@@ -219,7 +230,13 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     {
         throw std::length_error("Temporal effect/view/layer history capacity exceeded");
     }
+    if (!_pool)
+    {
+        _pool = std::make_shared<TemporaryResourcePool>(*_device, _configuration.poolLimits);
+    }
+    _pool->setEnabled(_poolingEnabled);
     auto next = std::make_shared<History>();
+    next->recording = input.command.recordingCompletion();
     next->sequence = input.sceneFrameNumber;
     next->generation = input.generation;
     next->reset = _generation;
@@ -232,11 +249,11 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     description.size = input.signal.size();
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;
     description.format = input.signal.pixelFormat();
-    next->signal = _device->createImage(description);
+    next->signal = _pool->image(input.command, description);
     description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
-    next->position = _device->createImage(description);
+    next->position = _pool->image(input.command, description);
     description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
-    next->normal = _device->createImage(description);
+    next->normal = _pool->image(input.command, description);
     Invocation invocation;
     invocation.previous = previous;
     invocation.next = next;
@@ -249,10 +266,12 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     data.extent = {input.surface.extent().width,input.surface.extent().height,input.signal.width(),input.signal.height()};
     data.cameraRoughness = glm::vec4(glm::vec3(glm::inverse(input.view.view)[3]),input.maxRoughness);
     data.flags.x = input.view.reproject ? 1u : 0u;
-    invocation.uniforms = _device->createBuffer("Temporal invocation uniforms");
-    invocation.uniforms->createUniformBuffer(data);
-    invocation.resources = _device->createResourceSet(_layout.get(),0);
-    invocation.resources->setUniformBuffer({0,1},invocation.uniforms.get());
+    invocation.pooled = _pool->bindings(input.command, _layout, 0, sizeof(data),
+        {input.slot, uint64_t(input.key.signal), input.key.view, input.key.layer});
+    invocation.pooled->writeUniforms(&data, sizeof(data));
+    invocation.uniforms = invocation.pooled->uniforms();
+    invocation.resources = invocation.pooled->resources();
+    invocation.pooled->setUniformBuffer({0,1},invocation.uniforms.get());
     auto* coverage = input.surface.profile == SurfaceProfile::CameraDepth ? input.surface.normal : input.surface.coverage;
     const std::array<gpu::Image*,8> sources{input.surface.normal,input.surface.depthOrPosition,coverage,&input.signal,
         previous ? previous->signal.get() : &input.signal,previous ? previous->position.get() : _zeroPosition.get(),
@@ -260,16 +279,16 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     for (uint32_t i = 0; i < sources.size(); ++i)
     {
         input.command.transition(sources[i],gpu::ImageLayout::ShaderReadOnly);
-        invocation.resources->setSampledImage({i+1,i},sources[i]);
+        invocation.pooled->setSampledImage({i+1,i},sources[i]);
     }
-    invocation.resources->setSampler({9,0},_nearest.get());
+    invocation.pooled->setSampler({9,0},_nearest.get());
     const std::array<gpu::Image*,3> outputs{next->signal.get(),next->position.get(),next->normal.get()};
     for (uint32_t i = 0; i < outputs.size(); ++i)
     {
         input.command.transition(outputs[i],gpu::ImageLayout::General);
-        invocation.resources->setStorageImage({i+10,i+8},outputs[i]);
+        invocation.pooled->setStorageImage({i+10,i+8},outputs[i]);
     }
-    invocation.resources->update();
+    invocation.pooled->update();
     slot.invocations.push_back(std::move(invocation));
     const uint32_t index = (input.surface.profile == SurfaceProfile::WorldPositionCoverage ? 2u : 0u)+(scalar ? 0u : 1u);
     input.command.beginCompute();
@@ -303,6 +322,7 @@ void TemporalAccumulator::cleanup()
     }
     _histories.clear();
     _slots.clear();
+    _pool.reset();
     _pipelines = {};
     _shaders = {};
     _layout.reset();
@@ -392,4 +412,10 @@ uint32_t TemporalAccumulator::frameCount(const TemporalKey& key) const
     const auto found = _histories.find(key);
     return found != _histories.end() ? found->second->count : 0;
 }
+
+TemporaryPoolStatistics TemporalAccumulator::poolStatistics() const
+{
+    return _pool ? _pool->statistics() : TemporaryPoolStatistics{};
+}
+
 }

@@ -65,6 +65,10 @@ class BG2E_API Texture {
     {
         return _sampler.get();
     }
+    uint64_t bindingRevision() const
+    {
+        return _bindingRevision;
+    }
     // Retained snapshots for consumers whose submissions outlive a texture reload.
     std::shared_ptr<gpu::Image> imageResource() const
     {
@@ -85,11 +89,12 @@ class BG2E_API Texture {
     }
 
   private:
-    std::shared_ptr<gpu::Sampler> makeSampler(const base::Texture& settings, uint32_t levels) const;
     Engine* _engine;
     std::shared_ptr<base::Texture> _settings;
     std::shared_ptr<gpu::Image> _image;
     std::shared_ptr<gpu::Sampler> _sampler;
+    gpu::SamplerDescription _samplerDescription;
     std::unique_ptr<base::Image> _memorySource;
+    uint64_t _bindingRevision = 0;
 };
 }

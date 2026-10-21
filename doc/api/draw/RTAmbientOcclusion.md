@@ -10,7 +10,7 @@ ao->setQuality(bg2e::draw::pipeline::RTAOQuality::High);
 rendererConfiguration.ambientOcclusion = ao;
 ```
 
-Set RTAOConfiguration::shaderRoot to the deployed shader root when constructing a standalone pass. RendererDeferred supplies its shader root to the default pass. Configure injected passes before initialization. The default pass is disabled; available() reports capability/pipeline availability separately from enabled(). A custom subclass may override recording or a compatible shaderPrefix may replace the paired native kernels with interface `draw.rtao.v2`. The `_256` shader files are templates: Vulkan specializes constant ID0 to the exact device-clamped capacity up to 16384; Metal uses image/sampler argument-record buffers8/9. See [tracing tables](TracingSceneResources.md).
+Set RTAOConfiguration::shaderRoot to the deployed shader root when constructing a standalone pass. RendererDeferred supplies its shader root to the default pass. Configure injected passes before initialization. The default pass is disabled; available() reports capability/pipeline availability separately from enabled(). A custom subclass may override recording or a compatible shaderPrefix may replace the paired native kernels with interface `draw.rtao.v3`. The `_256` shader files are templates: Vulkan specializes constant ID0 to the exact device-clamped capacity up to 16384; Metal uses image/sampler argument-record buffers8/9. See [tracing tables](TracingSceneResources.md).
 
 RendererDeferred prepares scene resources per retired frame slot and records camera AO for each composite. Its ambientOcclusion() accessor exposes settings. Change settings at a synchronized application boundary and request a scene frame. Quality affects AO resolution independently of renderer resolution. Low/Medium/High/Ultra scale by 1/3, 1/2, 2/3 and 1. Sample/bounce counts, radius, bias, falloff, attenuation and shared BlueNoise are configurable. Discontinuous edits require invalidateHistories() to reset engine and SDK histories; [Temporal histories](TemporalAccumulator.md) are available; [spatial filtering](DenoiseFilter.md) is available after temporal accumulation.
 
@@ -33,3 +33,11 @@ check graph selection as well. [SurfaceInputs](SurfaceInputs.md) and
 [TracingSceneResources](TracingSceneResources.md) describe reusable inputs/owners.
 Device must outlive retained results/snapshots. No UI, exact bake-average or
 headless application scheduler is implicitly created by a standalone effect.
+
+Invocation uniforms and surface set0 use [retired temporary storage](TemporaryResourcePool.md)
+keyed by slot/invocation ordinal, layout and uniform size. Each live invocation
+keeps distinct storage; only retired unreferenced leases are reused. Exact native
+binding tuples skip descriptor updates, while uniforms are uploaded each call.
+Tracing scene set1 and immutable material arrays set2 retain their existing owners.
+Use setPoolingEnabled(false) for fresh-invocation diagnostics and poolStatistics()
+for current retention, at a synchronized update boundary.

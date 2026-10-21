@@ -319,6 +319,7 @@ static base::MaterialAttributes materialAttributes(
     // glTF defaults differ from MaterialAttributes defaults.
     result.setMetalness(1.0f);
     result.setRoughness(1.0f);
+    result.setAlphaCutoff(0.0f);
 
     const auto* material = primitive->material;
     if (material && material->has_pbr_metallic_roughness)
@@ -381,7 +382,8 @@ static base::MaterialAttributes materialAttributes(
         }
         else if (material->alpha_mode == cgltf_alpha_mode_mask)
         {
-            result.setAlphaCutoff(material->alpha_cutoff);
+            // Deliberately normalize MASK to 0.5, overriding authored glTF cutoffs.
+            result.setAlphaCutoff(0.5f);
         }
 
         if (auto texture = textureFromView(material->normal_texture, images, base::Color::TypeLinear))

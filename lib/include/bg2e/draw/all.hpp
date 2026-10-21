@@ -48,6 +48,7 @@
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
 #include <bg2e/draw/pipeline/FullscreenPass.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/draw/pipeline/GBuffer.hpp>
 #include <bg2e/draw/pipeline/DeferredLayer.hpp>
 

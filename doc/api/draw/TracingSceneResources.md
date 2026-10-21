@@ -10,7 +10,7 @@ after reserving the effect's direct bindings: AO uses (4,2,13), GI (5,3,15),
 reflections (6,3,16). Native execution and output formats are separate prerequisites.
 A snapshot shared between effects must match their Device and fit each selected
 capacity. Independent effects can select different capacities. A consumer with a
-larger layout passes its capacity to `resourceSet(layout, 1, bindingCapacity)`;
+larger layout passes its capacity to `materialResourceSet(layout, bindingCapacity)`;
 the binding arrays are padded without rebuilding the snapshot's material tables.
 
 Selection is the exact minimum of 16384, available image entries, available sampler
@@ -41,16 +41,37 @@ accepts this snapshot as the final optional argument to `prepare`; omitting it
 uses an internally retained `TracingSceneResources` for standalone preparation,
 sharing geometry across its completed-slot snapshots. The renderer builds the TLAS before recording
 the layers; subsequent consumer `build` calls are no-ops. Snapshots are retained
-per frame slot through GPU completion. Material/instance/shadow tables and the TLAS
-are deliberately regenerated each frame, not cached across frames or refitted.
-The existing immutable packed-geometry cache is unchanged.
+per frame slot through GPU completion. Immutable material and alpha-metadata generations
+survive unchanged camera/transform frames. Immutable completed acceleration generations
+also share TLAS, CPU instance vectors and GPU instance buffers across matching
+snapshots. Camera state does not enter the acceleration key. Changed transforms
+allocate new instance storage and use the complete existing TLAS build path.
 
-The indexed shadow kernel/layout is `draw.query.softShadows.v3`. Rebuild both
-native shadow shaders together with the library. Vulkan set0 binding2 / Metal
-buffer3 now supplies shared vertices; Vulkan binding9 / Metal buffer7 supplies
-shared indices. The independent alpha-texture table keeps its existing ordering
-and scalar fallback policy, with capacity reserves (2,1,10) for the extra index
-buffer. Alpha image/sampler bindings remain Vulkan16/24 and Metal records5/6.
+Material generation keys retain source identity and captured effective revisions,
+including classification and native texture realization. Entries remain in first
+encounter order. Value edits allocate a new immutable material buffer; no submitted
+buffer is overwritten. Image/sampler tuples are shared independently when ordered
+native owners, image generations, admission capacity and fallback owners match.
+Thus a scalar edit does not re-encode unchanged arrays. Shadow metadata keys include
+geometry identity, dense order, canonical IDs, rebased ranges, UV/scalar alpha data,
+classification and alpha-resource identity. Transforms are excluded. Membership or
+order changes rebuild the corresponding mappings. Independent editable materials
+remain independent; derived table addresses never enter object serialization.
+
+The shadow kernel/layout is `draw.query.softShadows.v5`. Rebuild library and paired
+native shaders together before execution. Vulkan set0 contains invocation uniforms0,
+normal/depth images4/5, nearest sampler6 and outputs7/8. Set1 contains metadata1,
+vertices2, TLAS3 and indices9. Persistent set2 contains alpha arrays16/24. Metal
+indices remain uniforms buffer1; metadata/vertices/TLAS buffers2/3/4; alpha records
+buffers5/6; indices buffer7; nearest sampler8; normal/depth textures0/1 and outputs2/3.
+Capacity reserves remain (2,1,10).
+
+After `build()`, `shadowResourceSet(sharedLayout, capacity, 1)` provides per-snapshot
+scene bindings. `shadowAlphaResourceSet(sharedLayout, capacity)` provides persistent
+set2, including fully initialized fallback arrays for all-opaque scenes. Each
+SoftShadowPass invocation retains its own set0/targets plus both scene and alpha sets.
+`SoftShadowPass::setBindingReuseEnabled(false)` creates fresh scene and alpha sets
+per invocation for diagnostic comparisons.
 
 | Record | Layout |
 |---|---|
@@ -64,32 +85,69 @@ Vulkan custom index. Canonical frame objectId/submesh is correspondence only.
 Normal transforms account for nonuniform/mirrored geometry. Builder checks ranges,
 finite/nonsingular transforms and buffer/count/device limits before publication.
 
-snapshot->build(command) records TLAS construction once for that recording and
-submission; discard the snapshot if recording aborts. resourceSet(layout,set=1)
+snapshot->build(command) transitions the current wrapper's textures even when its
+TLAS is reused. New acceleration is recorded once; a matching completed generation
+skips the build. Discard the snapshot if recording aborts. resourceSet(layout,set=1)
 returns bindings compatible with tracingBindingLayout(capacity,stage,additionalStages).
-Bindings are created once per layout identity, set index and effective binding
-capacity within that snapshot. Repeated effect invocations (including transparent
-compositions) receive the same ResourceSet without resolving image/sampler arrays,
-allocating argument buffers or encoding native tables again. Shared-owned layouts
-are retained to prevent cache-key address reuse; otherwise callers must keep the
-layout alive. Returned scene sets are shared and must not be mutated or cleaned up
-by consumers. Calls are serialized on the recording thread. Each new frame/job
-snapshot starts with an empty cache, so no cross-frame caching is introduced.
-Keep snapshot and returned descriptors alive through GPU completion. Never mutate
-an in-flight snapshot or rebuild the same one across independent submissions.
-clear() drops cache ownership; externally retained snapshots remain valid.
+Scene bindings are created once per layout identity, set index and effective binding
+capacity within that snapshot. Bind `materialResourceSet(layout, capacity)` as set2
+in addition to scene set1. Logical set1 contains vertex/index/instance/material
+buffers0..3 and TLAS4; set2 contains images5/samplers6. Metal buffers2..6 carry direct
+data; argument-record buffers8/9 hold images/samplers with record id0 and native
+encoder stride. All unused table entries receive valid fallback resources.
 
-Logical set1 binds vertex/index/instance/material buffers0..3, TLAS4, images5 and
-samplers6. Metal buffers2..6 carry direct data; separate argument-record buffers8/9
-hold images/samplers with record id0 and native encoder stride. All unused table entries receive valid fallback
-resources. Vulkan divergent indices require enabled nonuniform features; Metal
-uses Tier-2 compute argument arrays and residency declarations. This is bounded
-material addressing, not unrestricted bindless or general Metal graphics arrays.
+Persistent array sets are cached by retained layout identity, route and capacity,
+with at most eight entries per native tuple. Service ownership is bounded to the
+latest geometry/material/shadow generation plus up to eight acceleration candidates.
+Old generations survive eviction through retained snapshots or array handles. Handles retain their native tuple
+and layout even after cache eviction or `clear()`, without ownership cycles. Borrowed
+layouts are not cached across calls and must outlive their handles. Shared-owned
+layouts are retained. Resource validity and captured image generations are checked
+before array cache hits; discard snapshots after in-place native recreation.
+
+Returned sets are immutable to consumers. Scene binding/build calls are serialized
+on the recording thread; persistent array cache access is synchronized. Retain the
+snapshot and all sets through GPU completion. Empty preparation and `clear()` drop
+service cache ownership without cleaning up retained resources. Discard snapshots
+after aborted recording. `setPersistenceEnabled(false)` on TracingSceneResources
+builds fresh immutable material/shadow generations for diagnostic comparison,
+without disabling the existing geometry cache.
+
+Acceleration identity includes packed geometry identity, ordered node/object/submesh
+correspondence, mesh/BLAS identity and build generation, world matrix, packed geometry
+ranges, material address, mask, tracing inclusion and RT opacity. Effective scalar
+material edits and texture replacement preserve acceleration when instance addresses
+and RT opacity are unchanged. Visibility and transparency exclusions affect collected
+membership; changed membership/order invalidates the complete instance-state key.
+
+Readiness is tied to `CommandBuffer::recordingCompletion()`, independently of the
+snapshot's recording-local `_built`. Backend `begin()` creates a new ticket; only a
+successful queue submission associates its completion record. Nonblocking polling
+must confirm normal GPU completion before prepare may reuse a candidate. Recorded,
+unsubmitted, reset, failed and abandoned recordings cannot certify completed reuse.
+An early identical frame may allocate its own generation while another is pending;
+after completion, matching frames reuse a completed candidate. No polling wait or
+device drain is added to prepare/build. Errors from submitted work propagate.
+
+The cache holds at most eight candidates, including pending ones. Eviction and
+clear only drop service ownership. Callers retain every snapshot and its descriptors
+through all GPU readers, as before. Generations retain packed geometry/source buffer
+owners and BLAS owners independently of the original source scene. Do not mutate
+or rebuild a retained scene/instance buffer. Prepare/build use the recording thread
+and the normal graphics-queue path; native queue-family transfers are not introduced.
+`setAccelerationReuseEnabled(false)` restores fresh immutable instance buffers and
+full TLAS builds per snapshot while leaving phase 05 material persistence enabled.
+Refit is not exposed by the current backends and is not needed for unchanged reuse.
+The shader ABI stays at tracing v3/shadows v5.
+
+Vulkan divergent indices require enabled nonuniform features; Metal uses Tier-2
+compute argument arrays with complete residency declarations on every bind. This
+is bounded material addressing, not unrestricted bindless or Metal graphics arrays.
 
 Vulkan uses UInt32 specialization constant ID0 to match each shader array extent
 to the layout capacity. AO/GI/reflection use the deployed `_256` filenames as
-templates, not a size restriction. Their native shader interfaces are v2; custom
-replacements must use specialization ID0 and the new Metal record bindings.
+templates, not a size restriction. Their native shader interfaces are v3; custom
+replacements must use specialization ID0 and Vulkan set2 arrays and the unchanged Metal record bindings.
 
 All six material slots retain image/view/sampler and UV/color/channel conventions.
 Cutout acceptance is albedo alpha times material alpha >= cutoff at explicit LOD0;

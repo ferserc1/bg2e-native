@@ -17,9 +17,12 @@
  */
 
 #include <bg2e/draw/pipeline/SoftShadowPass.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/base/CpuProfile.hpp>
+#include "TracingTableLookup.hpp"
 #include <bg2e/draw/pipeline/TracingSceneResources.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
+#include <bg2e/draw/pipeline/RasterFrame.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/base/Log.hpp>
@@ -28,6 +31,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <unordered_map>
 
 namespace bg2e::draw::pipeline {
 namespace {
@@ -56,6 +60,7 @@ ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstan
     uint64_t alphaTestInstances = 0;
     uint64_t alphaTextureLookups = 0;
     table.instances.reserve(instances.size());
+    std::unordered_map<detail::AlphaPairKey, uint32_t, detail::AlphaPairHash> alphaLookup;
     base::CpuProfileScope stageProfile("shadowTable.instanceMetadata");
     for (const auto& instance : instances)
     {
@@ -75,30 +80,34 @@ ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstan
         if ((data.options.y & MaterialAlphaTest) != 0)
         {
             ++alphaTestInstances;
-            alphaTextureLookups += table.alphaTextures.size() + 1;
+            ++alphaTextureLookups;
             stageProfile.next("shadowTable.alphaTextureDeduplication");
             const auto& texture = item.textures[0];
-            auto found = std::find_if(table.alphaTextures.begin(), table.alphaTextures.end(), [&](const auto& other)
+            if (!texture || !texture->image() || !texture->sampler() || !texture->image()->isValid() || !texture->sampler()->isValid() ||
+                texture->image() != item.textureImages[0] || texture->sampler() != item.textureSamplers[0] ||
+                texture->bindingRevision() != item.textureRevisions[0] || texture->image()->bindingGeneration() != item.imageGenerations[0])
             {
-                return other->image() == texture->image() && other->sampler() == texture->sampler();
-            });
-            if (found == table.alphaTextures.end())
+                throw std::invalid_argument("Shadow alpha lookup requires current retained image/sampler resources");
+            }
+            const detail::AlphaPairKey key{{texture->image(), texture->image()->bindingGeneration()}, texture->sampler()};
+            const auto found = alphaLookup.find(key);
+            if (found == alphaLookup.end())
             {
                 if (table.alphaTextures.size() >= capacity)
                 {
-                    // Keep this instance; UINT32_MAX means no texture sample,
-                    // while material scalar alpha/cutoff still apply in the shader.
+                    // Keep scalar alpha/cutoff when this pair cannot be admitted.
                     ++table.fallbackTextureSlots;
                 }
                 else
                 {
+                    data.ranges.z = uint32_t(table.alphaTextures.size());
                     table.alphaTextures.push_back(texture);
-                    data.ranges.z = uint32_t(table.alphaTextures.size() - 1);
+                    alphaLookup.emplace(key, data.ranges.z);
                 }
             }
             else
             {
-                data.ranges.z = uint32_t(found - table.alphaTextures.begin());
+                data.ranges.z = found->second;
             }
             stageProfile.next("shadowTable.instanceMetadata");
         }
@@ -106,6 +115,7 @@ ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstan
     }
     base::CpuProfileScope::count("shadowTable.instances", instances.size());
     base::CpuProfileScope::count("shadowTable.alphaTestInstances", alphaTestInstances);
+    base::CpuProfileScope::count("shadowTable.opaqueInstances", instances.size() - alphaTestInstances);
     base::CpuProfileScope::count("shadowTable.uniqueAlphaTextures", table.alphaTextures.size());
     base::CpuProfileScope::count("shadowTable.entries", table.instances.size());
     base::CpuProfileScope::count("shadowTable.capacitySlots", capacity);
@@ -119,7 +129,7 @@ ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstan
 PassContract softShadowContract(gpu::PixelFormat depth)
 {
     const auto hdr = gpu::PixelFormat::R16G16B16A16_SFLOAT;
-    return {"draw.query.softShadows.v3", {{"normalEmission", hdr}, {"depth", depth}},
+    return {"draw.query.softShadows.v5", {{"normalEmission", hdr}, {"depth", depth}},
         {{"shadow0", hdr, ExtentDomain::Internal, gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment},
          {"shadow1", hdr, ExtentDomain::Internal, gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment}}};
 }
@@ -132,22 +142,22 @@ gpu::PipelineLayoutDescription softShadowBindingLayout(uint32_t capacity)
     }
     using T = gpu::ResourceType;
     gpu::PipelineLayoutDescription result;
-    const auto add = [&](uint32_t vk, uint32_t metal, T type)
+    const auto add = [&](uint32_t set, uint32_t vk, uint32_t metal, T type)
     {
-        result.resourceBindings.push_back({0, {vk, metal}, type, gpu::ShaderStage::Compute, 1});
+        result.resourceBindings.push_back({set, {vk, metal}, type, gpu::ShaderStage::Compute, 1});
     };
-    add(0, 1, T::UniformBuffer);
-    add(1, 2, T::StorageBuffer);
-    add(2, 3, T::StorageBuffer); // Shared tracing vertices, including UV0/UV1.
-    add(3, 4, T::AccelerationStructure);
-    add(4, 0, T::SampledImage);
-    add(5, 1, T::SampledImage);
-    add(6, 8, T::Sampler);
-    add(7, 2, T::StorageImage);
-    add(8, 3, T::StorageImage);
-    add(9, 7, T::StorageBuffer); // Shared tracing indices.
-    result.resourceBindings.push_back({0,{16,0},T::SampledImage,gpu::ShaderStage::Compute,capacity,{},5,true,false});
-    result.resourceBindings.push_back({0,{24,0},T::Sampler,gpu::ShaderStage::Compute,capacity,{},6,true,false});
+    add(0, 0, 1, T::UniformBuffer);
+    add(1, 1, 2, T::StorageBuffer);
+    add(1, 2, 3, T::StorageBuffer); // Shared tracing vertices, including UV0/UV1.
+    add(1, 3, 4, T::AccelerationStructure);
+    add(0, 4, 0, T::SampledImage);
+    add(0, 5, 1, T::SampledImage);
+    add(0, 6, 8, T::Sampler);
+    add(0, 7, 2, T::StorageImage);
+    add(0, 8, 3, T::StorageImage);
+    add(1, 9, 7, T::StorageBuffer); // Shared tracing indices.
+    result.resourceBindings.push_back({2,{16,0},T::SampledImage,gpu::ShaderStage::Compute,capacity,{},5,true,false});
+    result.resourceBindings.push_back({2,{24,0},T::Sampler,gpu::ShaderStage::Compute,capacity,{},6,true,false});
     return result;
 }
 
@@ -246,6 +256,10 @@ void SoftShadowPass::attachScene(std::shared_ptr<scene::Node>)
     {
         slot = Slot{};
     }
+    if (_pool)
+    {
+        _pool->collect();
+    }
     _standaloneResources.reset();
 }
 
@@ -298,7 +312,12 @@ void SoftShadowPass::prepare(const FrameContext& frame, const RenderQueue& queue
             lights = true;
         }
     }
+    slot.prepared = false;
     slot.sets.clear(); // Retire only this completed slot's previous bindings.
+    if (_pool)
+    {
+        _pool->collect();
+    }
     slot.snapshot = std::move(snapshot);
     slot.active = false;
     slot.built = false;
@@ -387,6 +406,52 @@ void SoftShadowPass::record(const PassContext& context)
         }
         return;
     }
+    if (context.inputs.size() != 2 || context.outputs.size() != 2)
+    {
+        throw std::invalid_argument("Shadow invocations require two inputs and two outputs");
+    }
+    for (const auto& input : context.inputs)
+    {
+        if (!input.image || !input.image->isValid() || input.image->device() != _engine->device())
+        {
+            throw std::invalid_argument("Shadow input must be a valid same-device image");
+        }
+    }
+    for (const auto& output : context.outputs)
+    {
+        if (!output.image || !output.image->isValid() || output.image->device() != _engine->device())
+        {
+            throw std::invalid_argument("Shadow output must be a valid same-device image");
+        }
+    }
+    auto receiverExtent = context.outputs.at(0).image->size();
+    const auto fullExtent = receiverExtent;
+    // Pointwise shadows need no temporal/filter halo. Keep the existing shader
+    // ABI and dispatch a conservative origin-anchored rectangle of workgroups.
+    // Clear the complete outputs so pixels outside the dispatch remain neutral.
+    if (context.raster && context.raster->region)
+    {
+        const auto& r = *context.raster->region;
+        bool eligible = r.width && r.height && r.x <= fullExtent.width && r.y <= fullExtent.height &&
+            r.width <= fullExtent.width-r.x && r.height <= fullExtent.height-r.y;
+        for (const auto& input : context.inputs)
+        {
+            eligible = eligible && input.image->size() == fullExtent;
+        }
+        for (const auto& output : context.outputs)
+        {
+            eligible = eligible && output.image->size() == fullExtent &&
+                (output.image->usage() & gpu::ImageUsage::ColorAttachment) == gpu::ImageUsage::ColorAttachment;
+        }
+        if (eligible)
+        {
+            receiverExtent = {r.x+r.width, r.y+r.height};
+            for (const auto& output : context.outputs)
+            {
+                RenderTarget::clear(command, *output.image, {1, 1, 1, 1});
+            }
+        }
+    }
     if (!slot.built)
     {
         slot.snapshot->build(command);
@@ -402,39 +467,45 @@ void SoftShadowPass::record(const PassContext& context)
     }
     {
         base::CpuProfileScope bindingProfile("shadow.prepareBindings");
-        auto set = _engine->device()->createResourceSet(_layout.get(), 0);
-        set->setUniformBuffer({0, 1}, slot.uniforms.get());
-        set->setStorageBuffer({1, 2}, slot.snapshot->shadowInstances.get());
-        set->setStorageBuffer({2, 3}, slot.snapshot->geometry->vertexBuffer.get());
-        set->setStorageBuffer({9, 7}, slot.snapshot->geometry->indexBuffer.get());
-        base::CpuProfileScope::count("shadow.geometryBufferBindings", 2);
-        set->setRayTracingScene({3, 4}, slot.snapshot->scene.get());
-        set->setSampledImage({4, 0}, context.inputs.at(0).image);
-        set->setSampledImage({5, 1}, context.inputs.at(1).image);
-        set->setSampler({6, 8}, _nearest.get());
-        set->setStorageImage({7, 2}, context.outputs.at(0).image);
-        set->setStorageImage({8, 3}, context.outputs.at(1).image);
-        // Fully populate device-sized arrays, retaining the same source owners.
-        const auto fallback = slot.snapshot->owners.front().item.textures[0];
-        std::vector<gpu::ImageView> images(_alphaCapacity,fallback->imageResource()->fullView());
-        std::vector<gpu::Sampler*> samplers(_alphaCapacity,fallback->samplerResource().get());
-        const auto& table = slot.snapshot->shadowTable;
-        for (uint32_t i = 0; i < table.alphaTextures.size(); ++i)
+        Slot::Invocation invocation;
+        invocation.stable = slot.snapshot->shadowResourceSet(_layout, _alphaCapacity, 1, _bindingReuseEnabled);
+        invocation.alpha = slot.snapshot->shadowAlphaResourceSet(_layout, _alphaCapacity, _bindingReuseEnabled);
+        if (!_pool)
         {
-            const auto& texture = table.alphaTextures[i];
-            images[i] = texture->imageResource()->fullView();
-            samplers[i] = texture->samplerResource().get();
+            _pool = std::make_shared<TemporaryResourcePool>(*_engine->device());
         }
-        set->setSampledImages({16,0},images);
-        set->setSamplers({24,0},samplers);
-        set->update();
-        slot.sets.push_back(std::move(set));
+        _pool->setEnabled(_poolingEnabled);
+        invocation.pooled = _pool->bindings(command, _layout, 0, 0, {context.frame.frameSlot, slot.sets.size(), 0, 0});
+        auto set = invocation.pooled->resources();
+        invocation.pooled->setUniformBuffer({0, 1}, slot.uniforms.get());
+        invocation.pooled->setSampledImage({4, 0}, context.inputs.at(0).image);
+        invocation.pooled->setSampledImage({5, 1}, context.inputs.at(1).image);
+        invocation.pooled->setSampler({6, 8}, _nearest.get());
+        invocation.pooled->setStorageImage({7, 2}, context.outputs.at(0).image);
+        invocation.pooled->setStorageImage({8, 3}, context.outputs.at(1).image);
+        invocation.pooled->update();
+        invocation.resources = std::move(set);
+        for (const auto& input : context.inputs)
+        {
+            invocation.owners.push_back(input.image->weak_from_this().lock());
+        }
+        for (const auto& output : context.outputs)
+        {
+            invocation.owners.push_back(output.image->weak_from_this().lock());
+        }
+        slot.sets.push_back(std::move(invocation));
+        base::CpuProfileScope::count("shadow.invocationBindings", 1);
     }
     command.beginCompute();
     command.bindPipeline(_pipeline.get());
-    command.bindResourceSet(_pipeline.get(), 0, slot.sets.back().get());
-    const auto extent = context.outputs.at(0).image->size();
-    command.dispatch((extent.width + 15) / 16, (extent.height + 15) / 16, 1);
+    command.bindResourceSet(_pipeline.get(), 0, slot.sets.back().resources.get());
+    command.bindResourceSet(_pipeline.get(), 1, slot.sets.back().stable.get());
+    command.bindResourceSet(_pipeline.get(), 2, slot.sets.back().alpha.get());
+    const auto groupsX = (receiverExtent.width+15)/16;
+    const auto groupsY = (receiverExtent.height+15)/16;
+    base::CpuProfileScope::count("shadow.receiverInvocations", uint64_t(groupsX)*groupsY*256);
+    base::CpuProfileScope::count("shadow.fullReceiverPixels", uint64_t(fullExtent.width)*fullExtent.height);
+    command.dispatch(groupsX, groupsY, 1);
     command.endCompute();
     for (const auto& output : context.outputs)
     {
@@ -449,6 +520,7 @@ void SoftShadowPass::cleanup()
         _engine->device()->waitIdle();
     }
     _slots.clear();
+    _pool.reset();
     _standaloneResources.reset();
     _pipeline.reset();
     _shader.reset();
@@ -468,6 +540,12 @@ bool SoftShadowPass::sceneSupported() const
 uint32_t SoftShadowPass::alphaTextureCapacity() const
 {
     return _alphaCapacity;
+}
+
+
+TemporaryPoolStatistics SoftShadowPass::poolStatistics() const
+{
+    return _pool ? _pool->statistics() : TemporaryPoolStatistics{};
 }
 
 }

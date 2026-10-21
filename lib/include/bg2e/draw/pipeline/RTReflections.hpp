@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/reflection/TypeInfo.hpp>
 #include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
 #include <bg2e/draw/environment/EnvironmentResources.hpp>
@@ -32,7 +33,7 @@ struct RTReflectionSettings {
 };
 struct RTReflectionConfiguration {
     std::filesystem::path shaderRoot;
-    std::string shaderPrefix = "draw/rt_reflections", shaderInterface = "draw.rt_reflections.v2";
+    std::string shaderPrefix = "draw/rt_reflections", shaderInterface = "draw.rt_reflections.v3";
     std::shared_ptr<utils::BlueNoise> noise;
 };
 struct RTReflectionContext {
@@ -93,10 +94,19 @@ class BG2E_API RTReflections {
     virtual gpu::Size2D outputExtent(gpu::Size2D display) const;
     std::shared_ptr<TracingSceneResources> tracingResources() const;
 
+    TemporaryPoolStatistics poolStatistics() const;
+
+    // Diagnostic baseline: allocate fresh invocation/image storage.
+    void setPoolingEnabled(bool enabled)
+    {
+        _poolingEnabled = enabled;
+    }
+
   protected:
     struct Invocation {
+        std::shared_ptr<TemporaryBindings> pooled;
         std::shared_ptr<gpu::Buffer> uniforms;
-        std::shared_ptr<gpu::ResourceSet> surfaceSet, sceneSet;
+        std::shared_ptr<gpu::ResourceSet> surfaceSet, sceneSet, tableSet;
         std::shared_ptr<gpu::Image> noiseImage;
         std::shared_ptr<gpu::Sampler> noiseSampler;
         std::shared_ptr<const environment::EnvironmentResources> environment;
@@ -110,6 +120,8 @@ class BG2E_API RTReflections {
     RTReflectionConfiguration _configuration;
     RTReflectionSettings _settings;
     gpu::Device* _device = nullptr;
+    std::shared_ptr<TemporaryResourcePool> _pool;
+    bool _poolingEnabled = true;
     gpu::BackendType _backend{};
     uint32_t _capacity = 0;
     std::shared_ptr<TracingSceneResources> _tracing;

@@ -175,6 +175,15 @@ Size2D CommandBuffer::validateRendering(const RenderingDescription& description,
             throw std::invalid_argument("Depth attachment format/layout/clear is incompatible");
         }
     }
+    if (description.scissor)
+    {
+        const auto& r = *description.scissor;
+        if (!r.width || !r.height || r.x > extent.width || r.y > extent.height ||
+            r.width > extent.width-r.x || r.height > extent.height-r.y)
+        {
+            throw std::invalid_argument("Rendering scissor must be nonempty and inside attachments");
+        }
+    }
     return extent;
 }
 

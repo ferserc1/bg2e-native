@@ -17,6 +17,9 @@
  */
 
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
+#include <bg2e/gpu/metal/Device.hpp>
+#include <bg2e/base/CpuProfile.hpp>
+#include "ArgumentEncoderState.hpp"
 #include <bg2e/gpu/Device.hpp>
 
 namespace bg2e {
@@ -105,8 +108,68 @@ bool PipelineLayout::isValid() const
     return true;
 }
 
+std::shared_ptr<ArgumentEncoderState> PipelineLayout::argumentEncoder(uint32_t slot) const
+{
+#if BG2E_IS_MAC
+    std::lock_guard lock(_encoderMutex);
+    const auto cached = _encoders.find(slot);
+    if (cached != _encoders.end())
+    {
+        base::CpuProfileScope::count("metal.argumentEncoder.cacheHits", 1);
+        return cached->second;
+    }
+    auto* nativeDevice = dynamic_cast<metal::Device*>(device());
+    if (!nativeDevice || !nativeDevice->isValid())
+    {
+        throw std::invalid_argument("Argument encoders require a valid Metal device");
+    }
+    auto state = std::make_shared<ArgumentEncoderState>();
+    std::vector<NS::Object*> descriptors;
+    descriptors.reserve(_description.resourceBindings.size());
+    for (const auto& binding : _description.resourceBindings)
+    {
+        if (binding.metalArgumentBuffer != slot)
+        {
+            continue;
+        }
+        auto* descriptor = MTL::ArgumentDescriptor::alloc()->init();
+        descriptor->setIndex(binding.binding.metal);
+        descriptor->setArrayLength(binding.metalArgumentRecordsIndexable ? 1 : binding.count);
+        descriptor->setAccess(MTL::BindingAccessReadOnly);
+        descriptor->setDataType(binding.type == ResourceType::SampledImage ? MTL::DataTypeTexture : MTL::DataTypeSampler);
+        if (binding.type == ResourceType::SampledImage)
+        {
+            descriptor->setTextureType(MTL::TextureType2D);
+        }
+        descriptors.push_back(descriptor);
+    }
+    if (descriptors.empty())
+    {
+        throw std::invalid_argument("No argument-array group at this Metal buffer slot");
+    }
+    auto* arguments = NS::Array::alloc()->init(descriptors.data(), descriptors.size());
+    state->encoder = nativeDevice->handle()->newArgumentEncoder(arguments);
+    arguments->release();
+    for (auto* descriptor : descriptors)
+    {
+        descriptor->release();
+    }
+    if (!state->encoder)
+    {
+        throw std::runtime_error("Failed to create Metal argument encoder");
+    }
+    _encoders.emplace(slot, state);
+    base::CpuProfileScope::count("metal.argumentEncoder.creations", 1);
+    return state;
+#else
+    throw std::runtime_error("Metal backend is not available on this platform");
+#endif
+}
+
 void PipelineLayout::cleanup()
 {
+    std::lock_guard lock(_encoderMutex);
+    _encoders.clear();
 }
 
 }

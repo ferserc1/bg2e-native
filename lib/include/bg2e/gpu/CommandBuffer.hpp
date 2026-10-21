@@ -20,10 +20,14 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/detail/SubmissionState.hpp>
 #include <stdexcept>
 
 namespace bg2e {
 namespace gpu {
+
+namespace vk { class Queue; }
+namespace metal { class Queue; }
 
 class Device;
 class Buffer;
@@ -39,7 +43,20 @@ class RayTracingPipeline;
 
 class BG2E_API CommandBuffer {
   public:
-    virtual ~CommandBuffer() = default;
+    virtual ~CommandBuffer()
+    {
+        if (_recordingCompletion)
+        {
+            _recordingCompletion->abandon();
+        }
+    }
+
+    // Stable identity for this recording, independent of wrapper reset/destruction.
+    // Completion is false until successful submission and normal GPU completion.
+    std::shared_ptr<const detail::RecordingCompletion> recordingCompletion() const
+    {
+        return _recordingCompletion;
+    }
 
     virtual void begin() = 0;
     virtual void end() = 0;
@@ -186,6 +203,32 @@ class BG2E_API CommandBuffer {
     // Used by coordinators to enforce callback scope ownership.
     virtual bool hasActiveScope() const = 0;
     virtual bool isValid() const = 0;
+
+  protected:
+    // Backend begin() calls this only after native reset/begin succeeds.
+    void beginRecordingCompletion()
+    {
+        auto next = std::make_shared<detail::RecordingCompletion>();
+        if (_recordingCompletion)
+        {
+            _recordingCompletion->abandon();
+        }
+        _recordingCompletion = std::move(next);
+    }
+
+  private:
+    friend class vk::Queue;
+    friend class metal::Queue;
+
+    void publishRecordingSubmission(const std::shared_ptr<detail::CompletionRecord>& record)
+    {
+        if (_recordingCompletion)
+        {
+            _recordingCompletion->submitted(record);
+        }
+    }
+
+    std::shared_ptr<detail::RecordingCompletion> _recordingCompletion;
 };
 
 }

@@ -25,6 +25,8 @@
 #include <bg2e/geo/Mesh.hpp>
 
 #include <memory>
+#include <cmath>
+#include <optional>
 #include <stdexcept>
 
 namespace bg2e {
@@ -61,8 +63,56 @@ class BG2E_API MeshGeneric {
         return static_cast<uint32_t>(_meshData.submeshes.size());
     }
 
+    // Bounds describe uploaded geometry, independent of later CPU edits.
+    struct Bounds {
+        glm::vec3 minimum, maximum;
+    };
+    std::optional<Bounds> uploadedBounds(uint32_t submesh) const
+    {
+        if (submesh >= _uploadedBounds.size() || submesh >= _meshData.submeshes.size() ||
+            _meshData.submeshes[submesh].firstIndex != _uploadedRanges[submesh].firstIndex ||
+            _meshData.submeshes[submesh].indexCount != _uploadedRanges[submesh].indexCount)
+        {
+            return std::nullopt;
+        }
+        return _uploadedBounds[submesh];
+    }
+
     void build(gpu::Device* device)
     {
+        _uploadedBounds.clear();
+        _uploadedRanges = _meshData.submeshes;
+        for (const auto& submesh : _meshData.submeshes)
+        {
+            std::optional<Bounds> bounds;
+            bool valid = submesh.indexCount > 0 && submesh.firstIndex <= _meshData.indices.size() &&
+                submesh.indexCount <= _meshData.indices.size()-submesh.firstIndex;
+            for (uint32_t i = 0; valid && i < submesh.indexCount; ++i)
+            {
+                const auto index = _meshData.indices[submesh.firstIndex+i];
+                if (index >= _meshData.vertices.size())
+                {
+                    valid = false;
+                    break;
+                }
+                const auto position = _meshData.vertices[index].position;
+                if (!std::isfinite(position.x) || !std::isfinite(position.y) || !std::isfinite(position.z))
+                {
+                    valid = false;
+                    break;
+                }
+                if (!bounds)
+                {
+                    bounds = Bounds{position, position};
+                }
+                else
+                {
+                    bounds->minimum = glm::min(bounds->minimum, position);
+                    bounds->maximum = glm::max(bounds->maximum, position);
+                }
+            }
+            _uploadedBounds.push_back(valid ? bounds : std::nullopt);
+        }
         _vertexBuffer = device->createBuffer("Mesh vertex buffer");
         _vertexBuffer->createVertexBuffer(_meshData.vertices);
 
@@ -152,6 +202,8 @@ class BG2E_API MeshGeneric {
 
     void cleanup()
     {
+        _uploadedBounds.clear();
+        _uploadedRanges.clear();
         if (_vertexBuffer)
         {
             _vertexBuffer->cleanup();
@@ -165,6 +217,8 @@ class BG2E_API MeshGeneric {
     }
 
   private:
+    std::vector<std::optional<Bounds>> _uploadedBounds;
+    std::vector<geo::Submesh> _uploadedRanges;
     MeshT _meshData;
     std::shared_ptr<gpu::Buffer> _vertexBuffer;
     std::shared_ptr<gpu::Buffer> _indexBuffer;

@@ -482,3 +482,28 @@ See [waitIdle infrastructure](Submission_tracking_and_waitIdle.md) and
 
 See [rendering/subresources and transfer](Subresources_and_rendering.md) for
 MRT attachments, explicit views/layouts, capability limits and synchronous IO.
+
+## Recording completion identity
+
+`recordingCompletion()` returns a retained `shared_ptr<const detail::RecordingCompletion>`
+for the current recording (null before a native backend begin). Its `completed()`
+method polls without waiting. It returns false until that exact recording is
+successfully submitted and its GPU completion record reports success; GPU errors
+propagate. This is separate from ending recording or backend `isBuilt()` flags.
+
+Vulkan and Metal begin a new ticket for each recording; the old ticket remains
+independent of command-wrapper reset/destruction. Queues attach the existing
+CompletionRecord only after successful native submission. Abandoned recordings
+never become complete, including after a later unrelated submission or device
+idle. Native frame-fence reuse cannot change an already terminal completion record.
+The ticket does not retain arbitrary resources or replace the caller's obligation
+to keep command resources alive through completion. Use it for readiness checks,
+not for introducing measurement waits or synchronization drains.
+
+`RecordingCompletion::retired()` additionally recognizes unsubmitted recordings
+abandoned by command-wrapper destruction or a successful new native begin/reset.
+This permits retired temporary storage to be recycled without marking abandoned
+acceleration builds complete. Submitted tickets still require GPU completion, even
+after wrapper destruction. `wasSubmitted()` distinguishes valid prior temporal work
+from an abandoned/unsubmitted attempt; normal histories retain graphics-queue
+submission ordering. Neither method adds a GPU wait.

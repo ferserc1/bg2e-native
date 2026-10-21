@@ -114,6 +114,7 @@ void GBuffer::record(const PassContext& context)
     command.transition(depth, gpu::ImageLayout::DepthAttachment);
     rendering.depth = gpu::DepthAttachmentDescription{.image = depth,
         .load = raster->item ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::Clear};
+    rendering.scissor = raster->region;
     command.beginRendering(rendering);
     command.bindPipeline(_pipeline.get());
     command.bindResourceSet(_pipeline.get(), 0, raster->frame->set(context.frame));

@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/reflection/TypeInfo.hpp>
 
 #include <bg2e/draw/pipeline/TracingSceneResources.hpp>
@@ -55,7 +56,7 @@ struct RTAOSettings {
 struct RTAOConfiguration {
     std::filesystem::path shaderRoot;
     std::string shaderPrefix = "draw/rtao"; // camera/world_{hash,blue}_256 templates; exact runtime capacity.
-    std::string shaderInterface = "draw.rtao.v2";
+    std::string shaderInterface = "draw.rtao.v3";
     std::shared_ptr<utils::BlueNoise> noise;
 };
 struct RTAOContext {
@@ -68,7 +69,7 @@ struct RTAOContext {
 };
 
 // Public Device-backed pass, independent of a concrete renderer/camera/scene UI.
-// Custom native shaders implement draw.rtao.v2; subclass record is replaceable.
+// Custom native shaders implement draw.rtao.v3; subclass record is replaceable.
 // Retain caller surfaces/output and prepared snapshots through GPU completion.
 class BG2E_API RTAmbientOcclusion {
   public:
@@ -113,10 +114,19 @@ class BG2E_API RTAmbientOcclusion {
     gpu::Size2D outputExtent(gpu::Size2D surface) const;
     std::shared_ptr<TracingSceneResources> tracingResources() const;
 
+    TemporaryPoolStatistics poolStatistics() const;
+
+    // Diagnostic baseline: allocate fresh invocation/image storage.
+    void setPoolingEnabled(bool enabled)
+    {
+        _poolingEnabled = enabled;
+    }
+
   protected:
     struct Invocation {
+        std::shared_ptr<TemporaryBindings> pooled;
         std::shared_ptr<gpu::Buffer> uniforms;
-        std::shared_ptr<gpu::ResourceSet> surfaceSet, sceneSet;
+        std::shared_ptr<gpu::ResourceSet> surfaceSet, sceneSet, tableSet;
         std::shared_ptr<gpu::Image> noiseImage;
         std::shared_ptr<gpu::Sampler> noiseSampler;
     };
@@ -129,6 +139,8 @@ class BG2E_API RTAmbientOcclusion {
     RTAOConfiguration _configuration;
     RTAOSettings _settings;
     gpu::Device* _device = nullptr;
+    std::shared_ptr<TemporaryResourcePool> _pool;
+    bool _poolingEnabled = true;
     uint32_t _capacity = 0;
     std::shared_ptr<TracingSceneResources> _tracing;
     std::shared_ptr<gpu::Sampler> _nearest;

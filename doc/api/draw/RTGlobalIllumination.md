@@ -11,7 +11,7 @@ configuration.globalIllumination = gi;
 configuration.indirectLighting = bg2e::draw::IndirectLightingMode::GlobalIllumination;
 ```
 
-RendererDeferred creates an enabled default when no component is injected, and RendererConfiguration defaults the indirect mode to GlobalIllumination. This requests GI; it does not guarantee device/shader support. Check available/status and usesGlobalIllumination(); unsupported execution preserves the requested mode and falls back to ordinary IBL/baked arithmetic. An injected pass or explicit setting/mode overrides these defaults. Configure an injected RTGIConfiguration with the deployed shaderRoot, optional shared utils::BlueNoise and compatible native shaderPrefix before initialization. Its interface is draw.rtgi.v2 (Vulkan specialization ID0 and Metal image/sampler argument-record buffers8/9). Lifecycle/prepare/record/availability/outputExtent are virtual for compatible replacement. globalIllumination() exposes the component; usesGlobalIllumination() reports graph capability, independently of enabled() and the requested mode. setIndirectLightingMode selects IBL, AmbientOcclusion or GlobalIllumination, preserving both effects' settings. Mutate at synchronized application boundaries and request a scene frame; call invalidateHistories() after discontinuous application edits; the renderer coordinates its effect and SDK state.
+RendererDeferred creates an enabled default when no component is injected, and RendererConfiguration defaults the indirect mode to GlobalIllumination. This requests GI; it does not guarantee device/shader support. Check available/status and usesGlobalIllumination(); unsupported execution preserves the requested mode and falls back to ordinary IBL/baked arithmetic. An injected pass or explicit setting/mode overrides these defaults. Configure an injected RTGIConfiguration with the deployed shaderRoot, optional shared utils::BlueNoise and compatible native shaderPrefix before initialization. Its interface is draw.rtgi.v3 (Vulkan specialization ID0 and Metal image/sampler argument-record buffers8/9). Lifecycle/prepare/record/availability/outputExtent are virtual for compatible replacement. globalIllumination() exposes the component; usesGlobalIllumination() reports graph capability, independently of enabled() and the requested mode. setIndirectLightingMode selects IBL, AmbientOcclusion or GlobalIllumination, preserving both effects' settings. Mutate at synchronized application boundaries and request a scene frame; call invalidateHistories() after discontinuous application edits; the renderer coordinates its effect and SDK state.
 
 Settings expose sampleCount (1..64), bounceCount (1..8), shadowSamples (1..64), positive finite bias/maxDistance, quality, useShadows and useBlueNoise. Active recording requires maxDistance > 2*bias. Quality reuses Low/Medium/High/Ultra scales 1/3, 1/2, 2/3 and 1, independently of renderer resolution. The renderer detects quality target changes.
 
@@ -39,3 +39,11 @@ check graph selection as well. [SurfaceInputs](SurfaceInputs.md) and
 [TracingSceneResources](TracingSceneResources.md) describe reusable inputs/owners.
 Device must outlive retained results/snapshots. No UI, exact bake-average or
 headless application scheduler is implicitly created by a standalone effect.
+
+Invocation uniforms and surface set0 use [retired temporary storage](TemporaryResourcePool.md)
+keyed by slot/invocation ordinal, layout and uniform size. Each live invocation
+keeps distinct storage; only retired unreferenced leases are reused. Exact native
+binding tuples skip descriptor updates, while uniforms are uploaded each call.
+Tracing scene set1 and immutable material arrays set2 retain their existing owners.
+Use setPoolingEnabled(false) for fresh-invocation diagnostics and poolStatistics()
+for current retention, at a synchronized update boundary.

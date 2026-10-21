@@ -1,6 +1,6 @@
 # Draw renderer optimization implementation plan
 
-Status: planned. Each phase delivers a functional application with an independently verifiable optimization. No phase ends with an unfinished shader interface, disabled feature, or infrastructure that requires the next phase to restore functionality.
+Status: phases 01–10 implemented; native entry validation and runtime acceptance for these phases remain pending. Each phase delivers a functional application with an independently verifiable optimization. No phase ends with an unfinished shader interface, disabled feature, or infrastructure that requires the next phase to restore functionality.
 
 This plan extends the [existing optimization report](../render_to_draw.md). Snapshot-local tracing binding reuse and indexed GPU shadow UV lookup are already implemented; their native validation remains an entry requirement for this work. Existing profile numbers are CPU measurements from short Metal captures, including settings transitions. They establish resource preparation as a priority, but do not establish GPU speedups or reliable steady-state frame times.
 

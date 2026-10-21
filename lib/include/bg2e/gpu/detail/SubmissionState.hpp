@@ -112,6 +112,59 @@ class BG2E_API CompletionRecord {
     std::function<void()> _wait;
 };
 
+// A recording is not a submission. Abandoned/reset recordings never become
+// ready; only a successful send supplies a completion record. Polling never waits.
+class BG2E_API RecordingCompletion {
+  public:
+    bool completed() const
+    {
+        std::shared_ptr<CompletionRecord> record;
+        {
+            std::lock_guard lock(_mutex);
+            record = _submission;
+        }
+        return record && record->completed();
+    }
+
+    bool wasSubmitted() const
+    {
+        std::lock_guard lock(_mutex);
+        return bool(_submission);
+    }
+
+    // Abandoned recordings are safe to recycle, but are never completed builds.
+    bool retired() const
+    {
+        std::shared_ptr<CompletionRecord> record;
+        {
+            std::lock_guard lock(_mutex);
+            record = _submission;
+            if (!record)
+            {
+                return _abandoned;
+            }
+        }
+        return record->completed();
+    }
+
+    void abandon()
+    {
+        std::lock_guard lock(_mutex);
+        _abandoned = true;
+    }
+
+    void submitted(const std::shared_ptr<CompletionRecord>& record)
+    {
+        std::lock_guard lock(_mutex);
+        _submission = record;
+    }
+
+  private:
+    mutable std::mutex _mutex;
+    std::shared_ptr<CompletionRecord> _submission;
+    bool _abandoned = false;
+};
+
 class BG2E_API SubmissionState {
   public:
     // Shared by all queues, including wrappers aliasing one native queue.

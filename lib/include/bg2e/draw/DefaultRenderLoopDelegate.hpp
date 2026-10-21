@@ -26,6 +26,11 @@
 #include <optional>
 
 namespace bg2e::draw {
+namespace pipeline { class FinalLayer; }
+
+// Bounded CPU values copied into native command storage when the final pass records.
+enum class FinalColorProperty { Exposure, Contrast, Brightness, Gamma };
+enum class ValueUpdateResult { Applied, Unchanged, Stale };
 
 // Main-thread scene delegate. Renderer ownership is exclusive; scene ownership
 // is shared and survives renderer replacement. Setters queue work, including
@@ -65,6 +70,20 @@ class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
     void enqueueRendererUpdate(uint64_t generation, std::function<void(Renderer&)> operation,
         std::function<void()> stale = {});
 
+    // Main thread only; applied at prepareFrame with background producers stopped.
+    // Returns false for unsupported/custom renderers or final passes; enqueue the
+    // conservative callback instead. Notification callbacks may update UI or
+    // persistence, but must not mutate rendering resources or submit GPU work.
+    // Optional current is a read-only CPU validity predicate; false reports Stale.
+    bool enqueueFinalColorUpdate(uint64_t generation, FinalColorProperty property, float value,
+        std::function<void(ValueUpdateResult)> completion = {}, std::function<bool()> current = {});
+
+    // Diagnostic baseline: drain typed batches too, without changing their order.
+    void setValueUpdateDrainElisionEnabled(bool enabled)
+    {
+        _valueUpdateDrainElisionEnabled = enabled;
+    }
+
     using RendererAttachedCallback = std::function<void(Renderer&, uint64_t)>;
     // Configure before first binding (e.g. during application/UI initialization).
     // Detach cancels settings targets/callbacks before old resources are freed;
@@ -88,6 +107,14 @@ class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
         uint64_t generation;
         std::function<void(Renderer&)> operation;
         std::function<void()> stale;
+        struct ColorValue {
+            FinalColorProperty property;
+            float value;
+            std::weak_ptr<pipeline::FinalLayer> target;
+        };
+        std::optional<ColorValue> color;
+        std::function<void(ValueUpdateResult)> completion;
+        std::function<bool()> current;
     };
     void applyUpdates(std::vector<PendingUpdate> updates);
     std::vector<PendingUpdate> _updates;
@@ -108,6 +135,7 @@ class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
     bool _targetsBound = false;
     bool _followOutputExtent = true;
     bool _continuousRendering = false;
+    bool _valueUpdateDrainElisionEnabled = true;
     uint64_t _rendererGeneration = 0;
     gpu::Size2D _outputExtent;
     gpu::PixelFormat _outputFormat = gpu::PixelFormat::Undefined;

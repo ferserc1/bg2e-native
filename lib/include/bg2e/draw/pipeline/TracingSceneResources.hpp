@@ -50,36 +50,69 @@ struct TracingGeometry {
     std::shared_ptr<gpu::Buffer> vertexBuffer, indexBuffer;
 };
 
+class TracingMaterialGeneration;
+class TracingShadowGeneration;
+class TracingAccelerationGeneration;
+
 // One acquired-slot/explicit job snapshot. Retain through GPU completion, along
 // with every resource set made from it. Canonical IDs are never TLAS indices.
 class BG2E_API TracingSnapshot {
+  private:
+    std::shared_ptr<const TracingMaterialGeneration> _materialGeneration;
+    std::shared_ptr<const TracingShadowGeneration> _shadowGeneration;
+    std::shared_ptr<TracingAccelerationGeneration> _accelerationGeneration;
+
   public:
-    TracingSnapshot() = default;
+    TracingSnapshot();
+    TracingSnapshot(std::shared_ptr<const TracingMaterialGeneration> materials,
+        std::shared_ptr<const TracingShadowGeneration> shadows,
+        std::shared_ptr<TracingAccelerationGeneration> acceleration = nullptr);
     TracingSnapshot(const TracingSnapshot&) = delete;
     TracingSnapshot& operator=(const TracingSnapshot&) = delete;
 
     gpu::Device* device = nullptr; // Borrowed; outlives all owners.
     uint32_t capacity = 0;
-    uint64_t fallbackTextureSlots = 0; // Capacity-degraded slots; authored/raster resources are unchanged.
+    uint64_t fallbackTextureSlots = 0; // Degraded slots counted per instance reference; raster resources are unchanged.
     std::shared_ptr<const TracingGeometry> geometry;
     std::vector<CollectRayTracingInstancesVisitor::Instance> owners;
-    std::vector<TracingInstanceData> instances;
-    std::vector<TracingMaterialData> materials;
-    std::vector<std::shared_ptr<gpu::Image>> images;
-    std::vector<std::shared_ptr<gpu::Sampler>> samplers;
-    std::shared_ptr<gpu::Buffer> instanceBuffer, materialBuffer;
-    std::shared_ptr<gpu::RayTracingScene> scene;
-    ShadowQueryTable shadowTable;
-    std::shared_ptr<gpu::Buffer> shadowInstances;
+    const std::vector<TracingInstanceData>& instances;
+    const std::vector<TracingMaterialData>& materials; // First encounter of each material identity/effective revision.
+    const std::vector<std::shared_ptr<gpu::Image>>& images;
+    const std::vector<std::shared_ptr<gpu::Sampler>>& samplers;
+    const std::shared_ptr<gpu::Buffer>& instanceBuffer;
+    const std::shared_ptr<gpu::Buffer>& materialBuffer;
+    const std::shared_ptr<gpu::RayTracingScene>& scene;
+    const ShadowQueryTable& shadowTable;
+    // Native owners are captured once, independently of mutable Texture wrappers.
+    const std::vector<std::shared_ptr<gpu::Image>>& shadowImages;
+    const std::vector<std::shared_ptr<gpu::Sampler>>& shadowSamplers;
+    const std::vector<uint64_t>& shadowImageGenerations;
+    const std::shared_ptr<gpu::Image>& shadowFallbackImage;
+    const std::shared_ptr<gpu::Sampler>& shadowFallbackSampler;
+    const uint64_t& shadowFallbackGeneration;
+    const std::shared_ptr<gpu::Buffer>& shadowInstances;
 
     bool empty() const;
-    // Once per recording/submission. Discard the snapshot if recording aborts.
+    // Transitions once per wrapper; builds only a new acceleration generation.
+    // Recorded work is not reusable until its submission completes. Discard the
+    // snapshot if recording aborts.
     void build(gpu::CommandBuffer& command);
     // Shared, immutable bindings cached per layout/set/capacity for this snapshot
     // only. Consumers must not mutate/clean up the returned set. Calls are serial
     // on the recording thread, like build(). Shared-owned layouts are retained.
     std::shared_ptr<gpu::ResourceSet> resourceSet(gpu::PipelineLayout& layout, uint32_t set = 1,
         uint32_t bindingCapacity = 0) const;
+
+    // Persistent arrays live in set 2, independently of frame-specific set 1.
+    std::shared_ptr<gpu::ResourceSet> materialResourceSet(gpu::PipelineLayout& layout,
+        uint32_t bindingCapacity = 0, bool reuse = true) const;
+    std::shared_ptr<gpu::ResourceSet> shadowAlphaResourceSet(std::shared_ptr<gpu::PipelineLayout> layout,
+        uint32_t bindingCapacity, bool reuse = true) const;
+
+    // v5: scene/geometry/metadata set, independent of invocation and alpha sets.
+    // Discard the snapshot after native recreation or aborted recording.
+    std::shared_ptr<gpu::ResourceSet> shadowResourceSet(std::shared_ptr<gpu::PipelineLayout> layout,
+        uint32_t bindingCapacity, uint32_t setIndex = 1, bool reuse = true) const;
 
   private:
     struct SceneBindings {
@@ -89,11 +122,13 @@ class BG2E_API TracingSnapshot {
         std::shared_ptr<gpu::ResourceSet> resources;
     };
     mutable std::vector<SceneBindings> _sceneBindings;
+    mutable std::vector<SceneBindings> _shadowBindings;
+    mutable std::vector<SceneBindings> _uncachedShadowBindings; // Diagnostic invocations retain layouts too.
     bool _built = false;
 };
 
-// Native map: set=1 bindings 0..3 -> Metal buffers2..5, TLAS4 -> buffer6,
-// images5/samplers6 -> Metal argument record buffers8/9, each record id0.
+// Native map: set=1 bindings 0..3 -> Metal buffers2..5, TLAS4 -> buffer6;
+// set=2 images5/samplers6 -> Metal argument record buffers8/9, each record id0.
 BG2E_API gpu::PipelineLayoutDescription tracingBindingLayout(uint32_t capacity,
     gpu::ShaderStage stage = gpu::ShaderStage::Compute,
     const std::vector<gpu::ShaderStage>& additionalStages = {});
@@ -111,10 +146,28 @@ class BG2E_API TracingSceneResources {
     void clear(); // Drop cache ownership only; retained snapshots remain valid.
     uint32_t capacity() const;
 
+    // Diagnostic baseline: rebuild immutable material/shadow generations each frame.
+    void setPersistenceEnabled(bool enabled)
+    {
+        _persistenceEnabled = enabled;
+    }
+
+    // Diagnostic baseline: new instance storage and full TLAS build per snapshot.
+    void setAccelerationReuseEnabled(bool enabled)
+    {
+        _accelerationReuseEnabled = enabled;
+    }
+
   private:
     gpu::Device* _device;
     uint32_t _capacity;
     std::shared_ptr<const TracingGeometry> _geometry;
+    std::shared_ptr<const TracingMaterialGeneration> _materials;
+    std::shared_ptr<const TracingShadowGeneration> _shadows;
+    // Bounded candidates: recorded/pending entries are never reused prematurely.
+    std::vector<std::shared_ptr<TracingAccelerationGeneration>> _accelerations;
+    bool _accelerationReuseEnabled = true;
+    bool _persistenceEnabled = true;
     bool _capacityWarningActive = false;
 };
 }

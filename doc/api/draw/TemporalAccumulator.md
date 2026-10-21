@@ -37,3 +37,26 @@ check graph selection as well. [SurfaceInputs](SurfaceInputs.md) and
 [TracingSceneResources](TracingSceneResources.md) describe reusable inputs/owners.
 Device must outlive retained results/snapshots. No UI, exact bake-average or
 headless application scheduler is implicitly created by a standalone effect.
+
+## Retired temporary storage
+
+History signal/position/normal images and invocation uniform buffers/sets use
+[TemporaryResourcePool](TemporaryResourcePool.md). Current histories and previous
+histories still read by any slot retain separate owners; externally retained result
+owners cannot become scratch storage. Frame-slot count is not reduced to a fixed
+two-image ping-pong. Pool reuse does not relax any camera, sequence, settings,
+classification or history-generation invalidation rule.
+
+TemporalConfiguration::poolLimits controls retained cache bytes, image/set counts
+and idle age. `poolStatistics()` reports retention; `setPoolingEnabled(false)`
+restores fresh-storage diagnostics. Logical invalidate still keeps submitted
+invocation owners alive. Failed/abandoned recordings cannot become input history
+for a different recording; retrying their scene sample starts from a fresh history.
+Previously submitted history and earlier samples within the same command retain
+the normal ordered graphics-queue behavior. No new per-frame wait is introduced.
+
+RendererDeferred now reuses [revision-keyed scene signatures](TemporalInvalidation.md).
+This changes signature preparation work, not the accumulator's acceptance tests:
+object-motion global resets, camera thresholds, previous surfaces, transparent
+correspondence, disocclusion and explicit generation checks remain conservative.
+No new object-motion reprojection or effect-local material/light reset is enabled.

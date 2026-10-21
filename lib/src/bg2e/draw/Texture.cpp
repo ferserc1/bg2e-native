@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/Texture.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/db/image.hpp>
 #include <bg2e/db/texture_archive.hpp>
 #include <bg2e/gpu/Device.hpp>
@@ -84,6 +85,40 @@ gpu::AddressMode addressMode(base::Texture::AddressMode mode)
     }
     throw std::invalid_argument("Unknown texture address mode");
 }
+
+gpu::SamplerDescription samplerDescription(const base::Texture& settings, uint32_t levels)
+{
+    gpu::SamplerDescription description;
+    description.minFilter = settings.minFilter() == base::Texture::FilterLinear ? gpu::Filter::Linear : gpu::Filter::Nearest;
+    description.magFilter = settings.magFilter() == base::Texture::FilterLinear ? gpu::Filter::Linear : gpu::Filter::Nearest;
+    description.mipFilter = settings.minFilter() == base::Texture::FilterLinear ? gpu::MipmapFilter::Linear : gpu::MipmapFilter::Nearest;
+    description.addressModeU = addressMode(settings.addressModeU());
+    description.addressModeV = addressMode(settings.addressModeV());
+    description.addressModeW = addressMode(settings.addressModeW());
+    const float maxLevel = settings.useMipmaps() ? float(levels - 1) : 0.0f;
+    description.maxLod = settings.maxLod() < 0 ? maxLevel : std::min(settings.maxLod(), maxLevel);
+    description.minLod = std::min(settings.minLod(), description.maxLod);
+    description.mipLodBias = settings.mipLodBias();
+    return description;
+}
+
+bool sameSampler(const gpu::SamplerDescription& a, const gpu::SamplerDescription& b)
+{
+    return a.minFilter == b.minFilter && a.magFilter == b.magFilter && a.mipFilter == b.mipFilter &&
+        a.addressModeU == b.addressModeU && a.addressModeV == b.addressModeV && a.addressModeW == b.addressModeW &&
+        a.minLod == b.minLod && a.maxLod == b.maxLod && a.mipLodBias == b.mipLodBias;
+}
+
+void copySamplerSettings(base::Texture& target, const base::Texture& source)
+{
+    target.setMinFilter(source.minFilter());
+    target.setMagFilter(source.magFilter());
+    target.setUseMipmaps(source.useMipmaps());
+    target.setMinLod(source.minLod());
+    target.setMaxLod(source.maxLod());
+    target.setMipLodBias(source.mipLodBias());
+    target.setAddressMode(source.addressModeU(), source.addressModeV(), source.addressModeW());
+}
 }
 
 std::shared_ptr<base::Texture> cloneTextureSettings(const base::Texture& source)
@@ -114,22 +149,6 @@ Texture::Texture(Engine* engine) : _engine(engine), _settings(std::make_shared<b
 Texture::Texture(Engine* engine, std::shared_ptr<base::Texture> settings) : Texture(engine)
 {
     load(std::move(settings));
-}
-
-std::shared_ptr<gpu::Sampler> Texture::makeSampler(const base::Texture& settings, uint32_t levels) const
-{
-    gpu::SamplerDescription description;
-    description.minFilter = settings.minFilter() == base::Texture::FilterLinear ? gpu::Filter::Linear : gpu::Filter::Nearest;
-    description.magFilter = settings.magFilter() == base::Texture::FilterLinear ? gpu::Filter::Linear : gpu::Filter::Nearest;
-    description.mipFilter = settings.minFilter() == base::Texture::FilterLinear ? gpu::MipmapFilter::Linear : gpu::MipmapFilter::Nearest;
-    description.addressModeU = addressMode(settings.addressModeU());
-    description.addressModeV = addressMode(settings.addressModeV());
-    description.addressModeW = addressMode(settings.addressModeW());
-    const float maxLevel = settings.useMipmaps() ? float(levels - 1) : 0.0f;
-    description.maxLod = settings.maxLod() < 0 ? maxLevel : std::min(settings.maxLod(), maxLevel);
-    description.minLod = std::min(settings.minLod(), description.maxLod);
-    description.mipLodBias = settings.mipLodBias();
-    return _engine->device()->createSampler(description);
 }
 
 void Texture::load(std::shared_ptr<base::Texture> settings)
@@ -163,7 +182,11 @@ void Texture::load(std::shared_ptr<base::Texture> settings)
 
 void Texture::load(const base::Image& pixels, const base::Texture& settings)
 {
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("texture.waitIdle.load");
+        base::CpuProfileScope::count("texture.drains.load", 1);
+        _engine->device()->waitIdle();
+    }
     gpu::ImageDescription description;
     description.size = {pixels.width(), pixels.height()};
     description.format = pixels.dataf() ? gpu::PixelFormat::R32G32B32A32_SFLOAT : gpu::PixelFormat::R8G8B8A8_UNORM;
@@ -202,12 +225,19 @@ void Texture::load(std::shared_ptr<base::Texture> settings, std::shared_ptr<gpu:
         throw std::invalid_argument("Requested texture filtering is unsupported for this format");
     }
     auto independent = cloneTextureSettings(*settings);
-    auto sampler = makeSampler(*independent, image->mipLevels());
-    _engine->device()->waitIdle();
+    auto description = samplerDescription(*independent, image->mipLevels());
+    auto sampler = _engine->device()->createSampler(description);
+    {
+        base::CpuProfileScope profile("texture.waitIdle.load");
+        base::CpuProfileScope::count("texture.drains.load", 1);
+        _engine->device()->waitIdle();
+    }
     _memorySource.reset();
     _settings = std::move(independent);
     _image = std::move(image);
     _sampler = std::move(sampler);
+    _samplerDescription = description;
+    ++_bindingRevision;
 }
 
 void Texture::reload()
@@ -233,18 +263,25 @@ void Texture::updateSampler(const base::Texture& settings)
     {
         throw std::invalid_argument("Requested texture filtering is unsupported for this format");
     }
+    const auto description = samplerDescription(settings, _image->mipLevels());
+    if (_sampler && _sampler->isValid() && sameSampler(description, _samplerDescription))
+    {
+        // Preserve authored settings even if clamping leaves native state equal.
+        copySamplerSettings(*_settings, settings);
+        return;
+    }
     auto independent = cloneTextureSettings(*_settings);
-    independent->setMinFilter(settings.minFilter());
-    independent->setMagFilter(settings.magFilter());
-    independent->setUseMipmaps(settings.useMipmaps());
-    independent->setMinLod(settings.minLod());
-    independent->setMaxLod(settings.maxLod());
-    independent->setMipLodBias(settings.mipLodBias());
-    independent->setAddressMode(settings.addressModeU(), settings.addressModeV(), settings.addressModeW());
-    auto sampler = makeSampler(*independent, _image->mipLevels());
-    _engine->device()->waitIdle();
+    copySamplerSettings(*independent, settings);
+    auto sampler = _engine->device()->createSampler(description);
+    {
+        base::CpuProfileScope profile("texture.waitIdle.updateSampler");
+        base::CpuProfileScope::count("texture.drains.updateSampler", 1);
+        _engine->device()->waitIdle();
+    }
     _settings = std::move(independent);
     _sampler = std::move(sampler);
+    _samplerDescription = description;
+    ++_bindingRevision;
 }
 
 std::shared_ptr<Texture> Texture::clone() const
@@ -253,7 +290,11 @@ std::shared_ptr<Texture> Texture::clone() const
     {
         throw std::logic_error("Cannot clone an unloaded texture");
     }
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("texture.waitIdle.clone");
+        base::CpuProfileScope::count("texture.drains.clone", 1);
+        _engine->device()->waitIdle();
+    }
     if ((_image->usage() & gpu::ImageUsage::TransferSrc) == gpu::ImageUsage::None)
     {
         throw std::invalid_argument("Texture cloning requires transfer-source usage");

@@ -23,7 +23,9 @@
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <cmath>
+#include <cstring>
 #include <stdexcept>
 #include <utility>
 
@@ -206,35 +208,91 @@ void EnvironmentDataBinding::initialize(Engine& engine, std::shared_ptr<gpu::Pip
 {
     initializeUniforms(engine, std::move(layout), 3, sizeof(EnvironmentData), {{.vulkan = 8, .metal = 5}}, frameSlots);
     _metalTextureBase = metalTextureBase;
-    _owners.resize(_slots.size());
+    _records.resize(_slots.size());
 }
 
 void EnvironmentDataBinding::update(const FrameContext& frame, std::shared_ptr<const environment::EnvironmentResources> environment)
 {
-    if (!environment || _engine != &frame.engine || frame.frameSlot >= _owners.size())
+    if (!environment || _engine != &frame.engine || frame.frameSlot >= _records.size())
     {
         throw std::invalid_argument("Environment frame binding requires a compatible resource snapshot");
+    }
+    auto& slot = _slots.at(frame.frameSlot);
+    if (slot.prepared && slot.frameNumber == frame.frameNumber)
+    {
+        throw std::logic_error("Do not overwrite environment data already prepared for this frame");
     }
     environment->validate(frame.engine.device());
     EnvironmentData data;
     data.parameters = {float(environment->prefilteredSpecular->mipLevels() - 1), environment->skyboxBlur, environment->skyboxVisible ? 1.0f : 0.0f, 0};
-    auto& slot = updateBytes(frame, &data, sizeof(data));
-    slot.prepared = false; // Do not expose partially rebound environment sets.
     const std::array<std::shared_ptr<gpu::Image>, 4> images = {environment->sky, environment->irradiance, environment->prefilteredSpecular, environment->brdf};
-    for (uint32_t i = 0; i < images.size(); ++i)
+    const std::array<std::shared_ptr<gpu::Sampler>, 4> samplers = {environment->sampler, environment->sampler, environment->sampler, environment->brdfSampler};
+    std::array<uint64_t, 4> generations{};
+    auto& record = _records.at(frame.frameSlot);
+    bool bindingsChanged = !_reuseEnabled || !record.valid;
+    for (size_t i = 0; i < images.size(); ++i)
     {
-        slot.set->setSampledImage({.vulkan = i, .metal = _metalTextureBase + i}, images[i].get());
-        slot.set->setSampler({.vulkan = 4 + i, .metal = _metalTextureBase + i}, i == 3 ? environment->brdfSampler.get() : environment->sampler.get());
+        generations[i] = images[i]->bindingGeneration();
+        bindingsChanged |= record.images[i] != images[i] || record.samplers[i] != samplers[i] || record.imageGenerations[i] != generations[i];
     }
-    slot.set->update();
-    _owners.at(frame.frameSlot) = std::move(environment);
+    const bool uniformChanged = !_reuseEnabled || !record.valid || std::memcmp(&record.data, &data, sizeof(data)) != 0;
+    const bool wasValid = _reuseEnabled && record.valid;
+    slot.prepared = false; // Do not expose a candidate until every update succeeds.
+    record.valid = false;
+    try
+    {
+        if (!slot.set)
+        {
+            slot.set = frame.engine.device()->createResourceSet(_layout.get(), 3);
+            slot.set->setUniformBuffer({.vulkan = 8, .metal = 5}, slot.buffer.get());
+        }
+        if (uniformChanged)
+        {
+            slot.buffer->updateUniformBuffer(data);
+            base::CpuProfileScope::count("environmentBinding.uniformUploads", 1);
+        }
+        if (bindingsChanged)
+        {
+            for (uint32_t i = 0; i < images.size(); ++i)
+            {
+                if (!wasValid || record.images[i] != images[i] || record.imageGenerations[i] != generations[i])
+                {
+                    slot.set->setSampledImage({.vulkan = i, .metal = _metalTextureBase + i}, images[i].get());
+                }
+                if (!wasValid || record.samplers[i] != samplers[i])
+                {
+                    slot.set->setSampler({.vulkan = 4 + i, .metal = _metalTextureBase + i}, samplers[i].get());
+                }
+            }
+            slot.set->update();
+            base::CpuProfileScope::count("environmentBinding.descriptorUpdates", 1);
+        }
+        else
+        {
+            base::CpuProfileScope::count("environmentBinding.bindingCacheHits", 1);
+        }
+        record.owner = std::move(environment);
+        record.images = images;
+        record.samplers = samplers;
+        record.imageGenerations = generations;
+        record.data = data;
+        record.valid = true;
+    }
+    catch (...)
+    {
+        // Discard native pending writes as well as the unpublished cache state.
+        slot.set.reset();
+        record.valid = false;
+        throw;
+    }
+    slot.frameNumber = frame.frameNumber;
     slot.prepared = true;
 }
 
 void EnvironmentDataBinding::cleanup()
 {
     DataBinding::cleanup();
-    _owners.clear();
+    _records.clear();
 }
 
 void ObjectDataBinding::initialize(Engine& engine, std::shared_ptr<gpu::PipelineLayout> layout, uint32_t frameSlots)
@@ -270,42 +328,102 @@ void ObjectDataBinding::prepare(const FrameContext& frame, const RenderQueue& qu
             validateTexture(texture, frame.engine);
         }
     }
+    // Preflight the complete queue before touching any record in the acquired slot.
+    for (size_t i = 0; i < queue.items().size(); ++i)
+    {
+        if (queue.items()[i].objectId != i + 1)
+        {
+            throw std::invalid_argument("Object IDs must index the complete queue snapshot");
+        }
+    }
+    slot.prepared = false;
     slot.records.resize(queue.items().size());
     for (size_t i = 0; i < queue.items().size(); ++i)
     {
         const auto& item = queue.items()[i];
-        if (item.objectId != i + 1)
-        {
-            throw std::invalid_argument("Object IDs must index the complete queue snapshot");
-        }
         auto& record = slot.records[i];
-        record.owner = item;
+        const bool sameSource = _reuseEnabled && record.valid && record.owner.nodeId == item.nodeId &&
+            record.owner.submeshIndex == item.submeshIndex && record.owner.drawMesh == item.drawMesh &&
+            record.owner.drawMaterial == item.drawMaterial;
+        const bool wasValid = record.valid;
+        const bool newBuffer = !record.buffer || !record.buffer->isValid();
+        const bool newSet = !record.set;
+        bool bindingsChanged = !sameSource || newBuffer || newSet || record.owner.materialRevisions.bindings != item.materialRevisions.bindings;
         ObjectData data;
         data.model = item.worldMatrix;
-        data.normal = glm::transpose(glm::inverse(item.worldMatrix));
+        data.normal = sameSource && record.data.model == item.worldMatrix ? record.data.normal : glm::transpose(glm::inverse(item.worldMatrix));
         data.material = item.materialData;
         data.identity = {item.objectId, item.submeshIndex, 0, 0};
-        if (!record.buffer)
+        for (size_t texture = 0; texture < item.textures.size(); ++texture)
         {
-            record.buffer = frame.engine.device()->createBuffer("Draw object uniform data");
-            record.buffer->createUniformBuffer(data);
+            bindingsChanged |= record.images[texture].get() != item.textureImages[texture] ||
+                record.samplers[texture].get() != item.textureSamplers[texture] ||
+                record.owner.textureRevisions[texture] != item.textureRevisions[texture] ||
+                record.owner.imageGenerations[texture] != item.imageGenerations[texture];
         }
-        else
+        record.valid = false;
+        try
         {
-            record.buffer->updateUniformBuffer(data);
+            if (newBuffer)
+            {
+                auto buffer = frame.engine.device()->createBuffer("Draw object uniform data");
+                buffer->createUniformBuffer(data);
+                record.buffer = std::move(buffer);
+                base::CpuProfileScope::count("objectBinding.uniformUploads", 1);
+            }
+            else if (!_reuseEnabled || !wasValid || record.owner.materialRevisions.values != item.materialRevisions.values ||
+                std::memcmp(&record.data, &data, sizeof(data)) != 0)
+            {
+                record.buffer->updateUniformBuffer(data);
+                base::CpuProfileScope::count("objectBinding.uniformUploads", 1);
+            }
+            if (newSet)
+            {
+                record.set = frame.engine.device()->createResourceSet(_layout.get(), 1);
+            }
+            if (!wasValid || newBuffer || newSet)
+            {
+                record.set->setUniformBuffer({.vulkan = 0, .metal = 3}, record.buffer.get());
+                record.set->setUniformBuffer({.vulkan = 1, .metal = 7}, record.buffer.get());
+            }
+            if (bindingsChanged)
+            {
+                for (uint32_t texture = 0; texture < item.textures.size(); ++texture)
+                {
+                    if (newSet || !sameSource || record.images[texture].get() != item.textureImages[texture] ||
+                        record.owner.imageGenerations[texture] != item.imageGenerations[texture] ||
+                        record.owner.textureRevisions[texture] != item.textureRevisions[texture])
+                    {
+                        record.set->setSampledImage({.vulkan = 2 + texture, .metal = texture}, item.textureImages[texture]);
+                    }
+                    if (newSet || !sameSource || record.samplers[texture].get() != item.textureSamplers[texture] ||
+                        record.owner.textureRevisions[texture] != item.textureRevisions[texture])
+                    {
+                        record.set->setSampler({.vulkan = 8 + texture, .metal = texture}, item.textureSamplers[texture]);
+                    }
+                }
+                record.set->update();
+                base::CpuProfileScope::count("objectBinding.descriptorUpdates", 1);
+            }
+            else
+            {
+                base::CpuProfileScope::count("objectBinding.bindingCacheHits", 1);
+            }
+            record.owner = item;
+            record.data = data;
+            for (size_t texture = 0; texture < item.textures.size(); ++texture)
+            {
+                record.images[texture] = item.textures[texture]->imageResource();
+                record.samplers[texture] = item.textures[texture]->samplerResource();
+            }
+            record.valid = true;
         }
-        if (!record.set)
+        catch (...)
         {
-            record.set = frame.engine.device()->createResourceSet(_layout.get(), 1);
-            record.set->setUniformBuffer({.vulkan = 0, .metal = 3}, record.buffer.get());
-            record.set->setUniformBuffer({.vulkan = 1, .metal = 7}, record.buffer.get());
+            record.set.reset();
+            record.valid = false;
+            throw;
         }
-        for (uint32_t texture = 0; texture < item.textures.size(); ++texture)
-        {
-            record.set->setSampledImage({.vulkan = 2 + texture, .metal = texture}, item.textures[texture]->image());
-            record.set->setSampler({.vulkan = 8 + texture, .metal = texture}, item.textures[texture]->sampler());
-        }
-        record.set->update();
     }
     slot.frameNumber = frame.frameNumber;
     slot.prepared = true;

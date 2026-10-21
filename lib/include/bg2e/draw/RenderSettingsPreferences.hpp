@@ -23,6 +23,8 @@
 #include <bg2e/app/Preferences.hpp>
 
 namespace bg2e::draw {
+// Explicit contract for a completion that only updates UI/persistence values.
+enum class SettingsUpdateSynchronization { Conservative, ValueOnlyNotification };
 // Live facade. Direct bind/apply/restore require a stopped safe boundary.
 // Persistence service is borrowed, optional, and must outlive this facade.
 class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<RenderSettingsPreferences> {
@@ -39,7 +41,8 @@ class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<R
     // keep the facade/delegate alive. Existing lifecycle callbacks must be composed
     // explicitly by callers who already own them; connect is an opt-in owner.
     void connect(const std::shared_ptr<DefaultRenderLoopDelegate>& delegate, ExtendCatalog extensions = {});
-    void queueSet(SettingHandle handle, std::any value, Completion completion = {});
+    void queueSet(SettingHandle handle, std::any value, Completion completion = {},
+        SettingsUpdateSynchronization synchronization = SettingsUpdateSynchronization::Conservative);
     void queueImport(const json::JsonNode& document, UnknownSettingPolicy policy = UnknownSettingPolicy::Reject,
         Completion completion = {});
     bool hasPersistence() const;
@@ -56,6 +59,8 @@ class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<R
   private:
     void enqueue(SettingsImport plan, Completion completion);
     SettingsCatalog _catalog;
+    std::weak_ptr<pipeline::FinalLayer> _boundedFinal;
+    uint64_t _boundedFinalCatalogGeneration = 0;
     app::Preferences* _persistence;
     std::string _key;
     std::weak_ptr<DefaultRenderLoopDelegate> _delegate;

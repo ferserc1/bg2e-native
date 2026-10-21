@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/FullscreenPass.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
@@ -64,13 +65,17 @@ void FullscreenPass::beginFrame(const FrameContext& frame)
     if (_serial[frame.frameSlot] != frame.frameNumber)
     {
         _sets[frame.frameSlot].clear();
+        if (_pool)
+        {
+            _pool->collect();
+        }
         _serial[frame.frameSlot] = frame.frameNumber;
     }
 }
 
 void FullscreenPass::draw(const FrameContext& frame, gpu::Image& output,
     const std::vector<gpu::Image*>& inputs, uint32_t imageSet,
-    const std::vector<std::pair<uint32_t, gpu::ResourceSet*>>& sets, const void* push, uint32_t pushSize, const std::vector<uint32_t>& metalImages, const std::vector<uint32_t>& metalSamplers)
+    const std::vector<std::pair<uint32_t, gpu::ResourceSet*>>& sets, const void* push, uint32_t pushSize, const std::vector<uint32_t>& metalImages, const std::vector<uint32_t>& metalSamplers, std::optional<gpu::ScissorRegion> region)
 {
     beginFrame(frame);
     if ((!metalImages.empty() && metalImages.size() != inputs.size()) ||
@@ -79,7 +84,13 @@ void FullscreenPass::draw(const FrameContext& frame, gpu::Image& output,
         throw std::invalid_argument("Fullscreen native image map must match input count");
     }
     auto& command = frame.commandBuffer;
-    auto resources = _engine->device()->createResourceSet(_layout.get(), imageSet);
+    if (!_pool)
+    {
+        _pool = std::make_shared<TemporaryResourcePool>(*_engine->device());
+    }
+    _pool->setEnabled(_poolingEnabled);
+    auto pooled = _pool->bindings(command, _layout, imageSet, 0, {frame.frameSlot, _sets[frame.frameSlot].size(), 0, 0});
+    const auto& resources = pooled->resources();
     for (uint32_t i = 0; i < inputs.size(); ++i)
     {
         if (!inputs[i] || inputs[i] == &output || inputs[i]->device() != _engine->device())
@@ -88,14 +99,15 @@ void FullscreenPass::draw(const FrameContext& frame, gpu::Image& output,
         }
         command.transition(inputs[i], gpu::ImageLayout::ShaderReadOnly);
         const auto metal = metalImages.empty() ? i : metalImages[i];
-        resources->setSampledImage({i, metal}, inputs[i]);
-        resources->setSampler({uint32_t(inputs.size()) + i, metalSamplers.empty() ? metal : metalSamplers[i]}, _sampler.get());
+        pooled->setSampledImage({i, metal}, inputs[i]);
+        pooled->setSampler({uint32_t(inputs.size()) + i, metalSamplers.empty() ? metal : metalSamplers[i]}, _sampler.get());
     }
-    resources->update();
-    _sets[frame.frameSlot].push_back(resources);
+    pooled->update();
+    _sets[frame.frameSlot].push_back(pooled);
     command.transition(&output, gpu::ImageLayout::ColorAttachment);
     gpu::RenderingDescription rendering;
-    rendering.colors.push_back({.image = &output, .load = gpu::AttachmentLoadOperation::DontCare});
+    rendering.colors.push_back({.image = &output, .load = region ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::DontCare});
+    rendering.scissor = region;
     command.beginRendering(rendering);
     command.bindPipeline(_pipeline.get());
     command.bindResourceSet(_pipeline.get(), imageSet, resources.get());
@@ -119,6 +131,7 @@ void FullscreenPass::cleanup()
         _engine->device()->waitIdle();
     }
     _sets.clear();
+    _pool.reset();
     _serial.clear();
     _pipeline.reset();
     _sampler.reset();
@@ -127,4 +140,10 @@ void FullscreenPass::cleanup()
     _layout.reset();
     _engine = nullptr;
 }
+
+TemporaryPoolStatistics FullscreenPass::poolStatistics() const
+{
+    return _pool ? _pool->statistics() : TemporaryPoolStatistics{};
+}
+
 }

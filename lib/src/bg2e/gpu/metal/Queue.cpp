@@ -170,6 +170,7 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
         _submissions->cancel(record, std::current_exception());
         throw;
     }
+    command->publishRecordingSubmission(record);
     command->_submitted = true;
     command->_executable = false;
 }

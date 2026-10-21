@@ -106,6 +106,7 @@ ImageLayout Image::currentLayout(const ImageSubresourceRange& range) const
 
 void Image::resetLayoutTracking()
 {
+    ++_bindingGeneration;
     _subresourceLayouts.clear();
     _currentLayout = ImageLayout::Undefined;
 }

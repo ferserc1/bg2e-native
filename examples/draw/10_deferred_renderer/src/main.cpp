@@ -17,6 +17,7 @@
  */
 
 #include <bg2e.hpp>
+#include "MaterialRevisionChecks.hpp"
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/draw/RenderSettingsPreferences.hpp>
 #include <bg2e/ui/GraphicsSettingsWindow.hpp>
@@ -123,8 +124,8 @@ struct SceneState {
 
 class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
   public:
-    SceneDelegate()
-        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>(), makeRendererConfiguration())
+    explicit SceneDelegate(bool verifyRevisions = false)
+        : DefaultRenderLoopDelegate(std::make_unique<draw::RendererDeferred>(), makeRendererConfiguration()), _verifyRevisions(verifyRevisions)
     {
         setContinuousRendering(true);
     }
@@ -250,6 +251,11 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         canopy->material().setAlphaCutoff(0.5f);
         canopy->material().setMetalness(0);
         load(canopy);
+        if (_verifyRevisions)
+        {
+            verifyMaterialRevisions(*canopy->drawMaterial(0));
+            std::clog << "Material revision checks passed\n";
+        }
         _state.canopy = addDrawable(root, "Alpha-cutout canopy", canopy, {-3, 2.4f, 1.5f});
 
         // UV1 is scaled separately so the packed map demonstrates material UV selection.
@@ -313,6 +319,8 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
     }
 
   private:
+    bool _verifyRevisions = false;
+
     void load(const std::shared_ptr<draw::Drawable>& drawable)
     {
         // Keep each drawable until cleanup, including if loading fails partway through.
@@ -450,9 +458,14 @@ class UiDelegate final : public ui::UserInterfaceDelegate {
 
 class Application final : public app::Application {
   public:
-    void init(int, char**) override
+    void init(int argc, char** argv) override
     {
-        auto delegate = std::make_shared<SceneDelegate>();
+        bool verifyRevisions = false;
+        for (int i = 1; i < argc; ++i)
+        {
+            verifyRevisions |= std::string(argv[i]) == "--verify-material-revisions";
+        }
+        auto delegate = std::make_shared<SceneDelegate>(verifyRevisions);
         setRenderDelegate(delegate);
         setInputDelegate(std::make_shared<app::InputDelegate>());
         setUiDelegate(std::make_shared<UiDelegate>(delegate));

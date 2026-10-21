@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/reflection/TypeInfo.hpp>
 #include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
 #include <bg2e/draw/environment/EnvironmentResources.hpp>
@@ -32,7 +33,7 @@ struct RTGISettings {
 };
 struct RTGIConfiguration {
     std::filesystem::path shaderRoot;
-    std::string shaderPrefix = "draw/rtgi", shaderInterface = "draw.rtgi.v2";
+    std::string shaderPrefix = "draw/rtgi", shaderInterface = "draw.rtgi.v3";
     std::shared_ptr<utils::BlueNoise> noise;
 };
 struct RTGIContext {
@@ -88,10 +89,19 @@ class BG2E_API RTGlobalIllumination {
     virtual gpu::Size2D outputExtent(gpu::Size2D surface) const;
     std::shared_ptr<TracingSceneResources> tracingResources() const;
 
+    TemporaryPoolStatistics poolStatistics() const;
+
+    // Diagnostic baseline: allocate fresh invocation/image storage.
+    void setPoolingEnabled(bool enabled)
+    {
+        _poolingEnabled = enabled;
+    }
+
   protected:
     struct Invocation {
+        std::shared_ptr<TemporaryBindings> pooled;
         std::shared_ptr<gpu::Buffer> uniforms;
-        std::shared_ptr<gpu::ResourceSet> surfaceSet, sceneSet;
+        std::shared_ptr<gpu::ResourceSet> surfaceSet, sceneSet, tableSet;
         std::shared_ptr<gpu::Image> noiseImage;
         std::shared_ptr<gpu::Sampler> noiseSampler;
         std::shared_ptr<const environment::EnvironmentResources> environment;
@@ -105,6 +115,8 @@ class BG2E_API RTGlobalIllumination {
     RTGIConfiguration _configuration;
     RTGISettings _settings;
     gpu::Device* _device = nullptr;
+    std::shared_ptr<TemporaryResourcePool> _pool;
+    bool _poolingEnabled = true;
     gpu::BackendType _backend{};
     uint32_t _capacity = 0;
     std::shared_ptr<TracingSceneResources> _tracing;

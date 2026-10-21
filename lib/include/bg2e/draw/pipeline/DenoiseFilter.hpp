@@ -18,6 +18,7 @@
 
 #pragma once
 #include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/reflection/TypeInfo.hpp>
 #include <set>
 #include <tuple>
@@ -46,6 +47,7 @@ struct DenoiseConfiguration {
     std::filesystem::path shaderRoot;
     std::string shaderPrefix = "draw/denoise", shaderInterface = "draw.denoise.v1";
     uint32_t maxInvocations = 256; // Per acquired slot, across effect/view/layer keys.
+    TemporaryPoolLimits poolLimits;
 };
 struct DenoiseInput {
     gpu::CommandBuffer& command;
@@ -97,8 +99,17 @@ class BG2E_API DenoiseFilter {
     virtual reflection::TypeInfo settingsType() const;
     virtual void* settingsInstance();
 
+    TemporaryPoolStatistics poolStatistics() const;
+
+    // Diagnostic baseline: allocate fresh invocation/image storage.
+    void setPoolingEnabled(bool enabled)
+    {
+        _poolingEnabled = enabled;
+    }
+
   protected:
     struct Invocation {
+        std::shared_ptr<TemporaryBindings> pooled;
         std::shared_ptr<gpu::Image> output;
         std::shared_ptr<gpu::Buffer> uniforms;
         std::shared_ptr<gpu::ResourceSet> resources;
@@ -112,6 +123,8 @@ class BG2E_API DenoiseFilter {
     DenoiseConfiguration _configuration;
     DenoiseSettings _settings;
     gpu::Device* _device = nullptr;
+    std::shared_ptr<TemporaryResourcePool> _pool;
+    bool _poolingEnabled = true;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::shared_ptr<gpu::Sampler> _nearest;
     std::array<std::shared_ptr<gpu::ShaderModule>,4> _shaders;

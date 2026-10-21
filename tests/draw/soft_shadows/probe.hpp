@@ -95,6 +95,9 @@ inline void runShadowTableProbe(Engine& engine)
     {
         auto extra = std::make_shared<Drawable>();
         extra->setMesh(mesh);
+        // Alpha tables require explicit cutouts now that new materials default to zero.
+        extra->material(0).setAlphaCutoff(0.5f);
+        extra->material(1).setAlphaCutoff(0.5f);
         extra->load(&engine);
         auto node = std::make_shared<scene::Node>("extra shadow caster");
         node->addComponent(new scene::DrawableComponent(extra));
@@ -134,9 +137,9 @@ inline void runShadowTableProbe(Engine& engine)
         pipeline::TracingSceneResources resources(*engine.device(), capacity);
         const auto snapshot = resources.prepare(queue, capacity);
         const auto next = resources.prepare(queue, capacity);
-        if (snapshot->geometry != next->geometry || snapshot->shadowInstances == next->shadowInstances)
+        if (snapshot->geometry != next->geometry || snapshot->shadowInstances != next->shadowInstances)
         {
-            throw std::runtime_error("Shadows must share immutable geometry but retain per-frame metadata");
+            throw std::runtime_error("Unchanged shadows must share immutable geometry and alpha metadata");
         }
         for (size_t i = 0; i < snapshot->owners.size(); ++i)
         {

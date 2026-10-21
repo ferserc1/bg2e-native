@@ -19,6 +19,7 @@
 #pragma once
 #include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
 #include <bg2e/draw/Engine.hpp>
+#include <bg2e/gpu/Queue.hpp>
 #include <cmath>
 #include <cstring>
 
@@ -237,6 +238,32 @@ inline bool runTemporalProbe(Engine& engine, const std::filesystem::path& shader
     {
         throw std::runtime_error("Valid black GI must retain alpha validity");
     }
+    // Failed recording must not publish readable history, even when the next
+    // attempt reuses the same scene sample number with a new recording ticket.
+    const uint16_t retryValue = 0x3400;
+    auto retrySignal = upload(gpu::PixelFormat::R16_SFLOAT,&retryValue,2);
+    const TemporalKey retryKey{TemporalSignal::Visibility,999,999};
+    const uint32_t retrySlot = uint32_t(sequence%2);
+    temporal.beginFrame(retrySlot,++serial,sequence);
+    auto abandoned = device.graphicsQueue().createCommandBuffer("abandoned temporal history");
+    abandoned->begin();
+    const auto abandonedResult = temporal.record({*abandoned,retrySlot,serial,sequence,revision,
+        retryKey,*retrySignal,surface,view,nullptr,1});
+    abandoned->end();
+    abandoned.reset();
+    temporal.beginFrame(retrySlot,++serial,sequence);
+    TemporalResult retried;
+    device.immediateSubmit([&](gpu::CommandBuffer* command)
+    {
+        retried = temporal.record({*command,retrySlot,serial,sequence,revision,
+            retryKey,*retrySignal,surface,view,nullptr,1});
+    });
+    if (retried.frameCount != 1 || retried.image == abandonedResult.image ||
+        std::abs(read(retried,1).r-0.25f) > 0.001f)
+    {
+        throw std::runtime_error("Abandoned history or externally retained output was reused before safe retirement");
+    }
+    ++sequence;
     temporal.setEnabled(false);
     const auto disabled = render(0x3a00,red,red);
     if (disabled[0].owner || std::abs(read(disabled[0],1).r-0.75f) > 0.001f)

@@ -29,3 +29,14 @@ also checks identical shadow/tracing geometry bases. These probes are updated bu
 have not been compiled or executed. Run both native backends and the public
 standalone pass as well as the renderer integration. CPU profiles must no longer
 contain shadow triangle packing/upload regions; metadata and binding regions stay.
+
+Phase 04 introduced `draw.query.softShadows.v4`; rebuild the
+library and both native query shaders before running these checks. Vulkan stable
+bindings1/2/3/9/16/24 move to set1; invocation bindings0/4/5/6/7/8 stay in set0.
+Metal native indices are unchanged. The earlier v3 map in checklist item 9 is
+historical. Also run the [shadow binding probe](../shadow_bindings/README.md) and
+compare multiple transparent compositions with binding reuse enabled/disabled.
+
+Phase 05 advances the active contract to `draw.query.softShadows.v5`, with alpha
+arrays in set2. Unchanged shadow metadata buffers now persist across snapshots.
+The library and paired native shaders must be rebuilt together before execution.

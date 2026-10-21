@@ -375,4 +375,20 @@ array; the records are then exposed through the direct pointer-buffer binding.
 
 The set borrows source resources through GPU completion and owns its native descriptor/argument storage. Keep the device/layout and every source owner alive. Update only at a retired slot or drained edit boundary. Metal declares indirect texture residency at command encoding; array updates re-encode owned buffers and preserve direct scalar bindings. No partial binding/update-after-bind, texture atlas, unbounded bindless allocation or higher-level material policy is implied.
 
+Metal array preparation caches native views by retained image identity, allocation
+generation and exact subresource range, and immutable sampler handles by retained
+identity. Repeated fallback entries resolve once per distinct source/range, and
+unchanged arrays preserve encoded storage. Managed array resources are retained
+for both candidate resolution and the last successfully encoded storage; borrowed
+resources still require caller ownership. Failed updates leave the previous
+encoded buffers, owners and residency entries intact. Complete residency lists
+are redeclared whenever a reused set is bound.
+
+Compatible argument encoders are cached within the immutable Metal PipelineLayout
+by argument-buffer group. Layout identity includes device, set/stage visibility,
+binding IDs, counts, resource types and record/indexability flags. Each encoding
+operation locks its cached encoder for the full mutable target/write sequence.
+Resource sets still allocate and own distinct argument buffers; concurrent sets
+never share writable argument storage. Layout cleanup drops encoder cache ownership.
+
 A concrete higher-level consumer is [draw tracing snapshots](../draw/TracingSceneResources.md), with fully initialized separate image/sampler tables. Its material/count policy belongs to draw, not gpu.

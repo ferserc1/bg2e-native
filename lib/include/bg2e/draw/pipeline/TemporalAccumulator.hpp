@@ -19,6 +19,7 @@
 #pragma once
 #include <bg2e/reflection/TypeInfo.hpp>
 #include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/draw/pipeline/MotionVectorGenerator.hpp>
 #include <map>
 #include <tuple>
@@ -46,6 +47,7 @@ struct TemporalConfiguration {
     std::filesystem::path shaderRoot;
     std::string shaderPrefix = "draw/temporal_accumulation", shaderInterface = "draw.temporal.v1";
     uint32_t maxHistories = 256;
+    TemporaryPoolLimits poolLimits;
 };
 // Public borrowed signal/surface profile; independent of private renderer targets.
 struct TemporalInput {
@@ -91,8 +93,17 @@ class BG2E_API TemporalAccumulator {
     uint64_t generation() const;
     uint32_t frameCount(const TemporalKey& key) const;
 
+    TemporaryPoolStatistics poolStatistics() const;
+
+    // Diagnostic baseline: allocate fresh invocation/image storage.
+    void setPoolingEnabled(bool enabled)
+    {
+        _poolingEnabled = enabled;
+    }
+
   protected:
     struct History {
+        std::shared_ptr<const gpu::detail::RecordingCompletion> recording;
         std::shared_ptr<gpu::Image> signal, position, normal;
         TemporalView view;
         uint64_t sequence = 0, generation = 0, reset = 0;
@@ -102,6 +113,7 @@ class BG2E_API TemporalAccumulator {
         float maxRoughness = 1;
     };
     struct Invocation {
+        std::shared_ptr<TemporaryBindings> pooled;
         std::shared_ptr<History> previous, next;
         std::shared_ptr<gpu::Buffer> uniforms;
         std::shared_ptr<gpu::ResourceSet> resources;
@@ -114,6 +126,8 @@ class BG2E_API TemporalAccumulator {
     TemporalConfiguration _configuration;
     TemporalSettings _settings;
     gpu::Device* _device = nullptr;
+    std::shared_ptr<TemporaryResourcePool> _pool;
+    bool _poolingEnabled = true;
     std::shared_ptr<gpu::Sampler> _nearest;
     std::shared_ptr<gpu::Image> _zeroPosition, _zeroNormal;
     std::shared_ptr<gpu::PipelineLayout> _layout;

@@ -111,6 +111,7 @@ void RayTracingMesh::build(MTL::CommandBuffer* cmd)
     encoder->endEncoding();
 
     descriptor->release();
+    ++_buildGeneration;
     _built = true;
 }
 
@@ -126,6 +127,7 @@ void RayTracingMesh::cleanup()
         _accelerationStructure->release();
         _accelerationStructure = nullptr;
     }
+    ++_buildGeneration;
     _built = false;
 }
 

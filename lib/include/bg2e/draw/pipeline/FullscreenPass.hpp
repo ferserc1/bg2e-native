@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 
 #include <bg2e/draw/pipeline/RenderLayer.hpp>
 #include <bg2e/gpu/GraphicsPipeline.hpp>
@@ -38,15 +39,27 @@ class BG2E_API FullscreenPass {
         const std::vector<gpu::Image*>& inputs, uint32_t imageSet,
         const std::vector<std::pair<uint32_t, gpu::ResourceSet*>>& sets,
         const void* push = nullptr, uint32_t pushSize = 0, const std::vector<uint32_t>& metalImages = {},
-        const std::vector<uint32_t>& metalSamplers = {});
+        const std::vector<uint32_t>& metalSamplers = {},
+        std::optional<gpu::ScissorRegion> region = std::nullopt);
     void cleanup();
+
+    TemporaryPoolStatistics poolStatistics() const;
+
+    // Diagnostic baseline: allocate fresh invocation/image storage.
+    void setPoolingEnabled(bool enabled)
+    {
+        _poolingEnabled = enabled;
+    }
+
   private:
     Engine* _engine = nullptr;
+    std::shared_ptr<TemporaryResourcePool> _pool;
+    bool _poolingEnabled = true;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::shared_ptr<gpu::ShaderModule> _vertex, _fragment;
     std::shared_ptr<gpu::GraphicsPipeline> _pipeline;
     std::shared_ptr<gpu::Sampler> _sampler;
-    std::vector<std::vector<std::shared_ptr<gpu::ResourceSet>>> _sets;
+    std::vector<std::vector<std::shared_ptr<TemporaryBindings>>> _sets;
     std::vector<uint64_t> _serial;
 };
 }

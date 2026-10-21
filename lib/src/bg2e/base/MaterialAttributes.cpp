@@ -25,6 +25,61 @@ MaterialAttributes::MaterialAttributes()
 {
 }
 
+MaterialAttributes& MaterialAttributes::operator=(const MaterialAttributes& source)
+{
+    if (this != &source)
+    {
+        assign(_isTransparent, source._isTransparent);
+        assign(_isSolid, source._isSolid);
+        assign(_unlit, source._unlit);
+        assign(_refractionFactor, source._refractionFactor);
+        assign(_alphaCutoff, source._alphaCutoff);
+        assign(_albedo, source._albedo);
+        assign(_albedoTexture, source._albedoTexture);
+        assign(_albedoScale, source._albedoScale);
+        assign(_albedoUVSet, source._albedoUVSet);
+        assign(_metalness, source._metalness);
+        assign(_metalnessTexture, source._metalnessTexture);
+        assign(_metalnessScale, source._metalnessScale);
+        assign(_metalnessChannel, source._metalnessChannel);
+        assign(_metalnessInvert, source._metalnessInvert);
+        assign(_metalnessUVSet, source._metalnessUVSet);
+        assign(_roughness, source._roughness);
+        assign(_roughnessTexture, source._roughnessTexture);
+        assign(_roughnessScale, source._roughnessScale);
+        assign(_roughnessChannel, source._roughnessChannel);
+        assign(_roughnessInvert, source._roughnessInvert);
+        assign(_roughnessUVSet, source._roughnessUVSet);
+        assign(_normalTexture, source._normalTexture);
+        assign(_normalScale, source._normalScale);
+        assign(_normalUVSet, source._normalUVSet);
+        assign(_fresnelTint, source._fresnelTint);
+        assign(_sheenIntensity, source._sheenIntensity);
+        assign(_sheenColor, source._sheenColor);
+        assign(_indirectTextureMode, source._indirectTextureMode);
+        assign(_aoTexture, source._aoTexture);
+        assign(_aoScale, source._aoScale);
+        assign(_aoChannel, source._aoChannel);
+        assign(_aoUVSet, source._aoUVSet);
+        assign(_lightEmission, source._lightEmission);
+        assign(_lightEmissionTexture, source._lightEmissionTexture);
+        assign(_lightEmissionScale, source._lightEmissionScale);
+        assign(_lightEmissionChannel, source._lightEmissionChannel);
+        assign(_lightEmissionInvert, source._lightEmissionInvert);
+        assign(_lightEmissionUVSet, source._lightEmissionUVSet);
+        assign(_name, source._name);
+        assign(_groupName, source._groupName);
+        assign(_visible, source._visible);
+        _albedoTextureUpdated = source._albedoTextureUpdated;
+        _metalnessTextureUpdated = source._metalnessTextureUpdated;
+        _roughnessTextureUpdated = source._roughnessTextureUpdated;
+        _normalTextureUpdated = source._normalTextureUpdated;
+        _aoTextureUpdated = source._aoTextureUpdated;
+        _lightEmissionTextureUpdated = source._lightEmissionTextureUpdated;
+    }
+    return *this;
+}
+
 void MaterialAttributes::setUpdated()
 {
     _albedoTextureUpdated = true;

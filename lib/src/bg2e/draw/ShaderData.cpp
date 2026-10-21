@@ -17,10 +17,24 @@
  */
 
 #include <bg2e/draw/ShaderData.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <cmath>
+#include <cstring>
+#include <utility>
 #include <stdexcept>
 
 namespace bg2e::draw {
+struct MaterialCache {
+    MaterialData data;
+    MaterialRevisions revisions;
+    uint64_t authoredRevision = 0;
+    std::array<std::shared_ptr<gpu::Image>, 6> images;
+    std::array<std::shared_ptr<gpu::Sampler>, 6> samplers;
+    std::array<uint64_t, 6> textureRevisions{};
+    std::array<uint64_t, 6> imageGenerations{};
+    std::array<base::Color::Type, 6> colorTypes{};
+};
+
 namespace {
 glm::vec4 color(const base::Color& c)
 {
@@ -52,10 +66,20 @@ void invertible(const glm::mat4& value)
 }
 }
 
-MaterialData packMaterial(const MaterialBase& material)
+float effectiveAlphaTestCutoff(float authoredCutoff)
+{
+    if (!std::isfinite(authoredCutoff) || authoredCutoff < 0 || authoredCutoff > 1)
+    {
+        throw std::invalid_argument("Alpha cutoff must be finite and in [0, 1]");
+    }
+    return authoredCutoff >= AlphaTestCutoffThreshold ? authoredCutoff : 0.0f;
+}
+
+static MaterialData packMaterialUncached(const MaterialBase& material)
 {
     const auto& a = material.materialAttributes();
-    if (!a.isUpdated())
+    const float cutoff = effectiveAlphaTestCutoff(a.alphaCutoff());
+    if (!material.texturesUpdated())
     {
         throw std::logic_error("Realize pending material texture changes before queue extraction");
     }
@@ -64,9 +88,9 @@ MaterialData packMaterial(const MaterialBase& material)
     result.fresnelTint = color(a.fresnelTint());
     result.sheenColor = color(a.sheenColor());
     result.factors = {a.metalness(), a.roughness(), a.sheenIntensity(), a.refractionFactor()};
-    result.emissionAlpha = {a.lightEmission(), a.alphaCutoff(), 0, 0};
+    result.emissionAlpha = {a.lightEmission(), cutoff, 0, 0};
     result.uvScale = {glm::vec4(a.albedoScale(), a.normalScale()), glm::vec4(a.metalnessScale(), a.roughnessScale()), glm::vec4(a.aoScale(), a.lightEmissionScale())};
-    uint32_t flags = (a.isUnlit() ? MaterialUnlit : 0u) | (a.alphaCutoff() > 0 ? MaterialAlphaTest : 0u) |
+    uint32_t flags = (a.isUnlit() ? MaterialUnlit : 0u) | (cutoff > 0 ? MaterialAlphaTest : 0u) |
         (a.isTransparent() ? MaterialTransparent : 0u) | (a.isSolid() ? MaterialSolid : 0u) |
         (a.aoTexture() ? MaterialHasAOTexture : 0u);
     using IndirectMode = base::MaterialAttributes::IndirectTextureMode;
@@ -132,11 +156,99 @@ MaterialData packMaterial(const MaterialBase& material)
     {
         finite(value);
     }
-    if (a.alphaCutoff() < 0 || a.alphaCutoff() > 1)
-    {
-        throw std::invalid_argument("Alpha cutoff must be in [0, 1]");
-    }
     return result;
+}
+
+MaterialData packMaterial(const MaterialBase& material)
+{
+    return packMaterial(material, nullptr);
+}
+
+MaterialData packMaterial(const MaterialBase& material, MaterialRevisions* consumedRevisions)
+{
+    if (!material.texturesUpdated())
+    {
+        throw std::logic_error("Realize pending material texture changes before packing");
+    }
+    const auto& previous = material._cache;
+    const auto authoredRevision = material.materialAttributes().revision();
+    bool bindingsChanged = !previous;
+    bool changed = !material._materialCacheEnabled || !previous || previous->authoredRevision != authoredRevision;
+    std::array<gpu::Image*, 6> images{};
+    std::array<gpu::Sampler*, 6> samplers{};
+    std::array<uint64_t, 6> textureRevisions{};
+    std::array<uint64_t, 6> imageGenerations{};
+    std::array<base::Color::Type, 6> colorTypes{};
+    for (size_t i = 0; i < images.size(); ++i)
+    {
+        const auto texture = material.texture(TextureSlot(i));
+        images[i] = texture->image();
+        samplers[i] = texture->sampler();
+        if (!images[i] || !samplers[i] || !images[i]->isValid() || !samplers[i]->isValid())
+        {
+            throw std::logic_error("Material requires valid realized images and samplers");
+        }
+        textureRevisions[i] = texture->bindingRevision();
+        imageGenerations[i] = images[i]->bindingGeneration();
+        colorTypes[i] = texture->colorType();
+        bindingsChanged |= !previous || previous->images[i].get() != images[i] || previous->samplers[i].get() != samplers[i] ||
+            previous->textureRevisions[i] != textureRevisions[i] || previous->imageGenerations[i] != imageGenerations[i];
+        changed |= !previous || previous->colorTypes[i] != colorTypes[i];
+    }
+    if (!changed && !bindingsChanged)
+    {
+        base::CpuProfileScope::count("material.packCacheHits", 1);
+        if (consumedRevisions)
+        {
+            *consumedRevisions = previous->revisions;
+        }
+        return previous->data;
+    }
+    // Validate the entire candidate before publishing any state or revision.
+    const auto data = packMaterialUncached(material);
+    base::CpuProfileScope::count("material.packs", 1);
+    MaterialRevisions revisions = previous ? previous->revisions : MaterialRevisions{};
+    if (!previous || std::memcmp(&previous->data, &data, sizeof(data)) != 0)
+    {
+        ++revisions.values;
+    }
+    constexpr uint32_t classification = MaterialAlphaTest | MaterialTransparent | MaterialSolid;
+    if (!previous || ((previous->data.uvSets[1].z ^ data.uvSets[1].z) & classification) != 0)
+    {
+        ++revisions.classification;
+    }
+    if (bindingsChanged)
+    {
+        ++revisions.bindings;
+    }
+    if (!material._cache)
+    {
+        material._cache = std::make_shared<MaterialCache>();
+    }
+    auto& cache = *material._cache;
+    cache.data = data;
+    cache.revisions = revisions;
+    cache.authoredRevision = authoredRevision;
+    for (size_t i = 0; i < images.size(); ++i)
+    {
+        const auto texture = material.texture(TextureSlot(i));
+        cache.images[i] = texture->imageResource();
+        cache.samplers[i] = texture->samplerResource();
+    }
+    cache.textureRevisions = textureRevisions;
+    cache.imageGenerations = imageGenerations;
+    cache.colorTypes = colorTypes;
+    if (consumedRevisions)
+    {
+        *consumedRevisions = revisions;
+    }
+    return data;
+}
+
+MaterialRevisions MaterialBase::revisions() const
+{
+    packMaterial(*this);
+    return _cache->revisions;
 }
 
 FrameData packFrame(const FrameContext& frame, const glm::mat4& view, const glm::mat4& projection)

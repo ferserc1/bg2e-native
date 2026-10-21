@@ -17,6 +17,7 @@
  */
 
 #pragma once
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 
 #include <bg2e/draw/pipeline/RenderLayer.hpp>
 #include <bg2e/draw/CollectRayTracingInstancesVisitor.hpp>
@@ -90,11 +91,31 @@ class BG2E_API SoftShadowPass : public RenderLayer {
         std::shared_ptr<TracingSnapshot> snapshot = nullptr);
     void record(const PassContext& context) override;
     void cleanup() override;
+
+    // Diagnostic fallback: construct fresh scene and alpha bindings for every invocation.
+    void setBindingReuseEnabled(bool enabled)
+    {
+        _bindingReuseEnabled = enabled;
+    }
+
+    TemporaryPoolStatistics poolStatistics() const;
+
+    // Diagnostic baseline: allocate fresh invocation/image storage.
+    void setPoolingEnabled(bool enabled)
+    {
+        _poolingEnabled = enabled;
+    }
+
   protected:
     struct Slot {
         std::shared_ptr<TracingSnapshot> snapshot;
         std::shared_ptr<gpu::Buffer> uniforms;
-        std::vector<std::shared_ptr<gpu::ResourceSet>> sets;
+        struct Invocation {
+            std::shared_ptr<TemporaryBindings> pooled;
+            std::shared_ptr<gpu::ResourceSet> stable, resources, alpha;
+            std::vector<std::shared_ptr<gpu::DeviceResource>> owners;
+        };
+        std::vector<Invocation> sets;
         uint64_t serial = 0;
         bool prepared = false;
         bool active = false;
@@ -104,10 +125,13 @@ class BG2E_API SoftShadowPass : public RenderLayer {
     uint32_t _requestedSlots;
     SoftShadowSettings _settings;
     Engine* _engine = nullptr;
+    std::shared_ptr<TemporaryResourcePool> _pool;
+    bool _poolingEnabled = true;
     PassContract _contract;
     std::string _status = "Not initialized";
     uint32_t _alphaCapacity = 0;
     bool _capacityWarningActive = false;
+    bool _bindingReuseEnabled = true;
     std::shared_ptr<gpu::ShaderModule> _shader;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::shared_ptr<gpu::ComputePipeline> _pipeline;

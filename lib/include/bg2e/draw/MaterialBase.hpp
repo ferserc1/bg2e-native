@@ -24,6 +24,16 @@
 #include <functional>
 
 namespace bg2e::draw {
+struct MaterialData;
+struct MaterialCache;
+struct MaterialRevisions {
+    uint64_t values = 0;
+    uint64_t bindings = 0;
+    uint64_t classification = 0;
+};
+class MaterialBase;
+BG2E_API MaterialData packMaterial(const MaterialBase& material);
+BG2E_API MaterialData packMaterial(const MaterialBase& material, MaterialRevisions* revisions);
 BG2E_API base::MaterialAttributes cloneMaterialAttributes(const base::MaterialAttributes& source);
 
 enum class TextureSlot
@@ -48,11 +58,18 @@ class BG2E_API MaterialBase {
         return _attributes;
     }
     void setMaterialAttributes(const base::MaterialAttributes& attributes);
+    MaterialRevisions revisions() const;
+    // Diagnostic fallback: retain validation and publish revisions, but repack.
+    void setMaterialCacheEnabled(bool enabled)
+    {
+        _materialCacheEnabled = enabled;
+    }
     Engine* engine() const
     {
         return _engine;
     }
     void updateTextures(std::function<void()> onTextureLoaded = nullptr);
+    bool texturesUpdated() const;
     void setTexture(TextureSlot slot, std::shared_ptr<Texture> texture);
     std::shared_ptr<Texture> texture(TextureSlot slot) const
     {
@@ -97,5 +114,11 @@ class BG2E_API MaterialBase {
     base::MaterialAttributes _attributes;
     std::array<std::shared_ptr<Texture>, 6> _textures;
     bool _useTextureCache = false;
+    std::array<std::shared_ptr<base::Texture>, 6> _realizedSettings;
+    std::array<uint64_t, 6> _realizedSettingsRevisions{};
+    mutable std::shared_ptr<MaterialCache> _cache;
+    bool _materialCacheEnabled = true;
+    friend MaterialData packMaterial(const MaterialBase& material);
+    friend MaterialData packMaterial(const MaterialBase& material, MaterialRevisions* revisions);
 };
 }

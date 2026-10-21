@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/RTReflections.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
@@ -81,9 +82,9 @@ RTReflections::RTReflections(RTReflectionConfiguration configuration)
 
 void RTReflections::initialize(gpu::Device& device, gpu::BackendType backend, uint32_t slots)
 {
-    if (_device || !device.isValid() || !slots || _configuration.shaderInterface != "draw.rt_reflections.v2")
+    if (_device || !device.isValid() || !slots || _configuration.shaderInterface != "draw.rt_reflections.v3")
     {
-        throw std::invalid_argument("Reflection initialization requires a clean instance, valid device/slots and draw.rt_reflections.v2 shaders");
+        throw std::invalid_argument("Reflection initialization requires a clean instance, valid device/slots and draw.rt_reflections.v3 shaders");
     }
     _device = &device;
     _backend = backend;
@@ -188,6 +189,10 @@ void RTReflections::prepareSnapshot(uint32_t index, uint64_t serial, std::shared
     next.serial = serial;
     next.snapshot = std::move(snapshot);
     slot = std::move(next); // Only the caller's retired slot may be replaced.
+    if (_pool)
+    {
+        _pool->collect();
+    }
 }
 
 void RTReflections::record(const RTReflectionContext& context)
@@ -289,19 +294,27 @@ void RTReflections::record(const RTReflectionContext& context)
             throw std::invalid_argument("Reflection BlueNoise sampling requires two source channels");
         }
     }
-    invocation.uniforms = _device->createBuffer("Reflection invocation uniforms");
-    invocation.uniforms->createUniformBuffer(data);
+    if (!_pool)
+    {
+        _pool = std::make_shared<TemporaryResourcePool>(*_device);
+    }
+    _pool->setEnabled(_poolingEnabled);
+    invocation.pooled = _pool->bindings(context.command, _layouts[index], 0, sizeof(data),
+        {context.slot, slot.invocations.size(), 0, 0});
+    invocation.pooled->writeUniforms(&data, sizeof(data));
+    invocation.uniforms = invocation.pooled->uniforms();
     slot.snapshot->build(context.command);
     invocation.sceneSet = slot.snapshot->resourceSet(*_layouts[index], 1, _capacity);
-    invocation.surfaceSet = _device->createResourceSet(_layouts[index].get(),0);
-    invocation.surfaceSet->setUniformBuffer({0,1},invocation.uniforms.get());
-    invocation.surfaceSet->setSampledImage({1,0},context.surface.normal);
-    invocation.surfaceSet->setSampledImage({2,1},context.surface.depthOrPosition);
+    invocation.tableSet = slot.snapshot->materialResourceSet(*_layouts[index], _capacity);
+    invocation.surfaceSet = invocation.pooled->resources();
+    invocation.pooled->setUniformBuffer({0,1},invocation.uniforms.get());
+    invocation.pooled->setSampledImage({1,0},context.surface.normal);
+    invocation.pooled->setSampledImage({2,1},context.surface.depthOrPosition);
     auto* coverage = context.surface.profile == SurfaceProfile::CameraDepth ? context.surface.normal : context.surface.coverage;
-    invocation.surfaceSet->setSampledImage({3,2},coverage);
-    invocation.surfaceSet->setSampler({4,9},_nearest.get());
-    invocation.surfaceSet->setStorageImage({5,4},&context.output);
-    invocation.surfaceSet->setSampledImage({10,6},&context.material);
+    invocation.pooled->setSampledImage({3,2},coverage);
+    invocation.pooled->setSampler({4,9},_nearest.get());
+    invocation.pooled->setStorageImage({5,4},&context.output);
+    invocation.pooled->setSampledImage({10,6},&context.material);
     context.command.transition(&context.material,gpu::ImageLayout::ShaderReadOnly);
     for (auto* image : {context.surface.normal,context.surface.depthOrPosition,coverage})
     {
@@ -309,14 +322,14 @@ void RTReflections::record(const RTReflectionContext& context)
     }
     if (blue)
     {
-        invocation.surfaceSet->setSampledImage({6,3},invocation.noiseImage.get());
-        invocation.surfaceSet->setSampler({7,10},invocation.noiseSampler.get());
+        invocation.pooled->setSampledImage({6,3},invocation.noiseImage.get());
+        invocation.pooled->setSampler({7,10},invocation.noiseSampler.get());
         context.command.transition(invocation.noiseImage.get(),gpu::ImageLayout::ShaderReadOnly);
     }
-    invocation.surfaceSet->setSampledImage({8,5},invocation.environment->irradiance.get());
-    invocation.surfaceSet->setSampler({9,11},invocation.environment->sampler.get());
+    invocation.pooled->setSampledImage({8,5},invocation.environment->irradiance.get());
+    invocation.pooled->setSampler({9,11},invocation.environment->sampler.get());
     context.command.transition(invocation.environment->irradiance.get(),gpu::ImageLayout::ShaderReadOnly);
-    invocation.surfaceSet->update();
+    invocation.pooled->update();
     slot.invocations.push_back(std::move(invocation));
     auto& retained = slot.invocations.back();
     context.command.transition(&context.output,gpu::ImageLayout::General);
@@ -325,6 +338,7 @@ void RTReflections::record(const RTReflectionContext& context)
         context.command.bindPipeline(_pipelines[index].get());
         context.command.bindResourceSet(_pipelines[index].get(),0,retained.surfaceSet.get());
         context.command.bindResourceSet(_pipelines[index].get(),1,retained.sceneSet.get());
+        context.command.bindResourceSet(_pipelines[index].get(),2,retained.tableSet.get());
         context.command.traceRays(context.output.width(),context.output.height(),1);
     }
     else
@@ -333,6 +347,7 @@ void RTReflections::record(const RTReflectionContext& context)
         context.command.bindPipeline(_compute[index].get());
         context.command.bindResourceSet(_compute[index].get(),0,retained.surfaceSet.get());
         context.command.bindResourceSet(_compute[index].get(),1,retained.sceneSet.get());
+        context.command.bindResourceSet(_compute[index].get(),2,retained.tableSet.get());
         context.command.dispatch((context.output.width()+15)/16,(context.output.height()+15)/16,1);
         context.command.endCompute();
     }
@@ -349,6 +364,10 @@ void RTReflections::reset()
     {
         slot = {};
     }
+    if (_pool)
+    {
+        _pool->collect();
+    }
     if (_tracing)
     {
         _tracing->clear();
@@ -359,6 +378,7 @@ void RTReflections::cleanup()
 {
     reset();
     _slots.clear();
+    _pool.reset();
     _pipelines = {};
     _compute = {};
     _stages = {};
@@ -548,4 +568,10 @@ float RTReflections::roughnessSpread() const
 {
     return _settings.roughnessSpread;
 }
+
+TemporaryPoolStatistics RTReflections::poolStatistics() const
+{
+    return _pool ? _pool->statistics() : TemporaryPoolStatistics{};
+}
+
 }

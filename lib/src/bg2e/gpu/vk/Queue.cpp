@@ -212,6 +212,7 @@ void Queue::submit(gpu::CommandBuffer* command) const
         _submissions->cancel(record, std::current_exception());
         throw;
     }
+    cmd->publishRecordingSubmission(record);
     cmd->_executable = false;
     // Presentation is in the same admission transaction as submission.
     if (presenting)

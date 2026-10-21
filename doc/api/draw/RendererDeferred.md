@@ -47,8 +47,13 @@ material/instance tables and TLAS per acquired frame, shared by shadows, AO/GI,
 reflections and both composition layers. Shadow-specific query tables are built
 from the same dense instance order. The renderer records the TLAS build before
 the layers; consumers do not build independent scenes. Each slot retains its
-snapshot until GPU completion. Tables and TLAS are rebuilt each rendered frame;
-only the pre-existing immutable packed-geometry cache is reused across frames.
+snapshot until GPU completion. Immutable material/resource tables persist, and
+completed matching TLAS/instance generations are reused across frames. Camera-only
+movement skips acceleration builds after warmup; changed instance state uses new
+immutable storage with a full build. `tracingResources()` exposes the shared service
+for diagnostics (null when unavailable/uninitialized). At a synchronized update
+boundary, `setAccelerationReuseEnabled(false)` restores per-snapshot full builds;
+`setPersistenceEnabled(false)` independently rebuilds material/shadow generations.
 Effect-specific uniforms, outputs and layout-dependent descriptor sets remain
 separate. See [TracingSceneResources](TracingSceneResources.md) for table capacities
 and standalone effect preparation.
@@ -149,3 +154,18 @@ conversion once on the exact N-sample mean using
 Its reference implementation sums on the CPU in double precision and resolves
 back to RGBA16F once. See [the default offscreen job contract](DefaultOffscreenApplicationDelegate.md)
 and [accumulation architecture](../../architecture/draw_offscreen_rendering.md).
+
+Temporal/denoise and effect/fullscreen/shadow invocation preparation reuse retired
+[temporary resources](TemporaryResourcePool.md). Histories and returned signal
+owners remain independent across in-flight slots and transparent layers. Controls
+are available on the exposed temporal, denoise and effect components through
+setPoolingEnabled(false) and poolStatistics(); change them at the normal synchronized
+update boundary. Reuse does not change the existing temporal-invalidating signature.
+
+The renderer reuses [temporal signature components](TemporalInvalidation.md) while
+preserving the full serialized reset policy, including object motion. Use
+setTemporalSignatureValidationEnabled(true) for exact reference parity and
+setTemporalSignatureReuseEnabled(false) for full-serialization decisions. Both are
+synchronized diagnostic controls. Out-of-band sceneFingerprint calls preserve the
+old byte format and do not consume edits before update. No narrower effect reset
+or additional dynamic-object history retention is enabled by this optimization.

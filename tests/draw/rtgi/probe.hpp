@@ -109,11 +109,11 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
     auto first = gi.tracingResources()->prepare(queue, gi.tableCapacity());
     auto second = gi.tracingResources()->prepare(queue, gi.tableCapacity());
     if (first->scene == second->scene || first->instanceBuffer == second->instanceBuffer ||
-        first->materialBuffer == second->materialBuffer || !first->shadowInstances ||
-        first->shadowInstances == second->shadowInstances ||
+        first->materialBuffer != second->materialBuffer || !first->shadowInstances ||
+        first->shadowInstances != second->shadowInstances ||
         first->shadowTable.instances.size() != first->instances.size())
     {
-        throw std::runtime_error("Per-frame tracing snapshots must rebuild tables/TLAS and own shared shadow buffers");
+        throw std::runtime_error("Unsubmitted snapshots must share material/shadow tables but retain separate pending acceleration");
     }
     for (size_t i = 0; i < first->instances.size(); ++i)
     {
@@ -153,6 +153,10 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
             throw std::runtime_error("Distinct pipeline layouts need independently cached scene bindings");
         }
         second->build(*command);
+        if (first->materialResourceSet(*sceneLayout) != second->materialResourceSet(*sceneLayout))
+        {
+            throw std::runtime_error("Unchanged snapshots must reuse persistent image/sampler sets");
+        }
         if (second->resourceSet(*sceneLayout) == bindings)
         {
             throw std::runtime_error("Scene bindings must not be cached across frame snapshots");

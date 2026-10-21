@@ -22,6 +22,9 @@
 #include <bg2e/gpu/Common.hpp>
 
 #include <cstdint>
+#include <memory>
+#include <mutex>
+#include <unordered_map>
 
 namespace bg2e {
 namespace gpu {
@@ -35,6 +38,8 @@ namespace metal {
 //      collide with reserved slots (vertex >= 2, fragment/compute >= 1).
 //
 // Throws std::runtime_error on validation failure.
+struct ArgumentEncoderState;
+
 class BG2E_API PipelineLayout : public gpu::PipelineLayout {
   public:
     PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayoutDescription& description);
@@ -52,6 +57,10 @@ class BG2E_API PipelineLayout : public gpu::PipelineLayout {
     {
         return _description.resourceBindings;
     }
+
+    // Layout-local compatibility key includes the complete immutable description.
+    // Callers hold the returned state's mutex while changing argument-buffer state.
+    std::shared_ptr<ArgumentEncoderState> argumentEncoder(uint32_t slot) const;
 
     // Metal texture/sampler argument index: uses the metal field of ShaderBinding.
     uint32_t metalIndex(const ResourceBinding& b) const
@@ -97,6 +106,8 @@ class BG2E_API PipelineLayout : public gpu::PipelineLayout {
 
   private:
     gpu::PipelineLayoutDescription _description;
+    mutable std::mutex _encoderMutex;
+    mutable std::unordered_map<uint32_t, std::shared_ptr<ArgumentEncoderState>> _encoders;
 };
 
 }

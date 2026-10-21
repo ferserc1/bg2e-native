@@ -17,9 +17,12 @@
  */
 
 #include <bg2e/draw/RendererDeferred.hpp>
+#include "TemporalSignatureCache.hpp"
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
+#include <bg2e/draw/pipeline/ProcessingRegion.hpp>
+#include <typeinfo>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
@@ -448,6 +451,10 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
         base::CpuProfileScope::count("renderer.attachSceneDrains", 1);
         _engine->device()->waitIdle();
     }
+    if (_tracingResources)
+    {
+        _tracingResources->clear();
+    }
     _scene = std::move(sceneRoot);
     _queue.clear();
     resetUpscaler();
@@ -457,6 +464,7 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
     }
     for (auto& slot : _targets)
     {
+        slot.tracing.reset();
         slot.queue.clear();
         slot.prepared = false;
     }
@@ -600,6 +608,7 @@ void RendererDeferred::update(const FrameContext& frame)
         if (!_explicitCamera)
         {
             _temporalCameraIdentity = inputs.camera;
+            _temporalCameraOwner = inputs.camera ? inputs.camera->weak_from_this().lock() : nullptr;
             _view = inputs.camera ? inputs.camera->viewMatrix() : glm::mat4{1};
             _projection = inputs.camera ? inputs.camera->projectionMatrix() : glm::mat4{1};
         }
@@ -610,15 +619,48 @@ void RendererDeferred::update(const FrameContext& frame)
     {
         slot.queue.beginFrame(*_engine);
         _temporalCameraIdentity = nullptr;
+        _temporalCameraOwner.reset();
     }
     slot.queue.sort(glm::vec3(glm::inverse(_view)[3]));
     _queue = slot.queue;
     stageProfile.next("renderer.temporalSignature");
-    auto signature = temporalSignature(slot.queue);
-    if (signature != _historySignature)
+    const auto signature = prepareTemporalSignature(slot.queue);
+    const bool componentChanged = !_historyState || !signature->equals(*_historyState);
+    bool changed = componentChanged;
+    std::vector<uint8_t> reference;
+    const bool referenceEnabled = !_signatureReuseEnabled || _signatureValidationEnabled;
+    if (referenceEnabled)
     {
-        invalidateHistories();
-        _historySignature = std::move(signature);
+        reference = fullTemporalSignature(slot.queue);
+        const std::vector<uint8_t> empty;
+        const auto& previous = _historySignatureCurrent ? _historySignature :
+            (_historyState ? _historyState->flattened() : empty);
+        const bool referenceChanged = reference != previous;
+        if (_signatureValidationEnabled &&
+            (signature->flattened() != reference || componentChanged != referenceChanged))
+        {
+            throw std::logic_error("Cached temporal signature differs from full serialization");
+        }
+        changed = _signatureReuseEnabled ? componentChanged : referenceChanged;
+        base::CpuProfileScope::count("temporal.signatureReferenceBytes", reference.size());
+    }
+    if (changed)
+    {
+        signature->countResetCauses(_historyState.get());
+        base::CpuProfileScope::count("temporal.signatureResets", 1);
+        resetHistories();
+    }
+    // Accepted history state is independent of derived-cache/fingerprint lookups.
+    _historyState = signature;
+    _historySignatureCurrent = referenceEnabled;
+    if (referenceEnabled)
+    {
+        _historySignature = std::move(reference);
+    }
+    else
+    {
+        std::vector<uint8_t> empty;
+        _historySignature.swap(empty); // Drop unused full-baseline storage.
     }
     stageProfile.next("renderer.beginTemporalAndFrameBindings");
     _configuration.temporal->beginFrame(frame.frameSlot,frame.frameNumber,frame.sceneFrameNumber);
@@ -646,7 +688,7 @@ void RendererDeferred::update(const FrameContext& frame)
     _lights.update(frame, slot.queue.lights());
     _environmentBinding.update(frame, _environment);
     // One immutable scene snapshot per acquired frame, shared by every RT pass.
-    // Deliberately rebuild tables/TLAS each frame, matching the production path.
+    // Reuse immutable tables and completed acceleration when their keys match.
     const bool shadowTracing = _queryShadows && _configuration.softShadows->available() &&
         _configuration.softShadows->settings().enabled;
     const bool aoTracing = _ambientOcclusion && _configuration.ambientOcclusion->enabled() &&
@@ -894,11 +936,54 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         const auto db = glm::vec3(b->worldMatrix[3]) - camera;
         return glm::dot(da, da) > glm::dot(db, db);
     });
+    // Custom shaders/passes may deform vertices or write outside coverage.
+    const auto* gbufferLayer = _configuration.layers[0].layer.get();
+    const auto* lightingLayer = _configuration.layers[1].layer.get();
+    const auto* finalLayer = _configuration.layers[2].layer.get();
+    const auto* lighting = dynamic_cast<const pipeline::DeferredLayer*>(lightingLayer);
+    const auto* final = dynamic_cast<const pipeline::FinalLayer*>(finalLayer);
+    const bool regions = _transparentRegionsEnabled &&
+        typeid(*gbufferLayer) == typeid(pipeline::GBuffer) &&
+        typeid(*lightingLayer) == typeid(pipeline::DeferredLayer) &&
+        typeid(*finalLayer) == typeid(pipeline::FinalLayer) &&
+        lighting && lighting->debugView() == pipeline::LightingDebugView::Final &&
+        final && final->debugView() == pipeline::FinalDebugView::Final;
+    const auto extent = slot.gbuffer[0]->size();
+    const uint64_t fullArea = uint64_t(extent.width)*extent.height;
     for (const auto* item : transparent)
     {
         if (_inspectOpaqueLayer)
         {
             break;
+        }
+        raster.region.reset();
+        if (regions)
+        {
+            const auto bounds = item->drawMesh->uploadedBounds(item->submeshIndex);
+            if (bounds && item->worldMatrix[0][3] == 0 && item->worldMatrix[1][3] == 0 &&
+                item->worldMatrix[2][3] == 0 && item->worldMatrix[3][3] == 1)
+            {
+                raster.region = pipeline::projectProcessingRegion(bounds->minimum, bounds->maximum,
+                    slot.jitteredProjection*_view*item->worldMatrix, extent);
+            }
+        }
+        base::CpuProfileScope::count("transparent.fullPixels", fullArea);
+        if (raster.region && (!raster.region->width || !raster.region->height))
+        {
+            base::CpuProfileScope::count("transparent.skippedLayers", 1);
+            continue; // Tracing snapshots were already collected and built in full.
+        }
+        const auto area = raster.region ? uint64_t(raster.region->width)*raster.region->height : fullArea;
+        base::CpuProfileScope::count("transparent.rasterPixels", area);
+        base::CpuProfileScope::count("transparent.compositionPixels", area);
+        base::CpuProfileScope::count("transparent.receiverDomainPixels", fullArea);
+        base::CpuProfileScope::count("transparent.fullExtentLayers", raster.region ? 0 : 1);
+        // Preserve every background texel, including refraction reads outside the
+        // write rectangle. The regional fullscreen pass loads this destination.
+        if (raster.region)
+        {
+            pipeline::RenderTarget::copy(frame.commandBuffer, *current, *next);
+            base::CpuProfileScope::count("transparent.backgroundCopyPixels", fullArea);
         }
         pipeline::RenderTarget::copy(frame.commandBuffer, *slot.opaqueDepth, *slot.gbuffer[6]);
         raster.item = item;
@@ -964,7 +1049,13 @@ void RendererDeferred::recordFinal(const FrameContext& frame, gpu::Image& linear
 
 std::vector<uint8_t> RendererDeferred::sceneFingerprint() const
 {
-    auto result = temporalSignature(_queue);
+    const auto signature = _signatureReuseEnabled || _signatureValidationEnabled ? prepareTemporalSignature(_queue) : nullptr;
+    auto result = _signatureReuseEnabled ? signature->flattened() : fullTemporalSignature(_queue);
+    if (_signatureValidationEnabled &&
+        (_signatureReuseEnabled ? result != fullTemporalSignature(_queue) : signature->flattened() != result))
+    {
+        throw std::logic_error("Cached scene fingerprint differs from full serialization");
+    }
     const auto* view = reinterpret_cast<const uint8_t*>(&_view);
     result.insert(result.end(), view, view+sizeof(_view));
     const auto* generation = reinterpret_cast<const uint8_t*>(&_historyGeneration);
@@ -1003,6 +1094,11 @@ pipeline::FinalSettings& RendererDeferred::finalSettings()
 const RenderQueue& RendererDeferred::queue() const
 {
     return _queue;
+}
+
+std::shared_ptr<pipeline::TracingSceneResources> RendererDeferred::tracingResources() const
+{
+    return _tracingResources;
 }
 
 std::shared_ptr<pipeline::SoftShadowPass> RendererDeferred::softShadows() const
@@ -1086,6 +1182,12 @@ void RendererDeferred::resetUpscaler()
 }
 
 void RendererDeferred::invalidateHistories()
+{
+    base::CpuProfileScope::count("temporal.explicitOrLifecycleResets", 1);
+    resetHistories();
+}
+
+void RendererDeferred::resetHistories()
 {
     if (_historyGeneration == UINT64_MAX)
     {
@@ -1181,6 +1283,11 @@ void RendererDeferred::cleanup()
         _configuration.denoise->cleanup();
     }
     _historySignature.clear();
+    _historySignatureCurrent = false;
+    _historyState.reset();
+    _signatureCache.reset();
+    _temporalCameraOwner.reset();
+    _temporalCameraIdentity = nullptr;
     _ambientOcclusion = false;
     _globalIllumination = false;
     _reflections = false;
@@ -1252,8 +1359,23 @@ bool RendererDeferred::reflectionsEnabled() const
     return _reflections && _configuration.reflections->enabled();
 }
 
-std::vector<uint8_t> RendererDeferred::temporalSignature(const RenderQueue& queue) const
+std::shared_ptr<const TemporalSignatureState> RendererDeferred::prepareTemporalSignature(const RenderQueue& queue) const
 {
+    if (!_signatureCache)
+    {
+        _signatureCache = std::make_shared<TemporalSignatureCache>();
+    }
+    const bool correspondenceNeeded = _configuration.temporal->available() && _configuration.temporal->settings().enabled &&
+        ((_ambientOcclusion && _configuration.ambientOcclusion->enabled() && _configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion) ||
+         (_globalIllumination && _configuration.globalIllumination->enabled() && _configuration.indirectLighting == IndirectLightingMode::GlobalIllumination) ||
+         (_reflections && _configuration.reflections->enabled()));
+    return _signatureCache->prepare(queue, {_configuration, _projection, _explicitCamera, _temporalCameraIdentity,
+        _temporalCameraOwner, _environment, correspondenceNeeded});
+}
+
+std::vector<uint8_t> RendererDeferred::fullTemporalSignature(const RenderQueue& queue) const
+{
+    base::CpuProfileScope profile("renderer.fullTemporalSignature");
     std::vector<uint8_t> bytes;
     auto append = [&](const auto& value)
     {
@@ -1381,6 +1503,7 @@ std::vector<uint8_t> RendererDeferred::temporalSignature(const RenderQueue& queu
     append(_configuration.denoise->depthSigma());
     append(_configuration.denoise->normalSigma());
     append(_configuration.denoise->spatialSigma());
+    base::CpuProfileScope::count("temporal.fullSignatureBytes", bytes.size());
     return bytes;
 }
 

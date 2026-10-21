@@ -71,11 +71,19 @@ class BG2E_API RayTracingMesh : public DeviceResource {
         return _description;
     }
 
+    // Native build/recreation identity, not completion proof. A recorded rebuild
+    // invalidates dependent scene keys even if that recording is later abandoned.
+    uint64_t buildGeneration() const
+    {
+        return _buildGeneration;
+    }
+
     // True once the acceleration structure has been built on the GPU.
     virtual bool isBuilt() const = 0;
 
   protected:
     RayTracingMeshDescription _description;
+    uint64_t _buildGeneration = 0;
 };
 
 }

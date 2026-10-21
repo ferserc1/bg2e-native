@@ -31,8 +31,11 @@
 #include <bg2e/draw/environment/EnvironmentGenerator.hpp>
 #include <bg2e/draw/environment/SkyboxRenderer.hpp>
 #include <bg2e/draw/RenderQueueVisitor.hpp>
+#include <bg2e/scene/Component.hpp>
 
 namespace bg2e::draw {
+class TemporalSignatureCache;
+class TemporalSignatureState;
 // Ordered single-sample deferred graph. Configuration.layers replaces matching
 // gbuffer/deferred/final/skybox contracts; missing stages get public defaults.
 // All lifecycle and prepareFrame calls require stopped background producers.
@@ -64,6 +67,18 @@ class BG2E_API RendererDeferred : public Renderer {
     void resetUpscaler(); // Compatibility hook: resets both effect and SDK histories.
     void invalidateHistories() override;
     uint64_t historyGeneration() const;
+
+    // Diagnostic baseline and exact comparison against full serialization.
+    // Change controls at the normal synchronized renderer update boundary.
+    void setTemporalSignatureReuseEnabled(bool enabled)
+    {
+        _signatureReuseEnabled = enabled;
+    }
+    void setTemporalSignatureValidationEnabled(bool enabled)
+    {
+        _signatureValidationEnabled = enabled;
+    }
+
     std::shared_ptr<pipeline::TemporalAccumulator> temporal() const;
     std::shared_ptr<pipeline::DenoiseFilter> denoise() const;
     std::shared_ptr<pipeline::FinalProcessor> finalProcessor() const;
@@ -74,6 +89,8 @@ class BG2E_API RendererDeferred : public Renderer {
 
     pipeline::FinalSettings& finalSettings();
     const RenderQueue& queue() const;
+    // Diagnostics only; change reuse flags at a synchronized update boundary.
+    std::shared_ptr<pipeline::TracingSceneResources> tracingResources() const;
     std::shared_ptr<pipeline::SoftShadowPass> softShadows() const;
     bool usesQueryShadows() const;
     std::shared_ptr<pipeline::RTAmbientOcclusion> ambientOcclusion() const;
@@ -94,6 +111,12 @@ class BG2E_API RendererDeferred : public Renderer {
     // Recoverable initialization failures and the selected fallback, also
     // exposed by the graphics diagnostics catalog. Empty on a clean startup.
     const std::string& initializationWarnings() const;
+    // Diagnostic baseline for transparent rasterization and composition.
+    void setTransparentRegionsEnabled(bool enabled)
+    {
+        _transparentRegionsEnabled = enabled;
+    }
+
   private:
     struct Targets {
         std::vector<std::shared_ptr<gpu::Image>> gbuffer;
@@ -111,7 +134,9 @@ class BG2E_API RendererDeferred : public Renderer {
 
     void buildTargets();
     void warnInitialization(const std::string& message);
-    std::vector<uint8_t> temporalSignature(const RenderQueue& queue) const;
+    std::vector<uint8_t> fullTemporalSignature(const RenderQueue& queue) const;
+    std::shared_ptr<const TemporalSignatureState> prepareTemporalSignature(const RenderQueue& queue) const;
+    void resetHistories();
     UpscalerConfiguration upscaleConfiguration() const;
     pipeline::OverlayConfiguration overlayConfiguration() const;
 
@@ -130,7 +155,12 @@ class BG2E_API RendererDeferred : public Renderer {
     bool _globalIllumination = false;
     bool _reflections = false;
     uint64_t _historyGeneration = 1;
-    std::vector<uint8_t> _historySignature;
+    std::vector<uint8_t> _historySignature; // Full baseline only while diagnostics are active.
+    bool _historySignatureCurrent = false;
+    bool _transparentRegionsEnabled = true;
+    bool _signatureReuseEnabled = true, _signatureValidationEnabled = false;
+    mutable std::shared_ptr<TemporalSignatureCache> _signatureCache;
+    std::shared_ptr<const TemporalSignatureState> _historyState;
     std::shared_ptr<scene::Node> _scene;
     std::unique_ptr<environment::EnvironmentGenerator> _generator;
     std::shared_ptr<const environment::EnvironmentResources> _environment;
@@ -145,6 +175,7 @@ class BG2E_API RendererDeferred : public Renderer {
     glm::mat4 _view{1}, _projection{1};
     bool _explicitCamera = false;
     const void* _temporalCameraIdentity = nullptr;
+    std::shared_ptr<scene::Component> _temporalCameraOwner;
     bool _inspectOpaqueLayer = false;
     std::string _environmentError;
     std::string _initializationWarnings;

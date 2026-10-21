@@ -218,6 +218,7 @@ void RayTracingMesh::build(VkCommandBuffer cmd)
     dependency.memoryBarrierCount = 1;
     dependency.pMemoryBarriers = &barrier;
     cmdPipelineBarrier2(cmd, &dependency);
+    ++_buildGeneration;
     _built = true;
 }
 
@@ -240,6 +241,7 @@ void RayTracingMesh::cleanup()
         _scratchBuffer = VK_NULL_HANDLE;
         _scratchAlloc = VK_NULL_HANDLE;
     }
+    ++_buildGeneration;
     _built = false;
 }
 

@@ -56,9 +56,14 @@ bool acceptsCandidate(uint instance, uint primitive, float2 bary,
         return false;
     }
     ShadowInstanceData data = instances[instance];
+    if ((data.options.y & 2u) == 0u)
+    {
+        // CPU-packed classification: skip UV/index fetches and alpha sampling.
+        return true;
+    }
     if (data.ranges.z == 0xffffffffu)
     {
-        return (data.options.y & 2u) == 0u || data.alpha.w >= data.alpha.z;
+        return data.alpha.w >= data.alpha.z;
     }
     if (primitive >= data.ranges.y)
     {
@@ -117,6 +122,7 @@ float3 sampleLightDirection(float3 direction, float angle, uint index, uint coun
     float phase = float(index) * 2.39996322973 + rotation;
     return normalize(direction + radius * (cos(phase) * t + sin(phase) * b));
 }
+// v5 splits invocation, scene and persistent alpha sets without changing Metal buffer/texture indices.
 kernel void compMain(
     uint2 pixelIndex [[thread_position_in_grid]],
     constant ShadowUniforms& dataBlock [[buffer(1)]],

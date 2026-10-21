@@ -17,6 +17,12 @@
  */
 
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
+#include <bg2e/draw/RendererDeferred.hpp>
+#include <bg2e/draw/FsrUpscaler.hpp>
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+#include <typeinfo>
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/Surface.hpp>
@@ -28,6 +34,32 @@
 #include <utility>
 
 namespace bg2e::draw {
+namespace {
+std::shared_ptr<pipeline::FinalLayer> finalColorTarget(const Renderer* renderer)
+{
+    if (!renderer || typeid(*renderer) != typeid(RendererDeferred))
+    {
+        return {};
+    }
+    const auto& configuration = renderer->configuration();
+    if (configuration.layers.size() <= 2)
+    {
+        return {};
+    }
+    const auto* layer = configuration.layers[2].layer.get();
+    const auto* temporal = configuration.temporal.get();
+    const auto* upscaler = configuration.upscaler.get();
+    // History invalidation remains part of settings edits. Unknown virtual reset
+    // implementations cannot inherit the proof for the built-in logical resets.
+    if (!layer || typeid(*layer) != typeid(pipeline::FinalLayer) ||
+        (temporal && typeid(*temporal) != typeid(pipeline::TemporalAccumulator)) ||
+        (upscaler && typeid(*upscaler) != typeid(ResamplingUpscaler) && typeid(*upscaler) != typeid(FsrUpscaler)))
+    {
+        return {};
+    }
+    return std::static_pointer_cast<pipeline::FinalLayer>(configuration.layers[2].layer);
+}
+}
 
 DefaultRenderLoopDelegate::DefaultRenderLoopDelegate(std::unique_ptr<Renderer> renderer,
                                                    RendererConfiguration configuration)
@@ -247,8 +279,58 @@ void DefaultRenderLoopDelegate::enqueueRendererUpdate(uint64_t generation,
     {
         throw std::invalid_argument("Renderer update requires an operation");
     }
-    _updates.push_back({generation, std::move(operation), std::move(stale)});
+    PendingUpdate update;
+    update.generation = generation;
+    update.operation = std::move(operation);
+    update.stale = std::move(stale);
+    _updates.push_back(std::move(update));
     requestSceneFrame();
+}
+
+bool DefaultRenderLoopDelegate::enqueueFinalColorUpdate(uint64_t generation,
+    FinalColorProperty property, float value, std::function<void(ValueUpdateResult)> completion, std::function<bool()> current)
+{
+    auto target = _targetsBound ? finalColorTarget(_renderer.get()) : nullptr;
+    if (!target)
+    {
+        return false;
+    }
+    // Match the four standard setters, before publishing a queue entry.
+    float minimum = 0, maximum = 0;
+    switch (property)
+    {
+    case FinalColorProperty::Exposure: minimum = -32; maximum = 32; break;
+    case FinalColorProperty::Contrast: minimum = 0; maximum = 10; break;
+    case FinalColorProperty::Brightness: minimum = -1; maximum = 1; break;
+    case FinalColorProperty::Gamma: minimum = 0.1f; maximum = 8; break;
+    default: throw std::invalid_argument("Unknown final color property");
+    }
+    if (!std::isfinite(value) || value < minimum || value > maximum)
+    {
+        throw std::invalid_argument("Final color value is outside its supported range");
+    }
+    // Coalesce only adjacent unobserved assignments to the same target/property.
+    // Every callback, different property and generic operation is an order barrier.
+    if (!completion && !current && !_updates.empty())
+    {
+        auto& previous = _updates.back();
+        if (previous.color && !previous.completion && !previous.current && previous.generation == generation &&
+            previous.color->property == property && previous.color->target.lock() == target)
+        {
+            previous.color->value = value;
+            base::CpuProfileScope::count("delegate.valueUpdatesCoalesced", 1);
+            requestSceneFrame();
+            return true;
+        }
+    }
+    PendingUpdate update;
+    update.generation = generation;
+    update.color = PendingUpdate::ColorValue{property, value, target};
+    update.completion = std::move(completion);
+    update.current = std::move(current);
+    _updates.push_back(std::move(update));
+    requestSceneFrame();
+    return true;
 }
 
 void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
@@ -258,14 +340,66 @@ void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
         return;
     }
     base::CpuProfileScope::count("delegate.queuedRendererUpdateBatch", updates.size());
+    const bool conservative = !_valueUpdateDrainElisionEnabled || std::any_of(updates.begin(), updates.end(), [](const auto& update)
+    {
+        return !update.color;
+    });
+    if (conservative)
     {
         base::CpuProfileScope profile("delegate.waitIdle.queuedRendererUpdates");
         base::CpuProfileScope::count("delegate.queuedRendererUpdateDrains", 1);
         _engine->device()->waitIdle();
     }
     base::CpuProfileScope updateProfile("delegate.applyQueuedRendererUpdates");
+    base::CpuProfileScope::count("delegate.valueOnlyUpdateBatches", conservative ? 0 : 1);
     for (auto& update : updates)
     {
+        if (update.color)
+        {
+            base::CpuProfileScope valueProfile("delegate.applyFinalColorValue");
+            base::CpuProfileScope::count("delegate.valueUpdates", 1);
+            const auto target = update.color->target.lock();
+            const bool current = _targetsBound && update.generation == _rendererGeneration &&
+                target && finalColorTarget(_renderer.get()) == target && (!update.current || update.current());
+            auto result = ValueUpdateResult::Stale;
+            if (current)
+            {
+                auto proposed = target->settings;
+                switch (update.color->property)
+                {
+                case FinalColorProperty::Exposure: proposed.color.x = update.color->value; break;
+                case FinalColorProperty::Contrast: proposed.color.y = update.color->value; break;
+                case FinalColorProperty::Brightness: proposed.color.z = update.color->value; break;
+                case FinalColorProperty::Gamma: proposed.color.w = update.color->value; break;
+                }
+                // Compare explicit float components, preserving signed-zero bits.
+                bool changed = false;
+                for (int i = 0; i < 4; ++i)
+                {
+                    changed = changed || std::memcmp(&proposed.color[i], &target->settings.color[i], sizeof(float)) != 0;
+                }
+                if (changed)
+                {
+                    target->settings.color = proposed.color;
+                    _renderer->invalidateHistories();
+                    requestSceneFrame();
+                    result = ValueUpdateResult::Applied;
+                }
+                else
+                {
+                    result = ValueUpdateResult::Unchanged;
+                }
+            }
+            base::CpuProfileScope::count("delegate.valueUpdatesApplied", result == ValueUpdateResult::Applied ? 1 : 0);
+            base::CpuProfileScope::count("delegate.valueUpdatesUnchanged", result == ValueUpdateResult::Unchanged ? 1 : 0);
+            base::CpuProfileScope::count("delegate.valueUpdatesStale", result == ValueUpdateResult::Stale ? 1 : 0);
+            if (update.completion)
+            {
+                update.completion(result);
+            }
+            continue;
+        }
+        base::CpuProfileScope::count("delegate.conservativeUpdates", 1);
         if (!withRenderer(update.generation, update.operation))
         {
             if (update.stale)

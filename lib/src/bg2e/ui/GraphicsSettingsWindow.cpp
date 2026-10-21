@@ -1,5 +1,5 @@
 /*
-*    business grade graphic engine (bg2 engine)
+ *    business grade graphic engine (bg2 engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
@@ -161,7 +161,8 @@ void GraphicsSettingsWindow::queueEdit(draw::SettingHandle handle, std::any valu
         report("no_settings", "No graphics settings are connected");
         return;
     }
-    _preferences->queueSet(std::move(handle), std::move(value), completion());
+    _preferences->queueSet(std::move(handle), std::move(value), completion(),
+        draw::SettingsUpdateSynchronization::ValueOnlyNotification);
 }
 
 void GraphicsSettingsWindow::importFile(const std::filesystem::path& path, draw::UnknownSettingPolicy policy)

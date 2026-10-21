@@ -103,6 +103,7 @@ void CommandBuffer::begin()
     auto beginInfo = Info::commandBufferBeginInfo();
     VK_ASSERT(vkBeginCommandBuffer(_cmd, &beginInfo));
     _recording = true;
+    beginRecordingCompletion();
 }
 
 void CommandBuffer::end()
@@ -560,6 +561,12 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
         VkRect2D scissor{};
         scissor.offset = {0, 0};
         scissor.extent = {w, h};
+        if (_attachmentRendering && _attachmentRendering->scissor)
+        {
+            const auto& r = *_attachmentRendering->scissor;
+            scissor.offset = {static_cast<int32_t>(r.x), static_cast<int32_t>(r.y)};
+            scissor.extent = {r.width, r.height};
+        }
         vkCmdSetScissor(_cmd, 0, 1, &scissor);
     }
 

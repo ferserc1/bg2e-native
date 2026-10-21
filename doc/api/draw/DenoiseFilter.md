@@ -17,10 +17,25 @@ Settings include enabled, kernelRadius (0..8), finite nonnegative depthThreshold
 
 Standalone clients construct DenoiseConfiguration with deployed shaderRoot/prefix, compatible draw.denoise.v1 and per-slot maxInvocations (default 256), then initialize(device,backend,slots). beginFrame(slot,serial) releases only the caller's completed slot. record(DenoiseInput) filters one (signal kind,view,layer) key per serial. Input borrows a sampled R16_SFLOAT visibility or RGBA16_SFLOAT radiance signal and SurfaceInputs; surface and signal extents may differ. CameraDepth requires a finite invertible affine worldToView matrix and the existing jittered inverse view-projection in SurfaceInputs. Explicit WorldPositionCoverage needs signed normals, positions and coverage, without camera reconstruction. Reflection input additionally requires matching sampled receiver material (RGBA8 UNORM or RGBA16 float, G=roughness) and maxRoughness.
 
-DenoiseResult::image is the result, with owner retaining the fresh filtered image. For disabled/radius-zero/unavailable profiles, owner is empty and image borrows input.signal. Keep caller-owned signal/surface/material alive through completion. Each active invocation retains its own output/uniforms/descriptors in the acquired slot, so other effects/views/layers cannot overwrite it. Returned owners can survive cleanup but Device must outlive them. Cleanup drains; there is no per-frame waitIdle. Output matches input extent/format and has sampled/storage/readback usage. No R8 scalar conversion, fixed camera GBuffer dependency or borrowed mutable scratch image is introduced.
+DenoiseResult::image is the result, with owner retaining the independently leased filtered image. For disabled/radius-zero/unavailable profiles, owner is empty and image borrows input.signal. Keep caller-owned signal/surface/material alive through completion. Each active invocation retains its own output/uniforms/descriptors in the acquired slot, so other effects/views/layers cannot overwrite it. Returned owners can survive cleanup but Device must outlive them. Cleanup drains; there is no per-frame waitIdle. Output matches input extent/format and has sampled/storage/readback usage. No R8 scalar conversion, fixed camera GBuffer dependency or borrowed mutable scratch image is introduced.
 
 Bilateral weights combine pixel distance, depth/world distance and normal agreement, with hard geometry thresholds. Out-of-bounds neighbors are skipped and weights normalized at borders. Constant HDR values are preserved; radiance is never clamped to [0,1]. Uncovered/nonfinite visibility becomes one. GI invalid centers stay zero-alpha; valid black remains valid, and invalid neighbors are excluded. Reflections average confidence independently and weight RGB by confidence, returning unpremultiplied RGB. Eligible misses participate with zero confidence; roughness-rejected centers remain invalid and cannot be filled by nearby hits. Explicit geometry guides do not infer validity from black RGB.
 
 available() reports any usable profile; available(kind,surface) reports exact scalar/HDR and camera/world support. Missing format or shader profiles return raw input, with status() describing initialization diagnostics. The filter requires no RT support. Configuration and virtual lifecycle/record methods permit compatible shaders, application resources and alternative allocation/filter implementations.
 
 See [native contract and limitations](../../../docs/render_to_draw/plan/milestone_03_ray_tracing/denoise.md) and [manual fixture](../../../tests/draw/denoise/README.md). Compilation/runtime validation remains with the project lead.
+
+## Retired temporary storage
+
+Outputs and per-invocation uniform buffers/sets use
+[TemporaryResourcePool](TemporaryResourcePool.md). Matching uses native image
+properties and slot/signal/view/layer invocation identity. Retained DenoiseResult
+owners remain occupied after slot retirement; another effect or layer cannot
+receive the same storage while that result or a GPU reader owns it.
+
+DenoiseConfiguration::poolLimits controls cache retention. `poolStatistics()` reports
+current retained entries/estimated bytes; `setPoolingEnabled(false)` provides fresh
+allocation diagnostics. Inputs are retained by each active pooled binding lease,
+including temporal signals read in the same recording. Reset/resize incompatibilities
+retire and age out without mutating pending outputs. Signal math, kernel interface,
+coverage and temporal history policies remain unchanged.

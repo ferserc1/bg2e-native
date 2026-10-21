@@ -37,6 +37,14 @@ namespace base {
 class BG2E_API MaterialAttributes {
   public:
     MaterialAttributes();
+    MaterialAttributes(const MaterialAttributes&) = default;
+    MaterialAttributes& operator=(const MaterialAttributes& source);
+
+    // Authored-state revision; independent of pending texture realization flags.
+    uint64_t revision() const
+    {
+        return _revision;
+    }
 
     inline bool isTransparent() const
     {
@@ -44,7 +52,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setIsTransparent(bool t)
     {
-        _isTransparent = t;
+        assign(_isTransparent, t);
     }
 
     inline bool isSolid() const
@@ -53,7 +61,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setIsSolid(bool s)
     {
-        _isSolid = s;
+        assign(_isSolid, s);
     }
 
     inline bool isUnlit() const
@@ -62,7 +70,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setIsUnlit(bool t)
     {
-        _unlit = t;
+        assign(_unlit, t);
     }
 
     // Screen-space refraction strength, only applied to transparent materials.
@@ -72,7 +80,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setRefractionFactor(float f)
     {
-        _refractionFactor = f;
+        assign(_refractionFactor, f);
     }
 
     // Alpha test threshold. Fragments with final albedo alpha below this
@@ -83,7 +91,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setAlphaCutoff(float c)
     {
-        _alphaCutoff = c;
+        assign(_alphaCutoff, c);
     }
 
     inline const Color& albedo() const
@@ -92,15 +100,15 @@ class BG2E_API MaterialAttributes {
     }
     inline void setAlbedo(const Color& c)
     {
-        _albedo = c;
+        assign(_albedo, c);
     }
     inline void setAlbedo(const std::array<float, 3>& s)
     {
-        _albedo = base::Color{s.at(0), s.at(1), s.at(2), 1.0f};
+        assign(_albedo, base::Color{s.at(0), s.at(1), s.at(2), 1.0f});
     }
     inline void setAlbedo(const std::array<float, 4>& s)
     {
-        _albedo = base::Color{s.at(0), s.at(1), s.at(2), s.at(3)};
+        assign(_albedo, base::Color{s.at(0), s.at(1), s.at(2), s.at(3)});
     }
 
     inline std::shared_ptr<Texture> albedoTexture() const
@@ -114,7 +122,7 @@ class BG2E_API MaterialAttributes {
     inline void setAlbedoTexture(std::shared_ptr<Texture> t)
     {
         _albedoTextureUpdated = false;
-        _albedoTexture = t;
+        assign(_albedoTexture, t);
     }
     inline bool albedoTextureUpdated() const
     {
@@ -127,11 +135,11 @@ class BG2E_API MaterialAttributes {
     }
     inline void setAlbedoScale(const glm::vec2& offset)
     {
-        _albedoScale = offset;
+        assign(_albedoScale, offset);
     }
     inline void setAlbedoScale(const std::array<float, 2>& s)
     {
-        _albedoScale = {s[0], s[1]};
+        assign(_albedoScale, glm::vec2{s[0], s[1]});
     }
 
     inline uint32_t albedoUVSet() const
@@ -140,7 +148,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setAlbedoUVSet(uint32_t uvSet)
     {
-        _albedoUVSet = uvSet;
+        assign(_albedoUVSet, uvSet);
     }
 
     inline float metalness() const
@@ -149,7 +157,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setMetalness(float m)
     {
-        _metalness = m;
+        assign(_metalness, m);
     }
 
     inline std::shared_ptr<Texture> metalnessTexture() const
@@ -163,7 +171,7 @@ class BG2E_API MaterialAttributes {
     inline void setMetalnessTexture(std::shared_ptr<Texture> t)
     {
         _metalnessTextureUpdated = false;
-        _metalnessTexture = t;
+        assign(_metalnessTexture, t);
     }
     inline bool metalnessTextureUpdated() const
     {
@@ -176,11 +184,11 @@ class BG2E_API MaterialAttributes {
     }
     inline void setMetalnessScale(const glm::vec2& s)
     {
-        _metalnessScale = s;
+        assign(_metalnessScale, s);
     }
     inline void setMetalnessScale(const std::array<float, 2>& s)
     {
-        _metalnessScale = {s[0], s[1]};
+        assign(_metalnessScale, glm::vec2{s[0], s[1]});
     }
 
     inline uint32_t metalnessChannel() const
@@ -189,7 +197,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setMetalnessChannel(uint32_t c)
     {
-        _metalnessChannel = c;
+        assign(_metalnessChannel, c);
     }
 
     inline bool metalnessInvert() const
@@ -198,7 +206,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setMetalnessInvert(bool i)
     {
-        _metalnessInvert = i;
+        assign(_metalnessInvert, i);
     }
 
     inline uint32_t metalnessUVSet() const
@@ -207,7 +215,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setMetalnessUVSet(uint32_t uvSet)
     {
-        _metalnessUVSet = uvSet;
+        assign(_metalnessUVSet, uvSet);
     }
 
     inline float roughness() const
@@ -216,7 +224,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setRoughness(float r)
     {
-        _roughness = r;
+        assign(_roughness, r);
     }
 
     inline std::shared_ptr<Texture> roughnessTexture() const
@@ -230,7 +238,7 @@ class BG2E_API MaterialAttributes {
     inline void setRoughnessTexture(std::shared_ptr<Texture> t)
     {
         _roughnessTextureUpdated = false;
-        _roughnessTexture = t;
+        assign(_roughnessTexture, t);
     }
     inline bool roughnessTextureUpdated() const
     {
@@ -243,11 +251,11 @@ class BG2E_API MaterialAttributes {
     }
     inline void setRoughnessScale(const glm::vec2& s)
     {
-        _roughnessScale = s;
+        assign(_roughnessScale, s);
     }
     inline void setRoughnessScale(const std::array<float, 2>& s)
     {
-        _roughnessScale = {s[0], s[1]};
+        assign(_roughnessScale, glm::vec2{s[0], s[1]});
     }
 
     inline uint32_t roughnessChannel() const
@@ -256,7 +264,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setRoughnessChannel(uint32_t c)
     {
-        _roughnessChannel = c;
+        assign(_roughnessChannel, c);
     }
 
     inline bool roughnessInvert() const
@@ -265,7 +273,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setRoughnessInvert(bool i)
     {
-        _roughnessInvert = i;
+        assign(_roughnessInvert, i);
     }
 
     inline uint32_t roughnessUVSet() const
@@ -274,7 +282,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setRoughnessUVSet(uint32_t uvSet)
     {
-        _roughnessUVSet = uvSet;
+        assign(_roughnessUVSet, uvSet);
     }
 
     inline std::shared_ptr<Texture> normalTexture() const
@@ -288,7 +296,7 @@ class BG2E_API MaterialAttributes {
     inline void setNormalTexture(std::shared_ptr<Texture> t)
     {
         _normalTextureUpdated = false;
-        _normalTexture = t;
+        assign(_normalTexture, t);
     }
     inline bool normalTextureUpdated() const
     {
@@ -301,11 +309,11 @@ class BG2E_API MaterialAttributes {
     }
     inline void setNormalScale(const glm::vec2& s)
     {
-        _normalScale = s;
+        assign(_normalScale, s);
     }
     inline void setNormalScale(const std::array<float, 2>& s)
     {
-        _normalScale = {s[0], s[1]};
+        assign(_normalScale, glm::vec2{s[0], s[1]});
     }
 
     inline uint32_t normalUVSet() const
@@ -314,7 +322,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setNormalUVSet(uint32_t uvSet)
     {
-        _normalUVSet = uvSet;
+        assign(_normalUVSet, uvSet);
     }
 
     inline const Color& fresnelTint() const
@@ -323,7 +331,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setFresnelTint(const Color& c)
     {
-        _fresnelTint = c;
+        assign(_fresnelTint, c);
     }
 
     inline float sheenIntensity() const
@@ -332,7 +340,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setSheenIntensity(float s)
     {
-        _sheenIntensity = s;
+        assign(_sheenIntensity, s);
     }
 
     inline const Color& sheenColor() const
@@ -341,7 +349,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setSheenColor(const Color& color)
     {
-        _sheenColor = color;
+        assign(_sheenColor, color);
     }
 
     // The AO texture slot can explicitly carry a baked RGB indirect multiplier.
@@ -363,7 +371,7 @@ class BG2E_API MaterialAttributes {
         {
             throw std::invalid_argument("Unknown indirect texture interpretation");
         }
-        _indirectTextureMode = mode;
+        assign(_indirectTextureMode, mode);
     }
 
     inline std::shared_ptr<Texture> aoTexture() const
@@ -377,7 +385,7 @@ class BG2E_API MaterialAttributes {
     inline void setAoTexture(std::shared_ptr<Texture> t)
     {
         _aoTextureUpdated = false;
-        _aoTexture = t;
+        assign(_aoTexture, t);
     }
     inline bool aoTextureUpdated() const
     {
@@ -390,11 +398,11 @@ class BG2E_API MaterialAttributes {
     }
     inline void setAoScale(const glm::vec2& s)
     {
-        _aoScale = s;
+        assign(_aoScale, s);
     }
     inline void setAoScale(const std::array<float, 2>& s)
     {
-        _aoScale = {s[0], s[1]};
+        assign(_aoScale, glm::vec2{s[0], s[1]});
     }
 
     inline uint32_t aoChannel() const
@@ -403,7 +411,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setAoChannel(uint32_t c)
     {
-        _aoChannel = c;
+        assign(_aoChannel, c);
     }
 
     inline uint32_t aoUVSet() const
@@ -412,7 +420,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setAoUVSet(uint32_t uvSet)
     {
-        _aoUVSet = uvSet;
+        assign(_aoUVSet, uvSet);
     }
 
     inline float lightEmission() const
@@ -421,7 +429,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setLightEmission(float e)
     {
-        _lightEmission = e;
+        assign(_lightEmission, e);
     }
 
     inline std::shared_ptr<Texture> lightEmissionTexture() const
@@ -435,7 +443,7 @@ class BG2E_API MaterialAttributes {
     inline void setLightEmissionTexture(std::shared_ptr<Texture> t)
     {
         _lightEmissionTextureUpdated = false;
-        _lightEmissionTexture = t;
+        assign(_lightEmissionTexture, t);
     }
     inline bool lightEmissionTextureUpdated() const
     {
@@ -448,11 +456,11 @@ class BG2E_API MaterialAttributes {
     }
     inline void setLightEmissionScale(const glm::vec2& s)
     {
-        _lightEmissionScale = s;
+        assign(_lightEmissionScale, s);
     }
     inline void setLightEmissionScale(const std::array<float, 2>& s)
     {
-        _lightEmissionScale = {s[0], s[1]};
+        assign(_lightEmissionScale, glm::vec2{s[0], s[1]});
     }
 
     inline uint32_t lightEmissionChannel() const
@@ -461,7 +469,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setLightEmissionChannel(uint32_t c)
     {
-        _lightEmissionChannel = c;
+        assign(_lightEmissionChannel, c);
     }
 
     inline bool lightEmissionInvert() const
@@ -470,7 +478,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setLightEmissionInvert(bool i)
     {
-        _lightEmissionInvert = i;
+        assign(_lightEmissionInvert, i);
     }
 
     inline uint32_t lightEmissionUVSet() const
@@ -479,7 +487,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setLightEmissionUVSet(uint32_t uvSet)
     {
-        _lightEmissionUVSet = uvSet;
+        assign(_lightEmissionUVSet, uvSet);
     }
 
     void setUpdated();
@@ -503,7 +511,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setName(const std::string& name)
     {
-        _name = name;
+        assign(_name, name);
     }
 
     inline const std::string& groupName() const
@@ -512,7 +520,7 @@ class BG2E_API MaterialAttributes {
     }
     inline void setGroupName(const std::string& groupName)
     {
-        _groupName = groupName;
+        assign(_groupName, groupName);
     }
 
     inline bool visible() const
@@ -521,15 +529,37 @@ class BG2E_API MaterialAttributes {
     }
     inline void setVisible(bool v)
     {
-        _visible = v;
+        assign(_visible, v);
     }
+
+  private:
+    template<class T>
+    void assign(T& target, const T& value)
+    {
+        if (!(target == value))
+        {
+            target = value;
+            ++_revision;
+        }
+    }
+
+    void assign(Color& target, const Color& value)
+    {
+        if (target.r != value.r || target.g != value.g || target.b != value.b || target.a != value.a)
+        {
+            target = value;
+            ++_revision;
+        }
+    }
+
+    uint64_t _revision = 1;
 
   protected:
     bool _isTransparent = false;
     bool _isSolid = true;
     bool _unlit = false;
     float _refractionFactor = 0.017f;
-    float _alphaCutoff = 0.5f;
+    float _alphaCutoff = 0.0f;
 
     Color _albedo = Color::White();
     std::shared_ptr<Texture> _albedoTexture;

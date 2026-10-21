@@ -54,7 +54,9 @@ void CollectRayTracingInstancesVisitor::collect(const RenderQueue& queue, RayTra
             {
                 throw std::length_error("Ray instance capacity exceeded; extraction does not silently truncate");
             }
-            next.push_back({item, {item.tracingMesh.get(), item.worldMatrix, item.objectId, 0xff}});
+            const auto opacity = (flags & MaterialAlphaTest) != 0 ?
+                gpu::RayTracingOpacity::ForceNonOpaque : gpu::RayTracingOpacity::ForceOpaque;
+            next.push_back({item, {item.tracingMesh.get(), item.worldMatrix, item.objectId, 0xff, opacity}});
         }
     }
     _engine = queue.engine();

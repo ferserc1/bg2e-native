@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/DenoiseFilter.hpp>
+#include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
@@ -126,6 +127,10 @@ void DenoiseFilter::beginFrame(uint32_t index, uint64_t serial)
         throw std::logic_error("Begin the completed denoise slot only once per serial");
     }
     slot = {};
+    if (_pool)
+    {
+        _pool->collect();
+    }
     slot.prepared = true;
     slot.serial = serial;
 }
@@ -197,13 +202,18 @@ DenoiseResult DenoiseFilter::record(const DenoiseInput& input)
     {
         throw std::invalid_argument("Denoise reflections require matching receiver roughness and threshold");
     }
+    if (!_pool)
+    {
+        _pool = std::make_shared<TemporaryResourcePool>(*_device, _configuration.poolLimits);
+    }
+    _pool->setEnabled(_poolingEnabled);
     Invocation invocation;
     gpu::ImageDescription image;
     image.size = input.signal.size();
     image.format = input.signal.pixelFormat();
     image.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;
     image.debugName = "draw per-invocation bilateral signal";
-    invocation.output = _device->createImage(image);
+    invocation.output = _pool->image(input.command, image);
     DenoiseUniforms data;
     data.inverseViewProjection = input.surface.inverseViewProjection;
     data.worldToView = input.worldToView;
@@ -211,22 +221,24 @@ DenoiseResult DenoiseFilter::record(const DenoiseInput& input)
     data.parameters = {spatialSigma(),input.maxRoughness,0,0};
     data.extent = {input.surface.extent().width,input.surface.extent().height,input.signal.width(),input.signal.height()};
     data.counts = {uint32_t(input.key.signal),kernelRadius(),0,0};
-    invocation.uniforms = _device->createBuffer("Denoise invocation uniforms");
-    invocation.uniforms->createUniformBuffer(data);
-    invocation.resources = _device->createResourceSet(_layout.get(),0);
-    invocation.resources->setUniformBuffer({0,1},invocation.uniforms.get());
+    invocation.pooled = _pool->bindings(input.command, _layout, 0, sizeof(data),
+        {input.slot, uint64_t(input.key.signal), input.key.view, input.key.layer});
+    invocation.pooled->writeUniforms(&data, sizeof(data));
+    invocation.uniforms = invocation.pooled->uniforms();
+    invocation.resources = invocation.pooled->resources();
+    invocation.pooled->setUniformBuffer({0,1},invocation.uniforms.get());
     auto* coverage = input.surface.profile == SurfaceProfile::CameraDepth ? input.surface.normal : input.surface.coverage;
     const std::array<gpu::Image*,5> sources{input.surface.normal,input.surface.depthOrPosition,coverage,&input.signal,
         input.key.signal == DenoiseSignal::ReflectedRadiance ? input.material : input.surface.normal};
     for (uint32_t i = 0; i < sources.size(); ++i)
     {
         input.command.transition(sources[i],gpu::ImageLayout::ShaderReadOnly);
-        invocation.resources->setSampledImage({i+1,i},sources[i]);
+        invocation.pooled->setSampledImage({i+1,i},sources[i]);
     }
-    invocation.resources->setSampler({6,0},_nearest.get());
+    invocation.pooled->setSampler({6,0},_nearest.get());
     input.command.transition(invocation.output.get(),gpu::ImageLayout::General);
-    invocation.resources->setStorageImage({7,5},invocation.output.get());
-    invocation.resources->update();
+    invocation.pooled->setStorageImage({7,5},invocation.output.get());
+    invocation.pooled->update();
     slot.invocations.push_back(std::move(invocation));
     slot.keys.insert(input.key);
     const auto& retained = slot.invocations.back();
@@ -247,6 +259,7 @@ void DenoiseFilter::cleanup()
         _device->waitIdle();
     }
     _slots.clear();
+    _pool.reset();
     _pipelines = {};
     _shaders = {};
     _layout.reset();
@@ -382,4 +395,10 @@ void* DenoiseFilter::settingsInstance()
 {
     return this;
 }
+
+TemporaryPoolStatistics DenoiseFilter::poolStatistics() const
+{
+    return _pool ? _pool->statistics() : TemporaryPoolStatistics{};
+}
+
 }

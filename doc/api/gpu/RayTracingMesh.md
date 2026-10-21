@@ -11,6 +11,8 @@ public:
 
     const RayTracingMeshDescription& description() const;
 
+    uint64_t buildGeneration() const;
+
     virtual bool isBuilt() const = 0;   // true once built on the GPU
 
     // From DeviceResource
@@ -227,3 +229,13 @@ reused afterward. `build()` records the build through a
 Returns the raw primitive acceleration structure (macOS only). Referenced by
 `metal::RayTracingScene` both in the instance descriptor and for `useResource`
 residency when the scene is used in a shader.
+
+## Native build generations
+
+`buildGeneration()` changes when Vulkan or Metal records another BLAS build and
+on native cleanup. Identity plus this generation distinguishes dependent TLAS keys
+when a BLAS object is rebuilt at the same address. This counter is invalidation
+data, not GPU completion evidence; neither it nor `isBuilt()` certifies that an
+aborted command executed. Source vertex/index buffers must remain alive and must
+not be modified under an in-flight BLAS/TLAS reader. Draw reload creates a new
+realization; higher-level acceleration generations retain the original owners.

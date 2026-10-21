@@ -27,6 +27,10 @@
 
 namespace bg2e::draw {
 inline constexpr uint32_t MaxLights = 8;
+// Slider values close to zero disable alpha testing; equality enables it.
+inline constexpr float AlphaTestCutoffThreshold = 0.02f;
+// Validates the authored cutoff without modifying it, then classifies for GPU use.
+BG2E_API float effectiveAlphaTestCutoff(float authoredCutoff);
 enum MaterialFlags : uint32_t
 {
     MaterialUnlit = 1, MaterialAlphaTest = 2, MaterialTransparent = 4,
@@ -38,7 +42,7 @@ struct alignas(16) MaterialData {
     glm::vec4 fresnelTint{0};
     glm::vec4 sheenColor{0};
     glm::vec4 factors{0}; // metalness, roughness, sheen intensity, refraction
-    glm::vec4 emissionAlpha{0}; // emission, alpha cutoff, reserved, reserved
+    glm::vec4 emissionAlpha{0}; // emission, effective alpha cutoff (zero disables testing), reserved, reserved
     std::array<glm::vec4, 3> uvScale{glm::vec4{0}, glm::vec4{0}, glm::vec4{0}}; // albedo/normal, metalness/roughness, AO/emission
     std::array<glm::uvec4, 2> uvSets{glm::uvec4{0}, glm::uvec4{0}}; // albedo/metalness/roughness/normal; AO/emission/flags/sRGB mask
     glm::uvec4 channels{0}; // metalness, roughness, AO, emission
@@ -76,5 +80,6 @@ static_assert(sizeof(MaterialData) == 192 && offsetof(MaterialData, uvScale) == 
 static_assert(sizeof(FrameData) == 240 && sizeof(ObjectData) == 336 && offsetof(ObjectData, identity) == 320);
 static_assert(sizeof(LightData) == 80 && sizeof(LightUniforms) == 656 && sizeof(EnvironmentData) == 16);
 BG2E_API MaterialData packMaterial(const MaterialBase& material);
+BG2E_API MaterialData packMaterial(const MaterialBase& material, MaterialRevisions* revisions);
 BG2E_API FrameData packFrame(const FrameContext& frame, const glm::mat4& view, const glm::mat4& projection);
 }

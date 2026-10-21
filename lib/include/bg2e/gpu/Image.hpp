@@ -22,6 +22,7 @@
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/DeviceResource.hpp>
 #include <stdexcept>
+#include <cstdint>
 #include <vector>
 
 namespace bg2e {
@@ -51,6 +52,11 @@ class BG2E_API Image : public DeviceResource {
     PixelFormat pixelFormat() const
     {
         return _pixelFormat;
+    }
+    // Changes when allocation/view state is reset, including in-place recreation.
+    uint64_t bindingGeneration() const
+    {
+        return _bindingGeneration;
     }
     const Size2D& size() const
     {
@@ -137,6 +143,7 @@ class BG2E_API Image : public DeviceResource {
     ImageLayout _currentLayout = ImageLayout::Undefined;
     ImageType _imageType = ImageType::Image2D;
     uint32_t _mipLevels = 1;
+    uint64_t _bindingGeneration = 0;
 
     friend class vk::CommandBuffer;
     friend class metal::CommandBuffer;

@@ -25,6 +25,7 @@
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <algorithm>
+#include <typeinfo>
 #include <mutex>
 #include <stdexcept>
 #include <iostream>
@@ -39,6 +40,23 @@ using Generation = environment::GenerationSettings;
 using Environment = scene::EnvironmentComponent;
 using Skybox = environment::SkyboxRenderer;
 constexpr auto RendererIdentity = "bg2e.draw.deferred.v1";
+
+reflection::TypeInfo finalSettingsType()
+{
+    TypeInfoBuilder<Final> final("bg2e.draw.final.v1");
+    final.property("exposure", &Final::exposure, &Final::setExposure).category("Color").range(-32, 32);
+    final.property("contrast", &Final::contrast, &Final::setContrast).category("Color").range(0, 10);
+    final.property("brightness", &Final::brightness, &Final::setBrightness).category("Color").range(-1, 1);
+    final.property("gamma", &Final::gamma, &Final::setGamma).category("Color").range(0.1, 8);
+    auto debug = final.property("debugView", &Final::debugView, &Final::setDebugView).category("Debug");
+    const char* labels[] = {"Final", "Albedo", "Normal and emission", "Material", "Fresnel flags",
+        "Sheen and refraction", "Baked multiplier", "Depth", "Raw HDR (no color processing)"};
+    for (int64_t i = 0; i < 9; ++i)
+    {
+        debug.enumValue(labels[i], i);
+    }
+    return final.build();
+}
 
 void registerTypes()
 {
@@ -55,19 +73,7 @@ void registerTypes()
             .enumValue("Ray visibility",11).enumValue("Diffuse GI signal",12)
             .enumValue("Reflected radiance signal",13).enumValue("Reflection confidence",14);
         TypeRegistry::get().registerType(lighting.build());
-        TypeInfoBuilder<Final> final("bg2e.draw.final.v1");
-        final.property("exposure", &Final::exposure, &Final::setExposure).category("Color").range(-32, 32);
-        final.property("contrast", &Final::contrast, &Final::setContrast).category("Color").range(0, 10);
-        final.property("brightness", &Final::brightness, &Final::setBrightness).category("Color").range(-1, 1);
-        final.property("gamma", &Final::gamma, &Final::setGamma).category("Color").range(0.1, 8);
-        auto debug = final.property("debugView", &Final::debugView, &Final::setDebugView).category("Debug");
-        const char* labels[] = {"Final", "Albedo", "Normal and emission", "Material", "Fresnel flags",
-            "Sheen and refraction", "Baked multiplier", "Depth", "Raw HDR (no color processing)"};
-        for (int64_t i = 0; i < 9; ++i)
-        {
-            debug.enumValue(labels[i], i);
-        }
-        TypeRegistry::get().registerType(final.build());
+        TypeRegistry::get().registerType(finalSettingsType());
 
         TypeInfoBuilder<Shadows> shadows("bg2e.draw.shadows.v1");
         shadows.accessor<bool>("enabled", [](const Shadows& o)
@@ -379,6 +385,8 @@ void RenderSettingsPreferences::clear()
 {
     _catalog.reset();
     _rendererGeneration = 0;
+    _boundedFinal.reset();
+    _boundedFinalCatalogGeneration = 0;
 }
 
 void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::Node> root, ExtendCatalog extensions)
@@ -407,7 +415,15 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
                 }
                 if (auto final = std::dynamic_pointer_cast<Final>(selection.layer))
                 {
-                    _catalog.add(target("final", "bg2e.draw.final.v1", final.get(), final));
+                    auto entry = target("final", "bg2e.draw.final.v1", final.get(), final);
+                    const auto* finalPointer = final.get();
+                    if (!extensions && typeid(renderer) == typeid(RendererDeferred) &&
+                        typeid(*finalPointer) == typeid(Final))
+                    {
+                        entry.type = finalSettingsType();
+                        _boundedFinal = final;
+                    }
+                    _catalog.add(std::move(entry));
                 }
                 if (auto skybox = std::dynamic_pointer_cast<Skybox>(selection.layer))
                 {
@@ -485,6 +501,10 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
         {
             extensions(renderer, _catalog);
         }
+        if (!_boundedFinal.expired())
+        {
+            _boundedFinalCatalogGeneration = _catalog.generation();
+        }
         if (_catalog.rendererId().empty())
         {
             throw std::invalid_argument("Custom renderers require a catalog extension with a stable renderer identity");
@@ -534,9 +554,85 @@ void RenderSettingsPreferences::connect(const std::shared_ptr<DefaultRenderLoopD
     _delegate = delegate;
 }
 
-void RenderSettingsPreferences::queueSet(SettingHandle handle, std::any value, Completion completion)
+void RenderSettingsPreferences::queueSet(SettingHandle handle, std::any value, Completion completion,
+    SettingsUpdateSynchronization synchronization)
 {
-    enqueue(SettingsCodec::prepare(_catalog, {{std::move(handle), std::move(value)}}), std::move(completion));
+    auto plan = SettingsCodec::prepare(_catalog, {{handle, value}});
+    auto delegate = _delegate.lock();
+    auto target = _boundedFinal.lock();
+    std::optional<FinalColorProperty> property;
+    if (handle.property == "exposure")
+    {
+        property = FinalColorProperty::Exposure;
+    }
+    else if (handle.property == "contrast")
+    {
+        property = FinalColorProperty::Contrast;
+    }
+    else if (handle.property == "brightness")
+    {
+        property = FinalColorProperty::Brightness;
+    }
+    else if (handle.property == "gamma")
+    {
+        property = FinalColorProperty::Gamma;
+    }
+    const auto* number = std::any_cast<float>(&value);
+    const auto* renderer = delegate ? delegate->renderer() : nullptr;
+    if ((!completion || synchronization == SettingsUpdateSynchronization::ValueOnlyNotification) &&
+        plan.result().valid() && delegate && target && property && number && handle.component == "final" &&
+        _boundedFinalCatalogGeneration == _catalog.generation() && renderer &&
+        renderer->configuration().layers.size() > 2 && renderer->configuration().layers[2].layer == target)
+    {
+        const std::weak_ptr<RenderSettingsPreferences> self = shared_from_this();
+        const auto catalogGeneration = _catalog.generation();
+        const bool queued = delegate->enqueueFinalColorUpdate(_rendererGeneration, *property, *number,
+            [self, completion, catalogGeneration](ValueUpdateResult status)
+        {
+            auto owner = self.lock();
+            SettingsResult result;
+            if (!owner)
+            {
+                result = failure("target_expired", "Settings facade no longer exists");
+            }
+            else if (owner->_catalog.generation() != catalogGeneration)
+            {
+                result = failure("stale_catalog", "Settings targets changed after validation");
+            }
+            else if (status == ValueUpdateResult::Stale)
+            {
+                result = failure("stale_renderer", "Renderer was replaced or rebound before the settings update");
+            }
+            else
+            {
+                result.applied = true;
+                if (owner->_automaticPersistence)
+                {
+                    try
+                    {
+                        owner->persist();
+                    }
+                    catch (const std::exception& error)
+                    {
+                        result.issues.push_back({"persistence_failed", "", error.what()});
+                    }
+                }
+            }
+            if (completion)
+            {
+                completion(std::move(result));
+            }
+        }, [self, catalogGeneration]
+        {
+            auto owner = self.lock();
+            return owner && owner->_catalog.generation() == catalogGeneration;
+        });
+        if (queued)
+        {
+            return;
+        }
+    }
+    enqueue(std::move(plan), std::move(completion));
 }
 
 void RenderSettingsPreferences::queueImport(const json::JsonNode& document, UnknownSettingPolicy policy, Completion completion)

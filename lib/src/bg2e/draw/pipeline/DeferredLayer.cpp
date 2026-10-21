@@ -197,7 +197,7 @@ void DeferredLayer::record(const PassContext& context)
     const glm::uvec4 debug{uint32_t(_debugView), 0, 0, 0};
     _pass.draw(context.frame, *context.outputs.at(0).image, inputs, 1,
         {{0, raster->frame->set(context.frame)}, {2, raster->lights->set(context.frame)}, {3, raster->environment->set(context.frame)}},
-        &debug, sizeof(debug), indices, samplers);
+        &debug, sizeof(debug), indices, samplers, raster->region);
 }
 
 void DeferredLayer::cleanup()

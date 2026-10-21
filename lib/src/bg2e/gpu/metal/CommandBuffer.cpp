@@ -108,6 +108,7 @@ void CommandBuffer::begin()
     {
         throw std::logic_error("Metal command buffer cannot begin again");
     }
+    beginRecordingCompletion();
     _executable = false;
     _recording = true;
 }
@@ -480,7 +481,9 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
         MTL::Viewport viewport{0.0, 0.0, static_cast<double>(_attachmentExtent.width),
             static_cast<double>(_attachmentExtent.height), 0.0, 1.0};
         _encoder->setViewport(viewport);
-        _encoder->setScissorRect(MTL::ScissorRect{0, 0, _attachmentExtent.width, _attachmentExtent.height});
+        const auto r = _attachmentRendering->scissor.value_or(
+            ScissorRegion{0, 0, _attachmentExtent.width, _attachmentExtent.height});
+        _encoder->setScissorRect(MTL::ScissorRect{r.x, r.y, r.width, r.height});
     }
 
     if (_renderingCubeMap && _renderCubeMap)

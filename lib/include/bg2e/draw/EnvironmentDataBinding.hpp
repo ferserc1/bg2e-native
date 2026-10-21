@@ -27,8 +27,23 @@ class BG2E_API EnvironmentDataBinding : public DataBinding {
     void initialize(Engine& engine, std::shared_ptr<gpu::PipelineLayout> layout, uint32_t frameSlots = 0, uint32_t metalTextureBase = 6);
     void update(const FrameContext& frame, std::shared_ptr<const environment::EnvironmentResources> environment);
     void cleanup() override;
+
+    void setReuseEnabled(bool enabled)
+    {
+        _reuseEnabled = enabled;
+    }
+
   private:
     uint32_t _metalTextureBase = 6;
-    std::vector<std::shared_ptr<const environment::EnvironmentResources>> _owners;
+    struct Record {
+        std::shared_ptr<const environment::EnvironmentResources> owner;
+        std::array<std::shared_ptr<gpu::Image>, 4> images;
+        std::array<std::shared_ptr<gpu::Sampler>, 4> samplers;
+        std::array<uint64_t, 4> imageGenerations{};
+        EnvironmentData data;
+        bool valid = false;
+    };
+    std::vector<Record> _records;
+    bool _reuseEnabled = true;
 };
 }

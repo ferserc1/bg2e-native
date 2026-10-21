@@ -6,7 +6,7 @@ Run on Vulkan and Metal with native validation. The fixture checks retained geom
 
 Lead integration coverage:
 
-- Compile all camera/world and hash/blue `_256` templates with the v2 interface. Vulkan must specialize ID0 to the selected exact capacity in all four RT stages, with recursion depth one; Metal uses pointer-indexed argument-record buffers8/9 and compute queries. Verify native-clamped counts up to 16384 and non-power-of-two values; do not look for capacity-specific deployed filenames. Record unavailable hardware separately.
+- Compile all camera/world and hash/blue `_256` templates with the v3 interface (Vulkan persistent arrays in set2). Vulkan must specialize ID0 to the selected exact capacity in all four RT stages, with recursion depth one; Metal uses pointer-indexed argument-record buffers8/9 and compute queries. Verify native-clamped counts up to 16384 and non-power-of-two values; do not look for capacity-specific deployed filenames. Record unavailable hardware separately.
 - In existing deferred/manipulation examples, switch IBL/AO/GI, toggle enabled independently, resize/change quality, pause/update UI, edit/reload textures/geometry/materials, and verify requested settings survive unsupported/disabled fallback.
 - Check geometric normals under nested nonuniform/mirrored transforms, both UV sets and scalar emission channel/inversion/sRGB metadata. Use emissive geometry with a nonzero submesh offset and transparent/cutout occluders.
 - Test point/spot/directional light participation, shadow toggles, source size and shadow sample counts, with an actual rear shadow occluder and a hole revealing it. Inspect black valid GI versus invalid zero-alpha fallback.

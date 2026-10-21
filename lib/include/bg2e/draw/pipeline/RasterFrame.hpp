@@ -34,5 +34,6 @@ struct RasterFrame {
     ObjectDataBinding* object = nullptr;
     LightDataBinding* lights = nullptr;
     EnvironmentDataBinding* environment = nullptr;
+    std::optional<gpu::ScissorRegion> region;
 };
 }

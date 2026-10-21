@@ -115,7 +115,10 @@ void main()
         return;
     }
     vec4 sum = vec4(0);
-    float weightSum = 0.0, confidenceSum = 0.0;
+    float weightSum = 0.0;
+#if !DENOISE_SCALAR
+    float confidenceSum = 0.0;
+#endif
     int radius = int(dataBlock.counts.y);
     for (int y = -radius; y <= radius; ++y)
     {

@@ -32,11 +32,21 @@ class BG2E_API ObjectDataBinding {
     void prepare(const FrameContext& frame, const RenderQueue& queue);
     gpu::ResourceSet* set(const FrameContext& frame, uint32_t objectId) const;
     void cleanup();
+
+    void setReuseEnabled(bool enabled)
+    {
+        _reuseEnabled = enabled;
+    }
+
   private:
     struct Record {
         RenderQueue::Item owner;
         std::shared_ptr<gpu::Buffer> buffer;
         std::shared_ptr<gpu::ResourceSet> set;
+        ObjectData data;
+        std::array<std::shared_ptr<gpu::Image>, 6> images;
+        std::array<std::shared_ptr<gpu::Sampler>, 6> samplers;
+        bool valid = false;
     };
     struct Slot {
         std::vector<Record> records;
@@ -46,5 +56,6 @@ class BG2E_API ObjectDataBinding {
     Engine* _engine = nullptr;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::vector<Slot> _slots;
+    bool _reuseEnabled = true;
 };
 }

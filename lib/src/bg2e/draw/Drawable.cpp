@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/Drawable.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 
 #include <algorithm>
 #include <limits>
@@ -64,7 +65,11 @@ void Drawable::setMesh(std::shared_ptr<Mesh> mesh)
     }
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        {
+            base::CpuProfileScope profile("drawable.waitIdle.setMesh");
+            base::CpuProfileScope::count("drawable.drains.setMesh", 1);
+            _engine->device()->waitIdle();
+        }
     }
     _mesh = std::move(mesh);
     _attributes.resize(_mesh->submeshes.size());
@@ -130,7 +135,11 @@ void Drawable::load(Engine* engine, std::function<void()> onTextureLoaded)
     {
         throw std::invalid_argument("Use setMesh to change Drawable submesh topology");
     }
-    engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("drawable.waitIdle.load");
+        base::CpuProfileScope::count("drawable.drains.load", 1);
+        engine->device()->waitIdle();
+    }
     _engine = engine;
     buildDrawMesh();
     updateMaterials(std::move(onTextureLoaded));
@@ -154,7 +163,11 @@ void Drawable::updateMaterials(std::function<void()> onTextureLoaded)
     {
         throw std::logic_error("Drawable has no engine");
     }
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("drawable.waitIdle.updateMaterials");
+        base::CpuProfileScope::count("drawable.drains.updateMaterials", 1);
+        _engine->device()->waitIdle();
+    }
     _loaded = false;
     _materials.resize(_attributes.size());
     for (size_t i = 0; i < _materials.size(); ++i)
@@ -206,7 +219,11 @@ void Drawable::reload()
     {
         throw std::invalid_argument("Use setMesh to change Drawable submesh topology");
     }
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("drawable.waitIdle.reload");
+        base::CpuProfileScope::count("drawable.drains.reload", 1);
+        _engine->device()->waitIdle();
+    }
     buildDrawMesh();
     updateMaterials();
     buildRayTracingMeshes();
@@ -220,7 +237,11 @@ void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
     }
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        {
+            base::CpuProfileScope profile("drawable.waitIdle.applyModifier");
+            base::CpuProfileScope::count("drawable.drains.applyModifier", 1);
+            _engine->device()->waitIdle();
+        }
     }
     modifier->setMesh(_mesh.get());
     modifier->apply();
@@ -251,7 +272,11 @@ std::shared_ptr<Drawable> Drawable::clone() const
     }
     if (isLoaded())
     {
-        _engine->device()->waitIdle();
+        {
+            base::CpuProfileScope profile("drawable.waitIdle.clone");
+            base::CpuProfileScope::count("drawable.drains.clone", 1);
+            _engine->device()->waitIdle();
+        }
         result->_engine = _engine;
         result->_drawMesh = std::make_shared<DrawMesh>();
         // Copy the actual uploaded geometry, even if CPU edits await reload.
@@ -276,7 +301,11 @@ void Drawable::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        {
+            base::CpuProfileScope profile("drawable.waitIdle.cleanup");
+            base::CpuProfileScope::count("drawable.drains.cleanup", 1);
+            _engine->device()->waitIdle();
+        }
     }
     for (size_t i = 0; i < _materials.size() && i < _attributes.size(); ++i)
     {

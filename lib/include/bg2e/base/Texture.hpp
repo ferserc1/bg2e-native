@@ -22,6 +22,7 @@
 #include <bg2e/base/Color.hpp>
 
 #include <memory>
+#include <cstdint>
 #include <filesystem>
 #include <string>
 #include <functional>
@@ -53,22 +54,26 @@ class ProceduralTextureGenerator {
 
     inline void setDimensions(uint32_t w, uint32_t h, uint32_t bpp)
     {
-        _width = w;
-        _height = h;
-        _bpp = bpp;
+        if (_width != w || _height != h || _bpp != bpp)
+        {
+            _width = w;
+            _height = h;
+            _bpp = bpp;
+            markModified();
+        }
     }
 
     inline void setWidth(uint32_t w)
     {
-        _width = w;
+        setDimensions(w, _height, _bpp);
     }
     inline void setHeight(uint32_t h)
     {
-        _height = h;
+        setDimensions(_width, h, _bpp);
     }
     inline void setBytesPerPixel(uint32_t bpp)
     {
-        _bpp = bpp;
+        setDimensions(_width, _height, bpp);
     }
 
     inline uint32_t width() const
@@ -84,10 +89,23 @@ class ProceduralTextureGenerator {
         return _bpp;
     }
 
+    uint64_t revision() const
+    {
+        return _revision;
+    }
+    // Custom generators call this when their pixel-producing state changes.
+    void markModified()
+    {
+        ++_revision;
+    }
+
   protected:
     uint32_t _width;
     uint32_t _height;
     uint32_t _bpp;
+
+  private:
+    uint64_t _revision = 1;
 };
 
 class Texture {
@@ -131,19 +149,52 @@ class Texture {
     {
         auto fullPath = filePath;
         fullPath.append(fileName);
-        _imageFilePath = fullPath.string();
+        assign(_imageFilePath, fullPath.string());
     }
 
     Texture(ProceduralTextureGenerator* gen)
         : _type{TypeProcedural}
     {
-        _proceduralGenerator = std::shared_ptr<ProceduralTextureGenerator>(gen);
+        assign(_proceduralGenerator, std::shared_ptr<ProceduralTextureGenerator>(gen));
     }
 
     Texture(std::shared_ptr<ProceduralTextureGenerator> gen)
         : _type{TypeProcedural}
     {
-        _proceduralGenerator = gen;
+        assign(_proceduralGenerator, gen);
+    }
+
+    Texture(const Texture&) = default;
+    Texture& operator=(const Texture& source)
+    {
+        if (this != &source)
+        {
+            assign(_imageFilePath, source._imageFilePath);
+            assign(_type, source._type);
+            assign(_useMipmaps, source._useMipmaps);
+            assign(_magFilter, source._magFilter);
+            assign(_minFilter, source._minFilter);
+            assign(_mipLodBias, source._mipLodBias);
+            assign(_minLod, source._minLod);
+            assign(_maxLod, source._maxLod);
+            assign(_addressModeU, source._addressModeU);
+            assign(_addressModeV, source._addressModeV);
+            assign(_addressModeW, source._addressModeW);
+            assign(_colorType, source._colorType);
+            assign(_proceduralGenerator, source._proceduralGenerator);
+        }
+        return *this;
+    }
+
+    uint64_t revision() const
+    {
+        const auto generatorRevision = _proceduralGenerator ? _proceduralGenerator->revision() : 0;
+        if (_generatorRevision != generatorRevision)
+        {
+            _generatorRevision = generatorRevision;
+            ++_revision;
+        }
+        return _revision;
     }
 
     inline TextureType type() const
@@ -157,8 +208,8 @@ class Texture {
     }
     inline void setProceduralGenerator(std::shared_ptr<ProceduralTextureGenerator> gen)
     {
-        _type = TypeProcedural;
-        _proceduralGenerator = gen;
+        assign(_type, TypeProcedural);
+        assign(_proceduralGenerator, gen);
     }
     ProceduralTextureGenerator* proceduralTextureGenerator()
     {
@@ -180,13 +231,13 @@ class Texture {
         result->setData(data, width, height, channels);
         result->setPath(identifier);
         result->setColorType(_proceduralGenerator->colorType());
-        _colorType = _proceduralGenerator->colorType();
+        assign(_colorType, _proceduralGenerator->colorType());
         return result;
     }
 
     inline void setUseMipmaps(bool mipmaps)
     {
-        _useMipmaps = mipmaps;
+        assign(_useMipmaps, mipmaps);
     }
     inline bool useMipmaps() const
     {
@@ -194,7 +245,7 @@ class Texture {
     }
     inline void setMagFilter(Filter filter)
     {
-        _magFilter = filter;
+        assign(_magFilter, filter);
     }
     inline Filter magFilter() const
     {
@@ -202,7 +253,7 @@ class Texture {
     }
     inline void setMinFilter(Filter filter)
     {
-        _minFilter = filter;
+        assign(_minFilter, filter);
     }
     inline Filter minFilter() const
     {
@@ -210,7 +261,7 @@ class Texture {
     }
     inline void setMipLodBias(float b)
     {
-        _mipLodBias = b;
+        assign(_mipLodBias, b);
     }
     inline float mipLodBias() const
     {
@@ -218,7 +269,7 @@ class Texture {
     }
     inline void setMinLod(float l)
     {
-        _minLod = l;
+        assign(_minLod, l);
     }
     inline float minLod() const
     {
@@ -226,7 +277,7 @@ class Texture {
     }
     inline void setMaxLod(float l)
     {
-        _maxLod = l;
+        assign(_maxLod, l);
     }
     inline float maxLod() const
     {
@@ -234,31 +285,31 @@ class Texture {
     }
     inline void setAddressMode(AddressMode uvw)
     {
-        _addressModeU = uvw;
-        _addressModeV = uvw;
+        assign(_addressModeU, uvw);
+        assign(_addressModeV, uvw);
     }
     inline void setAddressMode(AddressMode u, AddressMode v)
     {
-        _addressModeU = u;
-        _addressModeV = v;
+        assign(_addressModeU, u);
+        assign(_addressModeV, v);
     }
     inline void setAddressMode(AddressMode u, AddressMode v, AddressMode w)
     {
-        _addressModeU = u;
-        _addressModeV = v;
-        _addressModeW = w;
+        assign(_addressModeU, u);
+        assign(_addressModeV, v);
+        assign(_addressModeW, w);
     }
     inline void setAddressModeU(AddressMode u)
     {
-        _addressModeU = u;
+        assign(_addressModeU, u);
     }
     inline void setAddressModeV(AddressMode v)
     {
-        _addressModeV = v;
+        assign(_addressModeV, v);
     }
     inline void setAddressModeW(AddressMode w)
     {
-        _addressModeW = w;
+        assign(_addressModeW, w);
     }
     inline AddressMode addressModeU() const
     {
@@ -274,7 +325,7 @@ class Texture {
     }
     inline void setColorType(base::Color::Type t)
     {
-        _colorType = t;
+        assign(_colorType, t);
     }
     inline base::Color::Type colorType() const
     {
@@ -283,13 +334,27 @@ class Texture {
 
     inline void setImageFilePath(const std::string& filePath)
     {
-        _type = TypeFilesystem;
-        _imageFilePath = filePath;
+        assign(_type, TypeFilesystem);
+        assign(_imageFilePath, filePath);
     }
     inline const std::string& imageFilePath() const
     {
         return _imageFilePath;
     }
+
+  private:
+    template<class T>
+    void assign(T& target, const T& value)
+    {
+        if (!(target == value))
+        {
+            target = value;
+            ++_revision;
+        }
+    }
+
+    mutable uint64_t _revision = 1;
+    mutable uint64_t _generatorRevision = 0;
 
   protected:
     std::string _imageFilePath;

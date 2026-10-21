@@ -694,9 +694,14 @@ struct DepthAttachmentDescription {
     uint32_t clearStencil = 0;
     ImageSubresourceRange subresource;
 };
+// Attachment pixel coordinates, top-left origin. Does not restrict clears or viewport.
+struct ScissorRegion {
+    uint32_t x = 0, y = 0, width = 0, height = 0;
+};
 struct RenderingDescription {
     std::vector<ColorAttachmentDescription> colors;
     std::optional<DepthAttachmentDescription> depth;
+    std::optional<ScissorRegion> scissor;
 };
 struct RenderingCapabilities {
     uint32_t maxColorAttachments = 0;

@@ -40,20 +40,21 @@ struct ShadowUniforms {
     DrawLightUniforms lights;
 };
 
+// v4: set 0 is invocation data; set 1 is the immutable scene/alpha table.
 layout(local_size_x = 16, local_size_y = 16, local_size_z = 1) in;
 layout(std140, set = 0, binding = 0) uniform ShadowBlock { ShadowUniforms data; } queryData;
-layout(std430, set = 0, binding = 1) readonly buffer InstanceBlock { ShadowInstanceData values[]; } instanceData;
-layout(std430, set = 0, binding = 2) readonly buffer VertexBlock { ShadowVertex values[]; } vertices;
-layout(std430, set = 0, binding = 9) readonly buffer IndexBlock { uint values[]; } indices;
-layout(set = 0, binding = 3) uniform accelerationStructureEXT topLevel;
+layout(std430, set = 1, binding = 1) readonly buffer InstanceBlock { ShadowInstanceData values[]; } instanceData;
+layout(std430, set = 1, binding = 2) readonly buffer VertexBlock { ShadowVertex values[]; } vertices;
+layout(std430, set = 1, binding = 9) readonly buffer IndexBlock { uint values[]; } indices;
+layout(set = 1, binding = 3) uniform accelerationStructureEXT topLevel;
 layout(set = 0, binding = 4) uniform texture2D normalImage;
 layout(set = 0, binding = 5) uniform texture2D depthImage;
 layout(set = 0, binding = 6) uniform sampler nearestSampler;
 layout(rgba16f, set = 0, binding = 7) uniform writeonly image2D shadow0;
 layout(rgba16f, set = 0, binding = 8) uniform writeonly image2D shadow1;
 layout(constant_id = 0) const uint alphaCapacity = 16384u;
-layout(set = 0, binding = 16) uniform texture2D alphaImages[alphaCapacity];
-layout(set = 0, binding = 24) uniform sampler alphaSamplers[alphaCapacity];
+layout(set=2, binding = 16) uniform texture2D alphaImages[alphaCapacity];
+layout(set=2, binding = 24) uniform sampler alphaSamplers[alphaCapacity];
 float sampleAlpha(uint index, vec2 uv)
 {
     return textureLod(sampler2D(alphaImages[nonuniformEXT(index)], alphaSamplers[nonuniformEXT(index)]), uv, 0.0).a;
@@ -65,10 +66,15 @@ bool acceptsCandidate(uint instance, uint primitive, vec2 bary)
         return false;
     }
     ShadowInstanceData data = instanceData.values[instance];
+    if ((data.options.y & 2u) == 0u)
+    {
+        // CPU-packed classification: skip UV/index fetches and alpha sampling.
+        return true;
+    }
     if (data.ranges.z == 0xffffffffu)
     {
-        // No alpha test, or a texture omitted at capacity; keep scalar alpha.
-        return (data.options.y & 2u) == 0u || data.alpha.w >= data.alpha.z;
+        // A texture omitted at capacity still uses scalar alpha.
+        return data.alpha.w >= data.alpha.z;
     }
     if (primitive >= data.ranges.y)
     {

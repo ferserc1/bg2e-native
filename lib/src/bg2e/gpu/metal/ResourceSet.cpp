@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/gpu/metal/ResourceSet.hpp>
+#include "ArgumentEncoderState.hpp"
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/PipelineLayout.hpp>
@@ -298,20 +299,51 @@ void ResourceSet::setSampledImages(ShaderBinding binding, std::span<const ImageV
     base::CpuProfileScope profile("metal.resourceSet.resolveImageViews");
     auto& array = arrayBinding(binding, ResourceType::SampledImage, views.size());
     std::vector<TextureHandle> images;
+    std::vector<ImageKey> keys;
+    std::unordered_map<ImageKey, ResolvedImage, ImageHash> resolved;
+    images.reserve(views.size());
+    keys.reserve(views.size());
+    uint64_t resolutions = 0;
     for (const auto& view : views)
     {
-        auto* image = dynamic_cast<metal::Image*>(view.image);
-        if (!image || image->device() != device() || !image->isValid() ||
-            !hasFlag(image->usage(), ImageUsage::Sampled) || image->imageType() != ImageType::Image2D ||
-            isDepthFormat(image->pixelFormat()))
+        if (!view.image)
         {
-            throw std::invalid_argument("Argument image must be a valid same-device sampled color 2D view");
+            throw std::invalid_argument("Argument image view requires an image");
         }
-        image->validateRange(view.range);
-        images.push_back(image->subresourceView(view.range));
+        const ImageKey key{view.image, view.image->bindingGeneration(), view.range};
+        auto found = resolved.find(key);
+        if (found == resolved.end())
+        {
+            auto* image = dynamic_cast<metal::Image*>(view.image);
+            if (!image || image->device() != device() || !image->isValid() ||
+                !hasFlag(image->usage(), ImageUsage::Sampled) || image->imageType() != ImageType::Image2D ||
+                isDepthFormat(image->pixelFormat()))
+            {
+                throw std::invalid_argument("Argument image must be a valid same-device sampled color 2D view");
+            }
+            image->validateRange(view.range);
+            ResolvedImage entry;
+            const auto previous = array.imageCache.find(key);
+            if (previous != array.imageCache.end() && previous->second.owner)
+            {
+                entry = previous->second;
+            }
+            else
+            {
+                entry = {image->subresourceView(view.range), image->weak_from_this().lock()};
+                ++resolutions;
+            }
+            found = resolved.emplace(key, std::move(entry)).first;
+        }
+        images.push_back(found->second.handle);
+        keys.push_back(key);
     }
+    const bool changed = array.imageKeys != keys || array.images != images;
     array.images = std::move(images);
-    _arraysDirty = true;
+    array.imageKeys = std::move(keys);
+    array.imageCache = std::move(resolved);
+    _arraysDirty |= changed;
+    base::CpuProfileScope::count("metal.argumentArray.resolvedImageEntries", resolutions);
 }
 
 void ResourceSet::setSamplers(ShaderBinding binding, std::span<gpu::Sampler* const> values)
@@ -319,23 +351,49 @@ void ResourceSet::setSamplers(ShaderBinding binding, std::span<gpu::Sampler* con
     base::CpuProfileScope profile("metal.resourceSet.resolveSamplers");
     auto& array = arrayBinding(binding, ResourceType::Sampler, values.size());
     std::vector<SampleStateHandle> samplers;
+    std::vector<gpu::Sampler*> keys;
+    std::unordered_map<gpu::Sampler*, ResolvedSampler> resolved;
+    samplers.reserve(values.size());
+    keys.reserve(values.size());
+    uint64_t resolutions = 0;
     for (auto* value : values)
     {
-        auto* sampler = dynamic_cast<metal::Sampler*>(value);
-        if (!sampler || sampler->device() != device() || !sampler->isValid())
+        auto found = resolved.find(value);
+        if (found == resolved.end())
         {
-            throw std::invalid_argument("Argument sampler must be valid and belong to this device");
+            auto* sampler = dynamic_cast<metal::Sampler*>(value);
+            if (!sampler || sampler->device() != device() || !sampler->isValid())
+            {
+                throw std::invalid_argument("Argument sampler must be valid and belong to this device");
+            }
+            ResolvedSampler entry;
+            const auto previous = array.samplerCache.find(value);
+            if (previous != array.samplerCache.end() && previous->second.owner)
+            {
+                entry = previous->second;
+            }
+            else
+            {
+                entry = {sampler->handle(), sampler->weak_from_this().lock()};
+                ++resolutions;
+            }
+            found = resolved.emplace(value, std::move(entry)).first;
         }
-        samplers.push_back(sampler->handle());
+        samplers.push_back(found->second.handle);
+        keys.push_back(value);
     }
+    const bool changed = array.samplerKeys != keys || array.samplers != samplers;
     array.samplers = std::move(samplers);
-    _arraysDirty = true;
+    array.samplerKeys = std::move(keys);
+    array.samplerCache = std::move(resolved);
+    _arraysDirty |= changed;
+    base::CpuProfileScope::count("metal.argumentArray.resolvedSamplerEntries", resolutions);
 }
 
 void ResourceSet::update()
 {
     base::CpuProfileScope profile("metal.resourceSet.updateArgumentArrays");
-    if (_arrays.empty())
+    if (_arrays.empty() || (!_arraysDirty && !_argumentBuffers.empty()))
     {
         return;
     }
@@ -354,58 +412,36 @@ void ResourceSet::update()
     }
     std::vector<BufferHandle> buffers;
     std::vector<ResourceEntry> entries;
+    std::vector<ResourceEntry> replacement;
+    std::vector<std::shared_ptr<gpu::DeviceResource>> owners;
+    buffers.reserve(groups.size());
+    entries.reserve(groups.size());
     auto* nativeDevice = dynamic_cast<metal::Device*>(device());
     try
     {
         for (const auto& [slot, arrays] : groups)
         {
             const bool records = arrays.front()->description.metalArgumentRecordsIndexable;
-            const bool argumentArray = arrays.front()->description.metalArgumentRecordArray;
             const auto recordCount = records ? arrays.front()->description.count : 1u;
-            std::vector<NS::Object*> descriptors;
-            for (const auto* array : arrays)
-            {
-                auto* descriptor = MTL::ArgumentDescriptor::alloc()->init();
-                descriptor->setIndex(array->description.binding.metal);
-                descriptor->setArrayLength(records ? 1 : array->description.count);
-                descriptor->setAccess(MTL::BindingAccessReadOnly);
-                descriptor->setDataType(array->description.type == ResourceType::SampledImage ? MTL::DataTypeTexture : MTL::DataTypeSampler);
-                if (array->description.type == ResourceType::SampledImage)
-                {
-                    descriptor->setTextureType(MTL::TextureType2D);
-                }
-                descriptors.push_back(descriptor);
-            }
-            auto* arguments = NS::Array::alloc()->init(descriptors.data(), descriptors.size());
-            base::CpuProfileScope arrayProfile("metal.argumentArray.createEncoder");
-            auto* encoder = nativeDevice->handle()->newArgumentEncoder(arguments);
-            arguments->release();
-            for (auto* descriptor : descriptors)
-            {
-                descriptor->release();
-            }
-            if (!encoder)
-            {
-                throw std::runtime_error("Failed to create Metal argument encoder");
-            }
+            base::CpuProfileScope arrayProfile("metal.argumentArray.getEncoder");
+            const auto encoderState = _layout->argumentEncoder(slot);
+            // A layout may serve concurrent sets/jobs. Never let their mutable
+            // argument-buffer targets overlap inside the shared native encoder.
+            std::lock_guard encoderLock(encoderState->mutex);
+            auto* encoder = encoderState->encoder;
             const auto stride = encoder->encodedLength();
             if (!stride || recordCount > nativeDevice->handle()->maxBufferLength() / stride)
             {
-                encoder->release();
                 throw std::length_error("Metal argument table exceeds maxBufferLength");
             }
             arrayProfile.next("metal.argumentArray.allocateBuffer");
             auto* buffer = nativeDevice->handle()->newBuffer(stride * recordCount, MTL::ResourceStorageModeShared);
             if (!buffer)
             {
-                encoder->release();
                 throw std::runtime_error("Failed to allocate Metal argument buffer");
             }
             buffers.push_back(buffer);
-            if (argumentArray)
-            {
-                encoder->setArgumentBuffer(buffer, 0);
-            }
+            encoder->setArgumentBuffer(buffer, 0);
             ResourceEntry entry;
             entry.index = slot;
             entry.stage = arrays.front()->description.stage;
@@ -421,10 +457,6 @@ void ResourceSet::update()
                     {
                         encoder->setArgumentBuffer(buffer, stride * i);
                     }
-                    else if (argumentArray)
-                    {
-                        encoder->setArgumentBuffer(buffer, 0);
-                    }
                     encoder->setTexture(array->images[i], records ? 0 : array->description.binding.metal + i);
                     if (residentTextures.insert(array->images[i]).second)
                     {
@@ -437,15 +469,43 @@ void ResourceSet::update()
                     {
                         encoder->setArgumentBuffer(buffer, stride * i);
                     }
-                    else if (argumentArray)
-                    {
-                        encoder->setArgumentBuffer(buffer, 0);
-                    }
                     encoder->setSamplerState(array->samplers[i], records ? 0 : array->description.binding.metal + i);
                 }
             }
-            encoder->release();
+            base::CpuProfileScope::count("metal.argumentArray.encodedEntries", [&]()
+            {
+                uint64_t count = 0;
+                for (const auto* array : arrays)
+                {
+                    count += array->images.size() + array->samplers.size();
+                }
+                return count;
+            }());
             entries.push_back(std::move(entry));
+        }
+        replacement = _entries;
+        replacement.erase(std::remove_if(replacement.begin(), replacement.end(), [this](const auto& entry)
+        {
+            return std::find(_argumentBuffers.begin(), _argumentBuffers.end(), entry.buffer) != _argumentBuffers.end();
+        }), replacement.end());
+        replacement.insert(replacement.end(), entries.begin(), entries.end());
+        std::unordered_set<gpu::DeviceResource*> retained;
+        for (const auto& array : _arrays)
+        {
+            for (const auto& [key, image] : array.imageCache)
+            {
+                if (image.owner && retained.insert(image.owner.get()).second)
+                {
+                    owners.push_back(image.owner);
+                }
+            }
+            for (const auto& [key, sampler] : array.samplerCache)
+            {
+                if (sampler.owner && retained.insert(sampler.owner.get()).second)
+                {
+                    owners.push_back(sampler.owner);
+                }
+            }
         }
     }
     catch (...)
@@ -456,16 +516,13 @@ void ResourceSet::update()
         }
         throw;
     }
-    _entries.erase(std::remove_if(_entries.begin(), _entries.end(), [this](const auto& entry)
-        {
-            return std::find(_argumentBuffers.begin(), _argumentBuffers.end(), entry.buffer) != _argumentBuffers.end();
-        }), _entries.end());
     for (auto* buffer : _argumentBuffers)
     {
         buffer->release();
     }
     _argumentBuffers = std::move(buffers);
-    _entries.insert(_entries.end(), entries.begin(), entries.end());
+    _entries.swap(replacement);
+    _argumentOwners = std::move(owners);
     _arraysDirty = false;
 }
 
@@ -482,6 +539,7 @@ void ResourceSet::cleanup()
         buffer->release();
     }
     _argumentBuffers.clear();
+    _argumentOwners.clear();
     _arrays.clear();
     _arraysDirty = false;
     _entries.clear();

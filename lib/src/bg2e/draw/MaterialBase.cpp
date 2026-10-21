@@ -19,6 +19,7 @@
 #include <bg2e/draw/MaterialBase.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 #include <bg2e/gpu/Device.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 
 #include <stdexcept>
 #include <utility>
@@ -74,14 +75,25 @@ void MaterialBase::setMaterialAttributes(const base::MaterialAttributes& attribu
 
 void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
 {
+    // No native owner changes and no upload/callback work for realized revisions.
+    if (texturesUpdated())
+    {
+        _attributes.setUpdated();
+        base::CpuProfileScope::count("material.realizationNoops", 1);
+        return;
+    }
     auto textures = _textures;
+    auto settingsOwners = _realizedSettings;
+    auto settingsRevisions = _realizedSettingsRevisions;
     for (size_t i = 0; i < textures.size(); ++i)
     {
-        if (textures[i] && (_attributes.*updated[i])())
+        const auto settings = (_attributes.*getters[i])();
+        const auto settingsRevision = settings ? settings->revision() : 0;
+        if (textures[i] && settings == settingsOwners[i] &&
+            settingsRevision == settingsRevisions[i])
         {
             continue;
         }
-        const auto settings = (_attributes.*getters[i])();
         if (!settings)
         {
             textures[i] = Texture::colorTexture(_engine, i == size_t(TextureSlot::Normal)
@@ -96,10 +108,34 @@ void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
                 onTextureLoaded();
             }
         }
+        settingsOwners[i] = settings;
+        settingsRevisions[i] = settingsRevision;
     }
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("material.waitIdle.updateTextures");
+        base::CpuProfileScope::count("material.drains.updateTextures", 1);
+        _engine->device()->waitIdle();
+    }
     _textures = std::move(textures);
+    _realizedSettings = std::move(settingsOwners);
+    _realizedSettingsRevisions = settingsRevisions;
     _attributes.setUpdated();
+}
+
+bool MaterialBase::texturesUpdated() const
+{
+    // Legacy pending flags are preserved on the attributes. Draw compares actual
+    // source revisions so assigning the same settings does not force a reload.
+    for (size_t i = 0; i < getters.size(); ++i)
+    {
+        const auto settings = (_attributes.*getters[i])();
+        if (!_textures[i] || settings != _realizedSettings[i] ||
+            (settings && settings->revision() != _realizedSettingsRevisions[i]))
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 void MaterialBase::setTexture(TextureSlot slot, std::shared_ptr<Texture> texture)
@@ -110,11 +146,17 @@ void MaterialBase::setTexture(TextureSlot slot, std::shared_ptr<Texture> texture
     }
     const auto index = size_t(slot);
     auto settings = cloneTextureSettings(*texture->base());
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("material.waitIdle.setTexture");
+        base::CpuProfileScope::count("material.drains.setTexture", 1);
+        _engine->device()->waitIdle();
+    }
     // Keep the supplied realization, including GPU-authored mip levels. The
     // settings value records its sampler/source, not a second realization.
     (_attributes.*setters.at(index))(std::move(settings));
     _textures.at(index) = std::move(texture);
+    _realizedSettings[index] = (_attributes.*getters[index])();
+    _realizedSettingsRevisions[index] = _realizedSettings[index]->revision();
     // Only the selected slot is realized; do not mask other pending edits.
     auto pending = _attributes;
     _attributes.setUpdated();
@@ -129,7 +171,11 @@ void MaterialBase::setTexture(TextureSlot slot, std::shared_ptr<Texture> texture
 
 std::shared_ptr<MaterialBase> MaterialBase::clone() const
 {
-    _engine->device()->waitIdle();
+    {
+        base::CpuProfileScope profile("material.waitIdle.clone");
+        base::CpuProfileScope::count("material.drains.clone", 1);
+        _engine->device()->waitIdle();
+    }
     auto result = std::make_shared<MaterialBase>(_engine);
     result->_attributes = cloneMaterialAttributes(_attributes);
     for (size_t i = 0; i < _textures.size(); ++i)
@@ -137,15 +183,25 @@ std::shared_ptr<MaterialBase> MaterialBase::clone() const
         if (_textures[i])
         {
             result->_textures[i] = _textures[i]->clone();
+            result->_realizedSettings[i] = (result->_attributes.*getters[i])();
+            result->_realizedSettingsRevisions[i] = result->_realizedSettings[i] ? result->_realizedSettings[i]->revision() : 0;
         }
     }
     // Preserve uncommitted source changes for the next explicit update.
     result->_attributes.setUpdated();
     for (size_t i = 0; i < getters.size(); ++i)
     {
+        const auto settings = (_attributes.*getters[i])();
         if (!(_attributes.*updated[i])())
         {
             (result->_attributes.*setters[i])((result->_attributes.*getters[i])());
+        }
+        if (settings != _realizedSettings[i] ||
+            (settings && settings->revision() != _realizedSettingsRevisions[i]))
+        {
+            (result->_attributes.*setters[i])((result->_attributes.*getters[i])());
+            result->_realizedSettings[i] = _realizedSettings[i];
+            result->_realizedSettingsRevisions[i] = _realizedSettingsRevisions[i];
         }
     }
     return result;

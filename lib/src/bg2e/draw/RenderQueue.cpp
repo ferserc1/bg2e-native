@@ -30,6 +30,7 @@ void RenderQueue::beginFrame(Engine& engine)
     clear();
     _engine = &engine;
 }
+
 void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& drawable, uint32_t submesh, const glm::mat4& world)
 {
     if (!_engine || !drawable || !drawable->isLoaded() || drawable->engine() != _engine || !drawable->drawMesh())
@@ -82,7 +83,7 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
     item.submeshIndex = submesh;
     item.drawMesh = drawable->drawMesh();
     item.drawMaterial = material;
-    item.materialData = packMaterial(*material);
+    item.materialData = packMaterial(*material, &item.materialRevisions);
     item.worldMatrix = world;
     item.rayTracingEnabled = drawable->rayTracingEnabled();
     if (submesh < drawable->rayTracingMeshes().size())
@@ -94,6 +95,8 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
         item.textures[i] = material->texture(TextureSlot(i));
         item.textureImages[i] = item.textures[i]->image();
         item.textureSamplers[i] = item.textures[i]->sampler();
+        item.textureRevisions[i] = item.textures[i]->bindingRevision();
+        item.imageGenerations[i] = item.textureImages[i]->bindingGeneration();
         if (item.textures[i]->engine() != _engine || !item.textures[i]->image()->isValid() ||
             item.textures[i]->image()->device() != _engine->device() || item.textures[i]->image()->isCubemap() ||
             gpu::isDepthFormat(item.textures[i]->image()->pixelFormat()) || gpu::isUnsignedIntegerFormat(item.textures[i]->image()->pixelFormat()) ||
@@ -119,6 +122,7 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
         _opaque.push_back(std::move(item));
     }
 }
+
 void RenderQueue::validate(Engine& engine) const
 {
     if (_engine != &engine)
@@ -137,6 +141,7 @@ void RenderQueue::validate(Engine& engine) const
             const auto& texture = item.textures[i];
             if (!texture || texture->image() != item.textureImages[i] || texture->sampler() != item.textureSamplers[i] ||
                 !texture->image() || !texture->sampler() || !texture->image()->isValid() || !texture->sampler()->isValid() ||
+                texture->bindingRevision() != item.textureRevisions[i] || texture->image()->bindingGeneration() != item.imageGenerations[i] ||
                 texture->image()->currentLayout() != gpu::ImageLayout::ShaderReadOnly)
             {
                 throw std::logic_error("Re-extract the draw queue after texture/sampler realization changes");
@@ -144,6 +149,7 @@ void RenderQueue::validate(Engine& engine) const
         }
     }
 }
+
 void RenderQueue::sort(const glm::vec3& cameraPosition)
 {
     if (!std::isfinite(cameraPosition.x) || !std::isfinite(cameraPosition.y) || !std::isfinite(cameraPosition.z))
@@ -159,10 +165,12 @@ void RenderQueue::sort(const glm::vec3& cameraPosition)
     std::stable_sort(_transparent.begin(), _transparent.end(), backToFront);
     std::stable_sort(_solidTransparent.begin(), _solidTransparent.end(), backToFront);
 }
+
 const std::vector<RenderQueue::Item>& RenderQueue::items() const
 {
     return _items;
 }
+
 const std::vector<RenderQueue::Item>& RenderQueue::queue(RenderQueueType type) const
 {
     switch (type)
@@ -173,26 +181,32 @@ const std::vector<RenderQueue::Item>& RenderQueue::queue(RenderQueueType type) c
     }
     throw std::invalid_argument("Unknown draw queue type");
 }
+
 Engine* RenderQueue::engine() const
 {
     return _engine;
 }
+
 LightUniforms& RenderQueue::lights()
 {
     return _lights;
 }
+
 const LightUniforms& RenderQueue::lights() const
 {
     return _lights;
 }
+
 void RenderQueue::setEnvironment(std::shared_ptr<const scene::EnvironmentComponent> environment)
 {
     _environment = std::move(environment);
 }
+
 std::shared_ptr<const scene::EnvironmentComponent> RenderQueue::environment() const
 {
     return _environment;
 }
+
 void RenderQueue::clear()
 {
     _items.clear();

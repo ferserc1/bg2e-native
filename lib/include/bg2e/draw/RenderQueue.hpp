@@ -45,10 +45,13 @@ class BG2E_API RenderQueue {
         std::array<std::shared_ptr<Texture>, 6> textures;
         std::array<gpu::Image*, 6> textureImages{};
         std::array<gpu::Sampler*, 6> textureSamplers{};
+        std::array<uint64_t, 6> textureRevisions{};
+        std::array<uint64_t, 6> imageGenerations{};
         std::shared_ptr<gpu::RayTracingMesh> tracingMesh;
         bool rayTracingEnabled = false;
         glm::mat4 worldMatrix{1};
         MaterialData materialData;
+        MaterialRevisions materialRevisions;
     };
 
     void beginFrame(Engine& engine);
