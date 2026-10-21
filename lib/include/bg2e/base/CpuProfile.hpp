@@ -18,207 +18,122 @@
 
 #pragma once
 
-#include <algorithm>
 #include <bg2e/common.hpp>
+#include <bg2e/base/GpuProfile.hpp>
 #include <chrono>
 #include <cstdint>
-#include <ctime>
 #include <filesystem>
-#include <map>
-#include <sstream>
 #include <string>
 #include <vector>
 
 namespace bg2e::base {
-// Process-wide control and file output. Callers supply application identity;
-// the base profiler does not depend on the application or UI namespaces.
+// All timestamps are steady-clock nanoseconds, not Unix timestamps.
+struct CpuProfileSample {
+    enum class Kind { Scope, Counter, Frame };
+    Kind kind = Kind::Scope;
+    uint64_t epoch = 0, recording = 0, thread = 0;
+    uint64_t id = 0, parent = 0, presentationFrame = 0, sceneFrame = 0, presentationNumber = 0;
+    uint64_t begin = 0, end = 0, calls = 1;
+    double inclusiveMs = 0, exclusiveMs = 0, maximumMs = 0;
+    uint64_t value = 0, maximumValue = 0;
+    bool complete = true, sceneRendered = false;
+    std::string label;
+    std::string unit;
+};
+
+struct CpuProfileSnapshot {
+    std::vector<CpuProfileSample> samples;
+    std::vector<GpuProfileSample> gpuSamples;
+    std::vector<GpuProfileQueueStatus> gpuQueues;
+    uint64_t gpuPending = 0, gpuDropped = 0, gpuFailed = 0, gpuUnsupported = 0, gpuEvicted = 0, gpuLate = 0;
+    std::vector<CpuProfileSample> totals; // Per thread/label/unit; no frame normalization.
+    uint64_t presentationFrames = 0, sceneFrames = 0, incompleteFrames = 0;
+    uint64_t begin = 0, end = 0;
+    uint64_t evicted = 0, dropped = 0, writerDropped = 0, partial = 0;
+};
+
+// Coherent recording state for controls, including completed-session duration.
+struct CpuProfileRecordingStatus {
+    bool active = false;
+    uint64_t session = 0, begin = 0, end = 0;
+    std::filesystem::path path;
+    std::string error;
+};
+
+// An independent lease for each live consumer. Destruction never stops recording.
+class BG2E_API CpuProfileCollection {
+  public:
+    CpuProfileCollection();
+    ~CpuProfileCollection();
+    CpuProfileCollection(const CpuProfileCollection&) = delete;
+    CpuProfileCollection& operator=(const CpuProfileCollection&) = delete;
+};
+
 class BG2E_API CpuProfiler {
   public:
     using ContextProvider = std::string (*)(void*);
-    static bool start(const std::filesystem::path& path);
+    using Collection = CpuProfileCollection;
+
+    // Existing files are rejected unless overwrite was explicitly accepted.
+    static bool start(const std::filesystem::path& path, bool overwrite = false);
     static void stop();
+    // Replacement/detachment waits for an executing callback. Callbacks must
+    // not replace themselves. Owners detach before destroying borrowed data.
     static void setContextProvider(ContextProvider provider, void* context);
     static std::string context();
-    static void count(const char* name, uint64_t value) noexcept;
 
-    static bool enabled();
-    static uint64_t session();
+    static bool enabled(); // Any live lease OR an active recording.
+    static bool recording();
+    static uint64_t session(); // Collection epoch; independent of recording ID.
+    static uint64_t recordingSession();
+    // A reader-local cutoff; this never clears shared history or recordings.
+    static CpuProfileSnapshot snapshot(uint64_t since = 0);
+    static CpuProfileRecordingStatus recordingStatus();
+    // An adapter outside gpu owns publication. Stop counts pending request tokens
+    // without consulting native queues; late completions retain their identities.
+    static bool gpuTimingEnabled() noexcept;
+    static bool gpuPassTimingEnabled() noexcept;
+    static void setGpuPassTimingEnabled(bool enabled) noexcept;
+    static bool gpuDetailedTimingEnabled() noexcept;
+    static void setGpuDetailedTimingEnabled(bool enabled) noexcept;
+    static void setGpuTimingEnabled(bool enabled) noexcept;
+    static GpuProfileSample beginGpu(uint64_t presentation, uint64_t scene, GpuProfileWorkload workload) noexcept;
+    static void completeGpu(const GpuProfileSample& sample) noexcept;
+    static void gpuQueueStatus(const GpuProfileQueueStatus& status) noexcept;
+    static void publish() noexcept; // Flush this thread's non-frame work.
+    static void count(const char* name, uint64_t value, const char* unit = "count") noexcept;
     static std::filesystem::path outputPath();
     static std::string sessionInfo();
     static std::string error();
-
-    static void write(uint64_t session, const std::string& report);
 };
 
-// Opt-in CPU wall-clock diagnostics, including driver calls and blocking waits.
-// Labels must have static lifetime. No GPU synchronization is introduced.
-class CpuProfileScope {
+// Labels and units have static lifetime. No GPU synchronization is introduced.
+class BG2E_API CpuProfileScope {
   public:
-    explicit CpuProfileScope(const char* label, bool reportBoundary = false)
-        : _label(label), _boundary(reportBoundary), _active(enabled())
-    {
-        if (_active)
-        {
-            _session = CpuProfiler::session();
-            _frameBoundary = reportBoundary;
-            _parent = _current;
-            _current = this;
-            _start = Clock::now();
-        }
-    }
-
-    ~CpuProfileScope() noexcept
-    {
-        if (_active)
-        {
-            finish();
-            _current = _parent;
-            if (_boundary && enabled() && _session == CpuProfiler::session())
-            {
-                report(_frameBoundary);
-            }
-        }
-    }
-
+    explicit CpuProfileScope(const char* label, bool reportBoundary = false) noexcept;
+    ~CpuProfileScope() noexcept;
     CpuProfileScope(const CpuProfileScope&) = delete;
     CpuProfileScope& operator=(const CpuProfileScope&) = delete;
 
-    // End one sequential stage and start the next without changing its parent.
-    void next(const char* label) noexcept
-    {
-        if (_active)
-        {
-            finish();
-            _label = label;
-            _children = 0;
-            _start = Clock::now();
-        }
-    }
-
-    static bool enabled()
-    {
-        return CpuProfiler::enabled();
-    }
-
-    static void count(const char* name, uint64_t value) noexcept
-    {
-        CpuProfiler::count(name, value);
-    }
+    void next(const char* label) noexcept;
+    // Call only after a successful presentation. Omission marks an aborted frame.
+    void frameCompleted(uint64_t presentation, uint64_t scene, bool sceneRendered) noexcept;
+    static bool enabled();
+    static void count(const char* name, uint64_t value, const char* unit = "count") noexcept;
 
   private:
     friend class CpuProfiler;
-
     using Clock = std::chrono::steady_clock;
-    struct Sample {
-        uint64_t calls = 0;
-        double total = 0, self = 0, maximum = 0;
-    };
-    struct Count {
-        uint64_t total = 0;
-        uint64_t maximum = 0;
-    };
-    struct State {
-        std::map<std::string, Sample> samples;
-        std::map<std::string, Count> counts;
-        Clock::time_point last = Clock::now();
-        uint64_t frames = 0;
-        uint64_t session = 0;
-    };
+    void finish() noexcept;
+    void begin() noexcept;
 
-    static State& state()
-    {
-        static thread_local State value;
-        return value;
-    }
-
-    void finish() noexcept
-    {
-        const double ms = std::chrono::duration<double, std::milli>(Clock::now() - _start).count();
-        if (_parent)
-        {
-            _parent->_children += ms;
-        }
-        try
-        {
-            if (!enabled() || _session != CpuProfiler::session())
-            {
-                return;
-            }
-            auto& data = state();
-            if (data.session != _session)
-            {
-                data = State{};
-                data.session = _session;
-            }
-            auto& sample = data.samples[_label];
-            ++sample.calls;
-            sample.total += ms;
-            sample.self += std::max(0.0, ms - _children);
-            sample.maximum = std::max(sample.maximum, ms);
-        }
-        catch (...)
-        {
-            // Diagnostics must never interrupt rendering or exception unwinding.
-        }
-    }
-
-    static void report(bool frameBoundary) noexcept
-    {
-        try
-        {
-            auto& data = state();
-            ++data.frames;
-            const auto now = Clock::now();
-            const double seconds = std::chrono::duration<double>(now - data.last).count();
-            if (frameBoundary && seconds < 2.0)
-            {
-                return;
-            }
-            std::vector<std::pair<std::string, Sample>> sorted(data.samples.begin(), data.samples.end());
-            std::sort(sorted.begin(), sorted.end(), [](const auto& a, const auto& b)
-            {
-                return a.second.self > b.second.self;
-            });
-            std::ostringstream text;
-            text.setf(std::ios::fixed);
-            text.precision(3);
-            text << "\n[CPU profile] " << data.frames << " frame calls / " << seconds
-                 << " s; wall time (includes waits), sorted by self time\n"
-                 << "self ms/frame | total ms/frame | avg ms/call | max ms/call | calls | stage\n";
-            const auto context = CpuProfiler::context();
-            if (!context.empty())
-            {
-                text << "context: " << context << '\n';
-            }
-            for (const auto& [name, sample] : sorted)
-            {
-                text << sample.self / data.frames << " | " << sample.total / data.frames << " | "
-                     << sample.total / sample.calls << " | " << sample.maximum << " | "
-                     << sample.calls << " | " << name << '\n';
-            }
-            for (const auto& [name, count] : data.counts)
-            {
-                text << "count " << name << " | total=" << count.total
-                     << " | max/call=" << count.maximum << '\n';
-            }
-            CpuProfiler::write(data.session, text.str());
-            data.samples.clear();
-            data.counts.clear();
-            data.frames = 0;
-            data.last = Clock::now();
-        }
-        catch (...)
-        {
-        }
-    }
-
-    inline static thread_local CpuProfileScope* _current = nullptr;
+    static thread_local CpuProfileScope* _current;
     const char* _label;
-    bool _boundary, _active;
-    bool _frameBoundary = false;
+    bool _boundary = false, _active = false, _complete = false, _sceneRendered = false;
     CpuProfileScope* _parent = nullptr;
     Clock::time_point _start;
     double _children = 0;
-    uint64_t _session = 0;
+    uint64_t _epoch = 0, _recording = 0, _id = 0, _frame = 0;
+    uint64_t _presentation = 0, _scene = 0;
 };
 }

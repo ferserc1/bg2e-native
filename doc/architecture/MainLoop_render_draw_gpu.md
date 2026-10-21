@@ -778,10 +778,10 @@ See [app API](../api/app/index.md), [draw API](../api/draw/index.md),
 
 The [draw model editor](../apps/draw_model_edit.md) owns document generations,
 dirty state, stopped edit queues and integrated bake scheduling above Engine.
-Workspace composes its docked panels; only utility/settings/debug windows float.
+Workspace composes its docked panels; utility and settings windows float.
 Scene lighting editors use component reflection on temporary clones, then queue
 mutation of the checked live target. Graphics preferences exclude scene and debug
-properties; RendererDebugWidget shares the facade for nonpersistent diagnostics.
+properties. Graphics Settings contains no profiling controls.
 
 Completed baking writes a temporary texture and automatically updates live and
 CPU material definitions. A separately retained completed image keeps the preview

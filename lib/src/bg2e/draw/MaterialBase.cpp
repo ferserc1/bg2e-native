@@ -113,7 +113,7 @@ void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
     }
     {
         base::CpuProfileScope profile("material.waitIdle.updateTextures");
-        base::CpuProfileScope::count("material.drains.updateTextures", 1);
+        base::CpuProfileScope::count("material.drains.updateTextures", 1, "drains");
         _engine->device()->waitIdle();
     }
     _textures = std::move(textures);
@@ -148,7 +148,7 @@ void MaterialBase::setTexture(TextureSlot slot, std::shared_ptr<Texture> texture
     auto settings = cloneTextureSettings(*texture->base());
     {
         base::CpuProfileScope profile("material.waitIdle.setTexture");
-        base::CpuProfileScope::count("material.drains.setTexture", 1);
+        base::CpuProfileScope::count("material.drains.setTexture", 1, "drains");
         _engine->device()->waitIdle();
     }
     // Keep the supplied realization, including GPU-authored mip levels. The
@@ -173,7 +173,7 @@ std::shared_ptr<MaterialBase> MaterialBase::clone() const
 {
     {
         base::CpuProfileScope profile("material.waitIdle.clone");
-        base::CpuProfileScope::count("material.drains.clone", 1);
+        base::CpuProfileScope::count("material.drains.clone", 1, "drains");
         _engine->device()->waitIdle();
     }
     auto result = std::make_shared<MaterialBase>(_engine);

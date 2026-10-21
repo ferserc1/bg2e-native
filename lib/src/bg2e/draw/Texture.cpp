@@ -184,7 +184,7 @@ void Texture::load(const base::Image& pixels, const base::Texture& settings)
 {
     {
         base::CpuProfileScope profile("texture.waitIdle.load");
-        base::CpuProfileScope::count("texture.drains.load", 1);
+        base::CpuProfileScope::count("texture.drains.load", 1, "drains");
         _engine->device()->waitIdle();
     }
     gpu::ImageDescription description;
@@ -229,7 +229,7 @@ void Texture::load(std::shared_ptr<base::Texture> settings, std::shared_ptr<gpu:
     auto sampler = _engine->device()->createSampler(description);
     {
         base::CpuProfileScope profile("texture.waitIdle.load");
-        base::CpuProfileScope::count("texture.drains.load", 1);
+        base::CpuProfileScope::count("texture.drains.load", 1, "drains");
         _engine->device()->waitIdle();
     }
     _memorySource.reset();
@@ -275,7 +275,7 @@ void Texture::updateSampler(const base::Texture& settings)
     auto sampler = _engine->device()->createSampler(description);
     {
         base::CpuProfileScope profile("texture.waitIdle.updateSampler");
-        base::CpuProfileScope::count("texture.drains.updateSampler", 1);
+        base::CpuProfileScope::count("texture.drains.updateSampler", 1, "drains");
         _engine->device()->waitIdle();
     }
     _settings = std::move(independent);
@@ -292,7 +292,7 @@ std::shared_ptr<Texture> Texture::clone() const
     }
     {
         base::CpuProfileScope profile("texture.waitIdle.clone");
-        base::CpuProfileScope::count("texture.drains.clone", 1);
+        base::CpuProfileScope::count("texture.drains.clone", 1, "drains");
         _engine->device()->waitIdle();
     }
     if ((_image->usage() & gpu::ImageUsage::TransferSrc) == gpu::ImageUsage::None)

@@ -37,11 +37,130 @@
 #include <cmath>
 #include <stdexcept>
 
+#if BG2E_IS_MAC
+#include <objc/runtime.h>
+#include <objc/message.h>
+#include <mach/mach_time.h>
+#endif
+
 namespace bg2e {
 namespace gpu {
 namespace metal {
 
 #if BG2E_IS_MAC
+
+namespace {
+// One buffer per measured command, retained by its ticket until completion.
+// Samples belong to natural encoders; no encoder is created just for timing.
+struct PassCounters {
+    static constexpr uint32_t maximumSamples = 256;
+    MTL::CounterSampleBuffer* buffer = nullptr;
+    MTL::Device* device = nullptr;
+    MTL::Timestamp cpu = 0, gpu = 0;
+    uint32_t used = 0;
+    std::array<uint32_t, SubmissionTimingResult::maximumIntervals> first{}, last{};
+
+    ~PassCounters()
+    {
+        if (buffer)
+        {
+            buffer->release();
+        }
+    }
+
+    void resolve(SubmissionTimingResult& sample) noexcept
+    {
+        if (!buffer)
+        {
+            return;
+        }
+        MTL::Timestamp cpuEnd = 0, gpuEnd = 0;
+        device->sampleTimestamps(&cpuEnd, &gpuEnd);
+        mach_timebase_info_data_t timebase{};
+        mach_timebase_info(&timebase);
+        // Apple's paired CPU/GPU samples establish a local affine mapping.
+        // Only duration differences are converted; never mix with steady_clock.
+        const bool calibrated = cpuEnd > cpu && gpuEnd > gpu && timebase.denom;
+        const long double nsPerTick = calibrated ?
+            (static_cast<long double>(cpuEnd - cpu) / (gpuEnd - gpu)) * timebase.numer / timebase.denom : 0;
+        auto* data = used ? buffer->resolveCounterRange(NS::Range::Make(0, used)) : nullptr;
+        // This metal-cpp version omits NSData's immutable bytes accessor.
+        // Resolve data is read-only; mutableBytes is not valid for all NSData objects.
+        const auto readBytes = reinterpret_cast<const void* (*)(id, SEL)>(objc_msgSend);
+        const auto* values = data && data->length() >= used * sizeof(MTL::CounterResultTimestamp) ?
+            static_cast<const MTL::CounterResultTimestamp*>(readBytes(reinterpret_cast<id>(data), sel_registerName("bytes"))) : nullptr;
+        for (uint32_t i = 0; i < sample.intervalCount; ++i)
+        {
+            auto& interval = sample.intervals[i];
+            if (!interval.ended || interval.status != SubmissionTimingStatus::Pending)
+            {
+                continue;
+            }
+            interval.status = SubmissionTimingStatus::Unavailable;
+            if (!values || !calibrated || !first[i] || !last[i])
+            {
+                continue;
+            }
+            const auto a = values[first[i] - 1].timestamp;
+            const auto b = values[last[i] - 1].timestamp;
+            if (a == MTL::CounterErrorValue || b == MTL::CounterErrorValue || b < a || a < gpu || b > gpuEnd)
+            {
+                continue;
+            }
+            interval.durationMs = double((b - a) * nsPerTick / 1e6L);
+            if (std::isfinite(interval.durationMs) && interval.durationMs >= 0 &&
+                interval.durationMs <= double(detail::timingCpuNow() - sample.requested) / 1e6)
+            {
+                interval.status = SubmissionTimingStatus::Available;
+            }
+        }
+    }
+};
+
+std::shared_ptr<PassCounters> createPassCounters(MTL::Device* device)
+{
+    auto counters = std::make_shared<PassCounters>();
+    counters->device = device;
+    if (!class_respondsToSelector(object_getClass(reinterpret_cast<id>(device)), sel_registerName("sampleTimestamps:gpuTimestamp:")) ||
+        !class_respondsToSelector(object_getClass(reinterpret_cast<id>(device)), sel_registerName("counterSets")) ||
+        !device->supportsCounterSampling(MTL::CounterSamplingPointAtStageBoundary))
+    {
+        return counters;
+    }
+    auto* sets = device->counterSets();
+    for (NS::UInteger i = 0; sets && i < sets->count(); ++i)
+    {
+        auto* set = sets->object<MTL::CounterSet>(i);
+        if (!set->name()->isEqualToString(MTL::CommonCounterSetTimestamp))
+        {
+            continue;
+        }
+        bool timestamp = false;
+        auto* names = set->counters();
+        for (NS::UInteger j = 0; names && j < names->count(); ++j)
+        {
+            timestamp |= names->object<MTL::Counter>(j)->name()->isEqualToString(MTL::CommonCounterTimestamp);
+        }
+        if (!timestamp)
+        {
+            continue;
+        }
+        auto* descriptor = MTL::CounterSampleBufferDescriptor::alloc()->init();
+        descriptor->setCounterSet(set);
+        descriptor->setSampleCount(PassCounters::maximumSamples);
+        descriptor->setStorageMode(MTL::StorageModeShared);
+        NS::Error* error = nullptr;
+        counters->buffer = device->newCounterSampleBuffer(descriptor, &error);
+        descriptor->release();
+        if (counters->buffer)
+        {
+            device->sampleTimestamps(&counters->cpu, &counters->gpu);
+        }
+        break;
+    }
+    return counters;
+}
+}
 
 MTL::CullMode metalCullMode(gpu::CullMode cullMode)
 {
@@ -111,6 +230,175 @@ void CommandBuffer::begin()
     beginRecordingCompletion();
     _executable = false;
     _recording = true;
+}
+
+SubmissionTimingStatus CommandBuffer::requestSubmissionTiming(const SubmissionTimingRequest& request) noexcept
+{
+    if (!_recording || hasActiveScope() || _submissionTiming || !_timingState ||
+        !_timingState->capabilities.supported || !_cmd ||
+        !class_respondsToSelector(object_getClass(reinterpret_cast<id>(_cmd)), sel_registerName("GPUStartTime")) ||
+        !class_respondsToSelector(object_getClass(reinterpret_cast<id>(_cmd)), sel_registerName("GPUEndTime")))
+    {
+        return SubmissionTimingStatus::Unsupported;
+    }
+    auto ticket = _timingState->reserve(request);
+    if (!ticket)
+    {
+        return SubmissionTimingStatus::Dropped;
+    }
+    _submissionTiming = ticket;
+    try
+    {
+        try
+        {
+            if (request.passTiming)
+            {
+                ticket->resource = createPassCounters(_device->handle());
+            }
+            auto counters = std::static_pointer_cast<PassCounters>(ticket->resource);
+            ticket->sample.intervalCapability = counters && counters->buffer ?
+                base::GpuProfileGranularity::EncoderEnvelope : base::GpuProfileGranularity::None;
+            ticket->resolve = [counters](SubmissionTimingResult& result)
+            {
+                if (counters)
+                {
+                    counters->resolve(result);
+                }
+                return result.status;
+            };
+        }
+        catch (...)
+        {
+            // Total command-buffer timing remains usable without counters.
+        }
+        // Weak capture avoids native command -> handler -> ticket ownership
+        // cycles when a recording is abandoned without ever being committed.
+        std::weak_ptr<detail::SubmissionTimingTicket> weak = ticket;
+        _cmd->addCompletedHandler(MTL::HandlerFunction([weak](MTL::CommandBuffer* native)
+        {
+            if (auto timing = weak.lock())
+            {
+                const auto first = native->GPUStartTime();
+                const auto last = native->GPUEndTime();
+                const bool valid = native->status() == MTL::CommandBufferStatusCompleted &&
+                    std::isfinite(first) && std::isfinite(last) && first > 0 && last >= first;
+                timing->completeNative(valid ? SubmissionTimingStatus::Available :
+                    native->status() == MTL::CommandBufferStatusError ? SubmissionTimingStatus::Failed :
+                    SubmissionTimingStatus::Unavailable, valid ? (last - first) * 1000.0 : 0.0);
+            }
+        }));
+    }
+    catch (...)
+    {
+        ticket->complete(false);
+    }
+    return SubmissionTimingStatus::Pending;
+}
+
+void CommandBuffer::timingIntervalMarker(uint32_t index, bool) noexcept
+{
+    auto& interval = _submissionTiming->sample.intervals[index];
+    auto counters = std::static_pointer_cast<PassCounters>(_submissionTiming->resource);
+    if (!_recording || hasActiveScope() || !counters || !counters->buffer)
+    {
+        interval.status = SubmissionTimingStatus::Unsupported;
+    }
+    else
+    {
+        interval.granularity = base::GpuProfileGranularity::EncoderEnvelope;
+    }
+}
+
+// Return a natural encoder's pair, and associate all enclosing whole-pass scopes.
+uint32_t CommandBuffer::timingEncoderSamples() noexcept
+{
+    if (!_submissionTiming || !_submissionTiming->resource)
+    {
+        return 0;
+    }
+    auto counters = std::static_pointer_cast<PassCounters>(_submissionTiming->resource);
+    if (!counters->buffer)
+    {
+        return 0;
+    }
+    bool active = false;
+    auto& sample = _submissionTiming->sample;
+    for (uint32_t i = 0; i < sample.intervalCount; ++i)
+    {
+        auto& interval = sample.intervals[i];
+        if (!interval.ended && interval.status == SubmissionTimingStatus::Pending)
+        {
+            if (counters->used + 2 > PassCounters::maximumSamples)
+            {
+                interval.status = SubmissionTimingStatus::Dropped;
+            }
+            else
+            {
+                active = true;
+                if (!counters->first[i])
+                {
+                    counters->first[i] = counters->used + 1;
+                }
+                counters->last[i] = counters->used + 2;
+            }
+        }
+    }
+    if (!active)
+    {
+        return 0;
+    }
+    counters->used += 2;
+    return counters->used - 1; // one-based first index
+}
+
+void CommandBuffer::attachRenderTiming() noexcept
+{
+    const auto first = timingEncoderSamples();
+    if (first)
+    {
+        auto counters = std::static_pointer_cast<PassCounters>(_submissionTiming->resource);
+        auto* attachment = _passDesc->sampleBufferAttachments()->object(0);
+        attachment->setSampleBuffer(counters->buffer);
+        attachment->setStartOfVertexSampleIndex(first - 1);
+        attachment->setEndOfVertexSampleIndex(MTL::CounterDontSample);
+        attachment->setStartOfFragmentSampleIndex(MTL::CounterDontSample);
+        attachment->setEndOfFragmentSampleIndex(first);
+    }
+}
+
+MTL::ComputeCommandEncoder* CommandBuffer::createComputeEncoder()
+{
+    const auto first = timingEncoderSamples();
+    if (!first)
+    {
+        return _cmd->computeCommandEncoder();
+    }
+    auto counters = std::static_pointer_cast<PassCounters>(_submissionTiming->resource);
+    auto* descriptor = MTL::ComputePassDescriptor::alloc()->init();
+    auto* attachment = descriptor->sampleBufferAttachments()->object(0);
+    attachment->setSampleBuffer(counters->buffer);
+    attachment->setStartOfEncoderSampleIndex(first - 1);
+    attachment->setEndOfEncoderSampleIndex(first);
+    auto* encoder = _cmd->computeCommandEncoder(descriptor);
+    descriptor->release();
+    return encoder;
+}
+
+void CommandBuffer::omitBlitTiming() noexcept
+{
+    // Blits have no stage-boundary samples in this path. Never present an
+    // envelope omitting its leading/trailing transfers as a complete interval.
+    if (_submissionTiming)
+    {
+        auto& sample = _submissionTiming->sample;
+        for (uint32_t i = 0; i < sample.intervalCount; ++i)
+        {
+            if (!sample.intervals[i].ended)
+            {
+                sample.intervals[i].status = SubmissionTimingStatus::Unsupported;
+            }
+        }
+    }
 }
 
 void CommandBuffer::end()
@@ -384,6 +672,7 @@ void CommandBuffer::endRendering()
     // create it now so the clear LoadAction still resolves, then end it.
     if (!_encoder && _passDesc && _cmd)
     {
+        attachRenderTiming();
         _encoder = _cmd->renderCommandEncoder(_passDesc);
         if (_encoder)
         {
@@ -443,6 +732,7 @@ void CommandBuffer::ensureRenderEncoder()
     {
         throw std::runtime_error("metal::CommandBuffer::ensureRenderEncoder: no active render pass");
     }
+    attachRenderTiming();
     _encoder = _cmd->renderCommandEncoder(_passDesc);
     if (_encoder)
     {
@@ -551,7 +841,7 @@ void CommandBuffer::beginCompute()
     {
         throw std::runtime_error("metal::CommandBuffer::beginCompute: no command buffer");
     }
-    _computeEncoder = _cmd->computeCommandEncoder();
+    _computeEncoder = createComputeEncoder();
     if (!_computeEncoder)
     {
         throw std::runtime_error("metal::CommandBuffer::beginCompute: failed to create compute encoder");
@@ -852,6 +1142,7 @@ void CommandBuffer::copyImage(const ImageView& source, const ImageView& destinat
         throw std::invalid_argument("Image copy requires Metal images");
     }
     const auto extent = source.image->mipExtent(source.range.baseMipLevel);
+    omitBlitTiming();
     auto* encoder = _cmd->blitCommandEncoder();
     if (!encoder)
     {
@@ -875,6 +1166,7 @@ void CommandBuffer::generateMipmaps(gpu::Image* image, ImageLayout finalLayout)
     {
         transition(image, ImageLayout::TransferSrc, {0, 1, 0, image->arrayLayers()});
         transition(image, ImageLayout::TransferDst, {1, image->mipLevels() - 1, 0, image->arrayLayers()});
+        omitBlitTiming();
         auto* encoder = _cmd->blitCommandEncoder();
         if (!encoder)
         {
@@ -938,7 +1230,7 @@ void CommandBuffer::bindPipeline(gpu::RayTracingPipeline* pipeline)
         {
             throw std::runtime_error("metal::CommandBuffer::bindPipeline(RayTracingPipeline): no command buffer");
         }
-        _computeEncoder = _cmd->computeCommandEncoder();
+        _computeEncoder = createComputeEncoder();
         if (!_computeEncoder)
         {
             throw std::runtime_error("metal::CommandBuffer::bindPipeline(RayTracingPipeline): failed to create compute encoder");
@@ -1027,6 +1319,16 @@ CommandBuffer::~CommandBuffer()
 
 void CommandBuffer::begin()
 {
+}
+
+void CommandBuffer::timingIntervalMarker(uint32_t index, bool) noexcept
+{
+    _submissionTiming->sample.intervals[index].status = SubmissionTimingStatus::Unsupported;
+}
+
+SubmissionTimingStatus CommandBuffer::requestSubmissionTiming(const SubmissionTimingRequest&) noexcept
+{
+    return SubmissionTimingStatus::Unsupported;
 }
 
 void CommandBuffer::end()

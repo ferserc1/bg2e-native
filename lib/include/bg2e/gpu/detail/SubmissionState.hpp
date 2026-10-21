@@ -34,33 +34,23 @@ namespace bg2e::gpu::detail {
 // One immutable submission, independent of the lifetime/reuse of its wrapper.
 class BG2E_API CompletionRecord {
   public:
-    CompletionRecord(std::function<bool()> poll, std::function<void()> wait)
-        : _poll(std::move(poll)), _wait(std::move(wait))
+    CompletionRecord(std::function<bool()> poll, std::function<void()> wait,
+        std::function<void(bool)> terminal = {})
+        : _poll(std::move(poll)), _wait(std::move(wait)), _onTerminal(std::move(terminal))
     {
     }
 
     bool completed()
     {
         std::lock_guard lock(_mutex);
-        if (!_terminal)
-        {
-            try
-            {
-                if (_poll())
-                {
-                    finish();
-                }
-            }
-            catch (...)
-            {
-                fail(std::current_exception());
-            }
-        }
-        if (_error)
-        {
-            std::rethrow_exception(_error);
-        }
-        return _terminal;
+        return pollLocked();
+    }
+
+    // Profiling must not block behind a normal wait() holding this mutex.
+    bool pollNonblocking()
+    {
+        std::unique_lock lock(_mutex, std::try_to_lock);
+        return lock.owns_lock() && pollLocked();
     }
 
     void wait()
@@ -94,22 +84,58 @@ class BG2E_API CompletionRecord {
     uint64_t id = 0;
 
   private:
-    void finish()
+    bool pollLocked()
+    {
+        if (!_terminal)
+        {
+            try
+            {
+                if (_poll())
+                {
+                    finish();
+                }
+            }
+            catch (...)
+            {
+                fail(std::current_exception());
+            }
+        }
+        if (_error)
+        {
+            std::rethrow_exception(_error);
+        }
+        return _terminal;
+    }
+
+    void finish(bool success = true)
     {
         _terminal = true;
+        if (_onTerminal)
+        {
+            try
+            {
+                _onTerminal(success);
+            }
+            catch (...)
+            {
+                // Optional diagnostics must not change completion semantics.
+            }
+            _onTerminal = {};
+        }
         _poll = {};
         _wait = {};
     }
     void fail(std::exception_ptr error)
     {
         _error = error;
-        finish();
+        finish(false);
     }
     std::mutex _mutex;
     bool _terminal = false;
     std::exception_ptr _error;
     std::function<bool()> _poll;
     std::function<void()> _wait;
+    std::function<void(bool)> _onTerminal;
 };
 
 // A recording is not a submission. Abandoned/reset recordings never become
@@ -213,6 +239,31 @@ class BG2E_API SubmissionState {
                       });
         retire();
         return _pending;
+    }
+
+    void pollNonblocking() noexcept
+    {
+        std::unique_lock lock(_mutex, std::try_to_lock);
+        if (!lock.owns_lock() || _draining)
+        {
+            return;
+        }
+        for (auto it = _pending.begin(); it != _pending.end();)
+        {
+            try
+            {
+                if ((*it)->pollNonblocking())
+                {
+                    it = _pending.erase(it);
+                    continue;
+                }
+            }
+            catch (...)
+            {
+                // Preserve failed records for normal admission/drain error reporting.
+            }
+            ++it;
+        }
     }
 
     void drain(std::function<void()> nativeWait = {}, bool close = false)

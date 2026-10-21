@@ -641,14 +641,14 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
     base::CpuProfileScope::count("tracing.uniqueImages", next->images.size());
     base::CpuProfileScope::count("tracing.uniqueSamplers", next->samplers.size());
     base::CpuProfileScope::count("tracing.fallbackTextureSlots", next->fallbackTextureSlots);
-    base::CpuProfileScope::count("tracing.materialBufferBytes", next->materials.size()*sizeof(TracingMaterialData));
+    base::CpuProfileScope::count("tracing.materialBufferBytes", next->materials.size()*sizeof(TracingMaterialData), "bytes");
     stageProfile.next("tracing.instanceBufferUpload");
     if (!accelerationHit)
     {
         acceleration->buffer = buffer(*_device,next->instances.data(),next->instances.size()*sizeof(TracingInstanceData));
     }
     base::CpuProfileScope::count("tracing.accelerationGenerationHits", accelerationHit ? 1 : 0);
-    base::CpuProfileScope::count("tracing.instanceUploadedBytes", accelerationHit ? 0 : next->instances.size()*sizeof(TracingInstanceData));
+    base::CpuProfileScope::count("tracing.instanceUploadedBytes", accelerationHit ? 0 : next->instances.size()*sizeof(TracingInstanceData), "bytes");
     if (shadowCapacity && !shadowHit)
     {
         base::CpuProfileScope::count("shadowTable.prepared", 1);
@@ -676,7 +676,7 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
                 base::CpuProfileScope shadowInstanceProfile("tracing.shadowInstanceBufferUpload");
                 const size_t shadowInstanceBytes = next->shadowTable.instances.size() * sizeof(ShadowInstanceData);
                 shadow->buffer = buffer(*_device, next->shadowTable.instances.data(), shadowInstanceBytes);
-                base::CpuProfileScope::count("shadowTable.instanceBufferBytes", shadowInstanceBytes);
+                base::CpuProfileScope::count("shadowTable.instanceBufferBytes", shadowInstanceBytes, "bytes");
             }
         }
     }
@@ -702,7 +702,7 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
         shadow->resources = _shadows->resources;
     }
     base::CpuProfileScope::count("tracing.materialGenerationHits", materialHit ? 1 : 0);
-    base::CpuProfileScope::count("tracing.materialUploadedBytes", materialHit ? 0 : next->materials.size()*sizeof(TracingMaterialData));
+    base::CpuProfileScope::count("tracing.materialUploadedBytes", materialHit ? 0 : next->materials.size()*sizeof(TracingMaterialData), "bytes");
     base::CpuProfileScope::count("shadow.metadataGenerationHits", shadowHit && shadowCapacity ? 1 : 0);
     stageProfile.next("tracing.createSceneAndInstances");
     if (!accelerationHit)

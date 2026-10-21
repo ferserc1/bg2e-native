@@ -102,10 +102,8 @@ Show unavailable settings keeps unsupported choices visible when needed. Save
 preferences and Import/Export affect graphics-quality values. Environment and
 light controls remain in Environment Options.
 
-Open Window → Renderer Diagnostics for opaque-layer inspection, deferred
-lighting/final views and capability information. Debug selections are session
-controls: preference serialization excludes them, and restore skips legacy debug
-entries. Return diagnostic views to their normal final output when finished.
+Graphics Settings contains only graphics controls. Preference serialization
+excludes diagnostic selections, and restore skips legacy debug entries.
 
 ## 6. Generate UV2 and bake
 

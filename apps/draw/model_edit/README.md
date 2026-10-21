@@ -7,7 +7,7 @@ The application supplies a draw-only model editing workflow in a maximized windo
 Workspace matches production model_edit: full-width toolbar, docked Model Properties
 and Environment Options panels, and a bottom status bar. The app uses a deferred
 renderer, procedural startup cube/floor, generated environment, stage light and
-orbit camera. UI settings, Graphics settings and Renderer Diagnostics open separately from the Window menu. The
+orbit camera. UI settings and Graphics settings open separately from the Window menu. The
 graphics facade connects before first renderer attachment so replacement and
 resize can rebind its catalog safely. Values do not restore implicitly; explicit
 settings import/restore uses the existing queued facade. The floor is an editor
@@ -37,8 +37,7 @@ render preferences or environment `env.json`.
 Drag left to orbit, drag right to pan, and use the wheel to zoom. Reset camera is
 a generation-checked stopped renderer update. Open UI and Graphics settings from
 the toolbar Window menu. Graphics settings lets you inspect requested effects,
-resolution and optional upscalers. Renderer Diagnostics shows capabilities and
-session-only debug controls; Environment Options owns scene lighting. With no RT or FSR, ordinary raster/IBL and
+resolution and optional upscalers. Environment Options owns scene lighting. With no RT or FSR, ordinary raster/IBL and
 resampling remain the baseline. Native backend availability still requires a real
 Device and deployed shaders.
 

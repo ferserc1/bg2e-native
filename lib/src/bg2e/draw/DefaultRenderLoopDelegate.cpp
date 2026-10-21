@@ -347,7 +347,7 @@ void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
     if (conservative)
     {
         base::CpuProfileScope profile("delegate.waitIdle.queuedRendererUpdates");
-        base::CpuProfileScope::count("delegate.queuedRendererUpdateDrains", 1);
+        base::CpuProfileScope::count("delegate.queuedRendererUpdateDrains", 1, "drains");
         _engine->device()->waitIdle();
     }
     base::CpuProfileScope updateProfile("delegate.applyQueuedRendererUpdates");
@@ -445,7 +445,7 @@ void DefaultRenderLoopDelegate::prepareFrame()
         base::CpuProfileScope profile(_pendingRenderer
             ? (_scenePending ? "delegate.waitIdle.rendererAndSceneReplacement" : "delegate.waitIdle.rendererReplacement")
             : "delegate.waitIdle.sceneReplacement");
-        base::CpuProfileScope::count("delegate.replacementDrains", 1);
+        base::CpuProfileScope::count("delegate.replacementDrains", 1, "drains");
         _engine->device()->waitIdle();
     }
     base::CpuProfileScope stageProfile("delegate.commitReplacement");
@@ -528,7 +528,7 @@ void DefaultRenderLoopDelegate::reconfigureRenderer()
         base::CpuProfileScope reconfigureProfile("delegate.reconfigureRenderer");
         {
             base::CpuProfileScope profile("delegate.waitIdle.rendererReconfiguration");
-            base::CpuProfileScope::count("delegate.reconfigurationDrains", 1);
+            base::CpuProfileScope::count("delegate.reconfigurationDrains", 1, "drains");
             _engine->device()->waitIdle();
         }
         detachTargets();

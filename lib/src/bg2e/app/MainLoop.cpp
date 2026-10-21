@@ -193,6 +193,7 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
         {
             workers.clear(); // Join CPU readers before any app/UI/Engine teardown.
             loadTokens.clear(); // Cancel completions queued for the exiting run.
+            base::CpuProfiler::stop();
             userInterface.clearFrameOverride();
             if (execution)
             {
@@ -418,6 +419,7 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
 
     _asyncLoadWorkers.clear();
     _asyncLoadTokens.clear();
+    base::CpuProfiler::stop();
     _userInterface.clearFrameOverride();
     _execution->waitIdle();
     _execution->cleanup();

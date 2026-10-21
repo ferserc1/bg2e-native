@@ -89,11 +89,11 @@ class BG2E_API Window {
 
     virtual void draw();
 
-    inline void close()
+    virtual void close()
     {
         _open = false;
     }
-    inline void open()
+    virtual void open()
     {
         _open = true;
     }

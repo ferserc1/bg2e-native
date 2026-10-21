@@ -636,9 +636,9 @@ handles before UI/Engine teardown; no ImGui/native type enters application code.
 
 ## Draw model editor controls
 
-[GraphicsSettingsWindow and RendererDebugWidget](GraphicsSettingsWindow.md) share
-the live queued settings facade, with graphics persistence and session-only debug
-controls separated. [ReflectionWidget](Reflection_Widgets.md) can render only a
+[GraphicsSettingsWindow](GraphicsSettingsWindow.md) exposes graphics controls and
+persistence through the live queued settings facade. Profiling belongs to the
+separate Performance window. [ReflectionWidget](Reflection_Widgets.md) can render only a
 TransformComponent or LightComponent without inspecting the complete node. Its
 unbounded numeric/vector fields support dragging and direct keyboard entry.
 The [model editor tutorial](../../tutorials/draw/model_edit.md) combines these with

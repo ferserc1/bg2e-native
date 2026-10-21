@@ -448,7 +448,7 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
     }
     {
         base::CpuProfileScope profile("renderer.waitIdle.attachScene");
-        base::CpuProfileScope::count("renderer.attachSceneDrains", 1);
+        base::CpuProfileScope::count("renderer.attachSceneDrains", 1, "drains");
         _engine->device()->waitIdle();
     }
     if (_tracingResources)
@@ -497,7 +497,7 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
     }
         {
         base::CpuProfileScope profile("renderer.waitIdle.resize");
-        base::CpuProfileScope::count("renderer.resizeDrains", 1);
+        base::CpuProfileScope::count("renderer.resizeDrains", 1, "drains");
         _engine->device()->waitIdle();
     }
     _configuration.outputExtent = output;
@@ -642,7 +642,7 @@ void RendererDeferred::update(const FrameContext& frame)
             throw std::logic_error("Cached temporal signature differs from full serialization");
         }
         changed = _signatureReuseEnabled ? componentChanged : referenceChanged;
-        base::CpuProfileScope::count("temporal.signatureReferenceBytes", reference.size());
+        base::CpuProfileScope::count("temporal.signatureReferenceBytes", reference.size(), "bytes");
     }
     if (changed)
     {
@@ -787,6 +787,11 @@ void RendererDeferred::dispatch(size_t stage, const FrameContext& frame,
     base::CpuProfileScope profile(stage == 0 ? "layer.gbuffer" :
         stage == 1 ? "layer.deferredLighting" : stage == 2 ? "layer.final" :
         stage == 3 ? "layer.skybox" : "layer.other");
+    gpu::GpuTimingScope gpuProfile(frame.commandBuffer, stage == 0 ? "layer.gbuffer" :
+        stage == 1 ? "layer.deferredLighting" : stage == 2 ? "layer.final" :
+        stage == 3 ? "layer.skybox" : "layer.other",
+        raster && raster->item ? (uint64_t(raster->item->objectId) << 32) | raster->item->submeshIndex : 0,
+        stage != 2 && raster && raster->item);
     const auto& selected = _configuration.layers.at(stage);
     Renderer::recordLayer(selected, {frame, selected.configuration, inputs, outputs, _scene.get(), raster});
 }
@@ -836,8 +841,12 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             surface.depthOrPosition = slot.gbuffer[6].get();
             surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
             const pipeline::TemporalView view{_view,_projection,slot.jitteredProjection,true};
-            const auto accumulated = _configuration.temporal->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
-                frame.sceneFrameNumber,_historyGeneration,{kind,0,layer},signal,surface,view,material,maxRoughness});
+            const auto accumulated = [&]
+            {
+                gpu::GpuTimingScope timing(frame.commandBuffer, "effect.temporal.record", layer, layer != 0);
+                return _configuration.temporal->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                    frame.sceneFrameNumber,_historyGeneration,{kind,0,layer},signal,surface,view,material,maxRoughness});
+            }();
             pipeline::DenoiseSignal filteredKind = pipeline::DenoiseSignal::Visibility;
             if (kind == pipeline::TemporalSignal::DiffuseRadiance)
             {
@@ -847,13 +856,17 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             {
                 filteredKind = pipeline::DenoiseSignal::ReflectedRadiance;
             }
+            gpu::GpuTimingScope denoiseTiming(frame.commandBuffer, "effect.denoise.record", layer, layer != 0);
             return _configuration.denoise->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                 {filteredKind,0,layer},*accumulated.image,surface,_view,material,maxRoughness}).image;
         };
+        base::CpuProfileScope compositeCpu("renderer.composite");
+        gpu::GpuTimingScope compositeProfile(frame.commandBuffer, "renderer.composite", layer, layer != 0);
         auto inputs = gbuffer;
         inputs.push_back({"background", background});
         if (_queryShadows)
         {
+            gpu::GpuTimingScope gpuProfile(frame.commandBuffer, "effect.shadows.record", layer, layer != 0);
             std::vector<pipeline::ImageBinding> visibility{{"shadow0", slot.shadows[0].get()}, {"shadow1", slot.shadows[1].get()}};
             const std::vector<pipeline::ImageBinding> sources{{"normalEmission", slot.gbuffer[1].get()}, {"depth", slot.gbuffer[6].get()}};
             pipeline::LayerSelection selection{_configuration.softShadows, _shadowConfiguration};
@@ -862,6 +875,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         }
         if (_ambientOcclusion)
         {
+            gpu::GpuTimingScope gpuProfile(frame.commandBuffer, "effect.ao.record", layer, layer != 0);
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
             surface.depthOrPosition = slot.gbuffer[6].get();
@@ -877,6 +891,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         }
         if (_globalIllumination)
         {
+            gpu::GpuTimingScope gpuProfile(frame.commandBuffer, "effect.gi.record", layer, layer != 0);
             if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination)
             {
                 pipeline::SurfaceInputs surface;
@@ -899,6 +914,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         }
         if (_reflections)
         {
+            gpu::GpuTimingScope gpuProfile(frame.commandBuffer, "effect.reflections.record", layer, layer != 0);
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
             surface.depthOrPosition = slot.gbuffer[6].get();
@@ -950,48 +966,54 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         final && final->debugView() == pipeline::FinalDebugView::Final;
     const auto extent = slot.gbuffer[0]->size();
     const uint64_t fullArea = uint64_t(extent.width)*extent.height;
-    for (const auto* item : transparent)
     {
-        if (_inspectOpaqueLayer)
+        base::CpuProfileScope transparentCpu("renderer.transparent");
+        gpu::GpuTimingScope transparentTiming(frame.commandBuffer, "renderer.transparent");
+        for (const auto* item : transparent)
         {
-            break;
-        }
-        raster.region.reset();
-        if (regions)
-        {
-            const auto bounds = item->drawMesh->uploadedBounds(item->submeshIndex);
-            if (bounds && item->worldMatrix[0][3] == 0 && item->worldMatrix[1][3] == 0 &&
-                item->worldMatrix[2][3] == 0 && item->worldMatrix[3][3] == 1)
+            if (_inspectOpaqueLayer)
             {
-                raster.region = pipeline::projectProcessingRegion(bounds->minimum, bounds->maximum,
-                    slot.jitteredProjection*_view*item->worldMatrix, extent);
+                break;
             }
+            raster.region.reset();
+            if (regions)
+            {
+                const auto bounds = item->drawMesh->uploadedBounds(item->submeshIndex);
+                if (bounds && item->worldMatrix[0][3] == 0 && item->worldMatrix[1][3] == 0 &&
+                    item->worldMatrix[2][3] == 0 && item->worldMatrix[3][3] == 1)
+                {
+                    raster.region = pipeline::projectProcessingRegion(bounds->minimum, bounds->maximum,
+                        slot.jitteredProjection*_view*item->worldMatrix, extent);
+                }
+            }
+            base::CpuProfileScope::count("transparent.fullPixels", fullArea, "pixels");
+            if (raster.region && (!raster.region->width || !raster.region->height))
+            {
+                base::CpuProfileScope::count("transparent.skippedLayers", 1);
+                continue; // Tracing snapshots were already collected and built in full.
+            }
+            const auto area = raster.region ? uint64_t(raster.region->width)*raster.region->height : fullArea;
+            base::CpuProfileScope::count("transparent.rasterPixels", area, "pixels");
+            base::CpuProfileScope::count("transparent.compositionPixels", area, "pixels");
+            base::CpuProfileScope::count("transparent.receiverDomainPixels", fullArea, "pixels");
+            base::CpuProfileScope::count("transparent.fullExtentLayers", raster.region ? 0 : 1);
+            // Preserve every background texel, including refraction reads outside the
+            // write rectangle. The regional fullscreen pass loads this destination.
+            if (raster.region)
+            {
+                pipeline::RenderTarget::copy(frame.commandBuffer, *current, *next);
+                base::CpuProfileScope::count("transparent.backgroundCopyPixels", fullArea, "pixels");
+            }
+            pipeline::RenderTarget::copy(frame.commandBuffer, *slot.opaqueDepth, *slot.gbuffer[6]);
+            raster.item = item;
+            dispatch(0, frame, {}, gbuffer, &raster);
+            composite(current, next,(uint64_t(item->objectId)<<32)|item->submeshIndex);
+            std::swap(current, next);
         }
-        base::CpuProfileScope::count("transparent.fullPixels", fullArea);
-        if (raster.region && (!raster.region->width || !raster.region->height))
-        {
-            base::CpuProfileScope::count("transparent.skippedLayers", 1);
-            continue; // Tracing snapshots were already collected and built in full.
-        }
-        const auto area = raster.region ? uint64_t(raster.region->width)*raster.region->height : fullArea;
-        base::CpuProfileScope::count("transparent.rasterPixels", area);
-        base::CpuProfileScope::count("transparent.compositionPixels", area);
-        base::CpuProfileScope::count("transparent.receiverDomainPixels", fullArea);
-        base::CpuProfileScope::count("transparent.fullExtentLayers", raster.region ? 0 : 1);
-        // Preserve every background texel, including refraction reads outside the
-        // write rectangle. The regional fullscreen pass loads this destination.
-        if (raster.region)
-        {
-            pipeline::RenderTarget::copy(frame.commandBuffer, *current, *next);
-            base::CpuProfileScope::count("transparent.backgroundCopyPixels", fullArea);
-        }
-        pipeline::RenderTarget::copy(frame.commandBuffer, *slot.opaqueDepth, *slot.gbuffer[6]);
-        raster.item = item;
-        dispatch(0, frame, {}, gbuffer, &raster);
-        composite(current, next,(uint64_t(item->objectId)<<32)|item->submeshIndex);
-        std::swap(current, next);
     }
     slot.finalItem = raster.item;
+    base::CpuProfileScope reconstructionCpu("renderer.reconstruction");
+    gpu::GpuTimingScope reconstructionTiming(frame.commandBuffer, "renderer.reconstruction");
     UpscalerInput upscale{frame, *current, *slot.opaqueDepth, *slot.reconstructed, slot.camera, slot.jitteredProjection};
     if (!_configuration.upscaler->available() || !_configuration.upscaler->record(upscale))
     {
@@ -1503,7 +1525,7 @@ std::vector<uint8_t> RendererDeferred::fullTemporalSignature(const RenderQueue& 
     append(_configuration.denoise->depthSigma());
     append(_configuration.denoise->normalSigma());
     append(_configuration.denoise->spatialSigma());
-    base::CpuProfileScope::count("temporal.fullSignatureBytes", bytes.size());
+    base::CpuProfileScope::count("temporal.fullSignatureBytes", bytes.size(), "bytes");
     return bytes;
 }
 

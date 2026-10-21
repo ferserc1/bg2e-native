@@ -23,6 +23,7 @@
 #include <bg2e/draw/RenderSettingsPreferences.hpp>
 #include <bg2e/ui/GraphicsSettingsWindow.hpp>
 #include <bg2e/ui/UISettingsWindow.hpp>
+#include <bg2e/ui/Performance.hpp>
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <bg2e/ui/Window.hpp>
 #include <bg2e/ui/Toolbar.hpp>
@@ -62,7 +63,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     std::weak_ptr<AppDelegate> _delegate;
     std::shared_ptr<bg2e::draw::RenderSettingsPreferences> _preferences;
     bg2e::ui::GraphicsSettingsWindow _graphics;
-    bg2e::ui::RendererDebugWidget _diagnostics;
+    bg2e::ui::Performance _performance;
     bg2e::ui::UISettingsWindow _uiSettings;
     SceneLightmapWindow _lightmap;
     bg2e::ui::Window _importSettingsWindow;

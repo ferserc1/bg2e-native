@@ -159,17 +159,15 @@ settings do not imply required baking capability. The job freezes its accepted
 configuration and requires a fresh job after changes. See the
 [CLI guide](../../apps/draw_offscreen_application.md) for concrete options.
 
-## Graphics and diagnostic views
+## Graphics settings view
 
 `GraphicsSettingsWindow` shows renderer quality, global shadows, indirect lighting,
 AO/GI, reflections, temporal accumulation, denoising, color processing, upscaling
 and final processor settings. Show unavailable settings remains available.
 Scene environment and light controls belong to the application's environment editor.
 
-`ui::RendererDebugWidget` (header `<bg2e/ui/RendererDebugWidget.hpp>`) binds to the
-same `RenderSettingsPreferences` facade but shows only diagnostic and capability
-controls. This includes opaque-layer inspection and deferred lighting/final views.
-It has no import/export/preferences controls. The settings codec excludes these
-properties from serialization and ignores legacy diagnostic entries on restore;
-changing a diagnostic view never makes it part of saved graphics preferences.
-Scene values are likewise excluded from graphics preference documents.
+Graphics Settings contains no diagnostic or profiling controls. The settings
+codec excludes diagnostic properties from serialization and ignores legacy
+diagnostic entries on restore. Scene values are likewise excluded from graphics
+preference documents. The underlying catalog remains available for programmatic
+access to diagnostic properties.

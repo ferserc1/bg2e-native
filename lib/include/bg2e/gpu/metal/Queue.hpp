@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/gpu/Queue.hpp>
+#include <bg2e/gpu/detail/SubmissionTimingState.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
 #include <memory>
@@ -54,7 +55,11 @@ class Queue : public gpu::Queue {
     std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
+    SubmissionTimingCapabilities submissionTimingCapabilities() const noexcept override;
+    SubmissionTimingBatch pollSubmissionTimings() const noexcept override;
+
   private:
+    std::shared_ptr<detail::SubmissionTimingState> _timings;
     CommandQueueHandle _commandQueue = nullptr;
     std::shared_ptr<detail::SubmissionState> _submissions;
     metal::Device* _device = nullptr;

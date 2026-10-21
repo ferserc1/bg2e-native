@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/gpu/SubmissionTiming.hpp>
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/PhysicalDevice.hpp>
 #include <bg2e/gpu/detail/SubmissionState.hpp>
@@ -73,6 +74,10 @@ class BG2E_API Device {
     virtual void waitIdle() = 0;
 
     virtual bool isValid() const = 0;
+    uint64_t timingIdentity() const noexcept
+    {
+        return _timingIdentity;
+    }
     // Physical support and enabled logical-device limits are queried separately.
     virtual RayTracingCapabilities rayTracingCapabilities() const
     {
@@ -167,6 +172,7 @@ class BG2E_API Device {
     }
 
   protected:
+    uint64_t _timingIdentity = detail::nextTimingIdentity();
     // Internal coordination, deliberately absent from the public Device API.
     const std::shared_ptr<detail::SubmissionState>& submissionState() const
     {

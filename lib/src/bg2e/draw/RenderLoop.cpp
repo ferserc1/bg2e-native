@@ -25,9 +25,11 @@
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/SurfaceFrame.hpp>
 #include <bg2e/gpu/Queue.hpp>
+#include <bg2e/gpu/SubmissionTiming.hpp>
 #include <bg2e/gpu/CleanupManager.hpp>
 
 #include <exception>
+#include <array>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -42,6 +44,66 @@ struct RenderLoop::Impl {
         std::shared_ptr<gpu::CommandBuffer> command;
         std::shared_ptr<gpu::SurfaceFrame> frame;
     };
+    bool gpuTimingPending = false;
+
+    void collectTimings(const gpu::Device& device) noexcept
+    {
+        if (!gpuTimingPending && !base::CpuProfiler::enabled())
+        {
+            return;
+        }
+        base::CpuProfileScope profile("profiling.gpu.collect");
+        const std::array<const gpu::Queue*, 3> queues{
+            &device.graphicsQueue(), &device.presentQueue(), &device.transferQueue()};
+        std::array<base::GpuProfileQueueStatus, 3> statuses{};
+        size_t statusCount = 0;
+        gpuTimingPending = false;
+        for (size_t i = 0; i < queues.size(); ++i)
+        {
+            bool duplicate = false;
+            for (size_t j = 0; j < i; ++j)
+            {
+                duplicate |= queues[i] == queues[j];
+            }
+            if (duplicate)
+            {
+                continue;
+            }
+            const auto capabilities = queues[i]->submissionTimingCapabilities();
+            const auto batch = queues[i]->pollSubmissionTimings();
+            gpuTimingPending |= batch.pending != 0;
+            for (const auto& result : batch.results)
+            {
+                base::CpuProfiler::completeGpu(result);
+            }
+            size_t index = 0;
+            while (index < statusCount && (statuses[index].device != capabilities.device ||
+                statuses[index].queue != capabilities.queue))
+            {
+                ++index;
+            }
+            if (index == statusCount)
+            {
+                ++statusCount;
+                statuses[index].device = capabilities.device;
+                statuses[index].queue = capabilities.queue;
+                statuses[index].backend = capabilities.backend;
+            }
+            // Aliases of one native queue merge bookkeeping counts only, never
+            // GPU execution durations or an alleged frame total.
+            auto& status = statuses[index];
+            status.supported |= capabilities.supported;
+            status.pending += batch.pending;
+            status.dropped += batch.dropped;
+            status.failed += batch.failed;
+            status.unsupported += batch.unsupported;
+        }
+        for (size_t i = 0; i < statusCount; ++i)
+        {
+            base::CpuProfiler::gpuQueueStatus(statuses[i]);
+        }
+    }
+
     std::vector<Slot> slots;
     std::shared_ptr<gpu::Image> sceneColor;
     uint64_t surfaceGeneration = 0;
@@ -165,6 +227,7 @@ void RenderLoop::frame(float deltaSeconds)
             active = false;
         }
     } guard(_frameActive);
+    _impl->collectTimings(*_engine->device());
     _delegate->prepareFrame();
     if (!_scenePaused)
     {
@@ -203,7 +266,7 @@ void RenderLoop::frame(float deltaSeconds)
         // unlike ordinary frame execution, which waits only during slot reuse.
         {
             base::CpuProfileScope profile("renderLoop.waitIdle.rebuildSceneTarget");
-            base::CpuProfileScope::count("renderLoop.sceneTargetRebuildDrains", 1);
+            base::CpuProfileScope::count("renderLoop.sceneTargetRebuildDrains", 1, "drains");
             _engine->device()->waitIdle();
         }
         _impl->slots.clear();
@@ -247,6 +310,26 @@ void RenderLoop::frame(float deltaSeconds)
     slot.frame = frame;
     auto& command = *slot.command;
     command.begin();
+    auto gpuRequest = base::CpuProfiler::beginGpu(_presentationCount + 1, 0,
+        base::GpuProfileWorkload::Unassociated);
+    if (gpuRequest.token)
+    {
+        base::CpuProfileScope timingProfile("profiling.gpu.request");
+        const auto capabilities = queue.submissionTimingCapabilities();
+        gpuRequest.device = capabilities.device;
+        gpuRequest.queue = capabilities.queue;
+        gpuRequest.backend = capabilities.backend;
+        const auto status = command.requestSubmissionTiming(gpuRequest);
+        if (status == gpu::SubmissionTimingStatus::Pending)
+        {
+            _impl->gpuTimingPending = true;
+        }
+        else
+        {
+            gpuRequest.status = status;
+            base::CpuProfiler::completeGpu(gpuRequest);
+        }
+    }
     if (_uiPreparation)
     {
         base::CpuProfileScope profile("frame.uiPreparation");
@@ -259,6 +342,9 @@ void RenderLoop::frame(float deltaSeconds)
     const bool sceneDue = !_impl->colorInitialized || _sceneMaxFrameRate == 0.0 ||
         _sceneFrameElapsed >= 1.0 / _sceneMaxFrameRate;
     const bool refresh = !_scenePaused && _sceneDirty && sceneDue;
+    command.setSubmissionTimingContext(refresh ? _renderedSceneCount + 1 : 0,
+        refresh ? (_uiComposition ? gpu::SubmissionTimingWorkload::SceneAndUi : gpu::SubmissionTimingWorkload::Scene) :
+            gpu::SubmissionTimingWorkload::Ui);
     const auto revision = _sceneRevision;
     FrameContext context{*_engine, command, *_impl->sceneColor, extent,
                          surface->frameCounter(), slotIndex, deltaSeconds, _renderedSceneCount, _sceneDeltaSeconds};
@@ -300,6 +386,7 @@ void RenderLoop::frame(float deltaSeconds)
     if (_uiComposition)
     {
         base::CpuProfileScope profile("frame.uiComposition");
+        gpu::GpuTimingScope gpuProfile(command, "frame.uiComposition");
         _uiComposition(command, *frame);
     }
     if (command.hasActiveScope())
@@ -327,8 +414,10 @@ void RenderLoop::frame(float deltaSeconds)
     }
     surface->endFrame(frame.get());
     ++_presentationCount;
+    frameProfile.frameCompleted(_presentationCount, _renderedSceneCount, refresh);
     stageProfile.next("frame.deferredCleanup");
     _engine->cleanupManager().flushDeferred();
+    _impl->collectTimings(*_engine->device());
 }
 
 void RenderLoop::setUICompositionCallback(UICompositionCallback callback)
@@ -404,9 +493,10 @@ void RenderLoop::cleanup()
     {
         {
             base::CpuProfileScope profile("renderLoop.waitIdle.cleanup");
-            base::CpuProfileScope::count("renderLoop.cleanupDrains", 1);
+            base::CpuProfileScope::count("renderLoop.cleanupDrains", 1, "drains");
             _engine->device()->waitIdle();
         }
+        _impl->collectTimings(*_engine->device());
     }
     catch (...)
     {

@@ -120,7 +120,7 @@ ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstan
     base::CpuProfileScope::count("shadowTable.entries", table.instances.size());
     base::CpuProfileScope::count("shadowTable.capacitySlots", capacity);
     base::CpuProfileScope::count("shadowTable.overflowSlots", table.fallbackTextureSlots);
-    base::CpuProfileScope::count("shadowTable.instanceBytes", table.instances.size() * sizeof(ShadowInstanceData));
+    base::CpuProfileScope::count("shadowTable.instanceBytes", table.instances.size() * sizeof(ShadowInstanceData), "bytes");
     base::CpuProfileScope::count("shadowTable.alphaTextureLookups", alphaTextureLookups);
     base::CpuProfileScope::count("shadowTable.alphaTexturesAtCapacity", table.alphaTextures.size() >= capacity ? 1 : 0);
     return table;
@@ -504,7 +504,7 @@ void SoftShadowPass::record(const PassContext& context)
     const auto groupsX = (receiverExtent.width+15)/16;
     const auto groupsY = (receiverExtent.height+15)/16;
     base::CpuProfileScope::count("shadow.receiverInvocations", uint64_t(groupsX)*groupsY*256);
-    base::CpuProfileScope::count("shadow.fullReceiverPixels", uint64_t(fullExtent.width)*fullExtent.height);
+    base::CpuProfileScope::count("shadow.fullReceiverPixels", uint64_t(fullExtent.width)*fullExtent.height, "pixels");
     command.dispatch(groupsX, groupsY, 1);
     command.endCompute();
     for (const auto& output : context.outputs)

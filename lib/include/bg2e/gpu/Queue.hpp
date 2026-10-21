@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/gpu/SubmissionTiming.hpp>
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -36,6 +37,16 @@ class BG2E_API Queue {
 
     virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const = 0;
     virtual void submit(gpu::CommandBuffer* cmd) const = 0;
+
+    virtual SubmissionTimingCapabilities submissionTimingCapabilities() const noexcept
+    {
+        return {};
+    }
+    // Poll existing completion records without acquiring a drain/wait path.
+    virtual SubmissionTimingBatch pollSubmissionTimings() const noexcept
+    {
+        return {};
+    }
 };
 
 }

@@ -49,6 +49,7 @@ namespace vk {
 void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
     _submissions = std::make_shared<detail::SubmissionState>();
+    _timingIdentity = detail::nextTimingIdentity();
     auto* vkPhysDevice = dynamic_cast<vk::PhysicalDevice*>(physicalDevice);
     _physicalDevice = vkPhysDevice->handle();
     bool offscreen = surface->isOffscreen();

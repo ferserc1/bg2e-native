@@ -57,7 +57,6 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     std::weak_ptr<AppDelegate> _delegate;
     std::shared_ptr<bg2e::draw::RenderSettingsPreferences> _preferences;
     bg2e::ui::GraphicsSettingsWindow _graphics;
-    bg2e::ui::RendererDebugWidget _diagnostics;
     bg2e::ui::UISettingsWindow _uiSettings;
     ModelLightmapWindow _lightmap;
     bg2e::ui::Toolbar _toolbar;

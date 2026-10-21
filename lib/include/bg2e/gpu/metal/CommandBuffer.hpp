@@ -51,6 +51,9 @@ class CommandBuffer : public gpu::CommandBuffer {
 
     void begin() override;
     void end() override;
+    void timingIntervalMarker(uint32_t index, bool end) noexcept override;
+
+    SubmissionTimingStatus requestSubmissionTiming(const SubmissionTimingRequest& request) noexcept override;
     void transition(gpu::Image* image, ImageLayout newLayout) override;
     void transition(gpu::Image* image, ImageLayout newLayout, const ImageSubresourceRange& range) override;
     void copyImage(const ImageView& source, const ImageView& destination) override;
@@ -123,6 +126,11 @@ class CommandBuffer : public gpu::CommandBuffer {
 
 #if BG2E_IS_MAC
     void ensureRenderEncoder();
+
+    uint32_t timingEncoderSamples() noexcept;
+    void attachRenderTiming() noexcept;
+    void omitBlitTiming() noexcept;
+    MTL::ComputeCommandEncoder* createComputeEncoder();
 
     metal::Device* _device = nullptr;
     MTL::CommandBuffer* _cmd = nullptr;

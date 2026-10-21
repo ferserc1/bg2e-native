@@ -39,7 +39,7 @@ struct Writer {
     }
     std::vector<uint8_t> finish()
     {
-        base::CpuProfileScope::count("temporal.signatureBytesRebuilt", bytes.size());
+        base::CpuProfileScope::count("temporal.signatureBytesRebuilt", bytes.size(), "bytes");
         return std::move(bytes);
     }
 };
@@ -685,7 +685,7 @@ const std::vector<uint8_t>& TemporalSignatureState::flattened() const
     append(*lights);
     append(*environment);
     append(*settings);
-    base::CpuProfileScope::count("temporal.signatureFlattenedBytes", bytes.size());
+    base::CpuProfileScope::count("temporal.signatureFlattenedBytes", bytes.size(), "bytes");
     _bytes = std::move(bytes);
     _flattened = true;
     return _bytes;

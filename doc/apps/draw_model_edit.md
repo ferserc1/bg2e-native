@@ -18,7 +18,7 @@ The toolbar provides geometry operations, framing, duplication and quick toggles
 for both side panels. **File** contains Open, Import glTF, Import OBJ, Save, Save As
 and Quit. **View** contains camera reset/framing/best-view and selection-highlight actions.
 **Window** contains checkable entries for both docked panels, plus UI Settings,
-Graphics Settings, Renderer Diagnostics and the separate **UV and Lightmap Baker** utility. Settings and
+Graphics Settings and the separate **UV and Lightmap Baker** utility. Settings and
 bake controls open from that menu; the document, properties and environment are not
 separate floating windows. Keyboard shortcuts include Ctrl+O/S/Shift+S/Q, Ctrl+A
 for best view and Shift+Space for selection highlight. The bottom status bar shows
@@ -164,12 +164,11 @@ execution evidence. The project lead explicitly reports correct rendering with
 zero lights; other runtime/package coverage remains unspecified. No build or
 application run was performed by the agent.
 
-### Graphics, diagnostics and focused light editors
+### Graphics settings and focused light editors
 
-Window → Renderer Diagnostics opens session-only opaque-layer, lighting/deferred
-views and capability information. Graphics Settings contains only graphics quality
-controls; neither debug controls nor scene environment/lights are included in its
-preference documents.
+Graphics Settings contains only graphics quality controls. Profiling and diagnostic
+controls are absent; neither debug controls nor scene environment/lights are
+included in its preference documents.
 
 Environment Options can switch an image environment back to Procedural sky, even
 when the previous source was a custom file. It shows the stage light first and

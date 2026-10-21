@@ -20,8 +20,11 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
+#include <bg2e/gpu/detail/SubmissionTimingState.hpp>
 #include <bg2e/gpu/detail/SubmissionState.hpp>
 #include <stdexcept>
+#include <cstring>
+#include <exception>
 
 namespace bg2e {
 namespace gpu {
@@ -45,6 +48,10 @@ class BG2E_API CommandBuffer {
   public:
     virtual ~CommandBuffer()
     {
+        if (_submissionTiming)
+        {
+            _submissionTiming->abandon();
+        }
         if (_recordingCompletion)
         {
             _recordingCompletion->abandon();
@@ -60,6 +67,72 @@ class BG2E_API CommandBuffer {
 
     virtual void begin() = 0;
     virtual void end() = 0;
+
+    // Request immediately after begin(), before workload commands. Defaults are
+    // nonthrowing unsupported; identities are supplied by the caller.
+    virtual SubmissionTimingStatus requestSubmissionTiming(const SubmissionTimingRequest&) noexcept
+    {
+        return SubmissionTimingStatus::Unsupported;
+    }
+    // Recording-thread only. Zero means disabled/omitted; IDs are local to this
+    // command recording. Labels are copied and contexts preserve layer identity.
+    uint32_t beginTimingInterval(const char* label, uint64_t context = 0, bool detailedOnly = false) noexcept
+    {
+        if (!_submissionTiming || _submissionTiming->terminal || _submissionTiming->submitted || !_submissionTiming->sample.passTiming ||
+            (detailedOnly && !_submissionTiming->sample.detailed))
+        {
+            return 0;
+        }
+        auto& sample = _submissionTiming->sample;
+        if (sample.intervalCount == sample.maximumIntervals || (detailedOnly && sample.intervalCount >= sample.maximumIntervals - 8))
+        {
+            ++sample.intervalsDropped;
+            return 0;
+        }
+        auto& interval = sample.intervals[sample.intervalCount];
+        interval.id = ++sample.intervalCount;
+        interval.context = context;
+        if (label)
+        {
+            std::strncpy(interval.label.data(), label, interval.label.size() - 1);
+        }
+        for (uint32_t i = interval.id - 1; i > 0; --i)
+        {
+            if (!sample.intervals[i - 1].ended)
+            {
+                interval.parent = i;
+                break;
+            }
+        }
+        timingIntervalMarker(interval.id - 1, false);
+        return interval.id;
+    }
+
+    void endTimingInterval(uint32_t id, bool aborted = false) noexcept
+    {
+        if (!_submissionTiming || _submissionTiming->terminal || _submissionTiming->submitted || !id || id > _submissionTiming->sample.intervalCount)
+        {
+            return;
+        }
+        auto& interval = _submissionTiming->sample.intervals[id - 1];
+        if (!interval.ended)
+        {
+            timingIntervalMarker(id - 1, true);
+            interval.ended = true;
+            if (aborted)
+            {
+                interval.status = SubmissionTimingStatus::Aborted;
+            }
+        }
+    }
+
+    void setSubmissionTimingContext(uint64_t scene, SubmissionTimingWorkload workload) noexcept
+    {
+        if (_submissionTiming)
+        {
+            _submissionTiming->context(scene, workload);
+        }
+    }
 
     virtual void transition(gpu::Image* image, ImageLayout newLayout) = 0;
     virtual void transition(gpu::Image* image, ImageLayout newLayout, const ImageSubresourceRange& range)
@@ -205,9 +278,21 @@ class BG2E_API CommandBuffer {
     virtual bool isValid() const = 0;
 
   protected:
+    virtual void timingIntervalMarker(uint32_t index, bool) noexcept
+    {
+        _submissionTiming->sample.intervals[index].status = SubmissionTimingStatus::Unsupported;
+    }
+
+    std::shared_ptr<detail::SubmissionTimingState> _timingState;
+    std::shared_ptr<detail::SubmissionTimingTicket> _submissionTiming;
     // Backend begin() calls this only after native reset/begin succeeds.
     void beginRecordingCompletion()
     {
+        if (_submissionTiming)
+        {
+            _submissionTiming->abandon();
+            _submissionTiming.reset();
+        }
         auto next = std::make_shared<detail::RecordingCompletion>();
         if (_recordingCompletion)
         {
@@ -229,6 +314,26 @@ class BG2E_API CommandBuffer {
     }
 
     std::shared_ptr<detail::RecordingCompletion> _recordingCompletion;
+};
+
+// Pairs endpoints on normal/exceptional exits without changing native scopes.
+class GpuTimingScope {
+  public:
+    GpuTimingScope(CommandBuffer& command, const char* label, uint64_t context = 0, bool detailedOnly = false) noexcept
+        : _command(command), _exceptions(std::uncaught_exceptions()), _id(command.beginTimingInterval(label, context, detailedOnly))
+    {
+    }
+    ~GpuTimingScope()
+    {
+        _command.endTimingInterval(_id, std::uncaught_exceptions() > _exceptions);
+    }
+    GpuTimingScope(const GpuTimingScope&) = delete;
+    GpuTimingScope& operator=(const GpuTimingScope&) = delete;
+
+  private:
+    CommandBuffer& _command;
+    int _exceptions;
+    uint32_t _id;
 };
 
 }

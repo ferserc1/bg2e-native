@@ -23,13 +23,10 @@
 #include <bg2e/ui/Group.hpp>
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/app/FileDialog.hpp>
-#include <bg2e/app/MainLoop.hpp>
-#include <bg2e/base/CpuProfile.hpp>
-#include <bg2e/base/PlatformTools.hpp>
 #include <atomic>
 #include <algorithm>
 #include <cctype>
-#include <stdexcept>
+#include <exception>
 
 namespace bg2e::ui {
 namespace {
@@ -86,19 +83,11 @@ struct GraphicsSettingsWindow::State {
     bool showUnavailable = true;
 };
 
-GraphicsSettingsWindow::GraphicsSettingsWindow() : GraphicsSettingsWindow(false)
-{
-}
-
-RendererDebugWidget::RendererDebugWidget() : GraphicsSettingsWindow(true)
-{
-}
-
-GraphicsSettingsWindow::GraphicsSettingsWindow(bool diagnostics)
-    : _diagnostics(diagnostics), _state(std::make_shared<State>())
+GraphicsSettingsWindow::GraphicsSettingsWindow()
+    : _state(std::make_shared<State>())
 {
     static std::atomic<uint64_t> sequence{0};
-    setTitle(std::string(diagnostics ? "Renderer diagnostics##rendererDiagnostics" : "Graphics settings##graphicsSettings") + std::to_string(++sequence));
+    setTitle(std::string("Graphics settings##graphicsSettings") + std::to_string(++sequence));
     options.noMenu = true;
 }
 
@@ -239,73 +228,6 @@ void GraphicsSettingsWindow::draw()
 
 void GraphicsSettingsWindow::drawContents()
 {
-    Text::separator("CPU profiling");
-    bool profiling = base::CpuProfiler::enabled();
-    if (Button::checkBox("Enable CPU profiling", &profiling))
-    {
-        if (profiling)
-        {
-            try
-            {
-                const auto* loop = app::MainLoop::current();
-                if (!loop)
-                {
-                    throw std::runtime_error("CPU profiling requires an active application");
-                }
-                auto name = loop->appId();
-                if (name.empty())
-                {
-                    throw std::runtime_error("CPU profiling requires a nonempty application ID");
-                }
-                // An application ID is a filename, never a relative path.
-                for (auto& c : name)
-                {
-                    if (c == '/' || c == '\\' || c == ':')
-                    {
-                        c = '_';
-                    }
-                }
-                const auto home = base::PlatformTools::homePath();
-                if (home.empty() || !home.is_absolute())
-                {
-                    throw std::runtime_error("CPU profiling requires an absolute home directory");
-                }
-                const auto path = home / (name + "-cpu-profile.log");
-                if (!base::CpuProfiler::start(path))
-                {
-                    report("cpu_profile_failed", base::CpuProfiler::error());
-                }
-            }
-            catch (const std::exception& error)
-            {
-                report("cpu_profile_failed", error.what());
-            }
-        }
-        else
-        {
-            base::CpuProfiler::stop();
-        }
-    }
-    Text::text("Set the effect variant first; then enable profiling and leave settings unchanged during the capture.");
-    const auto profilePath = base::CpuProfiler::outputPath();
-    if (!profilePath.empty())
-    {
-        Text::text("CPU profile file: " + profilePath.string());
-    }
-    const auto profileSession = base::CpuProfiler::sessionInfo();
-    if (!profileSession.empty())
-    {
-        Text::text("CPU profile session: " + profileSession);
-    }
-    if (base::CpuProfiler::enabled())
-    {
-        Text::text("Runtime backend, resolutions, effect states and frame counters are included automatically. You may close this window now.");
-    }
-    const auto profileError = base::CpuProfiler::error();
-    if (!profileError.empty())
-    {
-        Text::text("CPU profile error: " + profileError);
-    }
     if (!_preferences || _preferences->catalog().rendererId().empty())
     {
         Text::text("Graphics settings are waiting for an active renderer.");
@@ -319,34 +241,31 @@ void GraphicsSettingsWindow::drawContents()
         _state->generation = catalog.generation();
     }
     Group::pushId(int(_state->generation & 0x7fffffff));
-    if (!_diagnostics)
+    Group::beginDisabled(pending());
+    if (Button::button("Restore preferences from file"))
     {
-        Group::beginDisabled(pending());
-        if (Button::button("Restore preferences from file"))
+        app::FileDialog picker;
+        picker.setFilters({{"Graphics settings", "json"}});
+        const auto path = picker.openFile();
+        if (!path.empty())
         {
-            app::FileDialog picker;
-            picker.setFilters({{"Graphics settings", "json"}});
-            const auto path = picker.openFile();
-            if (!path.empty())
-            {
-                importFile(path);
-            }
+            importFile(path);
         }
-        if (Button::button("Save preferences to file", true))
+    }
+    if (Button::button("Save preferences to file", true))
+    {
+        app::FileDialog picker;
+        picker.setFilters({{"Graphics settings", "json"}});
+        const auto path = picker.saveFile();
+        if (!path.empty())
         {
-            app::FileDialog picker;
-            picker.setFilters({{"Graphics settings", "json"}});
-            const auto path = picker.saveFile();
-            if (!path.empty())
-            {
-                exportFile(path);
-            }
+            exportFile(path);
         }
-        Group::endDisabled();
-        if (!_preferences->hasPersistence())
-        {
-            Text::text("Preference storage is not connected.");
-        }
+    }
+    Group::endDisabled();
+    if (!_preferences->hasPersistence())
+    {
+        Text::text("Preference storage is not connected.");
     }
     Button::checkBox("Show unavailable settings", &_state->showUnavailable);
     if (pending())
@@ -361,10 +280,9 @@ void GraphicsSettingsWindow::drawContents()
     // Availability can change without a generation change (e.g. light type), so
     // enumerate every frame. Only handles/metadata and transient values are used.
     auto descriptors = catalog.properties(_state->showUnavailable);
-    std::erase_if(descriptors, [this](const auto& descriptor)
+    std::erase_if(descriptors, [](const auto& descriptor)
     {
-        return _diagnostics ? !draw::SettingsCatalog::isDebugSetting(descriptor)
-            : !draw::SettingsCatalog::isGraphicsSetting(descriptor);
+        return !draw::SettingsCatalog::isGraphicsSetting(descriptor);
     });
     std::vector<std::string> components;
     for (const auto& descriptor : descriptors)

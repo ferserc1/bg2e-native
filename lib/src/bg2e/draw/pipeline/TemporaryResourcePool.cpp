@@ -68,7 +68,7 @@ void TemporaryBindings::writeUniforms(const void* data, uint64_t bytes)
     {
         _tuple.clear();
         _uniforms->createUniformBuffer(data, bytes);
-        base::CpuProfileScope::count("temporary.uniformAllocations", 1);
+        base::CpuProfileScope::count("temporary.uniformAllocations", 1, "allocations");
     }
     else
     {
@@ -306,8 +306,8 @@ void TemporaryResourcePool::trim()
             ++it;
         }
     }
-    base::CpuProfileScope::count("temporary.retainedImageBytes", bytes);
-    base::CpuProfileScope::count("temporary.retainedUniformBytes", bufferBytes);
+    base::CpuProfileScope::count("temporary.retainedImageBytes", bytes, "bytes");
+    base::CpuProfileScope::count("temporary.retainedUniformBytes", bufferBytes, "bytes");
     base::CpuProfileScope::count("temporary.retainedImages", _images.size());
     base::CpuProfileScope::count("temporary.retainedBindings", _bindings.size());
 }
@@ -338,7 +338,7 @@ std::shared_ptr<gpu::Image> TemporaryResourcePool::image(gpu::CommandBuffer& com
     }
     auto image = _device->createImage(description);
     _images.push_back({image, command.recordingCompletion(), image->bindingGeneration(), bytes, 0});
-    base::CpuProfileScope::count("temporary.imageAllocations", 1);
+    base::CpuProfileScope::count("temporary.imageAllocations", 1, "allocations");
     return image;
 }
 
@@ -381,7 +381,7 @@ std::shared_ptr<TemporaryBindings> TemporaryResourcePool::bindings(gpu::CommandB
     entry->_dirty = true;
     entry->_completion = command.recordingCompletion();
     _bindings.push_back(entry);
-    base::CpuProfileScope::count("temporary.bindingAllocations", 1);
+    base::CpuProfileScope::count("temporary.bindingAllocations", 1, "allocations");
     return entry;
 }
 }

@@ -24,6 +24,7 @@
 #include <bg2e/gpu/vk/Info.hpp>
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <stdexcept>
+#include <cmath>
 
 namespace bg2e::gpu::vk {
 namespace {
@@ -39,14 +40,17 @@ void check(VkResult result, const char* operation)
 Queue::Queue(VkQueue queue, uint32_t family) : _queue(queue), _familyIndex(family)
 {
 }
+
 uint32_t Queue::familyIndex() const
 {
     return _familyIndex;
 }
+
 bool Queue::isValid() const
 {
     return _queue != VK_NULL_HANDLE;
 }
+
 VkQueue Queue::handle() const
 {
     return _queue;
@@ -57,6 +61,36 @@ void Queue::initCommandPool(VkDevice device, vk::Device* gpuDevice)
     _device = device;
     _gpuDevice = gpuDevice;
     _submissions = gpuDevice->submissionState();
+    try
+    {
+        _timings = std::make_shared<detail::SubmissionTimingState>();
+        auto& capabilities = _timings->capabilities;
+        capabilities.device = gpuDevice->timingIdentity();
+        // Every wrapper uses native queue index 0. Aliased families share the
+        // same (device, queue) identity without implying independent execution.
+        capabilities.queue = uint64_t(_familyIndex) + 1;
+        capabilities.backend = SubmissionTimingBackend::Vulkan;
+        VkPhysicalDeviceProperties properties{};
+        vkGetPhysicalDeviceProperties(gpuDevice->physicalDeviceHandle(), &properties);
+        uint32_t count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(gpuDevice->physicalDeviceHandle(), &count, nullptr);
+        std::vector<VkQueueFamilyProperties> families(count);
+        vkGetPhysicalDeviceQueueFamilyProperties(gpuDevice->physicalDeviceHandle(), &count, families.data());
+        if (_familyIndex < count)
+        {
+            capabilities.timestampValidBits = families[_familyIndex].timestampValidBits;
+        }
+        capabilities.timestampPeriodNs = properties.limits.timestampPeriod;
+        capabilities.supported = capabilities.timestampValidBits > 0 && capabilities.timestampValidBits <= 64 &&
+            std::isfinite(capabilities.timestampPeriodNs) && capabilities.timestampPeriodNs > 0;
+        capabilities.description = capabilities.supported ?
+            "Vulkan command workload: top-of-pipe to bottom-of-pipe timestamps" :
+            "Vulkan queue has no usable timestamp bits/period";
+    }
+    catch (...)
+    {
+        _timings.reset();
+    }
     auto pool = std::make_shared<CommandPoolState>();
     pool->device = device;
     auto info = Info::commandPoolCreateInfo(_familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
@@ -67,6 +101,10 @@ void Queue::initCommandPool(VkDevice device, vk::Device* gpuDevice)
 
 void Queue::destroyCommandPool()
 {
+    if (_timings)
+    {
+        _timings->close();
+    }
     for (const auto& pool : _poolStates)
     {
         pool->cleanup();
@@ -116,6 +154,7 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
     auto command = std::make_shared<vk::CommandBuffer>(_gpuDevice, allocation->command, pool->pool);
     command->_allocation = allocation;
     command->_originQueue = _queue;
+    command->_timingState = _timings;
     if (!debugName.empty() && setDebugUtilsObjectName)
     {
         VkDebugUtilsObjectNameInfoEXT name{};
@@ -151,6 +190,20 @@ void Queue::submit(gpu::CommandBuffer* command) const
         throw std::logic_error("Vulkan command buffer is still in flight");
     }
 
+    struct TimingFailure {
+        std::shared_ptr<detail::SubmissionTimingTicket> ticket;
+        bool& executable;
+        bool accepted = false;
+
+        ~TimingFailure()
+        {
+            if (ticket && !accepted)
+            {
+                executable = false;
+                ticket->complete(false);
+            }
+        }
+    } timingFailure{cmd->_submissionTiming, cmd->_executable};
     auto* frame = cmd->presentFrame();
     const bool presenting = frame && frame->swapchain() != VK_NULL_HANDLE;
     if (presenting && frame->hasSubmissions())
@@ -183,11 +236,22 @@ void Queue::submit(gpu::CommandBuffer* command) const
         [device = _device, fence, ownedFence, allocation = cmd->_allocation]
         {
             check(vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX), "vkWaitForFences");
+        },
+        [ticket = cmd->_submissionTiming](bool success)
+        {
+            if (ticket)
+            {
+                ticket->complete(success);
+            }
         });
     auto info = Info::commandBufferSubmitInfo(cmd->handle());
     try
     {
         _submissions->track(record);
+        if (cmd->_submissionTiming)
+        {
+            cmd->_submissionTiming->markSubmitted(record->id);
+        }
         cmd->_completion = record;
         if (cmd->_submissionFrame)
         {
@@ -212,6 +276,7 @@ void Queue::submit(gpu::CommandBuffer* command) const
         _submissions->cancel(record, std::current_exception());
         throw;
     }
+    timingFailure.accepted = true;
     cmd->publishRecordingSubmission(record);
     cmd->_executable = false;
     // Presentation is in the same admission transaction as submission.
@@ -231,6 +296,20 @@ void Queue::submit(gpu::CommandBuffer* command) const
             check(result, "vkQueuePresentKHR");
         }
     }
+}
+
+SubmissionTimingCapabilities Queue::submissionTimingCapabilities() const noexcept
+{
+    return _timings ? _timings->capabilities : SubmissionTimingCapabilities{};
+}
+
+SubmissionTimingBatch Queue::pollSubmissionTimings() const noexcept
+{
+    if (_submissions)
+    {
+        _submissions->pollNonblocking();
+    }
+    return _timings ? _timings->take() : SubmissionTimingBatch{};
 }
 
 }

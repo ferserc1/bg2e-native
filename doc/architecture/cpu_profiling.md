@@ -1,112 +1,86 @@
-# Experimental renderer CPU diagnostics
+# CPU Performance diagnostics
 
-Open **Graphics settings** and select **Enable CPU profiling**. Clear the checkbox
-to stop recording. Profiling starts disabled and is not persisted as a graphics
-preference. No environment variable, command-line option or CMake option is used.
-The control is also available in the renderer diagnostics window.
+Open **Window > Performance** in the draw composer. Live CPU charts need no output
+file. Graphics Settings contains only graphics controls; profiling controls belong
+to the separate Performance window.
 
-Reports are appended to `PlatformTools::homePath() / (appId + "-cpu-profile.log")`,
-using `MainLoop::current()->appId()` for application identity. Path separators in
-the ID are replaced with underscores. For the composer, the filename is
-`org.bg2e.apps.draw.bg2e-composer-cpu-profile.log`. The window displays the full
-path, current session identifier/start time and file errors. Existing reports are
-retained, with a unique monotonically increasing session ID plus Unix and local
-human-readable start times written immediately after each session marker. Each
-reporting interval also has its own `[CPU profile]` header. When sharing results, include the session marker,
-the complete interval(s) for one configuration, and a short note naming the scene
-and active effects; do not concatenate unrelated configurations without their
-markers. The same UI works with Metal and Vulkan, including macOS app bundles.
-Each frame-boundary report automatically records context supplied by the active
-draw render loop: backend, surface/internal extents, cumulative presentation and
-scene-frame counts, renderer family, and effective deferred RT effects (renderer
-availability combined with each effect's enabled setting). A stable scene
-identifier/name is not exposed by the current scene API, so it is reported as
-unavailable rather than guessed. Context appears as a `context:` line in each
-report interval. Backend/resolution/effect context is automatic; build
-configuration and validation-layer state are not inferable from the active
-renderer and are not included. When the same scene is held constant across effect
-variants, no scene name is needed to interpret the comparisons.
+Performance provides presentation interval/FPS, scene cadence, CPU frame wall time,
+selectable stage inclusive/exclusive timings, a stage table and counters with units.
+Frame streams and stage/counter choices retain thread and collection-epoch identity.
+Scene cadence counts only scene-rendered frames; presentation-only frames do not
+inflate scene FPS. Frame work includes driver calls and existing waits, rather
+than CPU utilization or GPU execution. No GPU synchronization is introduced.
+Missing/incomplete data is unavailable or a gap, never a fabricated zero timing.
 
-Every approximately two seconds, at a completed RenderLoop frame call boundary,
-the file receives a table sorted by exclusive (`self`) CPU wall-clock time:
+**Pause display** freezes this window's snapshot while collection and recording
+continue. **Clear charts** applies a reader-local cutoff; it does not clear shared
+history, another window or a recording. Closing Performance releases its live
+consumer, while any active recording continues independently. Reopening reflects
+that process-wide recording. Applications finalize recording at shutdown through
+the existing MainLoop cleanup path.
 
-- `self ms/frame`: time excluding nested instrumented scopes, normalized by the
-  number of RenderLoop frame calls in the reporting window. Context is sampled at
-  each report boundary; scene/effect changes during an interval may therefore be
-  represented by the boundary configuration rather than every frame in it.
-- `total ms/frame`: inclusive time; do not sum nested totals.
-- `avg ms/call`, `max ms/call`, `calls`: distinguish one large stall from many
-  repeated operations, including effects invoked for multiple layers.
-- `frame.total`: whole RenderLoop call, including waits. The header also reports
-  elapsed wall time and frame call count (not necessarily rendered scene frames).
+**Start Recording** opens the native save dialog for a versioned JSON Lines file.
+Cancel leaves recording state unchanged. Existing files require explicit Replace
+confirmation. Only a successfully opened destination activates recording.
+**Stop Recording** drains accepted records, writes the terminal summary and closes
+the file; live collection continues while Performance remains open. The window
+shows the output path, session, duration and errors. Native dialog stalls are
+omitted from charts; recording boundaries follow the scope-exclusion policy.
 
-These are wall-clock measurements on the calling CPU thread, **not CPU utilization
-or GPU execution timestamps**. Driver work, scheduling and blocking GPU/presentation
-waits all contribute. No additional GPU waits or synchronization are inserted.
-When disabled, newly created scopes do not read clocks or accumulate samples.
-Enabled profiling has overhead, particularly for scenes with many resource bindings;
-compare against an uninstrumented run after diagnosing the bottleneck.
+For another application, keep a `bg2e::ui::Performance` member, call `open()` from
+its menu and `draw()` from its normal UI path. The widget starts closed and uses
+only engine/standard types in its public header. It can also be included through
+`bg2e/ui/all.hpp`. Lower-level consumers can independently retain a
+`bg2e::base::CpuProfiler::Collection` lease and read owning `snapshot()` values.
+`enabled()` indicates any collection consumer or recording; `recording()` indicates
+file recording only.
 
-Important stages:
+Scopes retain inclusive/exclusive duration, calls, maxima and parent/thread/frame
+identity; `next()` preserves sequential stages. Counters retain summed values,
+event maxima and units. Do not sum nested inclusive times or concurrent threads
+as frame time. Initial draw backend/extent/effect context is recorded on start,
+not continuously sampled as configuration changes; compare settled configurations
+in separate recordings.
 
-| Stage | Interpretation |
-|---|---|
-| `frame.acquireAndWaitSlot` | Surface acquisition and reuse of a completed slot |
-| `metal.surface.waitSlotSubmissions` | CPU blocked waiting for previously submitted GPU work |
-| `metal.surface.nextDrawable` | Presentation drawable acquisition; may block on compositor/backpressure |
-| `frame.retireSlotResources`, `frame.deferredCleanup` | Resource retirement/destruction |
-| `frame.uiPreparation`, `frame.uiComposition` | UI work, including editor callbacks |
-| `renderer.extractQueueAndCamera` | Queue extraction, sorting, camera setup |
-| `renderer.temporalSignature`, `renderer.objectBindings` | Scene comparison and raster object data |
-| `tracing.*` | Collection, geometry packing, material/texture tables, buffer allocation, scene creation |
-| `tracing.shadowTablesAndBuffers` | Inclusive shadow metadata/texture table construction and instance-buffer upload; no UV triangle packing or upload |
-| `tracing.prepareShadowResources` | Sequential preparation-stage interval; distinct from the nested shadow wrapper |
-| `tracing.buildShadowQueryTable` | Shadow table builder inclusive time, with non-overlapping `shadowTable.*` child regions |
-| `shadowTable.instanceMetadata`, `shadowTable.alphaTextureDeduplication` | Non-overlapping shadow metadata builder CPU regions |
-| `shadowTable.*` counters | Aggregate instance/resource counts and metadata bytes; total and max per count event are not normalized per frame |
-| `tracing.instanceBufferUpload` | Instance storage buffer upload only; excludes shadow preparation |
-| `tracing.shadowInstanceBufferUpload` | Shadow metadata storage-buffer upload; geometry remains in shared immutable tracing buffers |
-| `shadow.prepareBindings`, `shadow.geometryBufferBindings` | CPU binding preparation and number of existing geometry buffers bound (two per active shadow recording) |
-| `tracing.getSceneBindings` | All scene-binding requests, including inexpensive snapshot-cache hits |
-| `tracing.createSceneBindings` | Cache misses only: native scene tables created once per used layout/set/capacity per snapshot |
-| `metal.tlas.*`, `vulkan.tlas.*` | CPU allocation and encoding of TLAS construction, not GPU build duration |
-| `effect.*.record`, `layer.*` | CPU recording for effects and render layers |
-| `metal.resourceSet.resolveImageViews` | Resolution of all sampled image views |
-| `metal.argumentArray.*` | Argument encoder creation, allocation and table encoding |
-| `metal.bindResources.*` | Native binding and residency declarations |
-| `frame.submit`, `metal.queue.waitUntilCompleted` | Submission and any synchronous completion wait |
+History, publication batches, registered threads, copied labels, writer backlog,
+chart bins and selectors have explicit limits. Writer formatting/I/O is asynchronous;
+Stop may finish ordinary file I/O but never GPU completion. The window displays
+drops, evictions, partial boundaries and its own observer cost.
 
-The indexed shadow implementation removes the legacy `shadowTable.trianglePacking`,
-`shadowTable.triangleDataValidation`, `tracing.shadowTriangleBufferUpload` regions
-and triangle packing/byte counters. Their absence is intentional: both Vulkan and
-Metal interpolate UV0/UV1 from shared GPU vertices/indices at each candidate hit.
-`tracing.geometryPacking` still describes the existing immutable geometry cache
-creation when mesh identities change, not a per-frame shadow triangle table.
+Optional GPU submission timings now use Vulkan timestamp queries and Metal
+completed command-buffer times. They are per-submission execution envelopes, not
+frame totals or presentation/queue latency. GPU submission timing can be disabled
+independently while CPU collection/recording continue. Results retain original
+frame/session identities when arriving late; unsupported/missing timings are gaps
+and explicit statuses. Fine-grained pass timing remains a later phase.
 
-Set the effect variant before enabling profiling, then avoid edits while collecting
-reports. The checkbox may be enabled from Graphics settings and that window closed
-immediately; closing it does not invalidate the capture. Only capture with the
-window open but untouched if specifically investigating whether the UI contributes
-to a suspected stall. Keep scene/build/backend fixed. Wait for queued settings
-updates to settle before enabling profiling; intervals with nonzero
-`delegate.pendingRendererUpdates` describe configuration transitions, not steady
-state. Ignore initial loading/resize intervals when comparing performance.
+Native compilation, UI/hardware acceptance and
+measured overhead remain pending.
 
-Reports are flushed to disk after each reporting interval. Stop after at least
-one complete interval; an incomplete interval at deactivation is discarded. Aggregate
-counts are emitted with each interval on the render thread, so deactivation from
-the UI thread cannot lose them. The
-stop marker also writes bounded aggregate counters (`count <name> | total=... |
-max/call=...`) for the session; these counters are not normalized per frame and
-are independent of timing totals.
-checkbox label is the session boundary: turn profiling off after each requested
-configuration, then on again for the next one. Starting a new session never
-truncates the log. Changing sessions resets thread-local aggregates and rejects
-old in-flight samples. The session ID advances even if the application log is not
-deleted, so independent captures remain distinguishable.
-Opening/writing failures disable recording and are shown in the settings window.
+See the [phase 01 record](../../docs/profiling_and_stats/phase_01_implementation.md)
+for the baseline audit and collection/recording contract, and the
+[phase 02 record](../../docs/profiling_and_stats/phase_02_implementation.md) for
+CPU chart semantics and lifecycle details. The
+[phase 03 record](../../docs/profiling_and_stats/phase_03_implementation.md) describes
+GPU measurement domains, resource limits, late-session boundaries, schema v2, probes
+and pending hardware acceptance checks.
 
-All aggregation is thread-local. Reports describe the render thread; unrelated
-background threads are not merged into its samples. Diagnostic output is batched,
-not emitted per object/texture/sample, and output time itself is excluded from the
-completed frame sample.
+## GPU pass intervals
+
+Performance offers independent GPU submission, pass and detailed transparent
+sampling switches. Pass timing uses bounded whole-pass intervals with invocation
+IDs, parent IDs and object/submesh contexts. Select a GPU stage to chart its mean
+per time bin; inspect individual statuses and granularity in the pass table.
+Nested/overlapping intervals are never added. Missing/unsupported intervals leave
+gaps, and total command timing remains available when pass sampling is unsupported.
+
+Vulkan uses pipeline-boundary timestamp envelopes outside active rendering/compute
+scopes. Metal uses runtime-supported timestamp counter sets at natural encoder
+boundaries. Its encoder envelopes include intervening gaps and cannot attribute
+individual dispatches; intervals containing unmeasured transfers are unsupported.
+The chart uses the original CPU request time, not a calibrated GPU timeline.
+
+New captures use JSONL version 3 with bounded `intervals` arrays inside
+`gpu_submission` records. The validator retains version 1/2 support. Stop never
+waits for unresolved intervals: they share their submission's session boundary.
+See [phase 04 implementation and acceptance gaps](../../docs/profiling_and_stats/phase_04_implementation.md).

@@ -95,8 +95,8 @@ The project lead reports correct rendering with zero lights. Other scenario and
 backend/package coverage remains unspecified. No probe was executed by the agent.
 
 - Graphics Settings excludes scene/debug controls and retains Show unavailable
-  settings. Renderer Diagnostics exposes layer views. Export/restore must not
-  persist diagnostic selections or environment/light values.
+  settings. No Renderer Diagnostics menu or profiling controls appear in Graphics
+  Settings. Export/restore must not persist diagnostic selections or environment/light values.
 - Change a custom environment image back to Procedural sky. Edit stage/document
   lights through reflected translation/rotation/scale and light properties.
   Unbounded numeric fields support drag and Ctrl+click/double-click text entry;

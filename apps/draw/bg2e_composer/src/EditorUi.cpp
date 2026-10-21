@@ -36,8 +36,6 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
     _preferences->setExcludeSceneSettingsFromAutomaticPersistence(true);
     _preferences->connect(delegate); // Before the renderer's first attachment.
     _graphics.bind(_preferences);
-    _diagnostics.bind(_preferences);
-    _diagnostics.close();
     _graphics.setPosition(320, 80);
     _graphics.setSize(620, 740);
     _graphics.close();
@@ -214,13 +212,17 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             owner->_graphics.open();
         }
     }}});
-    window.addMenuItem({"Renderer Diagnostics", {.handler = [weakUi]
+    window.addMenuItem({"Performance", {.handler = [weakUi]
     {
         if (auto owner = weakUi.lock())
         {
-            owner->_diagnostics.open();
+            owner->_performance.open();
         }
-    }}});
+    }}, [weakUi]
+    {
+        const auto owner = weakUi.lock();
+        return owner && owner->_performance.isOpen();
+    }});
     window.addMenuItem({"Import Settings", {.handler = [weakUi]
     {
         if (auto owner = weakUi.lock())
@@ -315,7 +317,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                 ui->_lightmap.cleanup();
                 ui->_material.cleanup();
                 ui->_graphics.clear();
-                ui->_diagnostics.clear();
+                ui->_performance.close();
                 ui->_sceneTree.setRootNode(nullptr);
                 ui->_sceneTree.setSelectionManager(nullptr);
                 ui->_sceneTree.onSelect({});
@@ -466,7 +468,7 @@ void EditorUi::drawUI()
     _importStatusItem->setText(delegate->importStatus());
     _workspace.draw();
     _graphics.draw();
-    _diagnostics.draw();
+    _performance.draw();
     if (_uiSettings.isOpen())
     {
         _uiSettings.draw();

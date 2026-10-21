@@ -38,6 +38,10 @@ Queue::Queue(CommandQueueHandle commandQueue)
 
 Queue::~Queue()
 {
+    if (_timings)
+    {
+        _timings->close();
+    }
     if (_commandQueue)
     {
         _commandQueue->release();
@@ -46,7 +50,7 @@ Queue::~Queue()
 }
 
 Queue::Queue(Queue&& other) noexcept
-    : _commandQueue(other._commandQueue), _submissions(std::move(other._submissions)), _device(other._device)
+    : _timings(std::move(other._timings)), _commandQueue(other._commandQueue), _submissions(std::move(other._submissions)), _device(other._device)
 {
     other._commandQueue = nullptr;
     other._device = nullptr;
@@ -60,6 +64,11 @@ Queue& Queue::operator=(Queue&& other) noexcept
         {
             _commandQueue->release();
         }
+        if (_timings)
+        {
+            _timings->close();
+        }
+        _timings = std::move(other._timings);
         _commandQueue = other._commandQueue;
         _device = other._device;
         _submissions = std::move(other._submissions);
@@ -83,6 +92,20 @@ void Queue::setDevice(metal::Device* device)
 {
     _device = device;
     _submissions = device->submissionState();
+    try
+    {
+        _timings = std::make_shared<detail::SubmissionTimingState>();
+        auto& capabilities = _timings->capabilities;
+        capabilities.supported = _commandQueue != nullptr;
+        capabilities.device = device->timingIdentity();
+        capabilities.queue = detail::nextTimingIdentity();
+        capabilities.backend = SubmissionTimingBackend::Metal;
+        capabilities.description = "Metal completed command-buffer GPUStartTime/GPUEndTime (runtime checked per request)";
+    }
+    catch (...)
+    {
+        _timings.reset();
+    }
 }
 
 std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& debugName) const
@@ -108,7 +131,9 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
         mtlCmd->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
     }
 
-    return std::make_shared<metal::CommandBuffer>(_device, mtlCmd);
+    auto command = std::make_shared<metal::CommandBuffer>(_device, mtlCmd);
+    command->_timingState = _timings;
+    return command;
 }
 
 void Queue::submit(gpu::CommandBuffer* cmd) const
@@ -129,6 +154,18 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
     {
         throw std::logic_error("Metal command buffer is already submitted or not executable");
     }
+    struct TimingFailure {
+        std::shared_ptr<detail::SubmissionTimingTicket> ticket;
+        bool accepted = false;
+
+        ~TimingFailure()
+        {
+            if (ticket && !accepted)
+            {
+                ticket->complete(false);
+            }
+        }
+    } timingFailure{command->_submissionTiming};
     auto* handle = command->handle();
     handle->retain();
     auto native = std::shared_ptr<MTL::CommandBuffer>(handle, [](MTL::CommandBuffer* value)
@@ -154,10 +191,23 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
             {
                 throw std::runtime_error("Metal command buffer execution failed");
             }
+        },
+        [ticket = command->_submissionTiming](bool success)
+        {
+            // Success is resolved by the native completed handler. A failed
+            // admission/execution may never deliver valid native timestamps.
+            if (ticket && !success)
+            {
+                ticket->complete(false);
+            }
         });
     try
     {
         _submissions->track(record);
+        if (command->_submissionTiming)
+        {
+            command->_submissionTiming->markSubmitted(record->id);
+        }
         command->_completion = record;
         if (command->_submissionFrame)
         {
@@ -170,6 +220,7 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
         _submissions->cancel(record, std::current_exception());
         throw;
     }
+    timingFailure.accepted = true;
     command->publishRecordingSubmission(record);
     command->_submitted = true;
     command->_executable = false;
@@ -180,14 +231,17 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
 Queue::Queue(CommandQueueHandle)
 {
 }
+
 void Queue::setDevice(metal::Device* device)
 {
     _device = device;
     _submissions = device->submissionState();
 }
+
 Queue::~Queue()
 {
 }
+
 Queue::Queue(Queue&&) noexcept
 {
 }
@@ -195,10 +249,12 @@ Queue& Queue::operator=(Queue&&) noexcept
 {
     return *this;
 }
+
 uint32_t Queue::familyIndex() const
 {
     return 0;
 }
+
 bool Queue::isValid() const
 {
     return false;
@@ -215,6 +271,21 @@ void Queue::submit(gpu::CommandBuffer*) const
 }
 
 #endif
+
+SubmissionTimingCapabilities Queue::submissionTimingCapabilities() const noexcept
+{
+    return _timings ? _timings->capabilities : SubmissionTimingCapabilities{};
+}
+
+SubmissionTimingBatch Queue::pollSubmissionTimings() const noexcept
+{
+    if (_submissions)
+    {
+        _submissions->pollNonblocking();
+    }
+    return _timings ? _timings->take() : SubmissionTimingBatch{};
+}
+
 
 }
 }

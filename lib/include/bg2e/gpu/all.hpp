@@ -34,6 +34,7 @@
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Queue.hpp>
+#include <bg2e/gpu/SubmissionTiming.hpp>
 #include <bg2e/gpu/Buffer.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/Device.hpp>

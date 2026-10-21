@@ -45,6 +45,19 @@ namespace vk {
 
 namespace {
 
+struct TimingQueries {
+    VkDevice device = VK_NULL_HANDLE;
+    VkQueryPool pool = VK_NULL_HANDLE;
+
+    ~TimingQueries()
+    {
+        if (pool)
+        {
+            vkDestroyQueryPool(device, pool, nullptr);
+        }
+    }
+};
+
 VkImageLayout toVkLayout(ImageLayout layout)
 {
     switch (layout)
@@ -115,9 +128,111 @@ void CommandBuffer::end()
     std::lock_guard poolLock(_allocation->pool->mutex);
     flushPendingRendering();
     _boundRTPipeline = nullptr;
+    if (_submissionTiming && _submissionTiming->resource)
+    {
+        const auto queries = std::static_pointer_cast<TimingQueries>(_submissionTiming->resource);
+        vkCmdWriteTimestamp(_cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queries->pool, 1);
+    }
     VK_ASSERT(vkEndCommandBuffer(_cmd));
     _recording = false;
     _executable = true;
+}
+
+SubmissionTimingStatus CommandBuffer::requestSubmissionTiming(const SubmissionTimingRequest& request) noexcept
+{
+    if (!_recording || hasActiveScope() || _submissionTiming || !_timingState)
+    {
+        return SubmissionTimingStatus::Unsupported;
+    }
+    const auto capabilities = _timingState->capabilities;
+    if (!capabilities.supported)
+    {
+        return SubmissionTimingStatus::Unsupported;
+    }
+    auto ticket = _timingState->reserve(request);
+    if (!ticket)
+    {
+        return SubmissionTimingStatus::Dropped;
+    }
+    _submissionTiming = ticket;
+    try
+    {
+        auto queries = std::make_shared<TimingQueries>();
+        queries->device = _device->handle();
+        VkQueryPoolCreateInfo info{};
+        info.sType = VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO;
+        info.queryType = VK_QUERY_TYPE_TIMESTAMP;
+        info.queryCount = request.passTiming ? 2 + 2 * SubmissionTimingResult::maximumIntervals : 2;
+        if (vkCreateQueryPool(queries->device, &info, nullptr, &queries->pool) != VK_SUCCESS)
+        {
+            ticket->complete(false);
+            return SubmissionTimingStatus::Pending;
+        }
+        ticket->resource = queries;
+        ticket->sample.intervalCapability = request.passTiming ? base::GpuProfileGranularity::PipelineBoundary : base::GpuProfileGranularity::None;
+        ticket->resolve = [queries, capabilities](SubmissionTimingResult& result)
+        {
+            struct Value { uint64_t ticks = 0, available = 0; } values[2];
+            const auto status = vkGetQueryPoolResults(queries->device, queries->pool, 0, 2,
+                sizeof(values), values, sizeof(Value), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+            if (status != VK_SUCCESS || !values[0].available || !values[1].available)
+            {
+                return SubmissionTimingStatus::Unavailable;
+            }
+            for (uint32_t i = 0; i < result.intervalCount; ++i)
+            {
+                auto& interval = result.intervals[i];
+                if (!interval.ended || interval.status != SubmissionTimingStatus::Pending)
+                {
+                    continue;
+                }
+                Value endpoints[2];
+                const auto read = vkGetQueryPoolResults(queries->device, queries->pool, 2 + i * 2, 2,
+                    sizeof(endpoints), endpoints, sizeof(Value), VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WITH_AVAILABILITY_BIT);
+                const bool available = read == VK_SUCCESS && endpoints[0].available && endpoints[1].available &&
+                    detail::timestampDuration(endpoints[0].ticks, endpoints[1].ticks,
+                        capabilities.timestampValidBits, capabilities.timestampPeriodNs,
+                        detail::timingCpuNow() - result.requested, interval.durationMs);
+                interval.status = available ? SubmissionTimingStatus::Available : SubmissionTimingStatus::Unavailable;
+            }
+            const bool valid = detail::timestampDuration(values[0].ticks, values[1].ticks,
+                capabilities.timestampValidBits, capabilities.timestampPeriodNs,
+                detail::timingCpuNow() - result.requested, result.durationMs);
+            return valid ? SubmissionTimingStatus::Available : SubmissionTimingStatus::Unavailable;
+        };
+        // Fresh, exclusive query storage; reset is part of this same recording.
+        vkCmdResetQueryPool(_cmd, queries->pool, 0, info.queryCount);
+        vkCmdWriteTimestamp(_cmd, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, queries->pool, 0);
+    }
+    catch (...)
+    {
+        ticket->complete(false);
+    }
+    return SubmissionTimingStatus::Pending;
+}
+
+void CommandBuffer::timingIntervalMarker(uint32_t index, bool end) noexcept
+{
+    auto& interval = _submissionTiming->sample.intervals[index];
+    // Restrict public markers to whole scopes: no multiview query expansion,
+    // lazy render-pass materialization, barriers or encoder splits.
+    if (!_recording || hasActiveScope() || !_submissionTiming->resource)
+    {
+        interval.status = SubmissionTimingStatus::Unsupported;
+        return;
+    }
+    try
+    {
+        std::lock_guard poolLock(_allocation->pool->mutex);
+        const auto queries = std::static_pointer_cast<TimingQueries>(_submissionTiming->resource);
+        interval.granularity = base::GpuProfileGranularity::PipelineBoundary;
+        vkCmdWriteTimestamp(_cmd, end ? VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT : VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+            queries->pool, 2 + index * 2 + (end ? 1 : 0));
+    }
+    catch (...)
+    {
+        interval.status = SubmissionTimingStatus::Failed;
+    }
 }
 
 void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout)

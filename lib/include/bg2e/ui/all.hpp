@@ -37,6 +37,7 @@
 #include <bg2e/ui/PolarTransformControllerEditor.hpp>
 #include <bg2e/ui/Menu.hpp>
 #include <bg2e/ui/Window.hpp>
+#include <bg2e/ui/Performance.hpp>
 #include <bg2e/ui/SelectableList.hpp>
 #include <bg2e/ui/StatusBar.hpp>
 #include <bg2e/ui/SubmeshSelector.hpp>

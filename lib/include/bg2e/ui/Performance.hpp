@@ -1,5 +1,5 @@
 /*
- *    business grade graphic engine (bg2 engine)
+ *    business grade graphic engine (bg2e engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
@@ -16,7 +16,27 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-
 #pragma once
 
-#include <bg2e/ui/GraphicsSettingsWindow.hpp>
+#include <bg2e/ui/Window.hpp>
+#include <memory>
+
+namespace bg2e::ui {
+// Reusable CPU diagnostics. Call draw() from the application's normal UI path.
+// Closing releases only this live consumer; process-wide recording continues.
+class BG2E_API Performance : public Window {
+  public:
+    Performance();
+    ~Performance() override;
+    Performance(const Performance&) = delete;
+    Performance& operator=(const Performance&) = delete;
+
+    void open() override;
+    void close() override;
+    void draw() override;
+
+  private:
+    struct Impl;
+    std::unique_ptr<Impl> _impl;
+};
+}

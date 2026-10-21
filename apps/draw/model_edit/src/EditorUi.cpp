@@ -33,8 +33,6 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
     _preferences = std::make_shared<bg2e::draw::RenderSettingsPreferences>(&store);
     _preferences->connect(delegate); // Before the renderer's first attachment.
     _graphics.bind(_preferences);
-    _diagnostics.bind(_preferences);
-    _diagnostics.close();
     _graphics.setPosition(320, 80);
     _graphics.setSize(620, 740);
     _graphics.close();
@@ -171,13 +169,6 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             owner->_graphics.open();
         }
     }}});
-    window.addMenuItem({"Renderer Diagnostics", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_diagnostics.open();
-        }
-    }}});
     window.addMenuItem({"UV and Lightmap Baker...", {.handler = [weakUi]
     {
         if (auto owner = weakUi.lock())
@@ -258,7 +249,6 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                 ui->_lightmap.cleanup();
                 ui->_material.cleanup();
                 ui->_graphics.clear();
-                ui->_diagnostics.clear();
                 ui->_ui = nullptr;
             }
         });
@@ -350,7 +340,6 @@ void EditorUi::drawUI()
     }
     _workspace.draw();
     _graphics.draw();
-    _diagnostics.draw();
     if (_uiSettings.isOpen())
     {
         _uiSettings.draw();

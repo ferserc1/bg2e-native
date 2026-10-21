@@ -49,16 +49,5 @@ See [live settings and target IDs](../draw/Settings.md),
 [deferred tutorial](../../tutorials/draw/10_deferred_renderer.md) and
 [light/transform editing](../../apps/draw_manipulation.md).
 
-## RendererDebugWidget
-
-Header: `<bg2e/ui/RendererDebugWidget.hpp>`. Bind a `RendererDebugWidget` to the
-same facade, call `draw()` during the UI frame, and provide an `open()` menu action.
-The widget uses the same queued generation-checked edits but shows diagnostic and
-capability descriptors only: opaque layer inspection, deferred lighting/final
-views and effect statuses. It exposes no preference import/export controls.
-
-The codec excludes diagnostic and scene values from graphics documents and skips
-legacy diagnostic entries during restore. Debug selections last for the live
-session and are never restored as preferences. `draw_model_edit` opens the widget
-through Window → Renderer Diagnostics; its Environment Options panel owns scene
-editing. See the [model editor guide](../../apps/draw_model_edit.md).
+Graphics Settings contains no profiling controls. The draw composer exposes
+profiling separately through Window → Performance.

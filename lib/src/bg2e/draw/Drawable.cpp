@@ -67,7 +67,7 @@ void Drawable::setMesh(std::shared_ptr<Mesh> mesh)
     {
         {
             base::CpuProfileScope profile("drawable.waitIdle.setMesh");
-            base::CpuProfileScope::count("drawable.drains.setMesh", 1);
+            base::CpuProfileScope::count("drawable.drains.setMesh", 1, "drains");
             _engine->device()->waitIdle();
         }
     }
@@ -137,7 +137,7 @@ void Drawable::load(Engine* engine, std::function<void()> onTextureLoaded)
     }
     {
         base::CpuProfileScope profile("drawable.waitIdle.load");
-        base::CpuProfileScope::count("drawable.drains.load", 1);
+        base::CpuProfileScope::count("drawable.drains.load", 1, "drains");
         engine->device()->waitIdle();
     }
     _engine = engine;
@@ -165,7 +165,7 @@ void Drawable::updateMaterials(std::function<void()> onTextureLoaded)
     }
     {
         base::CpuProfileScope profile("drawable.waitIdle.updateMaterials");
-        base::CpuProfileScope::count("drawable.drains.updateMaterials", 1);
+        base::CpuProfileScope::count("drawable.drains.updateMaterials", 1, "drains");
         _engine->device()->waitIdle();
     }
     _loaded = false;
@@ -221,7 +221,7 @@ void Drawable::reload()
     }
     {
         base::CpuProfileScope profile("drawable.waitIdle.reload");
-        base::CpuProfileScope::count("drawable.drains.reload", 1);
+        base::CpuProfileScope::count("drawable.drains.reload", 1, "drains");
         _engine->device()->waitIdle();
     }
     buildDrawMesh();
@@ -239,7 +239,7 @@ void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
     {
         {
             base::CpuProfileScope profile("drawable.waitIdle.applyModifier");
-            base::CpuProfileScope::count("drawable.drains.applyModifier", 1);
+            base::CpuProfileScope::count("drawable.drains.applyModifier", 1, "drains");
             _engine->device()->waitIdle();
         }
     }
@@ -274,7 +274,7 @@ std::shared_ptr<Drawable> Drawable::clone() const
     {
         {
             base::CpuProfileScope profile("drawable.waitIdle.clone");
-            base::CpuProfileScope::count("drawable.drains.clone", 1);
+            base::CpuProfileScope::count("drawable.drains.clone", 1, "drains");
             _engine->device()->waitIdle();
         }
         result->_engine = _engine;
@@ -303,7 +303,7 @@ void Drawable::cleanup()
     {
         {
             base::CpuProfileScope profile("drawable.waitIdle.cleanup");
-            base::CpuProfileScope::count("drawable.drains.cleanup", 1);
+            base::CpuProfileScope::count("drawable.drains.cleanup", 1, "drains");
             _engine->device()->waitIdle();
         }
     }

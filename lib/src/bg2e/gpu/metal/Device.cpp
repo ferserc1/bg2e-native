@@ -58,6 +58,7 @@ FormatCapabilities Device::formatCapabilities(PixelFormat format) const
 void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
     _submissions = std::make_shared<detail::SubmissionState>();
+    _timingIdentity = detail::nextTimingIdentity();
     auto* metalPhysDevice = dynamic_cast<metal::PhysicalDevice*>(physicalDevice);
     if (!metalPhysDevice || !metalPhysDevice->isValid())
     {
