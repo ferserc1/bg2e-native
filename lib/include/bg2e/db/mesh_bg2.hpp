@@ -84,8 +84,9 @@ extern BG2E_API std::shared_ptr<bg2e::scene::Drawable> loadDrawableBg2(
     bg2e::render::Engine* engine);
 
 // Complete native-resource snapshot for one realized draw model node.
-extern BG2E_API void storeDrawableBg2(const std::filesystem::path& path,
-    draw::Engine& engine, scene::Node* node);
+// Returns false and logs the error on failure; never propagates exceptions.
+extern BG2E_API bool storeDrawableBg2(const std::filesystem::path& path,
+    draw::Engine& engine, scene::Node* node) noexcept;
 
 extern BG2E_API uint32_t countMeshTextures(const std::filesystem::path& filePath);
 

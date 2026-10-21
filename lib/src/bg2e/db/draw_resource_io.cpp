@@ -26,6 +26,7 @@
 #include <bg2e/utils/utils.hpp>
 
 #include <cmath>
+#include <cstdio>
 #include <map>
 #include <stdexcept>
 #include <system_error>
@@ -45,11 +46,28 @@ class Publication {
     explicit Publication(const std::filesystem::path& target)
         : destination(std::filesystem::absolute(target)), prefix(utils::uniqueId())
     {
-        directory = destination.parent_path() / (".bg2e-save-" + prefix);
-        if (!std::filesystem::create_directory(directory))
+        if (target.empty() || destination.filename().empty() ||
+            destination.filename() == "." || destination.filename() == "..")
         {
-            throw std::runtime_error("Could not create export staging directory");
+            throw std::invalid_argument("Export requires an output filename");
         }
+        // Save dialogs may introduce a scene folder that does not exist yet.
+        std::filesystem::create_directories(destination.parent_path());
+        for (unsigned attempt = 0; attempt < 32; ++attempt)
+        {
+            directory = destination.parent_path() / (".bg2e-save-" + prefix);
+            std::error_code error;
+            if (std::filesystem::create_directory(directory, error))
+            {
+                return;
+            }
+            if (error && error != std::errc::file_exists)
+            {
+                throw std::filesystem::filesystem_error("Could not create export staging directory", directory, error);
+            }
+            prefix = utils::uniqueId();
+        }
+        throw std::runtime_error("Could not allocate a unique export staging directory");
     }
 
     ~Publication()
@@ -86,15 +104,35 @@ class Publication {
         {
             auto target = destination.parent_path() / source.filename();
             published.push_back(target); // Reserve rollback bookkeeping first.
-            try
+            std::error_code error;
+            std::filesystem::create_hard_link(source, target, error);
+            if (error)
             {
-                // Fails rather than replacing a colliding existing resource.
-                std::filesystem::create_hard_link(source, target);
-            }
-            catch (...)
-            {
+                // External/removable filesystems may not support hard links.
+                // Never replace a resource owned by another saved document.
                 published.pop_back();
-                throw;
+                if (error == std::errc::file_exists)
+                {
+                    throw std::filesystem::filesystem_error("Export resource already exists", source, target, error);
+                }
+                // Reserve exclusive ownership so rollback also removes a
+                // partial output if copying fails.
+                published.push_back(target);
+#ifdef _WIN32
+                auto* output = _wfopen(target.c_str(), L"wbx");
+#else
+                auto* output = std::fopen(target.c_str(), "wbx");
+#endif
+                if (!output)
+                {
+                    published.pop_back();
+                    throw std::runtime_error("Could not reserve export resource: " + target.string());
+                }
+                if (std::fclose(output) != 0)
+                {
+                    throw std::runtime_error("Could not close export resource: " + target.string());
+                }
+                std::filesystem::copy_file(source, target, std::filesystem::copy_options::overwrite_existing);
             }
         }
 #ifdef _WIN32
@@ -268,12 +306,17 @@ void stageEnvironments(const std::shared_ptr<json::JsonNode>& value, Publication
 }
 }
 
-void saveScene(scene::Node* root, draw::Engine& engine, const std::filesystem::path& path,
-    scene::SceneProgressCallback progress)
+bool saveScene(scene::Node* root, draw::Engine& engine, const std::filesystem::path& path,
+    scene::SceneProgressCallback progress) noexcept
+try
 {
     if (!root || path.empty())
     {
         throw std::invalid_argument("Complete scene export requires a root and output path");
+    }
+    if (!engine.device())
+    {
+        throw std::invalid_argument("Resource export requires an initialized draw Engine");
     }
     engine.device()->waitIdle();
     Publication publication(path);
@@ -285,9 +328,21 @@ void saveScene(scene::Node* root, draw::Engine& engine, const std::filesystem::p
     stageEnvironments(document, publication);
     writeSceneDocument(document, main);
     publication.commit(main);
+    return true;
+}
+catch (const std::exception& error)
+{
+    std::fprintf(stderr, "Resource export failed: %s\n", error.what());
+    return false;
+}
+catch (...)
+{
+    std::fprintf(stderr, "Resource export failed: unknown error\n");
+    return false;
 }
 
-void storeDrawableBg2(const std::filesystem::path& path, draw::Engine& engine, scene::Node* node)
+bool storeDrawableBg2(const std::filesystem::path& path, draw::Engine& engine, scene::Node* node) noexcept
+try
 {
     if (!node || !node->children().empty() || !node->enabled() || node->steady())
     {
@@ -311,12 +366,27 @@ void storeDrawableBg2(const std::filesystem::path& path, draw::Engine& engine, s
     {
         throw std::invalid_argument("BG2 cannot preserve a node transform; save a scene document");
     }
+    if (!engine.device())
+    {
+        throw std::invalid_argument("Resource export requires an initialized draw Engine");
+    }
     engine.device()->waitIdle();
     Publication publication(path);
     auto model = snapshot(*node, engine, publication);
     const auto main = publication.directory / publication.destination.filename();
     storeMeshBg2(main, &model);
     publication.commit(main);
+    return true;
+}
+catch (const std::exception& error)
+{
+    std::fprintf(stderr, "Resource export failed: %s\n", error.what());
+    return false;
+}
+catch (...)
+{
+    std::fprintf(stderr, "Resource export failed: unknown error\n");
+    return false;
 }
 
 }

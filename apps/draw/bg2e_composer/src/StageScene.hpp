@@ -71,7 +71,7 @@ class StageScene {
         std::function<void(bool restoring)> rebind = {});
     void insert(std::shared_ptr<bg2e::scene::Node> candidate,
         const std::shared_ptr<bg2e::scene::Node>& parent);
-    void exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
+    bool exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
         const std::filesystem::path& destination, bool batch);
     void refreshCamera();
     void validateEditingGraph();

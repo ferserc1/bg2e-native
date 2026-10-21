@@ -925,14 +925,17 @@ bool StageScene::save(const std::filesystem::path& path, bool destinationConfirm
     refreshCamera();
     bg2e::scene::UpdateVisitor update;
     update.update(_document.root.get(), 0);
-    bg2e::db::saveScene(_document.root.get(), *_engine, committedPath);
+    if (!bg2e::db::saveScene(_document.root.get(), *_engine, committedPath))
+    {
+        return false;
+    }
     // Commit metadata only after complete resource/main publication succeeds.
     _document.savePath = std::move(committedPath);
     _document.dirty = false;
     return true;
 }
 
-void StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
+bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
     const std::filesystem::path& destination, bool batch)
 {
     using namespace bg2e;
@@ -1017,15 +1020,12 @@ void StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Nod
     {
         // Each complete writer is transactional. A later batch failure leaves
         // earlier exported models intact and reports the failed destination.
-        try
+        if (!db::storeDrawableBg2(output, *_engine, model.get()))
         {
-            db::storeDrawableBg2(output, *_engine, model.get());
-        }
-        catch (const std::exception& error)
-        {
-            throw std::runtime_error("Model export failed at " + output.string() + ": " + error.what());
+            return false;
         }
     }
+    return true;
 }
 
 void StageScene::releaseRetired()

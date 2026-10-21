@@ -352,7 +352,7 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
     _scene->updateAll();
 }
 
-void StageScene::save(const std::filesystem::path& path)
+bool StageScene::save(const std::filesystem::path& path)
 {
     if (!_document.root)
     {
@@ -362,11 +362,17 @@ void StageScene::save(const std::filesystem::path& path)
     const auto extension = path.extension().string();
     if (extension == ".bg2" || extension == ".vwglb")
     {
-        bg2e::db::storeDrawableBg2(path, *_engine, _document.root.get());
+        if (!bg2e::db::storeDrawableBg2(path, *_engine, _document.root.get()))
+        {
+            return false;
+        }
     }
     else if (extension == ".json" || (extension == ".bg2scene" || extension == ".bg2e"))
     {
-        bg2e::db::saveScene(_document.root.get(), *_engine, path);
+        if (!bg2e::db::saveScene(_document.root.get(), *_engine, path))
+        {
+            return false;
+        }
     }
     else
     {
@@ -375,6 +381,7 @@ void StageScene::save(const std::filesystem::path& path)
     // Commit metadata after the resource transaction, including filesystem path allocation.
     _document.savePath = std::move(committedPath);
     _document.dirty = false;
+    return true;
 }
 
 void StageScene::releaseRetired()

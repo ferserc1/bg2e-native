@@ -171,7 +171,7 @@ void AppDelegate::processDocumentIo()
         if (operation.kind == Kind::Save)
         {
             const bool saved = _stage->save(operation.path, operation.destinationConfirmed);
-            _status = saved ? "Saved " + document()->savePath.filename().string() : "Scene save cancelled";
+            _status = saved ? "Saved " + document()->savePath.filename().string() : "Scene save cancelled or failed (see log)";
             return;
         }
         if (operation.kind == Kind::Export)
@@ -190,8 +190,8 @@ void AppDelegate::processDocumentIo()
                 }
                 targets.push_back(std::move(node));
             }
-            _stage->exportModels(targets, operation.path, operation.batch);
-            _status = "Exported selected models";
+            _status = _stage->exportModels(targets, operation.path, operation.batch) ?
+                "Exported selected models" : "Model export failed (see log)";
             return;
         }
         // Do not allocate GPU resources for a replacement before the dirty prompt.

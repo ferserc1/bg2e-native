@@ -425,7 +425,11 @@ bool AppDelegate::confirmClose()
     {
         // MainLoop invokes this callback between frames, before command acquisition.
         _engine->device()->waitIdle();
-        _stage->save(path);
+        if (!_stage->save(path))
+        {
+            _status = "Save failed (see log)";
+            return false;
+        }
         return true;
     }
     catch (const std::exception& error)
@@ -483,8 +487,15 @@ void AppDelegate::prepareFrame()
             }
             if (!operation.save.empty())
             {
-                _stage->save(operation.save);
-                _status = "Saved " + operation.save.filename().string();
+                if (!_stage->save(operation.save))
+                {
+                    _status = "Save failed (see log)";
+                    operation.open.clear();
+                }
+                else
+                {
+                    _status = "Saved " + operation.save.filename().string();
+                }
             }
             if (!operation.open.empty())
             {

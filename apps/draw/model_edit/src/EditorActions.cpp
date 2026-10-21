@@ -384,9 +384,8 @@ void AppDelegate::environmentPreset(const std::filesystem::path& path, bool save
             if (save)
             {
                 auto preset = _stage->environmentPreset();
-                std::filesystem::create_directories(std::filesystem::absolute(path).parent_path());
-                bg2e::db::saveScene(preset.get(), *_engine, path);
-                _status = "Environment preset saved";
+                _status = bg2e::db::saveScene(preset.get(), *_engine, path) ?
+                    "Environment preset saved" : "Environment preset save failed (see log)";
             }
             else
             {

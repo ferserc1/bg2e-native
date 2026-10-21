@@ -48,7 +48,7 @@ class StageScene {
     const std::vector<bg2e::utils::AnalyzedSubmesh>& analyzedSubmeshes() const;
     std::shared_ptr<bg2e::scene::Node> load(const std::filesystem::path& path);
     void adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source);
-    void save(const std::filesystem::path& path);
+    bool save(const std::filesystem::path& path);
     void releaseRetired();
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
     bool contains(bg2e::scene::Node* node) const;
