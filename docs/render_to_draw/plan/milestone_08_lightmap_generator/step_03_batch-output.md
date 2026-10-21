@@ -19,6 +19,10 @@ See [M02 review](../milestone_02_manipulation/review.md).
 - `lib/src/bg2e/db/LightmapOutputWriter.cpp`
 - `lib/include/bg2e/bake/StandaloneBakeBatch.hpp`
 - `lib/include/bg2e/bake/LightmapOutputWriter.hpp`
+- `lib/src/bg2e/bake/StandaloneBakeBatch.cpp`
+- `lib/src/bg2e/bake/LightmapOutputWriter.cpp`
+- `lib/include/bg2e/db/file.hpp` and `lib/src/bg2e/db/file.cpp`
+- CPU `db::writeTextureArchive` overload and `db::ObjMesh::sourcePaths`
 
 Paths above include current references and proposed outputs. New paths are targets, not files claimed to exist. Public names follow the architecture contract and may be refined with the remaining plan updated.
 
@@ -75,14 +79,14 @@ Source and validation boundaries: [M03 technical review](../milestone_03_ray_tra
 
 ## M04-04 actual output handoff
 
-Reuse public UvTemporalAccumulator/LightmapCompositionPass with completed history and fresh per-record outputs. Standalone scheduling must commit only completed current jobs, validate all requested covered counts/numerics, and compose/dilate before exporting LightmapPixels. Keep exact integer counts/raw float sums separate from denoise, preserve source/target/geometry identity and reject current half-float GI saturation at 65504. GPU/CPU output shares nearest-chart padding and linear top-row-v=0 semantics; float HDR has no exposure/clamp, byte GI alone applies exposure. Final validation/readback is synchronous, not a new async staging interface.
+Reuse public UvTemporalAccumulator/LightmapCompositionPass with completed history and independently retained per-record logical outputs (completion-safe native allocation reuse is valid). Standalone scheduling must commit only completed current jobs, validate all requested covered counts/numerics, and compose/dilate before exporting LightmapPixels. Keep exact integer counts/raw float sums separate from denoise, preserve source/target/geometry identity and reject current half-float GI saturation at 65504. GPU/CPU output shares nearest-chart padding and linear top-row-v=0 semantics; float HDR has no exposure/clamp, byte GI alone applies exposure. Final validation/readback is synchronous, not a new async staging interface.
 
 See [output implementation](../milestone_04_lightmaps/accumulation-output.md).
 
 
 ## M04-07 reviewed implementation requirement
 
-Export the completed typed RGB pixels and real image files before publishing model/material copies. Preserve indirectTextureMode strings (ao/bakedAO/bakedGI), UV2 and linear color on reload. A retained sampled GPU image and copied sampler settings are not an exported resource. Keep RGB32F HDR output distinct from the interactive RGBA16F range limit; apply exposure/clamp only to the explicit RGB8 GI conversion. Implement actual batch/writer types here: current bake namespace only forward-declares Batch/SceneAssembler and supplies no new writer.
+Export the completed typed RGB pixels and real image files before publishing model/material copies. Preserve indirectTextureMode strings (ao/bakedAO/bakedGI), UV2 and linear color on reload. A retained sampled GPU image and copied sampler settings are not an exported resource. Keep RGB32F HDR output distinct from the interactive RGBA16F range limit; apply exposure/clamp only to the explicit RGB8 GI conversion. Implement actual batch/writer types here: StandaloneBakeSceneAssembler is now implemented; Batch and the new writer remain this step’s work.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
 
@@ -107,3 +111,50 @@ IO, not the M08 output contract: implement typed RGB8/RGB32F map encoding,
 complete-batch collision/preflight, overwrite policy, protected source/sidecar
 semantics and coordinated optional model-copy publication here. Do not treat
 sampler metadata or the model-editor Apply action as an output writer.
+
+## Current engine preservation requirements — 2026-10-21
+
+R03/R08/R13: draw db::saveScene and storeDrawableBg2 return bool noexcept; check
+false explicitly and fail the batch before publishing success or committing output
+metadata. Exceptions alone cannot detect writer failure. Existing resource export
+creates destination parents, retries unique staging and uses exclusive reserve/copy
+when hard links fail; preserve no-clobber resources, rollback and main-file-last
+publication. This does not provide whole-batch atomicity or protected-input policy.
+
+Per-record logical outputs must be independently owned through completion, but
+valid completion-aware pool allocation reuse is permitted. Do not require fresh
+native allocation for each wrapper. Material adoption must propagate current
+revisions and invalidate the actual source generation before further samples.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-02 delivered assembly handoff
+
+[Actual assembly](scene-assembly.md) supplies bake::StandaloneBakeSceneAssembler,
+Assembly.scene/targetRoot, normalized context/input paths, enabled target nodes,
+resolved inputSourcePath, stable sanitized hierarchy/sibling outputIdentity and
+UV2 validation/generated-atlas metadata. Preserve context sources without selecting
+them as targets. Use complete multi-root containers and camera-less prefab inputs.
+No SceneAssembler implementation alias exists; use the actual delivered class.
+
+Optional false target loading returns CPU geometry/materials and defers target
+resource hooks; context sources are already loaded. Realize the target tree and
+perform any required component updates before freezing prepareScene. Retain the
+Assembly Scene alongside its root while using scene caches/selection. Do not apply
+maps to the source scene between targets without source-generation invalidation.
+
+Assembly.sourcePaths contains canonical known standard input dependencies, not a
+whole-batch protection proof. Supplement original OBJ MTL and custom external
+resource discovery/protection, or reject unverifiable output collisions before
+writing. Lexical file paths remain authoritative for relative resource resolution;
+canonical paths are protected-source identities. Complete output preflight and
+publication remain M08-03; assembly writes no product output.
+
+## M08-03 delivered implementation
+
+[Batch/output handoff](batch-output.md) records the implemented bake-owned
+StandaloneBakeBatch and LightmapOutputWriter, generic DB helpers, dependency
+resolver, exact RGB32F archive, complete clone exports and final-manifest atomic
+publication contract. The old production writer is preserved, not moved or used
+as the new transaction. Lead compilation/native validation is pending; probes
+are in tests/bake/batch. M08-04 is the successor after acceptance.

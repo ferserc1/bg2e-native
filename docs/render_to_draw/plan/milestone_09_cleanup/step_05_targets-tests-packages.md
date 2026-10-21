@@ -86,7 +86,50 @@ Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md)
 ## Tracing specialization/template retention
 
 The [M07 capacity correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
-uses deployed `_256` effect files as v2 templates for exact counts up to 16384.
+uses deployed `_256` effect files as current v3 templates for exact counts up to 16384.
 Do not delete them as obsolete small-capacity shaders or require per-capacity
 filenames. Preserve Vulkan specialization ID0, Metal record arrays/residency and
 the separate primitive probe's small templates; validate rebuilt native deployment.
+
+## M07-08 source reconciliation
+
+At HEAD `78943d5820e69363c942d71136f479a0df87128e`, current source supersedes the
+historical v2 table handoff: AO/GI/reflection use native v3 with Vulkan scene set1,
+persistent material arrays set2 (bindings5/6), specialization ID0 and unchanged
+Metal record buffers8/9. Direct query shadows use `draw.query.softShadows.v5`,
+Vulkan invocation set0, scene set1 and persistent alpha set2 (bindings16/24),
+Metal records5/6 and reserves (2,1,10). AO/GI/reflection reserves are respectively
+(4,2,13), (5,3,15), (6,3,16). Exact device-clamped capacity up to 16384, neutral
+pair overflow and object-local ownership remain. Consume current maintained
+[tracing reference](../../../../doc/api/draw/TracingSceneResources.md) and source,
+not historical ABI labels. This is static reconciliation, not a new native test.
+
+## Current engine preservation requirements — 2026-10-21
+
+Keep current tracing v3/query-shadow v5 paired native shader libraries and `_256`
+templates; source constant/layout capacity specializes exact counts. Preserve the
+focused optimization fixture families and docs/profiling_and_stats probes as
+keep/adapt candidates through canonical target changes. Preserve code required by
+Performance, CPU/GPU transport, recording and native optional timing. Do not prune
+private engine optimization sources because they were absent from the initial
+retirement inventory.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 concrete registration/template/probe inventory
+
+Use the accepted per-file manifest to reconcile both app groups, legacy examples
+01..18/debug-app, surviving draw/gpu examples and four currently registered test
+subdirectories. Inspect test_01_key_and_mouse/test_04_uv2_atlas individually;
+CPU/input checks are not obsolete graphics code. Port useful UV/integrated checks
+and remove production-only negative branches in tests/draw/composer_io/schema.cpp
+without losing schema/clone/resource behavior.
+
+Retain tests/bake/{standalone,assembly,batch,cli,product}; update native probe
+accessors and CLI include/target paths to the final API. Preserve the independent
+Python inspector's encoded data semantics and scope limits. Replace the actual
+production default in scripts/templates/main.cpp; check create/update-library
+scripts and copied include/shader trees, not only package executable collection.
+Keep the neutral blue-noise generator while fixing its old output-path example.
+Shared GLSL includes, paired draw/bake refresh, RuntimeShaders, optional SDK assets
+and native loader formats must remain valid after legacy stages are removed.

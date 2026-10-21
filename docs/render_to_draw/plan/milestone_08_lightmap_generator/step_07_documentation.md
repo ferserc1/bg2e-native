@@ -26,3 +26,34 @@ Actual apps/draw/lightmap_generator lifecycle and standalone scene setup; assemb
 - Relevant API reference, tutorials, app/CLI/build guidance and navigation are updated; all applicable former M10 authoring requirements are covered or explicitly assigned to an unimplemented milestone owner.
 - Source/links/snippet checks and actual validation ownership are recorded; no invented compilation/backend coverage.
 - Deliver this documentation step for lead acceptance before entering M09. Follow the normal one-step execution protocol. M10 audits the accumulated result and does not defer missing authoring work to itself.
+
+## Current engine preservation requirements — 2026-10-21
+
+Document delivered headless use of optimized public primitives, completed-scene/job
+identity, immutable sharing versus editable ownership, current shader ABI/capacity,
+required-effect and table-overflow diagnostics, and bool-noexcept writer failure
+handling. Retain existing optimization/profiling references and actual acceptance
+gaps. Do not move substantive standalone documentation to M10.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 actual authoring handoff
+
+Use [the technical review](review.md) and [retirement impact](removal-impact.md),
+not the original absent-standalone anchors. Correct doc/api/bake/index.md's
+"Standalone scheduling is not implemented yet" and add reference for actual
+StandaloneBakerContext/StandaloneLightmapBaker/StandaloneBakeSceneAssembler/
+StandaloneBakeBatch/LightmapOutputWriter; reconcile LightmapOutput.md and the
+production DB writer page without calling either writer a namespace alias.
+
+Add usable standalone model/prefab/context lifecycle and CLI/tutorial guidance
+under maintained doc/, linking the delivered app README. Cover explicit
+bake/all.hpp (root all.hpp does not yet export it), retained Scene/root lifetime,
+one live baker, exact completed UV samples versus camera samples, deferred hooks,
+config identity/CLI-last precedence, custom input declarations, exact native float
+maps, single-model copy limits and final-manifest layout/overwrite/cancel/errors.
+Update bake/draw/app/tutorial/build indexes and resource/package guidance. Keep
+production reference pages explicitly scoped through M08 and distinguish P01–P11
+native coverage from ten synthetic inspector tests and lead continuation.
+Record page/source/snippet/disposition coverage in documentation.md and append its
+handoff to review.md. M10 audits this authored coverage; it does not write it later.

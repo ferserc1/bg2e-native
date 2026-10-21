@@ -87,7 +87,7 @@ mode selects IBL/AO/GI separately from reflections. Existing examples inject
 optional disabled FSR and SMAA. FinalProcessor/SMAAProcessor apply final scene AA
 after color/reconstruction and before overlays/UI, with standalone borrowed/owned
 output and retired-slot contracts. Reuse shared noise and explicit invalidation.
-Direct query shadows now use the M07 device-clamped 16384 policy and v2 kernels;
+Direct query shadows use the device-clamped 16384 policy and current v5 kernels;
 overflow degrades only alpha slots, not whole-scene shadows. Do not preserve the
 removed eight-pair bindings or ShadowTextureCapacityError as current behavior.
 Review no-query/no-array/partial support and the manual matrix; texture-count
@@ -122,3 +122,56 @@ joined CPU queue, preferences and private httplib include, documented in
 Preserve reusable db::readGltf/readObj and explicit-engine parsed-model realization
 APIs when removing production overloads. HTTP/backend runtime evidence remains
 project-lead-owned and is not established by the source handoff alone.
+
+## Current engine preservation requirements — 2026-10-21
+
+R01–R14 are explicit KEEP/adapt inventory entries. Include draw MaterialCache and
+revision propagation, private TemporalSignatureCache/TracingPersistentResources/
+TracingTableLookup/Metal ArgumentEncoderState helpers, gpu RecordingCompletion,
+image bindingGeneration/BLAS buildGeneration/uploaded bounds, native persistent
+array preparation/residency, TemporaryResourcePool and ProcessingRegion. These
+are implementations used today, not obsolete render compatibility layers.
+
+Keep base CpuProfile/GpuProfile, gpu SubmissionTiming and native query/completion
+paths, ui Performance/detail PerformanceData and Composer menu integration. Keep
+focused optimization/profiling probes and counters. Remove only actual production
+branches after identifying their surviving consumers; shared base material and
+texture revisions must survive render removal.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-05 product evidence handoff
+
+Consult [the standalone validation record](../milestone_08_lightmap_generator/product-validation.md)
+when assigning retirement replacements. The new standalone product deliberately
+changes skipped-required-target success, flat individual-file replacement and
+byte-only output into strict complete-batch success, final-manifest generations
+and exact native float output. Preserve those actual contracts and their source
+protection/cancellation semantics. Independent artifact inspection has passing
+synthetic tests, not native geometry/backend/package/optimized-regression proof.
+Carry the P01–P11 record and subsequent lead acceptance/evidence accurately;
+unknown backend/scenario coverage must not become invented measured results.
+
+## M08-06 concrete inventory input
+
+Refresh [M08's per-file candidate inventory](../milestone_08_lightmap_generator/retirement-inventory.tsv)
+with its [generator and incoming replacement table](../milestone_08_lightmap_generator/removal-impact.md)
+against this step's actual checkout. The snapshot has 1338 candidates/316 direct
+textual legacy matches, including comments and retained whole trees; it is not a
+semantic dependency graph or an instruction to remove every match. Resolve each
+candidate's incoming public/umbrella/build/template/data consumer before accepting
+the M09 manifest. Add new files and record changed dispositions/counts rather than
+using the old totals as expected deletion counts. Keep gpu native implementations,
+shared CPU/IO functions and optimized draw/bake helpers. Cross-check actual root
+all.hpp, dual DrawableComponent accessors, app/ImGui seams, old DB specialized
+writer and standalone template main. Keep data-format and source/ABI decisions
+separate; preserve evidence limits from the M08 review and P01–P11 ledger.
+
+## M08-07 maintained documentation baseline
+
+The [M08 coverage ledger](../milestone_08_lightmap_generator/documentation.md)
+now maps actual standalone reference/tutorial/app/architecture/generic IO pages to
+source. Preserve this authored baseline while refreshing the retirement inventory;
+canonical accessor/umbrella/target changes must update those real pages and probes,
+not only historical plan notes. Documentation delivery does not itself authorize
+removing production source; the ordinary acceptance/manifest steps still apply.

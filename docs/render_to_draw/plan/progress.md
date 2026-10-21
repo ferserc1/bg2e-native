@@ -9,22 +9,26 @@ This is the execution record for all implementation chats. The **Next step to im
 | Field | Value |
 |---|---|
 | Workflow state | `awaiting_project_lead` |
-| Current milestone | M07 — Experimental bg2e_composer application |
-| Active step | None — M07-07 explicit environment selection and HDR/procedural editing correction delivered |
-| Last implemented step | M07-07 — Review M07 scene/import contracts and revise CLI/cleanup |
-| Last accepted step | M07-06 including selection-crash correction — explicitly checked and accepted by project lead |
-| Awaiting project lead validation | M07-07 active Environment load/edit/HDR clearing/removal/ignored-addition behavior, plus prior shadow/table and Loader corrections |
-| Next step to implement | [M07-08 — Update cumulative implementation documentation](milestone_07_bg2e_composer/step_08_documentation.md) |
+| Current milestone | M08 — Standalone lightmap_generator on draw/bake |
+| Active step | M08-07 — Cumulative implementation documentation |
+| Last implemented step | M08-07 — Cumulative implementation documentation |
+| Last accepted step | M08-06 — accepted by project lead continuation instruction |
+| Awaiting project lead validation | M08-07 maintained documentation/source/snippet coverage; native backend/scenario details remain unspecified |
+| Next step to implement | [M09-01 — Actual dependency inventory and deletion manifest](milestone_09_cleanup/step_01_retirement-manifest.md) |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Project lead validation of Environment selection/HDR/procedural transitions, direct scene shadows, native tables, scene loading and earlier UI corrections before accepting M07-07. |
+| Condition before starting | Project lead accepts M08-07 documentation closure or requests a correction; then M09-01 refreshes the actual manifest before deletion. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; working tree was clean before this workflow documentation update. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
 
-Latest correction scope: explicit Environment selection/HDR/procedural editing,
-alongside prior SoftShadowPass/table updates in the same M07-07 handoff. Pending review states
-and earlier unrelated native-capacity edits are preserved. See chronological
-entry below; current acceptance remains pending.
+Latest delivery: [M08-07 documentation coverage](milestone_08_lightmap_generator/documentation.md).
+M08-06 is accepted by continuation; compilation/checks assumed successful under
+the convention, backend/scenario detail unspecified. Nine new and twenty-two
+updated maintained pages describe delivered standalone APIs, generic DB IO,
+model/prefab tutorial, full CLI/config/deployment and ownership/publication.
+Stale availability/save instructions are corrected; production/new API scopes and
+native/synthetic evidence remain separate. No source/CMake/shader change or engine
+execution occurred. M09 has not started; its first task is the actual manifest.
 
 M01-01 accepted by project lead continuation; compilation/checks assumed successful under the agreed convention. Backend/scenario coverage not specified. M01-02 accepted by project lead continuation; compilation/checks assumed successful, backend coverage unspecified. M01-03, including the Metal warning correction, accepted by project lead continuation; coverage unspecified. M01-04 accepted by project lead continuation; compilation/checks assumed successful, backend/deployment coverage unspecified. M01-05 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-06 accepted by continuation after the lead corrected compilation issues; backend coverage unspecified. M01-07 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-08 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-09 accepted by project lead continuation; compilation/checks assumed successful, coverage unspecified. M01-10 accepted after lead compilation corrections; irradianceImage rename and explicit CommandBuffer include reviewed as behavior-preserving. M01-11 accepted by continuation; compilation/checks assumed successful, backend coverage unspecified. M01-12, including its type-validation correction, accepted by project lead continuation instruction; backend coverage unspecified. M01-13 accepted by project lead continuation instruction; backend coverage unspecified. M01-14 accepted by project lead continuation after adding virtual Window destructor; backend coverage unspecified. M01-15 accepted by project lead continuation instruction; backend/scenario coverage unspecified. M01 HDR correction explicitly validated; transparency remains deferred. M01-16 explicitly validated by the lead and M01-17 documentation closed with separate validation waived. M02-01 accepted by lead continuation; lead reports validation through this state on macOS Metal and Linux Vulkan. Chronological handoffs below preserve earlier states.
 
@@ -104,7 +108,15 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 | [M07-04](milestone_07_bg2e_composer/step_04_async-import-service.md) | `accepted` | HEAD f7c2498cb4c29e27921c91809043dcf5fe4d963c plus preserved M07-03 work. New app-local importer/server/settings/queue UI and stopped publication/rollback; reusable CPU glTF/OBJ/BG2 realization boundaries. | Static GPL/style/delimiter/include/API/thread/ownership/rollback/protocol/Markdown/whitespace review; no configuration/build, shader, parser, HTTP, app, package or probe execution. | Accepted by project lead continuation instruction; backend/package/HTTP coverage unspecified. | Actual contracts in async-import-service.md; lead matrix in tests/draw/composer_import. M07-05 follows. |
 | [M07-05](milestone_07_bg2e_composer/step_05_scene-baking.md) | `accepted` | Same HEAD plus preserved inherited work; app-local serial selected-subtree/scene batches, retained per-target outputs, staged texture preparation/adoption, previews and cleanup. No CMake/core/shader edits. | Static API/call-site/source/ownership/UV/output/GPL/style/link/whitespace checks; no configuration/build/shader/app/GPU/package/probe execution. | Accepted by project lead continuation instruction; backend/package coverage unspecified. | Actual contracts in scene-baking.md; manual checks in tests/draw/composer_baking. M07-06 follows. |
 | [M07-06](milestone_07_bg2e_composer/step_06_product-validation.md) | `accepted` | Same HEAD plus inherited work preserved; product-validation.md, workflow/distribution matrix, restored Chain controls and selection-crash correction: missing Composer list scope plus bool beginList handling in every caller. No CMake/vendor edits. | Static source/API/Chain clone/schema/ownership/style, package routing, table scopes, GPL/delimiters, Markdown paths/fences and whitespace checks; no build/shader/app/HTTP/GPU/package execution. | Lead explicitly confirms the selection correction is checked and requests continuation; M07-06 including corrections accepted. Backend/package detail unspecified. | Lead matrices retained; M07-07 follows. |
-| [M07-07](milestone_07_bg2e_composer/step_07_review.md) | `awaiting_project_lead` | Original review f7c2498cb4c29e27921c91809043dcf5fe4d963c; ae0de5bbe015 plus inherited UI/IO/shadow/native-table work. Latest Environment correction: explicit Scene source, disabled-branch filtering, in-place inspector edit, HDR aliases/clear, fresh-document selection/rebuild, visible error. | GPL/style/API/ABI, weak owner/selection/destruction, renderer/queue/settings agreement, rollback, reflection Clear/empty semantics, docs/local links/whitespace. No build/shader/app/HTTP/GPU execution. | M07-06 accepted; Environment/scene/shadow/UI runtime validation not reported. | See environment-synchronization.md, tracing-capacity-16384.md and composer_io matrix. M07-08 remains conditional successor. |
+| [M07-07](milestone_07_bg2e_composer/step_07_review.md) | `accepted` | Original review f7c2498cb4c29e27921c91809043dcf5fe4d963c; ae0de5bbe015 plus inherited UI/IO/shadow/native-table work. Latest Environment correction: explicit Scene source, disabled-branch filtering, in-place inspector edit, HDR aliases/clear, fresh-document selection/rebuild, visible error. | GPL/style/API/ABI, weak owner/selection/destruction, renderer/queue/settings agreement, rollback, reflection Clear/empty semantics, docs/local links/whitespace. No build/shader/app/HTTP/GPU execution. | Accepted by project lead continuation instruction on 2026-10-21; compilation/checks assumed successful under the agreed convention, coverage unspecified. | Historical correction reports retained; M07-08 documents current source contracts. |
+| [M07-08](milestone_07_bg2e_composer/step_08_documentation.md) | `accepted` | HEAD 78943d5820e69363c942d71136f479a0df87128e, clean entry; maintained Composer app/tutorial/scene/import docs, joined MainLoop workers, UI intent/Clear contracts, current tracing v3/shadows v5; documentation.md coverage and pending-owner reconciliation. Markdown only. | Static source/signature/lifecycle/ABI/path/local-link/fence and diff whitespace checks. No compilation/shader/app/HTTP/GPU/package execution. | Accepted by project lead continuation instruction before redirection to plan audit; backend/measurement detail unspecified. | M08-01 remains next; latest instruction scopes work to source/plan audit only. |
+| [M08-01](milestone_08_lightmap_generator/step_01_standalone-context.md) | `accepted` | HEAD 78943d5820e69363c942d71136f479a0df87128e with inherited Markdown preserved. New bake StandaloneBakerContext/StandaloneLightmapBaker, explicit scene generations, one live target/private serial slot, required-profile/TLAS preflight, synchronous validated samples, failure/cancel/stale guards. Public primitive reuse; no render/gpu/CMake/shader edits. | Static API/dependency/native completion/source revision/ownership/lifecycle, GPL/style/include/link/whitespace checks; manual standalone fixture added but not run. No build/shader/app/GPU execution. | Accepted by project lead continuation instruction; compilation/checks assumed successful under the agreed convention, backend/scenario coverage unspecified. | standalone-context.md and tests/bake/standalone/README.md; M08-02 follows after acceptance. |
+| [M08-02](milestone_08_lightmap_generator/step_02_scene-assembly.md) | `accepted` | Same HEAD with inherited work retained. New bake StandaloneBakeSceneAssembler, shared schema/CPU BG2/OBJ preparation, camera-less single/multi-root prefab ownership, enabled stable targets, helpers excluded, staged independent UV2, optional target realization and known canonical dependencies. | Static signatures/includes/shared schema/hook/root/resource/UV/source ownership, GPL/style/local paths and whitespace. Manual assembly probe added, not run. No build/shader/app/GPU/package execution. | Accepted by project lead continuation instruction; compilation/checks assumed successful under the convention, backend/scenario coverage unspecified. | scene-assembly.md and tests/bake/assembly/README.md; M08-03 must supplement MTL/custom dependency discovery before protected output. |
+| [M08-03](milestone_08_lightmap_generator/step_03_batch-output.md) | `accepted` | HEAD 78943d5820e69363c942d71136f479a0df87128e with inherited work retained. New bake batch/writer, complete dependency/preflight/overwrite checks, staged generation/final manifest publication, exact typed maps and independent native model copies; generic DB CPU archive/publication helpers and OBJ MTL inventory. | Static API/dependency/license/include/style, source/lifecycle/archive/publication ordering, local links and git diff --check. Opt-in probes added, not run; no compile/shader/app/GPU/CMake execution. | Accepted by project lead continuation; compilation/checks assumed successful, backend/scenario coverage unspecified. | batch-output.md and tests/bake/batch/README.md; next M08-04 after acceptance. |
+| [M08-04](milestone_08_lightmap_generator/step_04_cli-application.md) | `accepted` | Same HEAD with inherited work retained. New draw_lightmap_generator parser/delegate/main, typed live bake config/CLI-last overrides, backend/mode/UV2/copy/format controls, signal/exit policy, CMake target/registration and guide/example/probes. | GPL/includes/lexical/style/whitespace, legacy option coverage, typed example/codec ordering, no-camera owner lifecycle, shared shader/package rule inspection and local links. No configure/build/shader/app/probe/GPU execution. | Accepted by lead continuation; compilation/checks assumed successful, backend/scenario coverage unspecified. | cli-application.md, app README and tests/bake/cli; M08-05 follows after acceptance. |
+| [M08-05](milestone_08_lightmap_generator/step_05_product-validation.md) | `accepted` | Same HEAD with inherited work retained. Source parity/product/deployment/regression record, independent read-only PNG/native/BG2-material artifact inspector, synthetic fixture tests and preserved production documentation/package handoffs. | Ten synthetic CPU inspector tests passed; source/protocol/format/deployment-rule/local-link/whitespace checks. No C++/shader build, engine/native probe/package execution or measured native evidence. | Accepted by lead continuation; compilation/checks assumed successful, backend/scenario details unspecified; P01–P11 provenance remains explicit. | product-validation.md and tests/bake/product; M08-06 next after acceptance. |
+| [M08-06](milestone_08_lightmap_generator/step_06_review.md) | `accepted` | HEAD 78943d5820e69363c942d71136f479a0df87128e plus preserved inherited work. Actual technical review, R01–R14/product/contract/evidence tables, 1338-file candidate retirement inventory/generator, concrete pending M08-07/M09/M10/root revisions. | 25 scoped C/C++ GPL/include/delimiter/control-brace checks and structural style review; source/consumer/lifecycle/publication/resource/protocol comparison, inventory existence/uniqueness/count/hash, Python syntax/local links/whitespace. No build/app/native probe/test/package execution. | Accepted by lead continuation; compilation/checks assumed successful, native backend/scenario detail unspecified. | review.md/removal-impact.md; next M08-07 after acceptance. No M09 deletion performed. |
+| [M08-07](milestone_08_lightmap_generator/step_07_documentation.md) | `awaiting_project_lead` | Same HEAD and preserved inherited work. Nine new/twenty-two updated maintained pages; standalone API/IO/tutorial/CLI/architecture, corrected bool-noexcept save/parent/copy-fallback guidance, coverage/source ledger and review closure note. | 31 affected pages/409 local targets and anchors, fences/includes/JSON; all 25 CLI flags; static signature/default/example/source ordering, current precision/save/resource contracts and whitespace. No configure/build/app/native probe/test/package execution. | M08-06 accepted by continuation; documentation acceptance pending, backend/scenario detail unspecified. | documentation.md; next M09-01 after acceptance. Production remains intact and no final draw promotion is claimed. |
 
 
 ## Open issues
@@ -2368,3 +2380,319 @@ configure/build, shader compiler, C++ fixture, application/GPU or packaging run.
 No CMake, shader, GPU API, native table limit or texture-count optimization changes
 are made by this correction. M07-07 remains awaiting lead validation; M07-08 is
 the unchanged conditional successor.
+
+## 2026-10-21 — M07-07 accepted; M07-08 documentation delivered
+
+The lead asks to implement the next step, accepting M07-07 and delivered
+Environment/UI/loading/table/shadow corrections by continuation. Compilation/checks
+are assumed successful under the agreed convention; backend/HTTP/package/numerical
+coverage remains unspecified. Baseline HEAD 78943d5820e69363c942d71136f479a0df87128e,
+clean working tree. No engine/source/shader/CMake change or build execution.
+
+Added maintained Composer guide/tutorial, scene/root/custom-clone API and draw
+import lifecycle. Updated app/DB/draw/tutorial navigation, ResourcePicker and
+SceneEditors intent contracts, schema warning/skip guidance, MainLoop worker
+ownership and safe-update lifecycle. Replaced contradictory Composer README
+startup/panel/pending-bake text. Complete DB publication, per-item model exports
+and partial interactive bake adoption remain distinct.
+
+Actual source is newer than the historical review ABI: tracing v3 uses persistent
+Vulkan material set2, query shadows v5 persistent alpha set2 and reserves (2,1,10).
+Retained 16384 device/sampler clamping, neutral overflow and independent materials;
+updated renderer reference and operative/pending owner notes rather than restoring
+v2. See milestone_07_bg2e_composer/documentation.md for cumulative changed/retained
+coverage, source mappings and future M08/M09/M10 owners. No page retired.
+
+Static declaration/caller/worker/shader-contract, local-link/fence and whitespace
+checks only; no new backend/runtime evidence. Lead should review maintained usage
+and limits against current Composer. M07-08 awaits acceptance; M08-01 is linked as
+successor with its entry condition. No later implementation started.
+
+## 2026-10-21 — Lead-directed engine/plan reconciliation
+
+The previous next-step instruction accepts M07-08 by continuation. The lead then
+interrupts M08-01 investigation and explicitly requests an audit, prioritizing
+engine code over the migration plan and preserving optimizations. No M08 source
+implementation had been written. Do not treat the audit as M08-01 delivery.
+
+Baseline HEAD 78943d5820e69363c942d71136f479a0df87128e with inherited uncommitted
+M07-08 Markdown changes retained. [R01–R14 report](code-reconciliation-2026-10-21.md)
+records alpha defaults/threshold/import policy, opaque instance selection, material
+revisions/raster bindings, indexed/persistent native tables, current v3/v5 ABI,
+completion-based acceleration reuse, temporary resource leases/pools, lazy temporal
+signatures, conservative transparent regions, narrow typed update drain elision,
+CPU/GPU profiling and bool-noexcept save/publication semantics.
+
+Updated operative index/decisions/protocols/source anchors and concrete M08–M10
+summaries/owning steps, including preservation/validation/documentation gates.
+Conflicting current pending ABI/remaining-infrastructure instructions are corrected
+directly; original completed review and delivery histories retain provenance.
+Implementation and measured/native acceptance of independent optimization/profiling
+projects remain distinct. No added migration step, engine/CMake/shader modification,
+build, executable/probe, native runtime or performance capture.
+
+Static source/declaration/native contract and plan path/link/fence/whitespace checks
+only. Audit is delivered for lead review; the next implementation pointer remains
+M08-01, not started, with a new continuation/implementation instruction required.
+
+## 2026-10-21 — M08-01 standalone context delivered
+
+The lead requests implementation continuation after the code/plan audit, accepting
+that reconciliation and authorizing M08-01 only. Baseline HEAD is
+78943d5820e69363c942d71136f479a0df87128e with inherited uncommitted M07 documentation
+and audit changes preserved. M07-08 remains the last accepted implementation step;
+no independent optimization/profiling native or measurement matrix is inferred.
+
+Added bake StandaloneBakerContext/StandaloneLightmapBaker headers and standalone
+implementation, exposed through bake/all.hpp. The context borrows an initialized
+windowless draw Engine, owns Created/Initialized/SceneReady/Cleaned state and one
+private serial slot; no camera/renderer/application/UI or production scheduler.
+prepareScene captures loaded graph/light/material/environment sources; public
+EnvironmentGenerator handles authored/default sources or callers provide explicit
+resource snapshots. createBaker preflights required primitives/native TLAS. One
+live target is released before the next. Every update owns synchronous submit/
+completion and exact sample count; final composition/validation/readback precedes
+output. Reset freezes settings only for the current scene; stale jobs cannot
+revive. Cancellation, partial command failure and submit/wait failure never publish
+pending output. Failed retirement blocks further work until successful cleanup.
+
+Source checks include copied environment intent/native generations, material/
+texture revisions, geometry/BLAS identity and enabled target membership. Existing
+immutable table/completed-TLAS reuse and primitive pooling remain active. No alpha,
+material ownership/default, capacity/native ABI, shared draw/gpu/render, CMake or
+shader behavior is changed. The small implementation-only shared state/target Impl
+keeps validity and staged GPU owners alive without hiding public pass extension APIs.
+
+Added source-only manual fixture for exact counts/settings, cancel during recording,
+partial-record failure/recovery, stale reset/update rejection, second target and
+retained results; supplied backend/no-RT/environment/source/teardown checks. Static
+source/API/native immediateSubmit/RecordingCompletion, ownership/dependency/style/
+GPL/include/link/whitespace review only. No configure/build, shader compiler,
+C++ fixture, application/GPU or package execution. Engine must outlive all target
+and external GPU owners; caller controls graph updates and stopped producers.
+
+Actual contract is recorded in milestone_08_lightmap_generator/standalone-context.md
+and handed to M08-02/M08-04. M08-01 awaits lead validation; M08-02 is the linked next
+step. Assembly, protected batch output and CLI are not implemented by this delivery.
+
+## 2026-10-21 — M08-01 accepted; M08-02 assembly delivered
+
+The lead requests the next step, accepting M08-01 under the continuation convention;
+compilation/checks assumed successful, backend/test scenarios unspecified. Entry
+HEAD remains 78943d5820e69363c942d71136f479a0df87128e with inherited uncommitted M07
+docs, plan audit and M08-01 source preserved. No compilation/runtime check is run.
+
+Added bake StandaloneBakeSceneAssembler header/source, exposed through bake/all.hpp,
+and refined the unused SceneAssembler forward declaration to the actual class name.
+Assembly returns a private context+target graph, targetRoot, source paths, stable
+sanitized hierarchy/sibling output identities and per-target UV2 diagnostics/atlas
+metadata. Shared scene factories preserve unknown-component warning/skip and real
+registered failures. A small single-Node representation adapter uses the engine
+JSON parser; there is no parallel component or geometry file parser. BG2/VWGLB/OBJ
+reuse CPU DB readers, preserving materials/groups/visibility and model chain joints.
+
+Prefab transfer releases the former Scene root, unwraps only one synthetic single-
+root level and retains multi-root containers. Camera-less inputs work. Context
+geometry is source-only, enabled target branches are selected, helper Drawables
+are removed without a manipulation dependency. Required source/geometry/UV/transform/
+material/light validity fails explicitly. UV overlaps warn and remain eligible.
+Initial UV2 is generated/validated on independent CPU replacements before first
+upload; already realized custom targets reuse generateUv2AndReload. No input files,
+earlier assembly or live context are mutated by a failed candidate.
+
+Optional target-resource false leaves CPU target meshes/material references while
+context sources are realized. Explicit later targetRoot.loadResources is required
+before prepareScene. Custom formats retain virtual GPU hooks, require CPU geometry
+for CPU-only preparation, and may not discard prepared UV2 during final realization.
+Engine/Device outlive all assemblies/resources; caller coordinates producers and
+component updates before freezing scene jobs. No render/draw/gpu implementation,
+alpha/default/material ownership, shader/table policy or CMake is changed.
+
+Added source-only assembly fixture for camera-less/single/multi-root inputs, joints,
+CPU/deferred/GPU realization, helpers, null/unknown components, deterministic identities,
+clone independence, registered failure isolation, source bytes and real overlap.
+Static API/schema/ownership/resource/UV/include/GPL/style/link/whitespace checks only.
+No build, shader compiler, fixture executable, application/GPU or packaging run.
+
+Actual contract is in milestone_08_lightmap_generator/scene-assembly.md. M08-03/M08-04
+handoffs name actual APIs and the remaining OBJ MTL/custom external dependency-
+discovery/protection obligation: known sourcePaths is not complete batch preflight.
+M08-02 awaits lead validation. The required successor is M08-03; no batch writer,
+map export, CLI or later milestone implementation is started.
+
+## 2026-10-21 — M08-02 accepted; M08-03 batch/output delivered
+
+The lead requests the next step, accepting M08-02 under the continuation
+convention; compilation/checks are assumed successful, backend/scenario coverage
+unspecified. Starting HEAD remains 78943d5820e69363c942d71136f479a0df87128e;
+inherited plan reconciliation, documentation and M08-01/02 source are preserved.
+
+Implemented bake::StandaloneBakeBatch and bake::LightmapOutputWriter. Frozen
+serial jobs reuse the standalone context and actual completed typed readback;
+callbacks can cancel even on the final completed sample without publication.
+Already realized custom hooks are not repeated, target identities/CPU-uploaded
+geometry and Engine ownership are checked, and sources are never adopted between
+targets. Preflight supplements assembly dependencies with original OBJ/MTL files
+from shared parser metadata and requires complete custom component declarations.
+Canonical/ancestor/equivalent-file checks protect sources and output namespaces;
+file fingerprints and scene/resource signatures reject changed jobs.
+
+RGB8 lossless output is decoded/compared (explicit JPEG is lossy); RGB32F preserves
+exact HDR bits in a CPU-written native RGBA32F archive. Detached model clones use
+linear UV2 baked AO/GI and actual generated pixels, snapshot all native resources
+through the checked bool-noexcept complete DB writer, and retain source assets.
+All artifacts are private until final-manifest publication. Cooperating writers
+use an exclusive directory lock; complete unique generations precede the atomic
+manifest switch. Old generations remain intact; exceptional final publication
+can leave an unreferenced generation. Crash recovery/garbage collection and
+power-loss durability are explicitly outside the contract.
+
+Generic DB additions preserve old signatures and production writer/CLI behavior;
+no native rendering algorithm, shader, material default or CMake file is changed.
+Static source/contract/include/license/style/archive/order/link/whitespace checks
+are recorded in batch-output.md. Added opt-in CPU and stopped-Engine probes plus
+a lead-run native matrix; none was compiled or executed. Updated M08-04/05 and
+summary with actual APIs, manifest layout and validation boundaries. M08-03 awaits
+lead validation; M08-04 is linked next and has not been started.
+
+## 2026-10-21 — M08-03 accepted; M08-04 draw CLI delivered
+
+The lead requests the next step, accepting M08-03 by the continuation convention;
+compilation/checks are assumed successful, backend/scenario coverage unspecified.
+Starting HEAD is 78943d5820e69363c942d71136f479a0df87128e. Inherited audit,
+documentation and M08-01/02/03 source changes are preserved.
+
+Implemented apps/draw/lightmap_generator with its own private parser and
+DrawOffscreenApplicationDelegate. It preserves useful production CLI arguments
+and defaults while adding backend selection, typed CPU output, explicit model
+copies, AO radius/bias/exposure/dilation/atlas padding, shader-root and validation
+controls. The SettingsCodec binds actual batch LightmapSettings under a declared
+standalone identity; explicit CLI values override import regardless of order.
+Unknown/unavailable fields reject or receive validated skip warnings; incompatible
+renderer/schema/type identities always reject. Preferences/camera-only effect
+profiles are not silently applied. Config and explicit shader roots are protected.
+
+The app runs no camera frames: its 1x1 depthless context owns only initialization,
+while finish runs public assembly and standalone batch work using requested UV
+resolution. All GPU/scene owners release before Engine cleanup. Signal handlers
+only store SIGINT/SIGTERM cancellation; native cleanup remains in the normal
+OffscreenApplication path. Results report the authoritative manifest after cleanup,
+with explicit 0/1/2/130/143 status and no skipped-required-target success.
+
+M08-04 explicitly names apps/CMakeLists.txt/new target creation in its selected
+scope: added that target and registration only. Existing bundle_app paired shader
+refresh and recursive package discovery are reused; shared CMake/scripts and the
+production CLI/native algorithms/shaders are unchanged. Native shader/deployment
+validation remains the lead's responsibility. Added app guide, typed example,
+opt-in CPU parser/config probe and executable/native matrix; none was compiled or
+run. Static source/API/include/GPL/style/delimiter, legacy flag coverage,
+config/lifecycle ordering, resource-rule, local link and whitespace checks passed.
+Updated M08-05 with actual checks and limits. M08-04 awaits lead validation;
+M08-05 is linked next and has not been started.
+
+## 2026-10-21 — M08-04 accepted; M08-05 product validation delivered
+
+The lead requests the next step, accepting M08-04 under the continuation
+convention; compilation/checks assumed successful, backend/scenario coverage
+unspecified. Baseline HEAD remains 78943d5820e69363c942d71136f479a0df87128e, with
+inherited documentation/audit/M08 implementation retained.
+
+Compared preserved production CLI/parser/batch/writer behavior with the delivered
+draw/bake product. Required model/prefab/context/UV2/reset/accumulation workflows
+are mapped; strict required-target failures, settings domains, final-manifest
+publication, native float format/material semantics and final-sample cancellation
+are explicit behavior changes rather than false flat-output parity claims.
+Recorded P01–P11 independent output/reload/protection/interrupt/deployment and
+current optimized/profiling regression requirements with native evidence pending.
+No native implementation rollback or new algorithm was justified by this audit.
+
+Added a read-only Python standard-library artifact inspector for committed
+manifest paths, unique complete generations, metadata and PNG/native RGB32F
+pixels. Optional BG2 material-section inspection checks local native sidecars and
+actual linear UV2 baked map RGB against the standalone image, independently of
+writer checks. It deliberately does not parse geometry, initialize an engine,
+prove chart masks/lighting, preserve source hashes or execute cancellation jobs.
+JPEG/BMP/TGA/large files require other independent decoders. Ten synthetic CPU
+file tests passed, including PNG filters/CRC, HDR100000, orientation/multiple
+identities, native material sidecars, malformed/truncated metadata/payloads,
+path escapes/symlinks and source enum ordinals. These are inspector self-checks,
+not engine/backend output artifacts or native reload evidence.
+
+Updated preserved production CLI docs to distinguish old limits from draw/bake,
+PACKAGING with actual target/resource/manifest checks, summary and M08-06/M09-01
+handoffs. No C++/shader build, engine app/native probe, CMake configure, package
+or profiling execution occurred; no native/production/shader/CMake implementation
+was changed. Static source/format/protocol/resource-rule/link/whitespace checks
+passed. M08-05 awaits lead validation under the existing protocol; M08-06 is
+linked next and has not been started. No M09 retirement is authorized here.
+
+## 2026-10-21 — M08-05 accepted; M08-06 technical review delivered
+
+The lead requests the next step, accepting M08-05 under the continuation convention;
+compilation/checks assumed successful, backend/scenario details unspecified.
+Starting and finishing HEAD remain 78943d5820e69363c942d71136f479a0df87128e, with
+all inherited documentation/audit/standalone implementation preserved. Host reports
+Darwin; no SDK/device/runtime/performance query or product execution was performed.
+
+Reviewed actual public standalone states/generations, Engine/Scene/native lifetime,
+exact internal recording completion, public effect injection and immutable reuse,
+UV2/schema/custom hooks, serial batch/source freezing, typed pixels/metadata,
+cloned complete model resource saves, generic DB helpers and final-manifest atomic
+publication. Recorded real CLI/config/bundle identities and all requested earlier
+products. Classified naming/equivalent refinements versus stricter target failure,
+manifest/native-format changes and verification/documentation gaps. Explicitly
+checked R01–R14 source-preservation impacts without modifying native algorithms.
+
+Built a refreshable per-file candidate retirement inventory: 1338 source/build/
+resource files, 316 direct textual legacy matches; comments and whole retained
+trees are included. It is not a transitive dependency graph or deletion approval.
+Concrete incoming/replacement rows cover shared app/scene/DB/UI/umbrella production
+branches, native Metal/Vulkan ImGui seams, actual old DB writer, root bake export
+gap, app/example/test registrations, templates, paired shaders and neutral IO.
+Updated M08-07 and every affected pending M09/M10 step plus root source/decision/
+requirement/index handoffs and summaries. M08-07 owns the stale public bake index
+and missing maintained standalone reference/tutorial/application authoring.
+
+Static checks covered 25 M08-owned/modified C/C++ files (full GPL, project includes,
+lexical delimiters/control braces plus structural namespace/function/group/include
+review), candidate path/disposition/uniqueness/count/hash, Python syntax, local
+links/fences and git diff --check. No style defect requiring source changes or
+known native implementation failure was established. Earlier ten synthetic
+inspector tests remain their original M08-05 evidence; no tests were rerun here.
+No CMake configure/build, shader compilation, app/native probe/package operation,
+source deletion or engine behavior change occurred. M08-06 awaits lead validation;
+M08-07 documentation is the linked successor, with M09 still unstarted.
+
+## 2026-10-21 — M08-06 accepted; M08-07 cumulative documentation delivered
+
+The lead requests the next step, accepting M08-06 under the continuation convention;
+compilation/checks assumed successful, backend/scenario detail unspecified. HEAD
+remains 78943d5820e69363c942d71136f479a0df87128e; inherited source, docs/audit and
+all current optimizations are preserved. This step changes documentation only.
+
+Authored nine maintained pages: actual standalone context/baker/assembler/batch/
+writer APIs, generic DB file/native archive IO, model/prefab C++ tutorial, full
+new CLI/config/resource guide and ownership/publication architecture. Updated
+22 maintained pages/indexes, including the stale bake/draw availability claims,
+production/new writer distinction, integrated output/material/precision guidance,
+app/offscreen/ShaderLibraries navigation and safe source freezing. Corrected
+current complete DB bool-noexcept false handling, automatic destination parents
+and exclusive-reserve/copy fallback rather than requiring hardlink support.
+
+The coverage ledger maps all 31 affected pages to actual headers/source/callers,
+retained M01–M07 foundations and authoring dispositions. Explicit bake include,
+retained Scene/Engine/native lifetime, one live baker, immutable completed reuse,
+UV versus camera samples, custom dependency limits, typed settings identity/CLI-
+last precedence, exact native float output, model-copy scope, final-manifest
+publication and cancellation/crash boundaries are documented as implemented.
+No future final accessor/umbrella/promotion or ResourceManager/extra texture slot
+is taught as available. Production reference pages remain scoped and retained.
+
+Static checks covered 409 local targets/anchors across affected pages, project
+include paths, fences/JSON, all 25 parser option names, current API/default/member
+and tutorial ordering, save/precision/build-script source comparison and whitespace.
+No snippets were compiled and no tests/app/native/GPU/package operation ran.
+Earlier ten synthetic inspector tests retain their original M08-05 scope; no
+backend/hardware execution detail is invented. Updated review closure, M09/M10
+coverage handoffs and progress. M08-07 awaits lead acceptance; M09-01 inventory is
+linked next and M09 deletion/promotion has not started.

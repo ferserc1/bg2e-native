@@ -45,9 +45,10 @@ exceed one. RGB32F preserves float RGB without exposure; RGB8 clamps and rounds
 once. No gamma correction or tone mapping is performed by readback.
 The GPU result is RGBA32F; alpha is internal coverage and is omitted on CPU.
 
-A dedicated RGB illumination material channel is still future work. Existing
-material AO is a selected scalar channel; current bake exports reuse its texture
-property. See [material integration and limits](../../architecture/lightmaps/output_and_materials.md).
+The production writer reuses the selected AO texture property; it does not add
+another illumination texture slot. The separate [draw material API](../draw/BakedIndirectMaps.md)
+and [bake writer](../bake/LightmapOutputWriter.md) now set explicit baked RGB
+interpretation on that slot. See [material integration and limits](../../architecture/lightmaps/output_and_materials.md).
 
 Sources: [settings](../../../lib/include/bg2e/render/LightmapSettings.hpp),
 [validation/readback](../../../lib/src/bg2e/render/LightmapBaker.cpp),

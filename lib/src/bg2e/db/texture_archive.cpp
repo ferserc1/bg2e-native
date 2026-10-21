@@ -158,4 +158,46 @@ void writeTextureArchive(const std::filesystem::path& path, gpu::Image& image)
     output.close();
 }
 
+void writeTextureArchive(const std::filesystem::path& path, const TextureArchive& archive)
+{
+    const auto& d = archive.description;
+    if (d.minMipSize != 0)
+    {
+        throw std::invalid_argument("Texture archive CPU description requires explicit mipLevels, not minMipSize");
+    }
+    validate(d);
+    const uint32_t layers = d.type == gpu::ImageType::Cubemap ? 6 : 1;
+    if (archive.subresources.size() != size_t(layers)*d.mipLevels)
+    {
+        throw std::invalid_argument("Texture archive CPU subresource count mismatch");
+    }
+    for (uint32_t layer = 0; layer < layers; ++layer)
+    {
+        for (uint32_t mip = 0; mip < d.mipLevels; ++mip)
+        {
+            const auto& bytes = archive.subresources[size_t(layer)*d.mipLevels+mip];
+            if (bytes.size() != subresourceBytes(d,mip) ||
+                bytes.size() > static_cast<size_t>(std::numeric_limits<std::streamsize>::max()))
+            {
+                throw std::invalid_argument("Texture archive CPU byte count mismatch");
+            }
+        }
+    }
+    std::ofstream output;
+    output.exceptions(std::ios::badbit | std::ios::failbit);
+    output.open(path,std::ios::binary);
+    output.write(Magic.data(),Magic.size());
+    writeInteger(output,static_cast<uint32_t>(d.format),4);
+    writeInteger(output,static_cast<uint32_t>(d.type),4);
+    writeInteger(output,d.size.width,4);
+    writeInteger(output,d.size.height,4);
+    writeInteger(output,d.mipLevels,4);
+    for (const auto& bytes : archive.subresources)
+    {
+        writeInteger(output,bytes.size(),8);
+        output.write(reinterpret_cast<const char*>(bytes.data()),static_cast<std::streamsize>(bytes.size()));
+    }
+    output.close();
+}
+
 }

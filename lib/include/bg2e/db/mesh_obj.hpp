@@ -85,6 +85,8 @@ struct ObjMesh {
     std::vector<base::MaterialAttributes> materials;
     std::vector<std::string> submeshNames;
     std::vector<std::string> submeshGroups;
+    // OBJ and every MTL successfully read by the shared parser (absolute paths).
+    std::vector<std::filesystem::path> sourcePaths;
 };
 
 extern BG2E_API std::shared_ptr<ObjMesh> readObj(const std::filesystem::path& filePath);

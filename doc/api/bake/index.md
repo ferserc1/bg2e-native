@@ -4,7 +4,10 @@
 Production `bg2e::render` baking remains supported. The namespace provides CPU settings/pixel validation, abstract base/target
 interfaces, a Device-backed UV surface/reload primitive, and an integrated raw
 AO/GI executor with validated accumulation/composition/dilation and typed output.
-Standalone scheduling is not implemented yet. The UI module provides
+Standalone context/assembly/batch scheduling and protected typed file/model output
+are implemented over a windowless draw Engine. Use `<bg2e/bake/all.hpp>` explicitly;
+the current root all.hpp still exposes production branches and does not include
+this bake umbrella. The UI module provides
 `BakeLightmapPreview` to display a completed `LightmapResult` through a draw UI
 session while retaining its shared GPU image owner. The geometry UV diagnostic
 is `bake::UvMapPreviewRenderer`; it rasterizes UV1/UV2 with submesh fills,
@@ -62,7 +65,9 @@ floating image precision; reject HDR overflow rather than clipping float results
 
 The [contract and complete production mapping](../../../docs/render_to_draw/plan/milestone_04_lightmaps/contracts.md)
 records defaults/ranges, settings-to-effect ownership, public world-surface formats,
-required-capability/empty-scene policy and concrete future implementation owners.
+required-capability/empty-scene policy and original implementation ownership.
+Actual standalone availability is documented below; historical pending notes are
+not an absence claim for delivered APIs.
 See [draw surface inputs](../draw/SurfaceInputs.md), [tracing snapshots](../draw/TracingSceneResources.md)
 and [manual CPU validation](../../../tests/bake/contracts/README.md). No agent build/runtime execution.
 
@@ -89,3 +94,18 @@ provides the example completion boundary; it does not add a render-loop callback
 
 - [Raw bake executor and sample](LightmapBakeExecutor.md): public effect reuse and exclusive pass ownership.
 - [Integrated architecture](../../architecture/draw_integrated_lightmaps.md): data flow, precision and material boundaries.
+
+## Standalone jobs and file publication
+
+- [StandaloneBakerContext](StandaloneBakerContext.md) and [StandaloneLightmapBaker](StandaloneLightmapBaker.md): borrowed offscreen Engine, one live target, completed samples/generations/reset/cancel.
+- [StandaloneBakeSceneAssembler](StandaloneBakeSceneAssembler.md): camera-less model/prefab/context, staged independent UV2 and retained Scene/root owners.
+- [StandaloneBakeBatch](StandaloneBakeBatch.md): frozen serial jobs, full preflight, callbacks and complete commit.
+- [LightmapOutputWriter](LightmapOutputWriter.md): protected sources, typed files, independent models and authoritative manifest; separate from the production DB writer.
+- [Standalone C++ tutorial](../../tutorials/draw/standalone_lightmaps.md), [CLI/build guide](../../apps/draw_lightmap_generator.md) and [ownership architecture](../../architecture/draw_standalone_lightmaps.md).
+
+The new product deliberately fails invalid required targets rather than skipping
+into zero-success. RGB32F file encoding preserves HDR in a native archive; raw GI
+precision and interactive half-range material display remain separate limits.
+Engine/Device outlive every retained GPU owner. Source/optimization preservation
+and native evidence are distinct: ten synthetic inspector tests do not establish
+actual Vulkan/Metal, geometry reload, package or performance results.

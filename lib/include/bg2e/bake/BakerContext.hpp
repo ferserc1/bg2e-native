@@ -85,10 +85,10 @@ class BG2E_API BakerContext {
     BakerContext() = default;
 };
 
-// IntegratedBakerContext is implemented; remaining owners are future contracts.
+// Public integrated/standalone execution and batch orchestration.
 class IntegratedBakerContext;
 class StandaloneBakerContext;
-class SceneAssembler;
-class Batch;
+class StandaloneBakeSceneAssembler;
+class StandaloneBakeBatch;
 class UvMapPreviewRenderer;
 }

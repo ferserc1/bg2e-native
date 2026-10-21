@@ -19,3 +19,31 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 Complete traceable inventory of existing cumulative documentation, with no unowned omissions.
 
 Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.
+
+## Current engine preservation requirements — 2026-10-21
+
+Include maintained TemporaryResourcePool, TemporalInvalidation, TransparentRegions,
+UpdateSynchronization, TracingSceneResources and cpu_profiling references, plus
+Performance UI/CPU/GPU transport/recording ownership. Link optimization/profiling
+implementation reports as evidence with their own validation state; their historical
+planning inventories are not current API descriptions.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 specific coverage audit
+
+Inventory M08-07 documentation.md and the maintained standalone bake API,
+model/prefab/context tutorial, new CLI/app, generic DB file/archive and deployment
+pages. M08 review found the old bake index falsely claimed scheduling was absent;
+verify that its owning documentation step corrected it. Track final M09 page/path
+changes from actual source rather than treating the historical removal TSV as a
+document inventory. Missing substantive standalone authoring remains an M08-07 gap.
+
+## M08-07 authored coverage available
+
+Use [documentation.md](../milestone_08_lightmap_generator/documentation.md) and its
+31-page source/disposition mapping. The public bake index, real standalone API
+references, generic DB file/archive, tutorial, full CLI and architecture pages are
+now authored. Final audit checks their post-M09 names/links/semantics and retained
+foundations; do not treat the earlier review's authoring gap as still absent or
+recreate parallel future guides. Native and synthetic evidence remain distinct.

@@ -26,3 +26,22 @@ Perform relevant static checks. Compilation/runtime validation belongs to the pr
 Check that visible-window/app initialization snippets actually connect/bind/draw settings, with rebind/cleanup and current defaults. Link actual lead evidence separately from source/static checks; continuation acceptance is not hardware-specific numeric/performance proof. Confirm all M03 documentation obligations were authored during M03-11, not deferred to this audit.
 
 Source and validation boundaries: [M03 technical review](../milestone_03_ray_tracing/review.md). Include these conditions in this step's implementation and exit checks.
+
+## Current engine preservation requirements — 2026-10-21
+
+Check code/snippets/links for current defaults, v3/v5 bindings, revision and
+completion APIs, optimization diagnostic switches, Performance/recording controls
+and bool writer return handling. No old cutoff 0.5 default, unconditional TLAS
+rebuild, all-queued-update drain or detached worker recipe may remain as current
+usage merely because it appeared in an earlier accepted milestone report.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 consistency searches
+
+Search maintained guidance for stale standalone-not-implemented text, tentative
+SceneAssembler/Batch names, root umbrella export assumptions, flat-file output,
+byte-clamped float claims, skipped-required-target success, interchangeable camera/
+UV samples and old production callback examples. Keep explicitly historical
+production descriptions distinct from final usage. Verify read-only artifact
+inspection is not described as full geometry reload or native/performance proof.

@@ -1,5 +1,14 @@
 # lightmap_generator
 
+This page describes the **preserved production CLI**. The separate
+[draw_lightmap_generator](../../../apps/draw/lightmap_generator/README.md) now
+provides draw/bake model/prefab batches, typed bake configuration, exact native
+RGB32F, explicit baked AO/GI model semantics and complete-generation manifest
+publication. Its stricter target/error and cancellation contracts differ from
+this reference; the byte-only/individual-file/skip limits below apply to the
+production executable. Both targets coexist until the M09 retirement review.
+
+
 `lightmap_generator` bakes lightmaps with the production Vulkan render engine
 without a window, camera or application render loop. It loads a JSON context
 scene and attaches one `.bg2` model or a prefab's complete subtree. The context

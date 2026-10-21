@@ -136,3 +136,7 @@ The project lead only needs to reference index.md and progress.md and ask to imp
 > Implement the next step indicated in docs/render_to_draw/plan/progress.md, following docs/render_to_draw/plan/index.md. Treat my continuation as acceptance of the previously delivered step. Update the next-step link when you finish, and leave compilation and runtime checks to me as project lead.
 
 This is a suggested prompt, not a message sent to another chat and not authorization to create or contact chats automatically.
+
+## Current code and independent workstreams
+
+Before implementing a step, consume [current-source reconciliation](code-reconciliation-2026-10-21.md). Engine code takes priority over older plan assumptions. Preserve already implemented optimizations and profiling even when their separate native/performance acceptance is unspecified. Update the affected pending step before proceeding with a conflicting old instruction; do not modify source to restore that instruction. Preserve diagnostic baselines and report actual source, functional and measurement evidence separately. This does not authorize builds or source cleanup outside the requested step.

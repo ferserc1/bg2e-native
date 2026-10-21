@@ -1,5 +1,7 @@
 # Render responsibilities reimplementation: milestone plan
 
+**Current-source precedence:** the engine implementation takes priority over older plan descriptions. Read the [2026-10-21 reconciliation](code-reconciliation-2026-10-21.md) before M08–M10 or any correction. It preserves implemented optimization/profiling contracts and distinguishes historical delivery evidence from current instructions. Do not restore old defaults, rebuild policies, shader ABIs or profiling UI to match this plan.
+
 **Plan baseline:** 2026-10-14, repository commit `12dac9eba55411267d0025b6bcaa31f4a99de3e7` and the user's conclusions following the [architecture assessment](../index.md).
 
 This plan reimplements production rendering responsibilities over `bg2e::gpu`, reorganizes engine responsibilities, and eventually removes `bg2e::render`. It is not a namespace move or an implementation delivered by this document. No source/build files were changed and no build was run while preparing the plan.
@@ -48,10 +50,13 @@ The [M07 capacity correction](milestone_07_bg2e_composer/tracing-capacity-16384.
 supersedes historical 32/128/256 effect profiles and the artificial Metal 256
 ceiling: use the exact minimum of 16384 and device budgets after effect reserves.
 Vulkan specializes fixed array extents; Metal uses Tier-2 argument record tables.
+Current native interfaces are tracing v3 and query shadows v5 with persistent
+Vulkan arrays in set2; see the current-source reconciliation.
 This also applies to direct SoftShadowPass: its separate eight-pair table is now
-replaced by device-clamped arrays with reserves (2,1,9), preserving scene shadows
-when individual textures overflow. Texture-count optimizations wait until after
-the API migration; do not change material defaults or globalize object ownership.
+replaced by device-clamped arrays with current reserves (2,1,10), preserving scene shadows
+when individual textures overflow. The old deferral must not undo the subsequently implemented indexed/persistent
+tables, revision caches or alpha defaults. Preserve default cutoff zero and the
+effective 0.02 threshold; no global editable material ownership is introduced.
 Keep materials independently owned/importable/exportable and retain warning plus
 neutral-texture fallback on exhaustion. This is not a global material catalog or
 the deferred future resource-architecture refactor. Older delivery histories remain
@@ -124,3 +129,36 @@ windowless draw ownership, exact camera samples, settings precedence and complet
 PNG export. M05-07 documentation is delivered awaiting lead acceptance; M06-01 is
 the next required step after that closure. Production render coexistence and
 independent UV-bake/batch ownership remain explicit.
+
+## M07-08 source reconciliation
+
+At HEAD `78943d5820e69363c942d71136f479a0df87128e`, current source supersedes the
+historical v2 table handoff: AO/GI/reflection use native v3 with Vulkan scene set1,
+persistent material arrays set2 (bindings5/6), specialization ID0 and unchanged
+Metal record buffers8/9. Direct query shadows use `draw.query.softShadows.v5`,
+Vulkan invocation set0, scene set1 and persistent alpha set2 (bindings16/24),
+Metal records5/6 and reserves (2,1,10). AO/GI/reflection reserves are respectively
+(4,2,13), (5,3,15), (6,3,16). Exact device-clamped capacity up to 16384, neutral
+pair overflow and object-local ownership remain. Consume current maintained
+[tracing reference](../../../doc/api/draw/TracingSceneResources.md) and source,
+not historical ABI labels. This is static reconciliation, not a new native test.
+
+## M08 technical review handoff
+
+[Actual standalone contracts and evidence](milestone_08_lightmap_generator/review.md)
+and [per-file retirement impact](milestone_08_lightmap_generator/removal-impact.md)
+now cover implemented context/assembly/batch/CLI products, typed native HDR and
+final-manifest publication. Shared app/scene/DB/UI/umbrella production dependencies
+still require ordered M09 migration; direct new-product use is not a zero-legacy
+proof. Current optimized draw/gpu and data readability remain protected. The next
+required same-milestone step is M08-07 maintained documentation after review
+acceptance. No production removal or final promotion has occurred here.
+
+## M08 maintained standalone documentation delivered
+
+[M08-07 coverage](milestone_08_lightmap_generator/documentation.md) connects actual
+standalone public API, generic DB IO, tutorial, CLI/build/config and architecture
+pages under doc/. The review's stale standalone-index/authoring gap is addressed;
+original review/evidence history remains. Documentation awaits normal acceptance;
+M09-01 actual inventory/manifest is next, with no source deletion or global draw
+promotion yet performed.

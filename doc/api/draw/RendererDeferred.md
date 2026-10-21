@@ -61,8 +61,9 @@ and standalone effect preparation.
 `pipeline::SoftShadowPass` uses optional ray queries and nonuniform sampled arrays,
 not a ray-tracing pipeline. Unsupported query/array hardware retains raster PBR/IBL.
 Alpha-aware traversal uses up to 16384 albedo image/sampler pairs, clamped to device
-budgets after reserving (2 images, 1 sampler, 9 total resources). Its v2 query kernel
-uses Vulkan specialization ID0 or Metal argument-record buffers5/6. The reflected
+budgets after reserving (2 images, 1 sampler, 10 total resources). Its v5 query kernel
+uses Vulkan specialization ID0 with alpha arrays16/24 in persistent set2,
+scene data in set1 and invocation inputs in set0, or Metal argument-record buffers5/6. The reflected
 alphaTextureLimit reports the selected alphaTextureCapacity(), not a fixed eight.
 Overflow warns and omits only excess texture sampling, preserving scalar alpha/
 cutoff, every occluder and the rest of the scene's shadows. It no longer clears

@@ -117,7 +117,9 @@ The separate [bake namespace](../bake/index.md) provides validated settings/pixe
 Device-backed UV surfaces, integrated AO/GI execution, exact accumulation and
 composition/dilation, finished maps and CPU UV diagnostics. The
 [lightmap tutorial](../../tutorials/draw/12_lightmaps.md) follows actual material
-adoption and UI ownership. Standalone scheduling/batch export is not implemented.
+adoption and UI ownership. [Standalone baking](../bake/StandaloneBakeBatch.md) now
+adds camera-less serial UV jobs and protected complete-generation file/model
+publication; see the [standalone tutorial](../../tutorials/draw/standalone_lightmaps.md).
 
 See [Baked indirect maps](BakedIndirectMaps.md) for explicit RGB lightmap metadata,
 UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
@@ -130,3 +132,10 @@ UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
 - [OffscreenApplication](../app/OffscreenApplication.md): typed execution lifecycle.
 - [Offscreen tutorial](../../tutorials/draw/13_offscreen_application.md) and
   [CLI/build guide](../../apps/draw_offscreen_application.md).
+
+- [Draw Composer](../../apps/draw_composer.md) and [scene ownership API](../scene/index.md): full scene editing/import/bake integration.
+
+
+- [Standalone UV bake CLI](../../apps/draw_lightmap_generator.md),
+  [C++ tutorial](../../tutorials/draw/standalone_lightmaps.md) and
+  [batch publication architecture](../../architecture/draw_standalone_lightmaps.md).

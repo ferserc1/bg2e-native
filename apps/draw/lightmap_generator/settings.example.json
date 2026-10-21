@@ -1,0 +1,41 @@
+{
+  "schema": "bg2e.draw.settings",
+  "version": "1",
+  "renderer": "bg2e.bake.standalone.v1",
+  "components": [
+    {
+      "id": "bake",
+      "type": "bg2e.bake.lightmapSettings.v1",
+      "properties": {
+        "resolution": {
+          "type": "uint32",
+          "value": "512"
+        },
+        "accumulationFrames": {
+          "type": "uint32",
+          "value": "16"
+        },
+        "mode": {
+          "type": "enum64",
+          "value": "1"
+        },
+        "samplesPerPixel": {
+          "type": "uint32",
+          "value": "8"
+        },
+        "giBounces": {
+          "type": "uint32",
+          "value": "2"
+        },
+        "cpuFormat": {
+          "type": "enum64",
+          "value": "1"
+        },
+        "dilationPixels": {
+          "type": "uint32",
+          "value": "4"
+        }
+      }
+    }
+  ]
+}

@@ -37,3 +37,13 @@ material path can be reloaded elsewhere.
 See [the integrated example](../../../examples/draw/12_lightmaps/README.md) for
 completed-result adoption, stored/live material metadata and UI ownership.
 Compilation and backend visual verification remain project lead checks.
+
+## Persisted standalone resources
+
+The [standalone bake writer](../bake/LightmapOutputWriter.md) exports actual pixels,
+then clones/updates materials with linear UV2 bakedAO/bakedGI and complete native
+sidecars. Native float file/model resources can preserve values beyond the
+interactive half-float display range; their file integrity does not promise the
+G-buffer can display those values without its independent range checks. Original
+material ownership remains unchanged. [Generic complete DB IO](../db/DrawResourceIO.md)
+and whole-batch manifest publication have distinct policies.

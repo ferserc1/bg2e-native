@@ -32,5 +32,8 @@ struct TextureArchive {
 
 BG2E_API TextureArchive readTextureArchive(const std::filesystem::path& path);
 BG2E_API void writeTextureArchive(const std::filesystem::path& path, gpu::Image& image);
+// CPU encoding with the same native archive contract; creates no GPU resource.
+// description requires explicit mipLevels and minMipSize == 0.
+BG2E_API void writeTextureArchive(const std::filesystem::path& path, const TextureArchive& archive);
 
 }

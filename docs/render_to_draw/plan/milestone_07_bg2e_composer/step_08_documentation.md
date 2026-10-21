@@ -60,3 +60,16 @@ Actual apps/draw/bg2e_composer workflows and build/deployment; complete scene se
 - Relevant API reference, tutorials, app/CLI/build guidance and navigation are updated; all applicable former M10 authoring requirements are covered or explicitly assigned to an unimplemented milestone owner.
 - Source/links/snippet checks and actual validation ownership are recorded; no invented compilation/backend coverage.
 - Deliver this documentation step for lead acceptance before entering M08. Follow the normal one-step execution protocol. M10 audits the accumulated result and does not defer missing authoring work to itself.
+
+## M07-08 source reconciliation
+
+At HEAD `78943d5820e69363c942d71136f479a0df87128e`, current source supersedes the
+historical v2 table handoff: AO/GI/reflection use native v3 with Vulkan scene set1,
+persistent material arrays set2 (bindings5/6), specialization ID0 and unchanged
+Metal record buffers8/9. Direct query shadows use `draw.query.softShadows.v5`,
+Vulkan invocation set0, scene set1 and persistent alpha set2 (bindings16/24),
+Metal records5/6 and reserves (2,1,10). AO/GI/reflection reserves are respectively
+(4,2,13), (5,3,15), (6,3,16). Exact device-clamped capacity up to 16384, neutral
+pair overflow and object-local ownership remain. Consume current maintained
+[tracing reference](../../../../doc/api/draw/TracingSceneResources.md) and source,
+not historical ABI labels. This is static reconciliation, not a new native test.

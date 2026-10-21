@@ -1,5 +1,9 @@
 # Operative architecture decisions
 
+## Current implementation baseline — overrides historical handoffs
+
+The [engine/plan reconciliation](code-reconciliation-2026-10-21.md) is operative for all future implementation. Current source takes priority. Preserve implemented alpha classification/defaults, revision caches, immutable table/acceleration reuse, completion-aware pooling, temporal signatures, conservative transparent regions, typed-only drain elision, profiling and bool-noexcept save semantics. Later sections recording M01–M07 decisions describe their original scope/revision; they do not prohibit optimizations subsequently implemented in source. Private cache helpers already required by concrete ownership/native ABI are valid implementations, not missing public passes.
+
 [Plan index](index.md) · [Review protocol](review-protocol.md)
 
 These decisions consolidate the user's conclusions. They supersede conflicting earlier assessment suggestions. Names proposed for new extension APIs may be refined during implementation, with pending steps updated at each milestone review.
@@ -185,7 +189,7 @@ Later image/sampler-management improvements remain separate.
 Use the exact minimum of 16384 and available image/sampler/aggregate device budgets
 after effect reservations, without rounding to 32/128/256. The [M07 correction](milestone_07_bg2e_composer/tracing-capacity-16384.md)
 records Vulkan specialization ID0 and Metal Tier-2 image/sampler record buffers8/9,
-native v2 shader interfaces and the conservative native sampler-budget constraint.
+current tracing v3 shader interfaces and the conservative native sampler-budget constraint.
 This supersedes earlier fixed-profile/Metal 256-ceiling wording. Material owners
 and references remain local to independently importable/exportable objects; GPU
 tables are execution bindings, not a global material library. Keep neutral-texture
@@ -195,14 +199,14 @@ overflow warnings. A larger resource management redesign is explicitly deferred.
 The lead reports working Model Edit shadows but missing Composer scene shadows.
 SoftShadowPass retained a separate eight-pair table and whole-scene neutral
 fallback, outside the earlier AO/GI/reflection expansion. Extend that pass to the
-same exact min(16384, available device budgets) policy with reserves (2,1,9).
-Use v2 query kernels, Vulkan specialization ID0 and Metal image/sampler argument
+same exact min(16384, available device budgets) policy with current reserves (2,1,10).
+Use current v5 query kernels, Vulkan specialization ID0 and Metal image/sampler argument
 records5/6. Table overflow must retain all instances and other shadows; only the
 excess texture sample becomes neutral alpha with a warning and scalar alpha/cutoff
-preserved. Do not reduce texture counts, alter alphaCutoff/material defaults,
-canonicalize object resources or globalize material ownership in this correction.
-The lead explicitly defers shader/resource-count improvements until the API
-migration is complete; that later refactor needs separate authorization.
+preserved. That correction originally deferred texture/default changes; later
+source implements indexed tables, immutable reuse and alpha defaults/threshold.
+Preserve those implementations, without canonicalizing editable object ownership
+or turning transient indices into global material identities.
 ## Composer explicit environment selection
 
 The M07 lead-directed [environment correction](milestone_07_bg2e_composer/environment-synchronization.md)
@@ -214,3 +218,42 @@ Renderer generation, queue snapshots and settings honor the same source. Retain
 procedural RGB while HDR is assigned, restore RGB when cleared, and expose failures
 without silently rolling back user fields. Existing non-opt-in Scene behavior and
 Model Edit coexistence remain intact; no new global material/resource policy.
+
+## M07-08 source reconciliation
+
+At HEAD `78943d5820e69363c942d71136f479a0df87128e`, current source supersedes the
+historical v2 table handoff: AO/GI/reflection use native v3 with Vulkan scene set1,
+persistent material arrays set2 (bindings5/6), specialization ID0 and unchanged
+Metal record buffers8/9. Direct query shadows use `draw.query.softShadows.v5`,
+Vulkan invocation set0, scene set1 and persistent alpha set2 (bindings16/24),
+Metal records5/6 and reserves (2,1,10). AO/GI/reflection reserves are respectively
+(4,2,13), (5,3,15), (6,3,16). Exact device-clamped capacity up to 16384, neutral
+pair overflow and object-local ownership remain. Consume current maintained
+[tracing reference](../../../doc/api/draw/TracingSceneResources.md) and source,
+not historical ABI labels. This is static reconciliation, not a new native test.
+
+## M08 implemented standalone boundary and retirement input
+
+The [M08 review](milestone_08_lightmap_generator/review.md) records the actual
+bake-owned StandaloneBakerContext, StandaloneLightmapBaker,
+StandaloneBakeSceneAssembler, StandaloneBakeBatch and LightmapOutputWriter.
+Generic image/native archive/atomic file IO stays DB. The CLI uses the typed draw
+offscreen lifecycle without camera frames; required UV sample work is distinct
+from camera exact-N export. Native immutable sharing/completed acceleration/pools
+and renderer optimizations remain intact.
+
+Actual output is an authoritative lightmaps.json pointing to a complete immutable
+generation, with explicit overwrite, native RGB32F, linear UV2 baked AO/GI model
+copies and stopped source protection. Strict whole-batch failure/cancellation
+supersedes legacy per-target skip/flat-file semantics for the new product.
+No simultaneous multi-path replacement, general HDR interchange or power-loss
+claim is added. Known registered custom external inputs need declarations;
+unknown schema components retain the shared parser policy.
+
+Production/shared transitive APIs remain through M08; new CLI direct draw use does
+not mean OffscreenApplication/scene/DB/UI umbrellas are render-free. Root all.hpp
+still exports render and omits bake/all.hpp. M09 owns final canonical accessors,
+exports/targets and native UI/app migration, updating actual callers and schemas
+without permanent source/ABI shims. See the per-file retirement impact; no native
+backend deletion or source rewrite is authorized by this review. M08-07 authoring
+precedes M09 and M10 remains a final audit of already maintained documentation.

@@ -43,3 +43,28 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 Keep the bake namespace implementation and its public draw/gpu dependencies; it contains no production rendering algorithm wrapper. Remove legacy render bake/output/preview classes only after M08 parity. The CPU UV diagnostic is an accepted implementation refinement, not a native rendering bridge that should be moved into gpu.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+## Current engine preservation requirements — 2026-10-21
+
+Keep native Vulkan/Metal persistent descriptor/argument-array caching and complete
+Metal indirect-resource residency, layout and encoder stride ownership. Preserve
+Vulkan timing query/timestamp capabilities and Metal encoder-envelope/submission
+timing, exact RecordingCompletion state, image bindingGeneration and BLAS build
+identity. Native graphics confinement is not permission to delete GPU profiling,
+cache helpers or backend-owned completion safety. Do not introduce GPU dependencies
+on draw/ui to retain telemetry: transport remains in base/gpu.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 actual native seam audit
+
+Before deleting the 178-file current render implementation tree, resolve its
+incoming users from M09-01/03. Inspect both ImGuiVulkanBackend.cpp AND
+ImGuiMetalBackend.cpp, ui/detail/ImGuiBackend.hpp, UserInterface public draw
+callbacks and app/GPUSelectionDialog. The Metal adapter still implements the
+production Vk callback signature, so removing Vulkan includes only from the
+Vulkan backend is insufficient. DrawGraphicsExecution also contains retained
+SDL_Vulkan_GetDrawableSize coordination. Move only required native implementation
+behind GPU primitive/native bridges without adding GPU-to-UI/scene/draw dependencies;
+keep UI wrappers and imgui header privacy. Do not delete gpu/vk, Vulkan SDK/runtime,
+current v3/v5 tables/pools/residency or legitimate binding indices/backend casts.

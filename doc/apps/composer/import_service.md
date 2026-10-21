@@ -148,3 +148,5 @@ results. The service replies after publication and renderer bindings are restore
 See the [implementation and lifecycle contract](../../../docs/render_to_draw/plan/milestone_07_bg2e_composer/async-import-service.md)
 and [project-lead checks](../../../tests/draw/composer_import/README.md). Native
 backend/service execution remains project-lead validation.
+
+For draw-specific request/document/renderer identity, CPU versus GPU phases, reimport rollback and joined shutdown, use the maintained [draw import lifecycle](draw_import_lifecycle.md). The production implementation section above describes the production app; it is not the draw worker implementation.

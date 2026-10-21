@@ -37,3 +37,24 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## Revised final handoff
 
 This technical review is followed by [M09-08 — Cumulative documentation](step_08_documentation.md) in the same milestone. On review delivery, progress points to that documentation step, with normal lead acceptance required. The review does not close the milestone or authorize the following milestone by itself. Reconcile its report with the documentation handoff after that final step.
+
+## Current engine preservation requirements — 2026-10-21
+
+Before declaring retirement complete, compare the KEEP/adapt inventory against
+R01–R14 and final source. Record output/counter/baseline evidence, actual native
+coverage and remaining measurements separately. Preserve shared optimization and
+profiling source/probes even if production entrypoints used related instrumentation.
+No reversion to full per-frame rebuilding/all-update drains is an acceptable
+implicit cleanup consequence.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 final review comparison input
+
+Compare final source against the M08 review and refreshed M09-01 per-file manifest:
+actual standalone owner names, final component/umbrella accessors, three app and
+camera-offscreen targets, config/data identities, manifest/native HDR model output,
+native UI seams and template/resource registrations. Resolve every remove/migrate/
+keep disposition; do not report a text-match count as a deleted-symbol proof.
+Carry P01–P11/optimization evidence by its real owner/result, with unspecified
+coverage unspecified, and update final M09-08/M10 page/source/target mappings.

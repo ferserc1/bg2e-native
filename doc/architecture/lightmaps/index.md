@@ -26,7 +26,7 @@ to the rendering pipeline documentation.
 | [Execution contexts](contexts.md) | `BakerContext`, `IntegratedBakerContext`, `IntegratedLightmapBaker`, `StandaloneBakerContext`, `StandaloneLightmapBaker`, private snapshots/resources. |
 | [Standalone assembly and batch](standalone_scene_and_batch.md) | `StandaloneBakeSceneAssembler`, its target/assembly records, `StandaloneBakeBatch` and callbacks. |
 | [UV preview and editor integration](preview_and_editors.md) | `UvMapPreviewRenderer`, `UvMapPreview`, `Uv2SafeReload`, `Uv2RegenerationResult`, `ModelLightmapWindow`, `SceneLightmapWindow` and delegate bake jobs. |
-| [Output and material integration](output_and_materials.md) | `LightmapOutputWriter`, `ImageFormat`, file naming/conversion; pending dedicated RGB material channel. |
+| [Output and material integration](output_and_materials.md) | Production `LightmapOutputWriter`, `ImageFormat` and file/material limits; separate draw/bake RGB contract linked below. |
 
 ```mermaid
 flowchart LR
@@ -45,8 +45,8 @@ flowchart LR
 The baker stores RGB multipliers, not a shaded beauty image. RTAO yields scalar
 visibility replicated into RGB. RTGI yields a colored factor normalized against
 environment irradiance. The material model still exposes the existing AO texture
-and selected scalar AO channel; a dedicated RGB illumination channel remains
-future work. Current deferred shaders contain an RGB path reusing the AO texture;
+and selected scalar AO channel in the production writer. No additional
+illumination texture slot is supplied. Current deferred shaders contain an RGB path reusing the AO texture;
 that transitional path is described explicitly in [material integration](output_and_materials.md).
 
 Public signatures and validation rules are in the [render API](../../api/render/reference.md),
@@ -56,3 +56,8 @@ For the separate draw/bake data flow, raw-sample versus composed-output ordering
 explicit indirect modes and precision boundaries, read
 [integrated draw lightmaps](../draw_integrated_lightmaps.md). The production
 diagram and scalar-AO export discussion above describe render, not draw.
+
+The delivered [standalone draw/bake architecture](../draw_standalone_lightmaps.md)
+now covers private assembly, UV2, exact completed samples and protected complete
+manifest publication. [CLI and deployment](../../apps/draw_lightmap_generator.md)
+are separate from the production render context/batch pages in this family.

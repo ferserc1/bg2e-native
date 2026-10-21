@@ -78,3 +78,9 @@ resources and commands used inside draw delegates.
 ## Advanced lighting in existing examples
 
 Tutorials [10](10_deferred_renderer.md#advanced-lighting-and-visible-controls) and [11](11_manipulation.md#advanced-lighting-and-visible-controls) now include actual settings-window wiring, GI/reflection activation, capability diagnostics, histories/denoise and final-AA choices. Tutorial 11 also covers per-light local position/orientation controls and active GI/reflection defaults. No extra example target is required.
+
+- [Compose, light and save a scene](composer.md): the delivered draw Composer workflow.
+
+
+- [Bake model/prefab lightmaps without a camera](standalone_lightmaps.md):
+  standalone Engine/Scene lifetime, UV2 preparation, serial batch and typed file output.

@@ -133,3 +133,14 @@ GPU-only texture ownership is not image/model export. See
 [integrated lifecycle](IntegratedBakerContext.md),
 [manual output fixtures](../../../tests/bake/output/README.md), and
 [implementation handoff](../../../docs/render_to_draw/plan/milestone_04_lightmaps/accumulation-output.md).
+
+## Standalone completed output and persisted resources
+
+[StandaloneLightmapBaker](StandaloneLightmapBaker.md) reuses the same raw/exact-count/
+composition/dilation contract through synchronous internal submissions.
+[StandaloneBakeBatch](StandaloneBakeBatch.md) exports its completed typed pixels
+through the [bake LightmapOutputWriter](LightmapOutputWriter.md), including actual
+model resources. RGB32F native encoding preserves final multiplier bits without
+exposure/clamp; it does not remove the raw GI precision/saturation validation
+above or the interactive RGBA16F display bound. [Generic archive IO](../db/FileIO.md)
+is separate from batch source protection and authoritative manifest publication.

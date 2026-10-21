@@ -20,3 +20,22 @@ Audit existing maintained `doc/` pages and M01–M09 documentation handoffs agai
 Complete final audit report and coherent maintained documentation; final lead acceptance closes the implementation plan.
 
 Perform relevant static checks. Compilation/runtime validation belongs to the project lead unless explicitly requested. Deliver one step, update progress and wait for lead acceptance under the execution protocol. No new engine feature, build-system change or future API documentation is authorized by this audit.
+
+## Current engine preservation requirements — 2026-10-21
+
+Explicitly close R01–R14 against final implementation and maintained guidance.
+Preserve independent optimization/profiling acceptance provenance and outstanding
+performance measurements; code existence or migration continuation is not a new
+benchmark/native matrix. Final migration retirement must retain optimized behavior,
+fall back safely and keep independent object import/export semantics.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 closure evidence input
+
+Reconcile final standalone products/data contracts and all M08-07/M09-08 maintained
+page mappings against final source, recording actual M09 retirement dispositions
+and current optimization/profiling preservation. Separate ten synthetic inspector
+tests, continuation acceptance and any later supplied native output/package/counter
+records. No unknown backend/scenario should become a fabricated successful run;
+no missed standalone authoring requirement is deferred beyond final closure.

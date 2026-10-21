@@ -7,10 +7,12 @@ Plans a complete batch's outputs before baking, then writes a completed target's
 RGB image and optional `.bg2` copy. Non-copyable; move construction/assignment
 are `noexcept`. Private state owns plans and sidecar-commit tracking.
 
-This writer consumes the production render bake types. The experimental
-[bake output](../bake/LightmapOutput.md) is a retained image plus typed CPU pixels;
-it does not yet have this batch/model-copy writer. Mode metadata and GPU-only
-texture ownership alone cannot produce a reloadable saved model.
+This is the preserved **production render** writer. The separate experimental
+[bake::LightmapOutputWriter](../bake/LightmapOutputWriter.md) stages a complete
+generation, preserves native RGB32F and atomically publishes its authoritative
+manifest. It is not a DB namespace alias. The per-target/byte-only/failure limits
+below apply specifically to this production writer. Mode metadata or GPU-only
+texture ownership alone is not exported image data.
 
 ## Types
 
@@ -54,8 +56,10 @@ for preflight/write/directory access.
 RGB8 is written directly. RGB32F must be finite and is clamped/rounded to RGB8
 without exposure. There is no HDR image format. Model copies use a cloned
 Drawable: every material gets the image via AO, UV set 1, unit scale and AO
-channel zero. Source material attributes are not changed. A dedicated RGB
-illumination material channel remains pending.
+channel zero. Source material attributes are not changed. This legacy writer assigns the AO
+carrier but does not explicitly set the new bakedAO/bakedGI interpretation; the
+[draw material contract](../draw/BakedIndirectMaps.md) and bake writer handle that
+explicit RGB/linear/UV2 behavior without inventing another texture slot.
 
 ## Staging and overwrite limits
 
@@ -73,7 +77,9 @@ bg2e::db::LightmapOutputWriter writer(outputDirectory, bg2e::db::ImageFormat::PN
 writer.setOverwriteExisting(false);
 std::vector<bg2e::db::LightmapOutputWriter::Target> targets;
 for (const auto& target : assembly.targets)
+{
     targets.push_back({target.outputIdentity, target.inputSourcePath, target.node});
+}
 auto paths = writer.preflight(targets, generateUv2, protectedInputPaths);
 // After a target's bake completes:
 writer.write(completedBaker->readPixels(), targets.front().identity);

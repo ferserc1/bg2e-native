@@ -18,7 +18,7 @@ still gates entry. Composer's serial integrated batches and per-item exports do
 not implement standalone scheduling or protected whole-batch publication. The
 lead checked the selection correction; other backend/package detail is unspecified.
 
-A runnable `apps/draw/lightmap_generator` uses windowless draw/GPU execution and public bake StandaloneBakerContext/SceneAssembler/Batch/output resources. It matches the current CLI map-generation, target validation, UV2, accumulation, output and overwrite behavior without a viewport renderer or production Engine.
+A runnable `apps/draw/lightmap_generator` uses windowless draw/GPU execution and public bake StandaloneBakerContext/SceneAssembler/Batch/output resources. It preserves required model/prefab map-generation, UV2 and accumulation workflows without a viewport renderer or production Engine; stricter required-target failure, typed HDR and complete-generation publication are explicit behavior changes recorded in product-validation.md.
 
 ## Scope exclusions
 
@@ -65,7 +65,7 @@ The technical review now hands off to [M08-07](step_07_documentation.md), not di
 
 ## M03-01 tracing checkpoint dependency
 
-The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and bake infrastructure remain pending. After M03 implementation/review, reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
+The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and integrated bake primitives are implemented. Reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
 
 ## M03 reviewed dependency
 
@@ -100,3 +100,91 @@ performance or exported-file evidence. Preserve production references until M09.
 ## M05 headless reuse boundary
 
 The generic draw Engine/offscreen surface and serial completed-frame lifecycle are implemented in M05. Reuse them where appropriate for windowless ownership, but M08 still supplies standalone bake job state, scene assembly, UV-specific sampling/coverage, typed LightmapPixels and complete-batch preflight/publication. The M05 exact-N camera average and verified RGBA8 PNG are separate products and do not establish bake batch semantics.
+
+## Current engine preservation requirements — 2026-10-21
+
+Preserve R01–R14 from the source reconciliation: alpha/default/import behavior,
+material and native-binding revisions, persistent table/acceleration generations,
+completion-aware pools, exact temporal invalidation, conservative transparent
+regions, narrow typed update drain elision, CPU/GPU profiling and current complete
+save error/publication semantics. Do not reimplement an older version of these
+features to satisfy an original milestone description.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-01 delivery
+
+[Standalone context contract](standalone-context.md) implements the headless serial
+scheduler over public bake primitives, with explicit scene generations, one live
+target, synchronous completed samples and stale/cancelled/failed publication guards.
+M08-01 is accepted by lead continuation; backend/scenario coverage is unspecified.
+Assembly and batch output are delivered below; CLI remains pending. Existing
+optimized draw/gpu implementations are unchanged.
+
+## M08-02 delivery
+
+[Standalone assembly](scene-assembly.md) now prepares independent camera-less
+model/prefab/context candidates with shared schema/factory/CPU parsers, complete
+root ownership, enabled-target/source identities and staged independent UV2.
+Optional target GPU loading and overlap warnings are explicit; context geometry
+is source-only. M08-03 must complete dependency protection/preflight and output
+publication, including OBJ MTL/custom-resource discovery gaps (completed below).
+No runtime matrix is inferred; M08-02 is accepted by lead continuation.
+
+## M08-03 delivery
+
+[Standalone batch/output](batch-output.md) implements serial frozen jobs,
+protected file/component inventories, RGB8/exact RGB32F encoding, independent
+complete model copies and a final authoritative manifest pointing to a complete
+unique generation. Previous generations are preserved; cancellation/failure never
+publishes partial success. Production writer/native rendering algorithms and
+CMake remain unchanged. M08-02 is accepted by continuation (backend coverage
+unspecified); M08-03 is accepted by lead continuation; backend/scenario coverage is unspecified.
+M08-04 delivery follows below.
+
+## M08-04 delivery
+
+[Draw CLI](cli-application.md) adds draw_lightmap_generator with model/prefab
+arguments, typed live bake configuration and CLI-last overrides, backend choice,
+AO/GI typed outputs, UV2/copy controls and deterministic cancellation/error status.
+It reuses OffscreenApplication plus standalone assembly/batch without camera
+rendering. Existing production CLI/native algorithms remain unchanged; only the
+new app target and its registration change CMake. Shared paired shader refresh
+and distribution discovery remain authoritative. M08-03 is accepted by
+continuation; M08-04 awaits lead validation. Next is M08-05 product validation.
+
+## M08-05 delivery
+
+[Product validation record](product-validation.md) compares actual legacy/new
+workflows and documents deliberate stricter failure, output-layout and typed HDR
+changes. A read-only independent PNG/native-map/BG2-material inspector has ten
+passing synthetic CPU tests; actual native output, geometry reload, deployment
+and optimized regression checks remain lead-owned with explicit P01–P11 status.
+M08-04 is accepted by continuation, backend/scenario coverage unspecified. No
+native/production/CMake implementation changes or engine/build/package execution
+were made in M08-05. Next is M08-06 review after lead acceptance.
+
+## M08-06 technical review delivery
+
+[Review](review.md) records actual standalone states/lifetimes/source generations,
+assembly/UV2, public pass/settings ownership, typed writer/manifest/clone behavior,
+CLI/config/deployment identities, product status and R01–R14 preservation.
+[Retirement impact](removal-impact.md) provides 1338 per-file candidates including
+316 direct textual legacy matches; these are not automatic deletions. Shared
+transitive headers, native UI seams, templates, specialized legacy writer and
+final umbrella/accessor decisions are assigned to concrete M09 steps. Pending
+M10 audits and root contracts now use actual M08 source. No code/native algorithm,
+shader/CMake implementation or production source is changed by the review.
+M08-05 is accepted by continuation; hardware/scenario details remain unspecified.
+Next after review acceptance is M08-07 cumulative maintained documentation, not M09.
+
+## M08-07 documentation delivery
+
+[Coverage/source ledger](documentation.md) records 9 new and 22 updated maintained
+pages for actual standalone APIs, generic file/archive IO, C++ tutorial, complete
+CLI/config/resource/publication guide and architecture. Current save bool/parents/
+hardlink fallback and production/new writer distinctions are corrected; indexes
+and affected cumulative guidance are connected. No source/CMake/shader change or
+native execution occurred. M08-06 is accepted by continuation; M08-07 awaits lead
+acceptance. Next is M09-01 inventory under the normal transition gate, with the
+review's original evidence limits and production source retained until retirement.

@@ -69,3 +69,34 @@ their overloads, preserve native resource format readability, and keep app dirty
 state/generations out of shared widgets and DB. M06 continuation does not supply
 runtime regression evidence; M09-06 must collect it before claiming equivalence.
 See the [M06 review](../milestone_06_model_edit/review.md).
+
+## Current engine preservation requirements — 2026-10-21
+
+Retain authored/effective material separation, source and texture revisions,
+image native generations and independent clones. Keep draw Object/Light/Environment
+binding reuse and typed final-color updates with renderer/catalog/weak-target guards.
+Unknown/mixed callbacks and resource changes remain conservative. Keep generic
+CPU/GPU telemetry transport and public UI wrapper APIs free of ImGui types; remove
+production overloads without deleting surviving optimized implementations.
+
+Draw complete-save bool noexcept is current public behavior. Audit consumers for
+explicit false handling; do not replace it with old throwing-only assumptions.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 shared API and specialized output actions
+
+Use the actual M08 removal table: remove the production DB LightmapOutputWriter
+header/source after its old CLI callers retire; do not turn it into a permanent
+alias for bake::LightmapOutputWriter. Keep db::publishFile, both useful native
+archive encoders, generic image/schema/file IO, CPU BG2/OBJ/glTF readers and the
+original OBJ/MTL source inventory. Retain complete draw bool-noexcept snapshot
+saves, clone revisions and real GPU-only mip/layer bytes.
+
+Choose/update one final DrawableComponent accessor consistently across Node,
+factories/reflection/custom hooks, apps, bake assembly/context/writer and probes;
+currently drawDrawable is the draw path while drawable is production. Preserve
+private/shared helper exclusion and detached roots. Root bg2e/all.hpp currently
+exports render but not bake/all.hpp: reconcile final umbrella exports and explicit
+bake includes here and verify no legacy type enters through app/DB/UI umbrellas.
+Do not delete a shared file solely because one overload references render.

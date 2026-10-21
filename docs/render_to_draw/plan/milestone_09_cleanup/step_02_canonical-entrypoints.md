@@ -49,3 +49,31 @@ Delegate compilation and applicable runtime checks to the project lead; perform 
 M09-03/M09-05 update callers/build rules to final names. M10 must describe draw as production and remove obsolete opt-in guidance.
 
 Record actual API, ownership and verification in the milestone review. Follow [the review protocol](../review-protocol.md) and edit affected pending steps when actual contracts differ.
+
+## Current engine preservation requirements — 2026-10-21
+
+Canonical draw promotion preserves current alpha/default/glTF policy, optimized
+renderer/pass behavior and diagnostics, settings update paths and Composer's
+Performance menu. Do not copy old production initialization/defaults or revive
+removed profiling controls in GraphicsSettingsWindow. Preserve current render-loop
+frame/scene/UI/submission timing association and settings IDs through renamed
+entrypoints; no profiler window is required for a headless CLI.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 actual product/canonicalization checklist
+
+The current supported alternatives are draw_model_edit, draw_bg2e_composer and
+draw_lightmap_generator, plus draw_offscreen_application for exact camera export.
+Keep apps/draw source locations. Record any final executable/app/preference/import
+identity change once, then update CMake/package/template/docs consumers together;
+no legacy forwarding target is required. A binary rename alone must not silently
+relabel the typed bake configuration identity bg2e.bake.standalone.v1.
+
+OffscreenApplication still publicly includes render Engine, production Vk callbacks
+and ProductionRender default even when the new CLI directly uses only draw/bake.
+Remove those actual transitive branches when promoting the typed draw lifecycle.
+Preserve both workloads: camera exact completed-frame rendering and the standalone
+CLI's no-camera finish/batch path with 1x1 context surface and UV-resolution bake.
+All scene/baker owners must release before Engine cleanup; preserve signal/error
+and committed-manifest reporting boundaries. See the M08 review/removal table.

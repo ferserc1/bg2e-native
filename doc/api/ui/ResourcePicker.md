@@ -26,9 +26,6 @@ possible. `readOnly` disables both editing and browsing. The function returns
 Use [`PropertyBuilder::resource()`](../reflection/Builder.md#propertybuildert)
 to supply this metadata.
 
-The model editor wires `NodeEditor::onResourceChanged()` for Environment
-components. It validates the selected image, loads it through the active render
-engine's texture cache, refreshes the scene/environment, and marks the document
-dirty. A failed load returns `false`, so `ComponentInspector` restores the
-previous path. Supported Environment extensions are `hdr`, `exr`, `jpg`,
-`jpeg`, `png`, `bmp`, and `webp`.
+`PropertyMetadata::resourceCanClear` defaults to false. Enabling it adds Clear and allows an explicit empty path; readOnly also disables clearing. Browse cancellation always retains the current path.
+
+Draw Composer's Environment image property opts into Clear and filters `.hdr`/`.exr`. Edits are queued in place; renderer synchronization realizes only the active source. Invalid HDR retains requested fields and last-good GPU resources with visible diagnostics. This differs from a resource-validation callback that rejects a path and restores the old value. See [Environment](../draw/Environment.md) for selection, color persistence and alias/clearing rules.

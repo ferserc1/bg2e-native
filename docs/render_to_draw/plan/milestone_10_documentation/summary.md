@@ -65,3 +65,37 @@ performance or exported-file evidence. Preserve production references until M09.
 ## M05 source-of-truth handoff
 
 At final audit, reconcile the surviving canonical offscreen executable and app docs with post-M09 source. The M05 interim contract includes exact requested camera samples, settings precedence, synchronous typed readback and verified no-clobber PNG output; do not extend that claim to full scene/resource or bake-batch export.
+
+## Current engine preservation requirements — 2026-10-21
+
+Preserve R01–R14 from the source reconciliation: alpha/default/import behavior,
+material and native-binding revisions, persistent table/acceleration generations,
+completion-aware pools, exact temporal invalidation, conservative transparent
+regions, narrow typed update drain elision, CPU/GPU profiling and current complete
+save error/publication semantics. Do not reimplement an older version of these
+features to satisfy an original milestone description.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 actual source/review handoff
+
+[Standalone technical review](../milestone_08_lightmap_generator/review.md) records
+implemented public owners, lifetimes/settings/output/CLI contracts and R01–R14
+preservation. [Retirement impact and per-file inventory](../milestone_08_lightmap_generator/removal-impact.md)
+identify actual transitive shared/header/native/product/template dependencies;
+refresh the candidate snapshot before M09 deletion. It is not deletion approval.
+The new product's strict required-target failures, native RGB32F and final-manifest
+publication are intentional contracts, not old flat-file/skip compatibility.
+M08-07 still owns maintained standalone authoring before M09; M10 audits final
+M09 names/resources/exports against that authored baseline. Actual native/package/
+optimized-counter coverage remains distinguished from synthetic inspection and
+lead continuation acceptance. Concrete pending step checklists are updated.
+
+## M08 maintained standalone coverage
+
+The [M08-07 ledger](../milestone_08_lightmap_generator/documentation.md) supplies
+actual API/tutorial/app/architecture/DB and navigation coverage, including current
+bool-noexcept save behavior and final-manifest/native HDR semantics. Audit its
+final post-M09 mappings alongside M01–M09 coverage rather than postponing standalone
+authoring. The source review's original gap is closed by delivered documentation,
+not transformed into native backend/package/performance evidence.

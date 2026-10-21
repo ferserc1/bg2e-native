@@ -133,3 +133,7 @@ stopped GPU realization, owned worker/server shutdown, document/job validity,
 canonical reimport and renderer rollback. Read them before M07-05 multi-job bake
 integration and M07-07 review. Implementation has static checks only; project-lead
 backend/HTTP execution is pending.
+
+## M07 documentation delivery
+
+M07-07 and delivered corrections are accepted by lead continuation. [M07-08 coverage](documentation.md) records maintained Composer/scene/import/tutorial documentation, current tracing v3/query shadows v5 source reconciliation and retained cumulative guides. M07-08 awaits documentation acceptance before M08-01; exact runtime/backend/package coverage is unspecified.

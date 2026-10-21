@@ -653,48 +653,11 @@ weak tokens, and invalidates draw only if callbacks ran. Token lifetime controls
 cancellation; callbacks must respect object ownership and external GPU producers.
 The wait is an intentional safe mutation boundary, not a per-frame wait.
 
-Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 479–505. Exact excerpt:
+Source: [MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp).
 
-```cpp
-void MainLoop::asyncLoad(
-    std::function<void(ui::Loader*)> loadFn,
-    glm::vec4 clearColor,
-    std::function<void(std::exception_ptr)> onComplete)
-{
-    if (!_execution)
-    {
-        throw std::logic_error("MainLoop::asyncLoad requires an active run; no graphics execution is available.");
-    }
+`asyncLoad` requires an active execution, pauses scene drawing and installs a Loader override when UI is ready. A loop-owned joinable worker executes loadFn and captures any exception. Its token-guarded safe-update completion clears the override, resumes scene drawing and calls onComplete on the main thread. Normal and exceptional run exit join workers before graphics/UI/Engine cleanup; exiting-run completion tokens expire.
 
-    _execution->pauseScene(clearColor);
-
-    if (_execution->userInterfaceReady()) _userInterface.setFrameOverride([this]{ _loader.draw(); });
-
-    std::thread([this, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
-    {
-        std::exception_ptr error;
-        try { fn(&_loader); }
-        catch (...) { error = std::current_exception(); }
-
-        safeUpdateScene([this, complete = std::move(complete), error]() {
-            if (_execution->userInterfaceReady()) _userInterface.clearFrameOverride();
-            _execution->resumeScene();
-            if (complete) complete(error);
-        });
-    }).detach();
-}
-```
-
-Async loading pauses scene on the calling main thread, installs Loader frame
-override if UI is ready, and runs loadFn on a detached worker. Completion,
-including exception_ptr, is queued through safeUpdateScene; main-thread completion
-clears override, resumes and invokes onComplete. The worker must not mutate
-main-thread-only state. It must also finish before MainLoop destruction: current
-code captures `this` in a detached thread and has no join/cancellation ownership.
-Overlapping async loads/manual pause do not have nested ownership; completion
-resumes unconditionally. These are current contracts/limitations, not guarantees
-of an independent UI thread or concurrent scene mutation. The main thread must
-remain available to process/present UI while expensive work runs elsewhere.
+Workers must not mutate live graph/GPU state or wait for main-thread callbacks in order to finish. Loader progress is thread-safe. Async loading has no nested pause ownership: overlapping loads/manual pauses require caller coordination because completion resumes the scene. Composer adds its own guarded IO and document-generation checks; shared worker ownership does not supply cancellation inside a third-party parser or asynchronous GPU realization.
 
 ## Synchronization and shutdown
 
@@ -789,3 +752,14 @@ alive after baker invalidation. Complete resource export publishes native textur
 sidecars independently of temporary files. The document graph is the bake root;
 editor floor, stage light and camera are fixtures outside that graph. Composer and
 standalone batch orchestration are not supplied by this application integration.
+
+
+## Standalone draw lightmap application
+
+The delivered [standalone bake CLI](../apps/draw_lightmap_generator.md) uses the
+typed draw OffscreenApplication path, no camera frames and finish-owned serial
+bake work. It reuses existing public effects rather than another graphics strategy.
+Assembly and all job owners release before Engine cleanup; output uses its own
+protected final-manifest contract. See [standalone ownership](draw_standalone_lightmaps.md)
+for source/generation/complete model publication. Production/default branches
+remain present; this addition does not remove render or promote draw globally.

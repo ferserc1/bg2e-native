@@ -1,4 +1,10 @@
-# Output files and current material integration
+# Production output files and material integration
+
+This page describes the preserved production DB/render writer. The separate
+[draw/bake writer](../../api/bake/LightmapOutputWriter.md) implements native HDR,
+explicit linear UV2 baked AO/GI and complete-generation manifest publication. Its
+contract supersedes none of the legacy byte/per-target limits documented below;
+choose the API deliberately. See [standalone ownership](../draw_standalone_lightmaps.md).
 
 ## LightmapOutputWriter and ImageFormat
 
@@ -59,10 +65,11 @@ rename. The old output is not backed up/restored if rename or a later commit
 fails. Even one replacement has a remove/rename gap. Successful earlier target
 writes remain if a later target fails. This is the actual implementation contract.
 
-## Material AO and the pending RGB illumination channel
+## Production AO carrier and draw RGB interpretation
 
-A separate RGB illumination/lightmap material channel has not been added. This
-remains future work. The current public/serialized carrier is the AO texture
+There is no additional illumination texture slot. The production writer uses
+the AO texture carrier; draw materials support explicit baked RGB interpretation
+on that same slot. In this production path, the public/serialized carrier is the AO texture
 property, with a UV-set selector, scale and scalar channel selector. Its ordinary
 AO sampling contract selects one component and the standard material G-buffer
 stores scalar AO in an 8-bit UNORM channel. That scalar path alone cannot express
@@ -108,6 +115,6 @@ as baked by that deferred path; it does not independently distinguish authored
 scalar AO from a colored bake. The exported `.bg2` references AO, not a separate
 RGB illumination slot. GPU RGBA32F bake output and CPU RGB32F access therefore
 do not establish HDR or dedicated RGB material support, and the deferred baked
-attachment itself is 8-bit. Future material-channel work must address the
+attachment itself is 8-bit. A different texture-slot design would have to address the
 independent representation/application of RGB illumination. No such API is
 assumed or specified here.

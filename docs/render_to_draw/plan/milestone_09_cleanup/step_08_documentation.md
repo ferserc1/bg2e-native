@@ -26,3 +26,24 @@ Reconcile every maintained page with actual final cleanup: draw is production; r
 - Relevant API reference, tutorials, app/CLI/build guidance and navigation are updated; all applicable former M10 authoring requirements are covered or explicitly assigned to an unimplemented milestone owner.
 - Source/links/snippet checks and actual validation ownership are recorded; no invented compilation/backend coverage.
 - Deliver this documentation step for lead acceptance before entering M10 final documentation audit. Follow the normal one-step execution protocol. M10 audits the accumulated result and does not defer missing authoring work to itself.
+
+## Current engine preservation requirements — 2026-10-21
+
+Reconcile canonical names without erasing current optimization/profiling guides:
+alpha/import policy, revisions/bindings, v3/v5 arrays, completion-based acceleration,
+pools, lazy signatures, regional fallbacks, narrow typed updates, CPU/GPU Performance
+and bool-noexcept saves. Update current API/app/deployment pages at M09; M10 audits
+them rather than authoring missing substantive coverage.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 documentation preservation input
+
+Use M08-07's authored standalone API/tutorial/app/package coverage as the baseline.
+Update it to actual final component/umbrella/entry-point and executable names after
+cleanup; preserve typed bake config and native archive/material/manifest semantics
+unless a deliberate data migration was implemented. Remove obsolete production
+usage pages without losing their still-valid CPU/file concepts or independent
+verification guidance. The M08 review's original production/experimental labels
+remain historical evidence; final maintained pages reflect actual M09 promotion,
+with no compatibility shims, synthetic-as-native claims or optimization rollbacks.

@@ -369,10 +369,12 @@ class ObjMaterialReader final : public tinyobj::MaterialReader {
         {
             directories[i] = path.parent_path();
         }
+        sourcePaths.push_back(std::filesystem::absolute(path).lexically_normal());
         return true;
     }
 
     std::vector<std::filesystem::path> directories;
+    std::vector<std::filesystem::path> sourcePaths;
 
   private:
     std::filesystem::path _base;
@@ -411,6 +413,8 @@ std::shared_ptr<ObjMesh> readObj(const std::filesystem::path& filePath)
     geo::GenTangentsModifier<geo::MeshPNUUT>(mesh.get()).apply();
     auto result = std::make_shared<ObjMesh>();
     result->name = filePath.stem().string();
+    result->sourcePaths = reader.sourcePaths;
+    result->sourcePaths.push_back(std::filesystem::absolute(filePath).lexically_normal());
     result->mesh = mesh;
     result->materials.resize(mesh->submeshes.size());
     for (uint32_t i = 0; i < result->mesh->submeshes.size(); ++i)

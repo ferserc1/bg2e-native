@@ -35,3 +35,28 @@ Record actual API, ownership and verification in the milestone review. Follow [t
 ## Revised final handoff
 
 This technical review is followed by [M08-07 — Cumulative documentation](step_07_documentation.md) in the same milestone. On review delivery, progress points to that documentation step, with normal lead acceptance required. The review does not close the milestone or authorize the following milestone by itself. Reconcile its report with the documentation handoff after that final step.
+
+## Current engine preservation requirements — 2026-10-21
+
+Compare R01–R14 explicitly with the delivered standalone scheduler/assembler/batch
+and all M09–M10 owners. Check fresh wrapper versus reusable immutable resources,
+completion-safe cancellation, source/material identity, bool export failures and
+separate workload waits from asynchronous timing. Preserve renderer/private cache
+helpers and independent workstream validation provenance; no duplicate cache,
+profiler or generic ResourceManager is required by M08.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-05 actual validation handoff
+
+Use [product-validation.md](product-validation.md) as the source parity and
+runtime evidence ledger. Independent PNG/native-map/material-section inspection
+is implemented and its ten synthetic CPU tests pass; it does not establish
+native geometry reload, actual bake numerics/chart dilation, source preservation,
+process cancellation, package relocation or Vulkan/Metal performance. Preserve
+P01–P11's explicit lead-owned status and the accepted continuation policy without
+inventing scenario/backend results. Carry strict required-target failure,
+manifest-based atomic publication, native RGB32F format and settings-identity
+changes into the actual M09 feature/dependency comparison. Existing production
+reference/native optimizations remain unchanged; this step supplies no deletion
+authorization or blanket product-retirement success.

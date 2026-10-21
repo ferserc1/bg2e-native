@@ -10,3 +10,7 @@
 
 - [Headless draw and camera accumulation](draw_offscreen_rendering.md): context
   ownership, exact completed samples, final-only conversion and PNG policy.
+
+
+- [Standalone UV batch ownership and publication](draw_standalone_lightmaps.md):
+  private assembly, frozen serial jobs, typed maps, complete models and final manifest.

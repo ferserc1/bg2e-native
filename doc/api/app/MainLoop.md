@@ -204,7 +204,7 @@ void asyncLoad(
 );
 ```
 
-`asyncLoad()` pauses scene drawing, runs `loadFn` on a detached worker thread,
+`asyncLoad()` pauses scene drawing, runs `loadFn` on a loop-owned joinable worker thread,
 then queues restoration and `onComplete` on the main thread. The worker must not
 mutate main-thread-only engine state directly. Progress methods on the supplied
 loader are thread-safe.
@@ -224,8 +224,9 @@ The [MainLoop architecture](../../architecture/MainLoop_render_draw_gpu.md)
 walks through concrete source and ownership. The selected draw Device uses
 [tracked submissions and waitIdle](../gpu/Submission_tracking_and_waitIdle.md).
 Safe updates and teardown require coordination with background GPU producers:
-waitIdle reopens admission on return. Async workers capture MainLoop and must
-finish before its destruction; detached-worker lifetime is not managed by run.
+waitIdle reopens admission on return. MainLoop joins async workers before normal
+or exceptional graphics/UI cleanup and expires completion tokens when run exits.
+A worker must return without depending on a future main-thread completion.
 A successful example run does not imply arbitrary cross-thread scene access.
 
 ## Experimental draw scene path

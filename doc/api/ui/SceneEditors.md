@@ -179,9 +179,8 @@ Target        vec3 input
 ```
 
 All ranges are fixed; the target is the orbit pivot in world space.
-`NodeEditor` embeds this editor automatically under a node's Light section
-when the node has both a `LightComponent` and a
-`PolarTransformControllerComponent` (the typical sun/sky-light rig).
+`NodeEditor` delegates component sections to the reflected ComponentInspector.
+Applications may also use this specialized controller widget directly.
 
 ---
 
@@ -190,3 +189,11 @@ when the node has both a `LightComponent` and a
 - [quick_start — Recipes 11 & 12](quick_start.md#recipe-12-scene-tree-selection)
 - [Material_Editors.md](Material_Editors.md)
 - `doc/safe_update_scene.md`, `manipulation::SelectionManager` header.
+
+## Queued Composer intent mode
+
+`SceneTree::onSelect(SelectCallback)` receives `(scene::Node*, bool)` selection intent; `onReparent(ReparentCallback)` receives source/destination nodes. `onChanged(ChangedCallback)` observes completed immediate reparent edits. Without intent callbacks, the existing immediate behavior remains available.
+
+`ComponentInspector` exposes `onAddRequested(std::function<void(const std::string&)>)`, `onRemoveRequested(std::function<void(std::shared_ptr<scene::Component>)>)` and `onDrawComponent(std::function<void(std::shared_ptr<scene::Component>)>)`. Composer uses these to queue registered Add/Remove actions and draw staged editors at safe boundaries. It checks weak owner/document membership again before mutation. Built-in Environment edits apply in place; arbitrary GPU-owning component clone/edit publication is not promised. These callbacks do not transfer application dirty/bake/history policy into the widget.
+
+See [Composer workflow](../../apps/draw_composer.md). Custom table integrations must guard rows and endList with [bool beginList](SelectableList.md).

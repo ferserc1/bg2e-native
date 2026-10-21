@@ -53,3 +53,24 @@ dependencies, shaders and assets. It records no native package launch or feature
 parity execution. Use the [M06 product validation record](../milestone_06_model_edit/product-validation.md)
 as an outstanding evidence list, then replace interim target/resource names only
 after checking the final M09 source and native installed layout.
+
+## Current engine preservation requirements — 2026-10-21
+
+Audit current Composer Window → Performance, live charts without file creation,
+Start/Stop Recording and close/reopen/shutdown behavior. Graphics Settings no longer
+owns profiler controls. Preserve final application-specific integration rather than
+inventing Model Edit/headless UI parity. Deployment retains v3/v5 native shader and
+optional timing backend support; include bool save failures and copy fallback in
+output documentation without claiming whole-batch atomicity from generic DB IO.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 final standalone product/deployment audit
+
+Compare final surviving lightmap app parser/target with its M08 typed bake schema,
+CLI-last overrides, input/copy/UV2 rules, signal/exit and complete-manifest/native
+HDR contract. Reconcile any intentional executable rename with app IDs, CMake,
+package discovery and scripts/templates/main.cpp; binary naming does not implicitly
+migrate data profiles. Check actual installed/relocated paired draw/bake stages
+and full model sidecars, retaining artifact-inspector and native reload evidence
+limits. M08 source registration is not measured package/backend success.

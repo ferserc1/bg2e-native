@@ -275,3 +275,20 @@ release/recreate the context. Reacquire replaced drawable/tracing/selection/prev
 owners after adoption. A settings generation/token does not establish GPU
 completion. The example captures all targets' completed GPU and typed CPU outputs
 before material adoption; applying one map mid-batch would invalidate its baseline.
+
+## Composer document and worker validity
+
+Draw Composer checks request/document generations and weak node membership independently of renderer generation. Graph/component intent callbacks queue work at the stopped boundary; they do not make a captured raw node safe after document replacement. Imports parse CPU inputs on owned readers and realize graph/images/GPU resources on the main thread. MainLoop workers are joined before graphics cleanup; app import/HTTP readers have their own stop/join lifecycle. See [draw import lifecycle](apps/composer/draw_import_lifecycle.md).
+
+Integrated scene baking freezes the batch source, finishes all targets, then prepares/adopts maps. Complete DB save publication and partial interactive material adoption have different guarantees; see [Composer](apps/draw_composer.md).
+
+
+## Standalone draw source freezing
+
+[Standalone contexts/batches](api/bake/StandaloneBakerContext.md) require private
+retained scene/job owners with all producers stopped. Prepare UV2 and resources
+before freezing, do not adopt one target's map mid-batch, and invalidate/reprepare
+new source generations after edits. CPU cancellation/current callbacks do not
+authorize competing GPU submissions. Full staged file publication is a separate
+[writer transaction](api/bake/LightmapOutputWriter.md), not an interactive partial
+material rollback or a replacement for exact recording completion.

@@ -146,3 +146,9 @@ completed linear camera samples before one final conversion and completed-output
 callback. The [offscreen scene CLI](../../apps/draw_offscreen_application.md)
 exports a verified PNG without window/UI initialization. Backend selection and
 explicit draw execution are separate choices; production render remains supported.
+
+
+The [standalone draw lightmap CLI](../../apps/draw_lightmap_generator.md) uses that
+typed lifecycle with no camera frames; its finish boundary runs public
+[bake batch jobs](../bake/StandaloneBakeBatch.md). Exact UV samples, typed native
+HDR and final manifest publication are distinct from camera averaging/PNG export.

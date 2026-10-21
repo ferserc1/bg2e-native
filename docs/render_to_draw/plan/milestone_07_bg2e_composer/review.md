@@ -162,3 +162,7 @@ Explicitly retained limits are not hidden claims of full transactions or package
 coverage. M07-07 is delivered awaiting lead review/acceptance. Its successor is
 M07-08, not M08. This technical report does not author the cumulative maintained
 Composer documentation, promote draw or authorize production deletion.
+
+## M07-08 cumulative documentation handoff — 2026-10-21
+
+M07-07 and delivered corrections are accepted by project lead continuation; exact backend/HTTP/package coverage is unspecified. Earlier pending-validation paragraphs retain their historical provenance. [Documentation coverage](documentation.md) maps maintained application/tutorial/scene/import/UI/worker pages and retained cumulative references to actual source. Source reconciliation finds current tracing v3/query shadows v5 with persistent Vulkan set2 arrays and shadow reserves (2,1,10); it supersedes this review's historical v2 ABI description. No engine/shader/CMake change or execution is made by documentation closure. M07-08 awaits lead review before M08-01.

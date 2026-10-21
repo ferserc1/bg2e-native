@@ -52,7 +52,44 @@ Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md)
 
 Audit [the M07 16384 policy](../milestone_07_bg2e_composer/tracing-capacity-16384.md):
 exact device/reservation-clamped counts, ShaderConstant/ShaderLib specialization,
-Metal argument-record groups, native effect shader interfaces v2, and explicit
+Metal argument-record groups, current native effect shader interfaces v3, and explicit
 neutral-texture overflow. Persisted reflection/settings IDs remain v1 where their
 schema is unchanged. Old 32/128/256 effect ceilings belong only to historical
 records or deliberately small primitive probes, not maintained product guidance.
+
+## M07-08 source reconciliation
+
+At HEAD `78943d5820e69363c942d71136f479a0df87128e`, current source supersedes the
+historical v2 table handoff: AO/GI/reflection use native v3 with Vulkan scene set1,
+persistent material arrays set2 (bindings5/6), specialization ID0 and unchanged
+Metal record buffers8/9. Direct query shadows use `draw.query.softShadows.v5`,
+Vulkan invocation set0, scene set1 and persistent alpha set2 (bindings16/24),
+Metal records5/6 and reserves (2,1,10). AO/GI/reflection reserves are respectively
+(4,2,13), (5,3,15), (6,3,16). Exact device-clamped capacity up to 16384, neutral
+pair overflow and object-local ownership remain. Consume current maintained
+[tracing reference](../../../../doc/api/draw/TracingSceneResources.md) and source,
+not historical ABI labels. This is static reconciliation, not a new native test.
+
+## Current engine preservation requirements — 2026-10-21
+
+Audit all R01–R14 against final source, particularly effective/authored alpha,
+revision/native generation keys, persistent v3/v5 native binding sets, exact
+RecordingCompletion rather than frame numbers, pool leases and limits, lazy
+fingerprint versus accepted history, typed-only notification safety and public
+CpuProfile/GpuProfile/SubmissionTiming/Performance APIs. Distinguish Vulkan timestamp
+boundaries from Metal encoder envelopes. Public pass injection does not require
+exposing private concrete cache/ABI helpers. Verify bool noexcept writer signatures
+and false handling rather than documenting thrown export exceptions.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 standalone API facts to reconcile
+
+Audit actual standalone context/baker/assembler/batch/writer declarations and final
+post-M09 accessors/umbrella exports. Preserve one live target, source/target/device
+identities, exact completed UV samples, public pass injection, immutable/completed
+reuse, staged complete-generation output, typed native HDR and bool-checked cloned
+model snapshots. Generic db file/archive/parsed data APIs survive independently
+of the retired specialized production writer. Do not document tentative SceneAssembler
+or Batch aliases, arbitrary camera-profile import, automatic custom resource
+inference or a general ResourceManager as implemented final APIs.

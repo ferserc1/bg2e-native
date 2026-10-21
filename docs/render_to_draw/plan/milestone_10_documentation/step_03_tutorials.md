@@ -29,3 +29,24 @@ Perform relevant static checks. Compilation/runtime validation belongs to the pr
 Compare the lightmap tutorial with draw_lightmaps's actual synchronous pre-acquisition sample submission, all-target adoption, frozen settings/source snapshots, cancellation and preview rebinding. Do not describe the example as a headless scheduler, async service, image exporter or GPU-rasterized UV diagnostic.
 
 Source and evidence: [M04 technical review](../milestone_04_lightmaps/review.md).
+
+## Current engine preservation requirements — 2026-10-21
+
+Keep current effective cutoff and glTF import examples, independent editable
+objects with derived-cache reuse, retired-slot/recording completion and custom-pass
+fallbacks. Queued generic callbacks still drain; do not illustrate them as the
+specialized no-drain color path. Timing examples must use asynchronous snapshots
+and distinguish CPU, GPU, scene cadence and presentation cadence; never sum nested
+inclusive scopes or overlapping submissions as total frame time.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 standalone tutorial comparison
+
+Audit M08-07's real standalone model/prefab/context example against final source:
+explicit live Engine lifetime, retained Scene/root, UV2 before realization, release
+previous baker, final settings before preparation, no source material adoption
+between targets and output manifest resolution. Keep camera exact-N offscreen and
+UV accumulation examples separate. Show real mode/format/model-copy limits and
+controlled pixel/geometry reload checks; no unimplemented native capability or
+future compatibility recipe may replace the delivered tutorial.

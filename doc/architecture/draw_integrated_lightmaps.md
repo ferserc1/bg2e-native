@@ -95,3 +95,9 @@ OffscreenApplication and an independent linear camera-frame accumulator; it does
 not use the UV-space bake counts/coverage in this integrated product. Runtime
 numeric/performance verification remains project-lead-owned; documentation and
 source checks do not establish Vulkan/Metal numerical equivalence.
+
+
+The separate [standalone UV architecture](draw_standalone_lightmaps.md) and
+[CLI](../apps/draw_lightmap_generator.md) are now delivered. They reuse raw bake
+primitives with their own serial completion/source and whole-batch publication
+lifecycle; the integrated example/adoption path remains independently scoped.

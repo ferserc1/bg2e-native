@@ -85,3 +85,38 @@ performance or exported-file evidence. Preserve production references until M09.
 ## M05 migration inventory
 
 M05 retains both production and experimental draw OffscreenApplication init paths; production remains the default. The registered draw_offscreen_application and tests/draw/offscreen are interim draw products alongside production examples. M09 must migrate and preserve the accepted headless behavior, remove temporary execution-selection branches and retire old offscreen products only under the accepted manifest and parity checks.
+
+## Current engine preservation requirements — 2026-10-21
+
+Preserve R01–R14 from the source reconciliation: alpha/default/import behavior,
+material and native-binding revisions, persistent table/acceleration generations,
+completion-aware pools, exact temporal invalidation, conservative transparent
+regions, narrow typed update drain elision, CPU/GPU profiling and current complete
+save error/publication semantics. Do not reimplement an older version of these
+features to satisfy an original milestone description.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-06 actual source/review handoff
+
+[Standalone technical review](../milestone_08_lightmap_generator/review.md) records
+implemented public owners, lifetimes/settings/output/CLI contracts and R01–R14
+preservation. [Retirement impact and per-file inventory](../milestone_08_lightmap_generator/removal-impact.md)
+identify actual transitive shared/header/native/product/template dependencies;
+refresh the candidate snapshot before M09 deletion. It is not deletion approval.
+The new product's strict required-target failures, native RGB32F and final-manifest
+publication are intentional contracts, not old flat-file/skip compatibility.
+M08-07 still owns maintained standalone authoring before M09; M10 audits final
+M09 names/resources/exports against that authored baseline. Actual native/package/
+optimized-counter coverage remains distinguished from synthetic inspection and
+lead continuation acceptance. Concrete pending step checklists are updated.
+
+## M08 documentation baseline delivered
+
+[M08-07 coverage](../milestone_08_lightmap_generator/documentation.md) closes the
+maintained standalone authoring gap: actual bake owners, complete output and generic
+DB IO, C++ tutorial, CLI/config/resource guide and architecture. Start M09-01 only
+after normal documentation acceptance; reconcile final API/targets and surviving
+data contracts with these authored pages during cleanup and M09-08. Preserve
+explicit native/profiling evidence provenance. No production removal is implied
+by documentation delivery.

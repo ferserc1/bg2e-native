@@ -30,7 +30,12 @@
 
 #include <bg2e/bake/LightmapBakeExecutor.hpp>
 #include <bg2e/bake/IntegratedBakerContext.hpp>
+#include <bg2e/bake/StandaloneBakerContext.hpp>
+#include <bg2e/bake/StandaloneBakeSceneAssembler.hpp>
 
 #include <bg2e/bake/UvTemporalAccumulator.hpp>
 #include <bg2e/bake/LightmapCompositionPass.hpp>
 #include <bg2e/bake/UvMapPreviewRenderer.hpp>
+
+#include <bg2e/bake/LightmapOutputWriter.hpp>
+#include <bg2e/bake/StandaloneBakeBatch.hpp>

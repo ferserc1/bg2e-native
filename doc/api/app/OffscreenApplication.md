@@ -90,3 +90,14 @@ producers throughout initialization, resource edits and teardown.
 See the [CLI guide](../../apps/draw_offscreen_application.md),
 [tutorial](../../tutorials/draw/13_offscreen_application.md) and
 [accumulation architecture](../../architecture/draw_offscreen_rendering.md).
+
+## Standalone UV batches without camera frames
+
+[draw_lightmap_generator](../../apps/draw_lightmap_generator.md) uses the typed
+draw delegate with continueRendering false, a 1x1 depthless context surface and
+finish to run StandaloneBakeBatch. No surface camera render callback is recorded;
+UV surfaces use job resolution. Assembly/context/baker native owners are local
+to that operation and release before driver cleanup. Config is validated against
+actual bake settings before GPU initialization rather than camera graphics targets.
+This does not change the default scene delegate's exact-N camera mean or production
+overload. See [ownership architecture](../../architecture/draw_standalone_lightmaps.md).

@@ -15,3 +15,7 @@
 - [Experimental draw model editor](draw_model_edit.md): selection/gizmos, material
   and geometry tools, environment presets and complete resource saves.
   [Step-by-step editor workflow](../tutorials/draw/model_edit.md).
+
+- [Experimental draw Composer](draw_composer.md): scene/component editing, guarded imports, complete scene saves and integrated scene baking. [Guided workflow](../tutorials/draw/composer.md).
+
+- [Draw lightmap generator CLI](draw_lightmap_generator.md) — headless model/prefab AO/GI batches with typed bake settings and manifest publication.

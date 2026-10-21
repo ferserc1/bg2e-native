@@ -46,12 +46,22 @@ requires a device nor exports any referenced image.
 ## Saving a complete resource generation
 
 ```cpp
-bg2e::db::saveScene(root.get(), engine, outputDirectory / "model.json");
-bg2e::db::storeDrawableBg2(outputDirectory / "model.bg2", engine, modelNode.get());
+if (!bg2e::db::saveScene(root.get(), engine, outputDirectory / "model.json"))
+{
+    throw std::runtime_error("Complete scene export failed");
+}
+if (!bg2e::db::storeDrawableBg2(outputDirectory / "model.bg2", engine, modelNode.get()))
+{
+    throw std::runtime_error("Complete model export failed");
+}
 ```
 
-The output directory must already exist. Export requires realized drawables owned
-by the supplied Engine and no unresolved pending texture updates. It snapshots live material attributes and each actual GPU
+These engine-aware save functions return bool and are noexcept: false reports a
+logged failure. Check the result before declaring document/batch success; a
+try/catch alone cannot detect it. The example fragment assumes live root/engine/
+modelNode and includes `<stdexcept>`. Destination parents are created by export.
+Export requires realized drawables owned by the supplied Engine and no unresolved
+pending texture updates. It snapshots live material attributes and each actual GPU
 texture, including a GPU-only baked map with an empty source path. Every image
 layer/mip is read in its native format into a `.bg2tex` sidecar; format, HDR values
 and authored mips survive without gamma conversion or mip regeneration. Images
@@ -68,7 +78,7 @@ values accompany model resources and scene components.
 
 Scene export calls each component's virtual `serializeReferences`, preserving
 custom fields implemented by that hook. Registered schema creators and draw
-`loadResources` remain authoritative when loading. Unsupported serializers throw;
+`loadResources` remain authoritative when loading. Unsupported serializers fail the complete save (logged false);
 raw document IO is the route for preserving unregistered representations. Custom
 components with external resource types must provide their own resource export
 contract. Environment source images are copied without re-encoding. Runtime
@@ -88,8 +98,10 @@ receive unique generation names and are linked into the destination without
 replacement. The main model/scene file is replaced last using an atomic filesystem
 rename (MoveFileEx on Windows). Failure removes this transaction's new sidecars
 and staging directory, preserving an existing main file and its resources. The
-filesystem must support hard links and same-filesystem atomic replacement. This
-is publication atomicity, not a power-loss durability guarantee. Old generations
+filesystem must support same-filesystem atomic replacement. If native hardlink
+publication is unavailable, exclusive resource reservation plus copy is used;
+unique resources still cannot clobber previous generations. This is publication
+atomicity, not a power-loss durability guarantee. Old generations
 remain on disk: export deliberately does not delete possibly shared resources.
 Keep the main file and its generated sidecars together when moving a document.
 
@@ -148,3 +160,11 @@ resource paths are resolved during realization, so external files must remain
 available. Applications own job cancellation, document/destination validity,
 publication rollback and renderer/bake/selection invalidation; parser results are
 not a background GPU-loading or immutable filesystem snapshot API.
+
+## Standalone batch boundary
+
+The [bake writer](../bake/LightmapOutputWriter.md) reuses complete bool-checked
+model snapshots inside private per-target directories, then publishes a complete
+batch manifest last. Complete single-document DB publication by itself does not
+supply that source-protection/overwrite/multi-target transaction. Generic native
+CPU archive/file publication is documented in [FileIO](FileIO.md).

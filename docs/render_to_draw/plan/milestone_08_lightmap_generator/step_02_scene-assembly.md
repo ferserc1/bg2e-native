@@ -66,7 +66,7 @@ selection/resource mappings.
 
 ## M03-01 tracing checkpoint dependency
 
-The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and bake infrastructure remain pending. After M03 implementation/review, reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
+The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and integrated bake primitives are implemented. Reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
 
 ## M04-02 actual replacement and surface inputs
 
@@ -107,3 +107,37 @@ Preserve independently owned/importable/exportable scene-object materials.
 execution bindings with a 16384/device-clamped ceiling, not a global material
 catalog or a requirement to deduplicate objects/materials before scene assembly.
 Keep the explicit warning/neutral-texture overflow policy.
+
+## Current engine preservation requirements — 2026-10-21
+
+R01–R04/R14: preserve cutoff default 0, effective threshold 0.02 (equality tests),
+MASK import exactly 0.5 and other glTF modes 0; do not restore the earlier default
+or infer cutout from transparency. Preserve independent editable clone/import/export
+ownership while sharing only valid derived immutable representations. Freeze after
+UV2 realization; actual geometry changes refresh BLAS/build/source identities.
+Retain material/texture revision propagation, helper exclusion and default blended
+tracing exclusion. CPU schema/parser separation is already implemented.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.
+
+## M08-01 delivered execution contract
+
+[Standalone context](standalone-context.md) now borrows an initialized headless draw
+Engine, with explicit initialize/prepareScene and one private serial slot. Reuse
+that scheduler; do not initialize a second Engine or borrow a viewport renderer.
+prepareScene takes a loaded retained root and optional EnvironmentResources;
+otherwise it generates the selected authored/default environment through public
+tools. The caller performs graph updates and UV2 realization first. Release the
+previous baker before createBaker; stale scene jobs cannot reset into a new scene.
+Each update completes exactly one synchronous sample; readPixels is available only
+for current completed validated output. Context cleanup precedes Engine cleanup;
+returned GPU outputs/targets must also be released inside the Engine lifetime.
+No standalone assembly, batch writer or CLI is supplied by M08-01.
+
+## Delivered contract
+
+See [scene-assembly.md](scene-assembly.md) for the implemented
+StandaloneBakeSceneAssembler API, private-candidate/source ownership, initial CPU
+UV2 generation before upload, schema-only versus target-resource loading, stable
+hierarchy identities, validation and remaining M08-03 dependency-discovery duties.
+The production assembler is retained as a reference and is not modified.

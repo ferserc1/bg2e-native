@@ -79,3 +79,25 @@ All original M10 final documentation outcomes remain required under the [coverag
 - [M07-08](milestone_07_bg2e_composer/step_08_documentation.md) — cumulative documentation through M07.
 - [M08-07](milestone_08_lightmap_generator/step_07_documentation.md) — cumulative documentation through M08.
 - [M09-08](milestone_09_cleanup/step_08_documentation.md) — cumulative documentation through M09.
+
+## Preservation of independently delivered engine work
+
+[Current-source reconciliation R01–R14](code-reconciliation-2026-10-21.md) is a
+cross-cutting requirement for M08–M10. Current defaults/classification, caches,
+native ABI/completion/pools, temporal/region/update behavior, profiling and save
+failure semantics are implemented source contracts to preserve, not new migration
+features to schedule or revert. Their functional/performance evidence is kept
+separate from implementation existence and migration acceptance. The concrete
+pending owning steps contain the corresponding preservation and validation work.
+
+## M08 reviewed implementation mapping
+
+The [M08 review](milestone_08_lightmap_generator/review.md) maps delivered actual
+standalone owner/type/header/CLI/settings/output contracts to pending M08-07,
+M09 and M10 tasks. [Retirement impact](milestone_08_lightmap_generator/removal-impact.md)
+assigns current shared/native/product/template dependencies to concrete cleanup
+steps. Required source/data/optimization preservation is separate from obsolete
+old-app API compatibility; typed native HDR/complete-generation publication and
+strict required-target success are explicit new contracts. P01–P11 and R01–R14
+carry real evidence/provenance without inventing named backend results. M08-07
+owns missing maintained standalone authoring; M10 only audits final coverage.

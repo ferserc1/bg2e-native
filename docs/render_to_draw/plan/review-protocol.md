@@ -69,3 +69,7 @@ M10 still performs this review: there are no pending implementation milestones, 
 ## 7. Documentation closure
 
 Follow [documentation-policy.md](documentation-policy.md). Documentation.md coverage evidence and maintained doc/ updates close M01–M09 after the technical review. Append that handoff to review.md and preserve the earlier review history. M10 audits all accumulated pages and closes the plan; no future implementation may be documented as available.
+
+## Optimization and profiling preservation
+
+Use [R01–R14](code-reconciliation-2026-10-21.md) as an explicit code-versus-plan checklist at every remaining review. Include material/default/import semantics, revisions, persistent native arrays, exact recording completion and acceleration reuse, resource leases/pools, temporal invalidation, transparent-region fallbacks, typed synchronization and CPU/GPU instrumentation/UI. Compare unchanged-frame work counters and diagnostic baselines where the lead supplies evidence; do not invent performance gains or undo source implementations because their independent validation report is pending.

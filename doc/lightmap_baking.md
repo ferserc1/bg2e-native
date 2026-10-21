@@ -4,9 +4,11 @@ This page documents the existing production `bg2e::render` workflow. The experim
 [draw advanced-lighting API](architecture/draw_advanced_lighting.md) has separate
 public components, settings, signals and ownership. The experimental [integrated bake API](api/bake/index.md) and
 [lightmap tutorial](tutorials/draw/12_lightmaps.md) now cover UV2 generation,
-completed RGB maps and draw material adoption. Standalone draw baking and
-windowless application orchestration remain separate pending products. Retain
-this production guide for current production editors and CLI applications.
+completed RGB maps and draw material adoption. [Standalone draw/bake jobs](tutorials/draw/standalone_lightmaps.md)
+and the [draw lightmap CLI](apps/draw_lightmap_generator.md) now supply camera-less
+serial UV samples and protected complete-generation output. [Windowless camera
+export](apps/draw_offscreen_application.md) is a different completed-sample product.
+The limits and recipes below remain the production editors/CLI reference.
 
 The lightmap baker needs a usable UV2 atlas. The integrated baker runs in an
 existing engine render loop; the standalone baker runs without a window or render
@@ -203,8 +205,9 @@ UV2 surface projection, world-space interpolation, coverage mask, frame ownershi
 accumulation, dilation and output boundaries directly from C++ and GLSL.
 The [application guide](apps/lightmap_generator/index.md) contains the current CLI.
 
-A dedicated RGB illumination channel in the material model remains future work.
-Current exports use the scalar AO property; the deferred shader path already
+The production writer uses the existing AO texture property rather than a
+separate illumination slot. Draw/bake exports now set explicit linear UV2 baked
+RGB interpretation on that same slot. Production exports use the scalar AO property; the deferred shader path already
 contains RGB sampling through that same texture, but this is not a separate
 material channel. See [material integration and limits](architecture/lightmaps/output_and_materials.md).
 

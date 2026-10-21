@@ -83,3 +83,30 @@ packaging helper does not itself implement scene-image export or standalone bake
 batch output. Packaging/install/standalone coverage remains subject to the actual
 selected script component and target configuration; registration alone does not
 establish that every distribution variant contains the example.
+
+
+## Draw standalone lightmap generator product validation
+
+`draw_lightmap_generator` is an application target under apps/draw. Standard
+bundle_app rules supply native libraries/assets and paired draw/bake shader trees;
+recursive Distribution discovery includes it alongside the preserved production
+lightmap_generator. RuntimeShaders installs both paired trees. No special package
+script or alternate shader layout is needed for the new CLI.
+
+Registration is source evidence only. On actual supported hosts validate fresh
+and shader-only builds, active bundle resources, installed Distribution and
+RuntimeShaders contents, and a relocated headless job. In particular inspect
+bake/uv_surface/surface.vert.metallib on Metal and its .spv peer on Vulkan at the
+**executed** shader root, not just the build source tree. Record backend/device,
+exact package/component/command, exit code and exported artifacts.
+
+Successful jobs publish lightmaps.json pointing to a complete unique output
+generation. Preserve that layout and independent native model sidecars when
+moving job output; these outputs are not engine runtime assets. The read-only
+[independent artifact inspector](../tests/bake/product/README.md) checks PNG/native
+HDR maps, metadata and model material sidecars; draw engine geometry reload and
+other image decoders remain separate lead checks. See the
+[M08-05 evidence matrix](../docs/render_to_draw/plan/milestone_08_lightmap_generator/product-validation.md).
+No backend/package success or measured performance is implied by registration or
+synthetic inspector tests. Package scripts retain their existing clean-checkout,
+destination and platform-generator requirements.

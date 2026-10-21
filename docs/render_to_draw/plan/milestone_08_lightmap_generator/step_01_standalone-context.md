@@ -56,7 +56,7 @@ At the original M01 review, draw::Engine had no offscreen overload. M05-02 now p
 
 ## M03-01 tracing checkpoint dependency
 
-The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and bake infrastructure remain pending. After M03 implementation/review, reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
+The [advanced tracing design](../milestone_03_ray_tracing/rt-design.md) was accepted by project-lead continuation. [M03-02](../milestone_03_ray_tracing/rt-gpu-data.md) delivers primitive arrays/stages; the draw snapshot builder and integrated bake primitives are implemented. Reuse the public draw::pipeline tracing snapshot, packed geometry/material data, bounded image/sampler resources and shared cutout predicate. Supply explicit UV-space world-position/normal/coverage surfaces without a camera RendererDeferred. Check effective capacities and required tracing support before a job; invalidate scene/baker generations after material/texture/topology edits. Keep bake sample accumulation separate from rendered-view histories and FSR state. Do not duplicate a private table/shading family or silently bake with truncated/unsupported resources.
 
 ## M03-03 shared noise resource
 
@@ -64,7 +64,7 @@ Use the implemented [utils noise contract](../milestone_03_ray_tracing/blue-nois
 
 ## M03-04 actual surface bridge
 
-Reuse [RTAO contracts](../milestone_03_ray_tracing/rtao.md): SurfaceInputs::WorldPositionCoverage uses signed RGBA16 normals, RGBA32 world positions and R8 coverage, without a camera. TracingSceneResources produces retained bounded geometry/material snapshots independently of RendererDeferred. Caller owns completed-slot discipline, surface/output lifetimes and renderedSample sequencing. Bake accumulation/presence policy is still this milestone’s work.
+Reuse [RTAO contracts](../milestone_03_ray_tracing/rtao.md): SurfaceInputs::WorldPositionCoverage uses signed RGBA16 normals, RGBA32 world positions and R8 coverage, without a camera. TracingSceneResources produces retained bounded geometry/material snapshots independently of RendererDeferred. Caller owns completed-slot discipline, surface/output lifetimes and renderedSample sequencing. Integrated UV accumulation/presence is implemented; standalone scene/job scheduling is this milestone’s work.
 
 ## M03-05 actual HDR GI bridge
 
@@ -87,7 +87,7 @@ Source and validation boundaries: [M03 technical review](../milestone_03_ray_tra
 
 ## M04-03 actual execution handoff
 
-Reuse the delivered Device-backed LightmapBakeExecutor for explicit UV surfaces and public draw AO/GI snapshot recording. It does not submit or accumulate. Preserve matching capacity, fresh per-recording snapshots, required-effect failures, immutable environment owner copies and completed-slot lifetime. IntegratedBakerContext is now a concrete draw Engine scheduler with one live target/in-flight frame; standalone should provide its own scheduler over the executor rather than borrow a viewport renderer or extend the production render context.
+Reuse the delivered Device-backed LightmapBakeExecutor for explicit UV surfaces and public draw AO/GI snapshot recording. It does not submit or accumulate. Preserve matching capacity, fresh per-recording snapshot wrappers with eligible immutable generation reuse, required-effect failures, immutable environment owner copies and completed-slot lifetime. IntegratedBakerContext is now a concrete draw Engine scheduler with one live target/in-flight frame; standalone should provide its own scheduler over the executor rather than borrow a viewport renderer or extend the production render context.
 
 See [integrated execution](../milestone_04_lightmaps/integrated-context.md).
 
@@ -140,8 +140,40 @@ validation and cleanup while the Device remains alive.
 ## Later tracing-capacity handoff
 
 Consume [the M07 16384 correction](../milestone_07_bg2e_composer/tracing-capacity-16384.md)
-without restoring small compiled profiles. AO/GI native shaders use v2 and exact
+without restoring small compiled profiles. AO/GI native shaders use current v3 and exact
 device-clamped capacities; shared snapshots must match each effect's actual
 capacity. Preserve object-local materials and warning/neutral-texture table
 overflow. Missing required native execution remains distinct from texture-table
 degradation; do not relabel unavailable execution as a successful bake.
+
+## M07-08 source reconciliation
+
+At HEAD `78943d5820e69363c942d71136f479a0df87128e`, current source supersedes the
+historical v2 table handoff: AO/GI/reflection use native v3 with Vulkan scene set1,
+persistent material arrays set2 (bindings5/6), specialization ID0 and unchanged
+Metal record buffers8/9. Direct query shadows use `draw.query.softShadows.v5`,
+Vulkan invocation set0, scene set1 and persistent alpha set2 (bindings16/24),
+Metal records5/6 and reserves (2,1,10). AO/GI/reflection reserves are respectively
+(4,2,13), (5,3,15), (6,3,16). Exact device-clamped capacity up to 16384, neutral
+pair overflow and object-local ownership remain. Consume current maintained
+[tracing reference](../../../../doc/api/draw/TracingSceneResources.md) and source,
+not historical ABI labels. This is static reconciliation, not a new native test.
+
+## Current engine preservation requirements — 2026-10-21
+
+R03–R09/R11: reuse the existing public LightmapBakeExecutor and snapshot APIs;
+new job/slot wrappers may reuse matching immutable material/shadow tables and only
+completed acceleration generations. A new UV sample is not a requirement for a
+new full TLAS/native-array build. Exact recording completion, BLAS build generation
+and source/target/settings validity are independent; never reuse pending/aborted
+work. Preserve image/sampler native-generation/residency checks and neutral
+capacity fallback; unsupported required AO/GI still fails. Do not mutate geometry
+or materials to improve cache hits. Keep headless scene/job state independent of
+RendererDeferred, presentation slots, display signatures and temporary pool state.
+
+Retain existing profiling counters/scopes in reused primitives. The synchronous
+sample completion required here is workload ownership, not permission to add GPU
+waits for timing collection. Destructive scene/context cleanup still coordinates
+producers and drains. Typed final-color wait elision does not apply to bake edits.
+
+Read the [source reconciliation](../code-reconciliation-2026-10-21.md); current engine code overrides historical implementation assumptions. No native/performance result is implied by this source baseline.

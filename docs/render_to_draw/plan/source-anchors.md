@@ -2,7 +2,7 @@
 
 [Plan index](index.md) · [Earlier complete inventory](../13-source-evidence.md)
 
-These links identify current references at planning time. New destination paths named in step files are planned outputs and need not exist yet. Re-resolve anchors against code at each milestone review.
+The original table below identifies references at initial planning time; use the current-source supplement below for implementation. New destination paths named in step files are planned outputs and need not exist yet. Re-resolve anchors against code at each milestone review.
 
 | Area | Current source/documentation |
 |---|---|
@@ -27,3 +27,39 @@ These links identify current references at planning time. New destination paths 
 | Example and application references | [17_deferred_renderer](../../../examples/17_deferred_renderer/src/main.cpp), [model_edit](../../../apps/model_edit/), [bg2e_composer](../../../apps/bg2e_composer/), [lightmap_generator](../../../apps/lightmap_generator/). |
 
 Two implementation facts especially relevant to this plan: reflection exposes getter/setter metadata but does not currently provide settings serialization; and the existing Metal RT wrapper executes a raygen compute kernel and ignores separate miss/closest-hit modules. Neither should be mistaken for a missing high-level shader abstraction to invent.
+
+## Current optimized implementation anchors — 2026-10-21
+
+Read [engine/plan discrepancies](code-reconciliation-2026-10-21.md). Production
+entries above remain behavior/retirement references, not the only current sources.
+
+| Area | Current source |
+|---|---|
+| Renderer/material revision caches | [RendererDeferred](../../../lib/src/bg2e/draw/RendererDeferred.cpp), [ShaderData](../../../lib/src/bg2e/draw/ShaderData.cpp), [DataBinding](../../../lib/src/bg2e/draw/DataBinding.cpp), [MaterialBase](../../../lib/src/bg2e/draw/MaterialBase.cpp), [glTF alpha import](../../../lib/src/bg2e/db/scene_gltf.cpp) |
+| Indexed and persistent tracing/shadow tables, acceleration | [TracingSceneResources](../../../lib/src/bg2e/draw/pipeline/TracingSceneResources.cpp), [persistent owners](../../../lib/src/bg2e/draw/pipeline/TracingPersistentResources.hpp), [native array bindings](../../../lib/src/bg2e/draw/pipeline/TracingPersistentResources.cpp), [lookup keys](../../../lib/src/bg2e/draw/pipeline/TracingTableLookup.hpp), [SoftShadowPass](../../../lib/src/bg2e/draw/pipeline/SoftShadowPass.cpp) |
+| Completion, pool and regions | [CommandBuffer](../../../lib/include/bg2e/gpu/CommandBuffer.hpp), [TemporaryResourcePool](../../../lib/include/bg2e/draw/pipeline/TemporaryResourcePool.hpp), [ProcessingRegion](../../../lib/include/bg2e/draw/pipeline/ProcessingRegion.hpp), [uploaded bounds](../../../lib/include/bg2e/gpu/Mesh.hpp) |
+| Temporal signatures and update synchronization | [TemporalSignatureCache](../../../lib/src/bg2e/draw/TemporalSignatureCache.cpp), [typed delegate updates](../../../lib/src/bg2e/draw/DefaultRenderLoopDelegate.cpp), [settings path](../../../lib/src/bg2e/draw/RenderSettingsPreferences.cpp) |
+| Implemented integrated bake primitives | [IntegratedBakerContext](../../../lib/include/bg2e/bake/IntegratedBakerContext.hpp), [LightmapBakeExecutor](../../../lib/src/bg2e/bake/LightmapBakeExecutor.cpp), [UvTemporalAccumulator](../../../lib/include/bg2e/bake/UvTemporalAccumulator.hpp), [LightmapCompositionPass](../../../lib/include/bg2e/bake/LightmapCompositionPass.hpp) |
+| Complete IO and save result | [DB draw export](../../../lib/src/bg2e/db/draw_resource_io.cpp), [scene API](../../../lib/include/bg2e/db/scene.hpp), [Composer document publication](../../../apps/draw/bg2e_composer/src/StageScene.cpp) |
+| CPU/GPU telemetry and UI | [CpuProfile](../../../lib/include/bg2e/base/CpuProfile.hpp), [GpuProfile](../../../lib/include/bg2e/base/GpuProfile.hpp), [SubmissionTiming](../../../lib/include/bg2e/gpu/SubmissionTiming.hpp), [Performance](../../../lib/src/bg2e/ui/Performance.cpp), [draw RenderLoop](../../../lib/src/bg2e/draw/RenderLoop.cpp), [maintained profiling reference](../../../doc/architecture/cpu_profiling.md) |
+| Independent source/evidence inventories | [optimization phases](../../optimizations/render_to_draw/summary.md), [profiling phases](../../profiling_and_stats/summary.md), [optimization probes](../../../tests/draw/), [profiling probes](../../profiling_and_stats/) |
+
+The settings codec/facade now exists in draw; the original note about reflection
+not serializing settings is not evidence that this implemented codec is missing.
+The public low-level Metal RT model and current v3/v5 native contracts must be
+checked directly rather than reconstructed from initial pipeline examples.
+
+## Delivered M08 source anchors
+
+Use [M08 review](milestone_08_lightmap_generator/review.md) and actual bake headers:
+[StandaloneBakerContext](../../../lib/include/bg2e/bake/StandaloneBakerContext.hpp),
+[StandaloneLightmapBaker](../../../lib/include/bg2e/bake/StandaloneLightmapBaker.hpp),
+[StandaloneBakeSceneAssembler](../../../lib/include/bg2e/bake/StandaloneBakeSceneAssembler.hpp),
+[StandaloneBakeBatch](../../../lib/include/bg2e/bake/StandaloneBakeBatch.hpp) and
+[LightmapOutputWriter](../../../lib/include/bg2e/bake/LightmapOutputWriter.hpp).
+The [draw CLI](../../../apps/draw/lightmap_generator/src/main.cpp) consumes these
+actual APIs; generic [file publication](../../../lib/include/bg2e/db/file.hpp),
+[native archive](../../../lib/include/bg2e/db/texture_archive.hpp) and OBJ/MTL
+inventory remain DB. Production baking anchors above remain retirement references,
+not evidence that standalone code is absent. [Candidate inventory](milestone_08_lightmap_generator/removal-impact.md)
+records shared transitive dependencies and current public include limitations.
