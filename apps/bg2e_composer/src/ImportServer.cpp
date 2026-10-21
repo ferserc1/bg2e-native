@@ -17,7 +17,7 @@
  */
 #include "ImportServer.hpp"
 
-#include "../../../third_party/cpp-httplib/httplib.h"                // app-local vendored header; no CMake include-path change required
+#include "../../third_party/cpp-httplib/httplib.h"                // app-local vendored header; no CMake include-path change required
 #include <bg2e/json/JsonParser.hpp> // engine JSON parser
 #include <bg2e/json/JsonNode.hpp>
 #include <bg2e/app/MainLoop.hpp>

@@ -4,7 +4,7 @@ Opt-in fixtures only; no CMake/test target. The agent has not compiled or execut
 them. The project lead owns native and executable validation.
 
 For the CPU probe, include probe.hpp in a local driver, add
-apps/draw/lightmap_generator/src to its include directories and link that
+apps/lightmap_generator/src to its include directories and link that
 CommandLine.cpp plus the engine. Call runDrawLightmapCliProbe with a fresh,
 caller-owned scratch directory. It checks defaults, argument grammar and ranges,
 mode/format constraints, independent model-copy controls, typed codec import,

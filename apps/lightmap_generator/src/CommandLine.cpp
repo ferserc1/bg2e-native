@@ -365,8 +365,8 @@ void validateOptions(const Options& options)
 void printUsage(std::ostream& output)
 {
     output << "Usage:\n"
-        "  draw_lightmap_generator model --context scene.json --model target.bg2 --output directory [options]\n"
-        "  draw_lightmap_generator prefab --context scene.json --prefab target.json --output directory [options]\n\n"
+        "  lightmap_generator model --context scene.json --model target.bg2 --output directory [options]\n"
+        "  lightmap_generator prefab --context scene.json --prefab target.json --output directory [options]\n\n"
         "Every option requires a value (--name=value or --name value).\n"
         "  --backend vulkan|metal             Default: Metal on macOS, Vulkan elsewhere\n"
         "  --config path                      Typed SettingsCodec bake configuration\n"

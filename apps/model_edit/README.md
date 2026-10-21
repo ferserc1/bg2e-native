@@ -1,6 +1,6 @@
 # Experimental draw model editor
 
-Target: `draw_model_edit`. Application ID: `org.bg2e.apps.draw.model-edit`.
+Target: `model_edit`. Application ID: `org.bg2e.apps.draw.model-edit`.
 Graphics preference scope: `draw.model_edit.graphics`.
 
 The application supplies a draw-only model editing workflow in a maximized window. Its
@@ -21,17 +21,16 @@ shader copy is required by this startup. Do not launch a copied executable witho
 its deployed resource tree.
 
 ```sh
-./draw_model_edit
-./draw_model_edit --backend vulkan
-./draw_model_edit --backend metal
-./draw_model_edit --help
+./model_edit
+./model_edit --backend vulkan
+./model_edit --backend metal
+./model_edit --help
 ```
 
 Metal requires macOS. Otherwise the EngineConfig platform default applies. Use
-the binary inside `draw_model_edit.app/Contents/MacOS` on macOS, or
-`draw_model_edit.exe` on Windows. Unsupported/duplicate options or backend failures
-return nonzero. The production `model_edit` target and its app identity/settings
-remain intact. New graphics preferences do not read or write the production
+the binary inside `model_edit.app/Contents/MacOS` on macOS, or
+`model_edit.exe` on Windows. Unsupported/duplicate options or backend failures
+return nonzero. The target is `model_edit`; its existing app identity/settings remain intact. New graphics preferences do not read or write the production
 render preferences or environment `env.json`.
 
 Drag left to orbit, drag right to pan, and use the wheel to zoom. Reset camera is
@@ -55,7 +54,7 @@ BG2 export rejects unrepresentable graph state. Save/Discard/Cancel protects dir
 documents on replacement and close; cancelled dialogs and failed IO retain the
 current document. Status messages report errors without terminating the editor.
 
-See [complete resource IO](../../../doc/api/db/DrawResourceIO.md) for import
+See [complete resource IO](../../doc/api/db/DrawResourceIO.md) for import
 subsets, source/relative-path behavior, native HDR/mip/sampler archives, sidecar
 publication and production compatibility. Preserve sidecars when moving a saved
 document. Old resource generations are retained. Selection, gizmos, material/submesh/geometry tools, environment/light/preset
@@ -63,7 +62,7 @@ controls, bounds framing and best-view analysis are implemented by M06-03/04.
 Frame selection fits the current selection or whole document. Best-view analysis
 renders 72 candidate poses at up to 48 pixels along the longest image dimension,
 preserving viewport aspect at a stopped boundary. It reports the winning score,
-visible submeshes and top contributors. The [editor guide](../../../doc/apps/draw_model_edit.md)
+visible submeshes and top contributors. The [editor guide](../../doc/apps/model_edit.md)
 describes these workflows, stage fixtures, queued dirty-state guards and texture
 sampling/indirect controls. **Window → UV and Lightmap Baker** previews UV1/UV2,
 regenerates UV2 at a safe boundary, runs integrated AO/GI accumulation, and applies
@@ -71,11 +70,11 @@ the completed image automatically from a temporary filesystem source. The
 generated-map preview remains visible alongside UV previews, and saving publishes
 the applied map with the final document resources.
 
-The [feature inventory](../../../docs/render_to_draw/plan/milestone_06_model_edit/application-inventory.md)
-accounts for remaining workflows. Project-lead checks: build/run draw_model_edit on
+The [feature inventory](../../docs/render_to_draw/plan/milestone_06_model_edit/application-inventory.md)
+accounts for remaining workflows. Project-lead checks: build/run model_edit on
 available backends, settings/orbit/resize/minimize/cleanup, file dialogs/drop,
 unsaved prompts, failed operation recovery, complete save/reload and independent
-production editor preferences. The [resource IO probe](../../../tests/draw/resource_io/README.md)
+production editor preferences. The [resource IO probe](../../tests/draw/resource_io/README.md)
 adds GPU-only HDR/mip/metadata/rollback checks. No agent build, shader compilation,
 probe or application run was performed.
 
@@ -84,7 +83,7 @@ The draw editor now uses bg2e::ui::Workspace to match model_edit panel positions
 toolbar/menu hierarchy and status layout. The Window menu toggles the docked panels
 and opens separate UI/Graphics settings windows. File/View/Window actions and the
 geometry toolbar preserve the familiar workflow.
-[Editor tool checks](../../../tests/draw/editor_tools/README.md) include the
+[Editor tool checks](../../tests/draw/editor_tools/README.md) include the
 unexecuted manual probe for partial patches, independent clones, sampler image
 retention and stale document rejection. Compilation and interaction/backend checks
 remain project-lead work; no agent runtime evidence is claimed.

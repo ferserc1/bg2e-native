@@ -1,6 +1,6 @@
 # Compose, light and save a scene
 
-Use the delivered `draw_bg2e_composer` with its deployed shaders/assets. Launch with `--backend metal` on a supported macOS host or `--backend vulkan` where available. See [application/deployment guidance](../../apps/draw_composer.md).
+Use the delivered `bg2e_composer` with its deployed shaders/assets. Launch with `--backend metal` on a supported macOS host or `--backend vulkan` where available. See [application/deployment guidance](../../apps/draw_composer.md).
 
 1. Choose New Scene, or Open an existing camera-bearing scene. While Open shows the Loader, wait for candidate adoption. If it fails, read the visible error; the prior document remains. Save/Discard/Cancel handles pending edits.
 2. Use Create Node or Create Primitive, or Import Model or Prefab. Import inserts below the selected node or document root. Keep source textures available while parsing/realization completes. Cancel prevents late insertion.

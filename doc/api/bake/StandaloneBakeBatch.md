@@ -69,5 +69,5 @@ paths are CPU values and can survive normal native cleanup.
 
 Sources: [header](../../../lib/include/bg2e/bake/StandaloneBakeBatch.hpp),
 [implementation](../../../lib/src/bg2e/bake/StandaloneBakeBatch.cpp),
-[CLI caller](../../../apps/draw/lightmap_generator/src/main.cpp),
+[CLI caller](../../../apps/lightmap_generator/src/main.cpp),
 [tutorial](../../tutorials/draw/standalone_lightmaps.md).

@@ -127,7 +127,7 @@ _fileStatus->setText(documentPath().filename().string());
 ```
 
 No dirty tracking, no redraw requests: the immediate-mode loop redraws the bar
-every frame anyway. The `apps/draw/model_edit` "file / save status" fields use
+every frame anyway. The `apps/model_edit` "file / save status" fields use
 exactly this pattern (`AppDelegate::initWorkspace`).
 
 ---

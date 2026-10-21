@@ -1,25 +1,24 @@
-# draw_lightmap_generator
+# lightmap_generator
 
-Headless UV2 AO/GI baking on `bg2e::draw` / `bg2e::bake`. The existing
-`lightmap_generator` executable remains available during API coexistence.
+Headless UV2 AO/GI baking on `bg2e::draw` / `bg2e::bake`.
 
-The CMake target is `draw_lightmap_generator`. It uses the existing `bundle_app`
+The CMake target is `lightmap_generator`. It uses the existing `bundle_app`
 resource rules and automatic distribution discovery. On macOS run the executable
-inside `draw_lightmap_generator.app/Contents/MacOS/`; other platforms place it in
+inside `lightmap_generator.app/Contents/MacOS/`; other platforms place it in
 the normal product directory. Select Vulkan or Metal explicitly when needed;
 defaults are Metal on macOS and Vulkan elsewhere. Required bake/tracing support
 must exist on the selected device; an unsupported job fails.
 
 ```sh
-draw_lightmap_generator --help
+lightmap_generator --help
 
-draw_lightmap_generator model --context context.json --model target.obj \
+lightmap_generator model --context context.json --model target.obj \
     --output baked --mode rtgi --resolution 512 --frames 32 --backend vulkan
 
-draw_lightmap_generator prefab --context context.json --prefab prefab.json \
+lightmap_generator prefab --context context.json --prefab prefab.json \
     --output baked --config settings.example.json --frames 64
 
-draw_lightmap_generator model --context context.json --model target.bg2 \
+lightmap_generator model --context context.json --model target.bg2 \
     --output baked --generate-uv2 false --write-model-copies true \
     --cpu-format rgb32f --overwrite false
 ```
@@ -121,7 +120,7 @@ failure may report code 1 even if a complete manifest was already committed.
 ## Validation status
 
 Agent checks are static only; no configure, build, shader compilation, executable
-or probe was run. [CLI probes](../../../tests/bake/cli/README.md) and
-[batch probes](../../../tests/bake/batch/README.md) define lead-run checks, including
+or probe was run. [CLI probes](../../tests/bake/cli/README.md) and
+[batch probes](../../tests/bake/batch/README.md) define lead-run checks, including
 both native backends, installed resources, error paths and model reload. Full
 product validation belongs to M08-05.

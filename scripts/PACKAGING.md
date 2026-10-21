@@ -87,10 +87,10 @@ establish that every distribution variant contains the example.
 
 ## Draw standalone lightmap generator product validation
 
-`draw_lightmap_generator` is an application target under apps/draw. Standard
+`lightmap_generator` is an application target under `apps/lightmap_generator`. Standard
 bundle_app rules supply native libraries/assets and paired draw/bake shader trees;
-recursive Distribution discovery includes it alongside the preserved production
-lightmap_generator. RuntimeShaders installs both paired trees. No special package
+recursive Distribution discovery includes it alongside `model_edit` and
+`bg2e_composer`. RuntimeShaders installs both paired trees. No special package
 script or alternate shader layout is needed for the new CLI.
 
 Registration is source evidence only. On actual supported hosts validate fresh
@@ -121,8 +121,12 @@ refresh both trees on shader-only rebuilds. Flat legacy shaders and old example
 sources/compiler frontends have been retired. Reconfigure existing build trees
 before building after this source removal.
 
-New packages collect the three registered `draw_model_edit`, `draw_bg2e_composer`
-and `draw_lightmap_generator` products. Their IDs/preferences/server behavior are
+Applications live directly in `apps/bg2e_composer`, `apps/model_edit` and
+`apps/lightmap_generator`. Packaging scripts verify that all three installed
+executables are present (inside their app bundles on macOS).
+
+New packages collect the three registered `model_edit`, `bg2e_composer`
+and `lightmap_generator` products. Their IDs/preferences/server behavior are
 unchanged. Non-Apple install rules copy the authoritative assets and paired engine
 trees, plus any target-specific shader directory; stale flat build outputs are
 not engine distribution inputs. Apple retains native bundle/SDK resource rules.

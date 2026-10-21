@@ -158,6 +158,11 @@ cmake --install "$build" \
     --prefix "$staged_package" \
     --component Distribution
 
+# Verify canonical application names before publishing the package.
+for app in bg2e_composer model_edit lightmap_generator; do
+    [[ -x "$staged_package/$app" ]] || die "Missing packaged application: $app"
+done
+
 # CMake's runtime dependency scan copies parts of the host graphics, desktop,
 # and C++ runtime stacks. Those copies can be incompatible with GPU drivers,
 # Vulkan ICDs, plugins, and other components loaded from the target system. Keep

@@ -77,7 +77,7 @@ See the [CLI guide](../../apps/draw_offscreen_application.md),
 
 ## Standalone UV batches without camera frames
 
-[draw_lightmap_generator](../../apps/draw_lightmap_generator.md) uses the typed
+[lightmap_generator](../../apps/draw_lightmap_generator.md) uses the typed
 draw delegate with continueRendering false, a 1x1 depthless context surface and
 finish to run StandaloneBakeBatch. No surface camera render callback is recorded;
 UV surfaces use job resolution. Assembly/context/baker native owners are local

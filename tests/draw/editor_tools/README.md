@@ -3,7 +3,7 @@
 `probe.hpp` exposes `model_edit::tests::runEditorToolsProbe(delegate, engine)`.
 It replaces the open document: use a disposable draw_model_edit session after
 its first renderer attachment and before frame acquisition. Add
-`apps/draw/model_edit/src` to the manual probe's include paths, include the header
+`apps/model_edit/src` to the manual probe's include paths, include the header
 in an application-owned check, and invoke at a stopped boundary. Do not call it
 inside UI drawing or command recording. The engine and deployed gizmo/shader
 assets must remain available throughout. This probe is not registered in CMake

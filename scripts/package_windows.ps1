@@ -52,6 +52,12 @@ $currentCommit = (Invoke-Checked git @('-C', $repo, 'rev-parse', 'HEAD')).Trim()
 if ($status.Count -or $currentCommit -ne $commit) { throw 'Repository changed during the build; package aborted.' }
 $null = New-Item -ItemType Directory -Path $package
 Invoke-Checked cmake @('--install', $build, '--config', $Configuration, '--prefix', $package, '--component', 'Distribution')
+# Verify canonical executable names before archiving.
+foreach ($app in @('bg2e_composer', 'model_edit', 'lightmap_generator')) {
+    if (-not (Test-Path -LiteralPath (Join-Path $package "$app.exe") -PathType Leaf)) {
+        throw "Missing packaged application: $app.exe"
+    }
+}
 @{ commit = $commit; configuration = $Configuration; platform = 'windows'; builtAtUtc = [DateTime]::UtcNow.ToString('o') } |
     ConvertTo-Json | Set-Content -LiteralPath (Join-Path $package 'build-info.json') -Encoding UTF8
 # CMake ZIP avoids Compress-Archive's per-file size limitation.

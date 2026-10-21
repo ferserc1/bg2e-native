@@ -54,7 +54,7 @@ int main(int argc, char** argv)
             const std::string_view option(argv[i]);
             if (option == "--help" || option == "-h")
             {
-                std::cout << "Usage: draw_model_edit [--backend vulkan|metal]\n";
+                std::cout << "Usage: model_edit [--backend vulkan|metal]\n";
                 return 0;
             }
             if (option != "--backend" || backendSet || i+1 >= argc)
@@ -98,7 +98,7 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& error)
     {
-        std::cerr << "draw_model_edit: " << error.what() << '\n';
+        std::cerr << "model_edit: " << error.what() << '\n';
         return 1;
     }
 }

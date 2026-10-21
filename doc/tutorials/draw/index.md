@@ -35,7 +35,7 @@ The numbering follows the corresponding directories in `examples/draw/`.
 ## Application workflow
 
 [Editing, lighting and baking a model](model_edit.md) walks through the delivered
-`apps/draw/model_edit` application. It is an application tutorial, not an additional
+`apps/model_edit` application. It is an application tutorial, not an additional
 numbered example target. It covers complete resource saving and focused component
 editors in addition to the numbered rendering examples.
 

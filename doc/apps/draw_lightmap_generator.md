@@ -1,6 +1,6 @@
 # Draw standalone lightmap generator
 
-`draw_lightmap_generator` bakes camera-less model/prefab AO/GI batches through
+`lightmap_generator` bakes camera-less model/prefab AO/GI batches through
 `bg2e::draw` and `bg2e::bake`. It is separate from the preserved production
 [lightmap_generator](lightmap_generator/index.md); there is no implicit production
 renderer fallback. Required native tracing/kernel/format support must exist.
@@ -8,12 +8,12 @@ renderer fallback. Required native tracing/kernel/format support must exist.
 ## Commands
 
 ```sh
-draw_lightmap_generator --help
+lightmap_generator --help
 
-draw_lightmap_generator model --context context.json --model target.obj \
+lightmap_generator model --context context.json --model target.obj \
     --output baked --mode rtgi --resolution 512 --frames 32 --backend vulkan
 
-draw_lightmap_generator prefab --context context.json --prefab target.json \
+lightmap_generator prefab --context context.json --prefab target.json \
     --output baked --generate-uv2 false --write-model-copies true \
     --cpu-format rgb32f --overwrite false
 ```
@@ -70,14 +70,14 @@ the other mode/format.
 
 ## Typed configuration and precedence
 
-The [shipped example](../../apps/draw/lightmap_generator/settings.example.json)
+The [shipped example](../../apps/lightmap_generator/settings.example.json)
 uses schema `bg2e.draw.settings`, version string `1`, renderer
 `bg2e.bake.standalone.v1`, component ID `bake`, type
 `bg2e.bake.lightmapSettings.v1`. Numeric values use typed decimal **strings**,
 including enum64 (mode AO=0/GI=1, CPU RGB8=0/RGB32F=1).
 
 ```sh
-draw_lightmap_generator model --context context.json --model target.bg2 \
+lightmap_generator model --context context.json --model target.bg2 \
     --output baked --frames 64 --config settings.example.json --resolution 1024
 ```
 
@@ -131,12 +131,12 @@ complete manifest has already been published.
 
 ## Build and resources
 
-Target `draw_lightmap_generator` is registered under apps/draw and uses bundle_app.
+Target `lightmap_generator` is registered under apps/draw and uses bundle_app.
 The repository still requires VULKAN_SDK for its shared build, including a Metal
 selection. Use Ninja on Linux and Visual Studio 17 2022 on Windows; macOS Xcode
 is the native-dialog/distribution path (Ninja development builds retain the
 existing dialog limitation). No new app-specific CMake variables are required.
-macOS output is draw_lightmap_generator.app; run its executable under
+macOS output is lightmap_generator.app; run its executable under
 Contents/MacOS. Other platforms use the normal product directory. The typed
 OffscreenApplication path creates a depthless 1×1 context and records no camera
 frames; standalone UV surfaces use the requested resolution.
@@ -166,4 +166,4 @@ made by this documentation.
 See [C++ tutorial](../tutorials/draw/standalone_lightmaps.md),
 [batch API](../api/bake/StandaloneBakeBatch.md),
 [publication contract](../api/bake/LightmapOutputWriter.md),
-[application sources](../../apps/draw/lightmap_generator/README.md).
+[application sources](../../apps/lightmap_generator/README.md).

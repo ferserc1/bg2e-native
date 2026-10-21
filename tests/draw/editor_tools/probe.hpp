@@ -18,7 +18,7 @@
 
 #pragma once
 
-// Add apps/draw/model_edit/src to the manual probe's include path.
+// Add apps/model_edit/src to the manual probe's include path.
 #include <AppDelegate.hpp>
 #include <bg2e/geo/cube.hpp>
 #include <bg2e/ui/DrawMaterialEditor.hpp>

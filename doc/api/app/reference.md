@@ -89,7 +89,7 @@ Access the active registry through `MainLoop::shortcuts()`.
 
 | Tool | Documentation | Description |
 |------|---------------|-------------|
-| `draw_lightmap_generator` | [Standalone lightmap CLI](../../apps/draw_lightmap_generator.md) | Headless model/prefab baking through draw and bake. |
+| `lightmap_generator` | [Standalone lightmap CLI](../../apps/draw_lightmap_generator.md) | Headless model/prefab baking through draw and bake. |
 
 ## Header catalog
 

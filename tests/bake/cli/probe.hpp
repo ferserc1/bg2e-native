@@ -18,7 +18,7 @@
 
 #pragma once
 
-// Add apps/draw/lightmap_generator/src to the local driver's include path and
+// Add apps/lightmap_generator/src to the local driver's include path and
 // compile CommandLine.cpp with it. This probe creates no Engine/GPU resources.
 #include <CommandLine.hpp>
 #include <bg2e/draw/SettingsCodec.hpp>

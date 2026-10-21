@@ -30,8 +30,8 @@ See [ShaderLibraries](../api/gpu/ShaderLibraries.md).
 ## Distribution and external applications
 
 [Packaging scripts](../../scripts/PACKAGING.md) build fresh distribution trees
-and register the three canonical apps: draw_model_edit, draw_bg2e_composer and
-draw_lightmap_generator. They require a valid SDK, an external destination and a
+and register the three canonical apps: model_edit, bg2e_composer and
+lightmap_generator. They require a valid SDK, an external destination and a
 clean checkout by default; use only flags supported by the selected script.
 
 Use scripts/create_standalone_project.sh TARGET [NAME] or the PowerShell sibling

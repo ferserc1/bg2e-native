@@ -160,7 +160,7 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& error)
     {
-        std::cerr << "draw_lightmap_generator: " << error.what() << '\n';
+        std::cerr << "lightmap_generator: " << error.what() << '\n';
         draw_lightmap_generator::printUsage(std::cerr);
         return 2;
     }
@@ -178,7 +178,7 @@ int main(int argc, char** argv)
         const auto& result = delegate->result();
         if (result.cancelled)
         {
-            std::cerr << "draw_lightmap_generator: cancelled; no new batch was published\n";
+            std::cerr << "lightmap_generator: cancelled; no new batch was published\n";
             return interrupted == SIGTERM ? 143 : 130;
         }
         std::cout << "Baked " << result.bakedCount << " target(s). Manifest: " << result.manifestPath.string() << '\n';
@@ -186,7 +186,7 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& error)
     {
-        std::cerr << "draw_lightmap_generator: " << error.what() << '\n';
+        std::cerr << "lightmap_generator: " << error.what() << '\n';
         return 1;
     }
 }

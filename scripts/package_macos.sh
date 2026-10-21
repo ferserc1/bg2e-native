@@ -33,6 +33,12 @@ status="$(git -C "$repo" status --porcelain=v1 --untracked-files=all --ignore-su
 [[ -z "$status" && "$(git -C "$repo" rev-parse HEAD)" == "$commit" ]] || { echo 'Repository changed during build; package aborted.' >&2; exit 1; }
 mkdir -- "$package"
 cmake --install "$build" --config "$config" --prefix "$package" --component Distribution
+# Verify canonical bundle and executable names before archiving.
+for app in bg2e_composer model_edit lightmap_generator; do
+    [[ -x "$package/$app.app/Contents/MacOS/$app" ]] || {
+        printf 'Missing packaged application: %s\n' "$app" >&2; exit 1;
+    }
+done
 printf '{"commit":"%s","configuration":"%s","platform":"macos"}\n' "$commit" "$config" > "$package/build-info.json"
 (cd -- "$destination" && cmake -E tar cf "$archive" --format=zip -- "$name")
 printf 'Package: %s\nArchive: %s\nBuild files retained: %s\n' "$package" "$archive" "$build"

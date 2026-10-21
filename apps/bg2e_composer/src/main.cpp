@@ -54,7 +54,7 @@ int main(int argc, char** argv)
             const std::string_view option(argv[i]);
             if (option == "--help" || option == "-h")
             {
-                std::cout << "Usage: draw_bg2e_composer [--backend vulkan|metal]\n";
+                std::cout << "Usage: bg2e_composer [--backend vulkan|metal]\n";
                 return 0;
             }
             if (option != "--backend" || backendSet || i+1 >= argc)
@@ -102,7 +102,7 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& error)
     {
-        std::cerr << "draw_bg2e_composer: " << error.what() << '\n';
+        std::cerr << "bg2e_composer: " << error.what() << '\n';
         return 1;
     }
 }

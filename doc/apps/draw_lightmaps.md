@@ -80,6 +80,6 @@ artifacts are not specified. The documentation agent performed static checks
 only, with no build, shader compiler, app run or image export.
 
 
-For camera-less file/model batches use [draw_lightmap_generator](draw_lightmap_generator.md)
+For camera-less file/model batches use [lightmap_generator](draw_lightmap_generator.md)
 and the [standalone C++ tutorial](../tutorials/draw/standalone_lightmaps.md).
 The integrated example's material adoption is not complete-batch file publication.

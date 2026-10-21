@@ -1,8 +1,7 @@
 # Draw draw model editor
 
-`draw_model_edit` is the independent editor in `apps/draw/model_edit`, using the
-draw renderer and its own application identity/preferences. The production
-`model_edit` remains available. See the [application README](../../apps/draw/model_edit/README.md)
+`model_edit` is the independent editor in `apps/model_edit`, using the
+draw renderer and its existing application identity/preferences. See the [application README](../../apps/model_edit/README.md)
 for launch/backend options and the [complete IO contract](../api/db/DrawResourceIO.md)
 for supported import subsets and native sidecars.
 
@@ -200,5 +199,5 @@ An imported/transformed parent affects the resulting world-space location.
 
 For a sequential walkthrough, see the [model editor tutorial](../tutorials/draw/model_edit.md).
 For supported development generators, shader/assets deployment and distribution,
-see the [application README](../../apps/draw/model_edit/README.md) and
+see the [application README](../../apps/model_edit/README.md) and
 [packaging guide](../../scripts/PACKAGING.md).

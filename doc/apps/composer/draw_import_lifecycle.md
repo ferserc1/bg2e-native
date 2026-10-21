@@ -1,6 +1,6 @@
 # Draw Composer import lifecycle
 
-The draw application's [SceneImporter](../../../apps/draw/bg2e_composer/src/SceneImporter.cpp) owns a joinable CPU reader and up to 16 waiting local jobs. Shared `db::readGltf`, `readObj`, `loadMeshBg2` and `readSceneDocument` prepare CPU data; graph factories, image decoding and GPU realization run on the stopped main-thread path. CPU parsing is not background GPU loading or an immutable snapshot of external image files.
+The draw application's [SceneImporter](../../../apps/bg2e_composer/src/SceneImporter.cpp) owns a joinable CPU reader and up to 16 waiting local jobs. Shared `db::readGltf`, `readObj`, `loadMeshBg2` and `readSceneDocument` prepare CPU data; graph factories, image decoding and GPU realization run on the stopped main-thread path. CPU parsing is not background GPU loading or an immutable snapshot of external image files.
 
 Request IDs, document generations, renderer generations and weak destination/reimport identities serve different purposes. Publication checks them independently; reusing a renderer still requires the current document generation. Cancelled/replaced jobs cannot publish into another document. Canonical source paths locate reimport wrappers by identity and preserve their current parent. Ordinary failed replacement restores graph order, camera/environment selection, dirty state and renderer binding. Binding recovery failure propagates to renderer-first teardown.
 

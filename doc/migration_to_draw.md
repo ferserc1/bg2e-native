@@ -11,7 +11,7 @@ or old-binary compatibility. Use `<bg2e/all.hpp>` or explicit draw/bake umbrella
 | Scene-native Drawable/resources | draw::Drawable, DrawableComponent::drawable() and canonical shared ownership. |
 | Multiple factory creation paths | ComponentFactoryRegistry registration by name and default creator. |
 | Native renderer baking | bake contexts, public UV passes, serial standalone batches and LightmapOutputWriter. |
-| Old app folders/targets | apps/draw with draw_model_edit, draw_bg2e_composer and draw_lightmap_generator. |
+| Old app folders/targets | `apps/model_edit`, `apps/bg2e_composer` and `apps/lightmap_generator`, with matching target names. |
 | Flat shader output | Paired draw/bake runtime trees and explicit native shader contracts. |
 
 Preserve authored Drawable component identities and CPU data concepts; realize

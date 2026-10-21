@@ -6,9 +6,9 @@ it does not claim native build or runtime coverage.
 
 | Target | Source directory | Guide |
 |---|---|---|
-| `draw_model_edit` | [apps/draw/model_edit](../../apps/draw/model_edit/) | [Guide](draw_model_edit.md) |
-| `draw_bg2e_composer` | [apps/draw/bg2e_composer](../../apps/draw/bg2e_composer/) | [Guide](draw_composer.md) |
-| `draw_lightmap_generator` | [apps/draw/lightmap_generator](../../apps/draw/lightmap_generator/) | [Guide](draw_lightmap_generator.md) |
+| `model_edit` | [apps/model_edit](../../apps/model_edit/) | [Guide](draw_model_edit.md) |
+| `bg2e_composer` | [apps/bg2e_composer](../../apps/bg2e_composer/) | [Guide](draw_composer.md) |
+| `lightmap_generator` | [apps/lightmap_generator](../../apps/lightmap_generator/) | [Guide](draw_lightmap_generator.md) |
 | `gpu_instance` | [examples/gpu/01_instance](../../examples/gpu/01_instance/) | [Guide](../tutorials/gpu/01_instance.md) |
 | `gpu_device` | [examples/gpu/02_device](../../examples/gpu/02_device/) | [Guide](../tutorials/gpu/02_device.md) |
 | `gpu_offscreen_device` | [examples/gpu/03_offscreen_device](../../examples/gpu/03_offscreen_device/) | [Guide](../tutorials/gpu/03_offscreen_device.md) |

@@ -3,7 +3,7 @@
 The production `bg2e::bake` standalone path runs completed UV AO/GI samples on
 an initialized windowless draw Engine. Both standalone and integrated jobs use these public contracts.
 This tutorial uses delivered APIs; it creates no viewport renderer or camera
-history. For a ready executable see [draw_lightmap_generator](../../apps/draw_lightmap_generator.md).
+history. For a ready executable see [lightmap_generator](../../apps/draw_lightmap_generator.md).
 
 ## Choose the owner
 
@@ -128,7 +128,7 @@ orientation and actual chart-mask edge values for dilation; arbitrary lighting
 values are not a universal golden image. Synthetic inspector tests are not GPU
 or package evidence. Build/native checks remain lead-owned.
 
-Sources/call sites: [CLI](../../../apps/draw/lightmap_generator/src/main.cpp),
+Sources/call sites: [CLI](../../../apps/lightmap_generator/src/main.cpp),
 [batch](../../../lib/src/bg2e/bake/StandaloneBakeBatch.cpp),
 [context](../../../lib/src/bg2e/bake/StandaloneBakerContext.cpp),
 [output contract](../../api/bake/LightmapOutputWriter.md).

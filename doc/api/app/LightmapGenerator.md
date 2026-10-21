@@ -5,7 +5,7 @@ primitives. Each mutable bake pass belongs to one lifecycle; Device and submitte
 resource owners outlive all context, preview and output images. Use the maintained
 references below for complete settings, signals, limits and error behavior.
 
-- [draw_lightmap_generator](../../apps/draw_lightmap_generator.md)
+- [lightmap_generator](../../apps/draw_lightmap_generator.md)
 - [StandaloneBakeBatch](../bake/StandaloneBakeBatch.md)
 
 For camera-less jobs use one live target/context, completed slots and a global

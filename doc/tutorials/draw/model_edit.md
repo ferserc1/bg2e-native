@@ -1,6 +1,6 @@
 # Editing, lighting and baking a model
 
-This tutorial uses the delivered `draw_model_edit` application. It assumes basic
+This tutorial uses the delivered `model_edit` application. It assumes basic
 familiarity with opening files and entering numbers. For implementing a C++ draw
 application, begin with [tutorial 10](10_deferred_renderer.md); for the baker APIs,
 use [tutorial 12](12_lightmaps.md).
@@ -9,8 +9,8 @@ The editor uses the production `bg2e::draw` rendering path. Application preferen
 
 ## 1. Launch the editor with its resources
 
-Use the configured repository build's `draw_model_edit` executable. On macOS,
-launch the app bundle or its `Contents/MacOS/draw_model_edit` executable so its
+Use the configured repository build's `model_edit` executable. On macOS,
+launch the app bundle or its `Contents/MacOS/model_edit` executable so its
 bundled engine, shaders and assets can be found. Metal is available on macOS:
 
 ```sh
@@ -21,7 +21,7 @@ To select Vulkan explicitly, use `--backend vulkan`. `--help` prints the accepte
 arguments. A backend selection requires that backend to be available on the host;
 it does not install its SDK or runtime. Use Xcode on macOS for working native file
 dialogs, Ninja on Linux, and Visual Studio 17 2022 on Windows. The configured build
-needs a Vulkan SDK. See the [application deployment instructions](../../../apps/draw/model_edit/README.md)
+needs a Vulkan SDK. See the [application deployment instructions](../../../apps/model_edit/README.md)
 and [packaging guide](../../../scripts/PACKAGING.md) for resource distribution.
 
 You should see a viewport between Model Properties and Environment Options, a
@@ -149,10 +149,10 @@ safe without giving this model editor a complete scene-component inspector.
 ## Source and validation
 
 The [application guide](../../apps/draw_model_edit.md) details supported subsets
-and lifetime rules. The implementation is in [EditorUi.cpp](../../../apps/draw/model_edit/src/EditorUi.cpp),
-[EditorTools.cpp](../../../apps/draw/model_edit/src/EditorTools.cpp),
-[EditorBaking.cpp](../../../apps/draw/model_edit/src/EditorBaking.cpp) and
-[StageScene.cpp](../../../apps/draw/model_edit/src/StageScene.cpp).
+and lifetime rules. The implementation is in [EditorUi.cpp](../../../apps/model_edit/src/EditorUi.cpp),
+[EditorTools.cpp](../../../apps/model_edit/src/EditorTools.cpp),
+[EditorBaking.cpp](../../../apps/model_edit/src/EditorBaking.cpp) and
+[StageScene.cpp](../../../apps/model_edit/src/StageScene.cpp).
 The [manual editor checks](../../../tests/draw/editor_tools/README.md) belong to
 the project lead. This tutorial was checked against source, not executed as a new
 Vulkan/Metal or packaged-runtime validation run.

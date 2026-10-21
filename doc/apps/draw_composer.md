@@ -1,10 +1,10 @@
 # Draw draw Composer
 
-`draw_bg2e_composer`, implemented in [apps/draw/bg2e_composer](../../apps/draw/bg2e_composer/README.md), edits complete scenes through `bg2e::draw`. Production `bg2e_composer` remains available as a separate application during migration. The standalone draw lightmap generator is not delivered by Composer.
+`bg2e_composer`, implemented in [apps/bg2e_composer](../../apps/bg2e_composer/README.md), edits complete scenes through `bg2e::draw`. The standalone draw lightmap generator is not delivered by Composer.
 
 ## Launch and deployment
 
-Run `draw_bg2e_composer [--backend vulkan|metal]`; `--help` lists accepted arguments. Use a backend available on the host. The existing CMake target is `draw_bg2e_composer`; the shared SDL bundle helper deploys engine shaders and assets. Launch with that resource tree, or the macOS bundle and its `Contents/MacOS/draw_bg2e_composer` executable. Native file dialogs require Xcode on macOS; use Ninja on Linux and Visual Studio 17 2022 on Windows. The repository configuration requires `VULKAN_SDK`. See [packaging](../../scripts/PACKAGING.md); source routing alone does not establish native package launch coverage.
+Run `bg2e_composer [--backend vulkan|metal]`; `--help` lists accepted arguments. Use a backend available on the host. The existing CMake target is `bg2e_composer`; the shared SDL bundle helper deploys engine shaders and assets. Launch with that resource tree, or the macOS bundle and its `Contents/MacOS/bg2e_composer` executable. Native file dialogs require Xcode on macOS; use Ninja on Linux and Visual Studio 17 2022 on Windows. The repository configuration requires `VULKAN_SDK`. See [packaging](../../scripts/PACKAGING.md); source routing alone does not establish native package launch coverage.
 
 Graphics preferences use `draw.bg2e_composer.graphics`, separately from document lighting and production preferences. Window → Graphics Settings exposes active renderer settings; changes persist automatically. JSON import/export is optional. Window → UI Settings controls foreground/background scene FPS independently of UI presentation; a zero cap is unlimited.
 
@@ -38,6 +38,6 @@ Tracing tables use exact device budgets up to 16384, including sampler limits. E
 
 ## Implementation and validation
 
-[DocumentIo.cpp](../../apps/draw/bg2e_composer/src/DocumentIo.cpp), [SceneEditor.cpp](../../apps/draw/bg2e_composer/src/SceneEditor.cpp), [ImportActions.cpp](../../apps/draw/bg2e_composer/src/ImportActions.cpp) and [EditorBaking.cpp](../../apps/draw/bg2e_composer/src/EditorBaking.cpp) own application policy. Shared graph/root/clone hooks are described in [scene API](../api/scene/index.md). No engine API depends on Composer's import queues.
+[DocumentIo.cpp](../../apps/bg2e_composer/src/DocumentIo.cpp), [SceneEditor.cpp](../../apps/bg2e_composer/src/SceneEditor.cpp), [ImportActions.cpp](../../apps/bg2e_composer/src/ImportActions.cpp) and [EditorBaking.cpp](../../apps/bg2e_composer/src/EditorBaking.cpp) own application policy. Shared graph/root/clone hooks are described in [scene API](../api/scene/index.md). No engine API depends on Composer's import queues.
 
 The [guided workflow](../tutorials/draw/composer.md) and manual [IO](../../tests/draw/composer_io/README.md), [import](../../tests/draw/composer_import/README.md) and [baking](../../tests/draw/composer_baking/README.md) matrices guide lead validation. M07 implementation/corrections are accepted by continuation; exact backend, HTTP and package coverage is unspecified. Documentation checks are static, with no new runtime run implied.

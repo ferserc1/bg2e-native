@@ -9,7 +9,7 @@ labels and buttons barely need a guide — everything else is here.
 Working code ships in:
 
 - `examples/draw/01_window_ui/src/main.cpp` — minimal delegate + `Window` demo.
-- `apps/draw/model_edit/src/AppDelegate.cpp` — complete workspace application.
+- `apps/model_edit/src/AppDelegate.cpp` — complete workspace application.
 
 ---
 
