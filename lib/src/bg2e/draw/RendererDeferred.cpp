@@ -18,6 +18,7 @@
 
 #include <bg2e/draw/RendererDeferred.hpp>
 #include "TemporalSignatureCache.hpp"
+#include "TemporalCorrespondence.hpp"
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
@@ -165,6 +166,7 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     {
         pipeline::TemporalConfiguration configuration;
         configuration.shaderRoot = _shaderRoot;
+        configuration.metadataShaderInterface = "draw.temporal.v2";
         _configuration.temporal = std::make_shared<pipeline::TemporalAccumulator>(configuration);
     }
     _configuration.temporal->initialize(*engine.device(),engine.backendType(),count);
@@ -311,6 +313,13 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     _object.initialize(engine, _drawLayout, count);
     _lights.initialize(engine, _lightingLayout, count);
     _environmentBinding.initialize(engine, _lightingLayout, count, 8);
+    _temporalSurface = std::make_unique<pipeline::TemporalSurfacePass>(_shaderRoot);
+    _temporalSurface->initialize(engine,*_configuration.layers[0].layer,count);
+    updateTemporalSurfaceStatus();
+    if (_temporalSurfaceEnabled && !_temporalSurface->available())
+    {
+        warnInitialization(_temporalSurface->status());
+    }
     for (auto it = _configuration.overlays.begin(); it != _configuration.overlays.end();)
     {
         ++_initializedOverlays; // Cleanup also covers partially initialized overlays.
@@ -364,6 +373,104 @@ void RendererDeferred::warnInitialization(const std::string& message)
 const std::string& RendererDeferred::initializationWarnings() const
 {
     return _initializationWarnings;
+}
+
+bool RendererDeferred::temporalSurfaceEnabled() const
+{
+    return _temporalSurfaceEnabled;
+}
+
+void RendererDeferred::setTemporalSurfaceEnabled(bool value)
+{
+    _temporalSurfaceEnabled = value;
+    updateTemporalSurfaceStatus();
+}
+
+bool RendererDeferred::temporalSurfaceAvailable() const
+{
+    return _temporalSurface && _temporalSurface->available();
+}
+
+const std::string& RendererDeferred::temporalSurfaceStatus() const
+{
+    return _temporalSurfaceStatus;
+}
+
+pipeline::TemporalDiagnosticView RendererDeferred::temporalDiagnosticView() const
+{
+    return _temporalDiagnosticView;
+}
+
+void RendererDeferred::setTemporalDiagnosticView(pipeline::TemporalDiagnosticView value)
+{
+    if (uint32_t(value) > uint32_t(pipeline::TemporalDiagnosticView::LocalHistory))
+    {
+        throw std::invalid_argument("Unknown temporal diagnostic view");
+    }
+    _temporalDiagnosticView = value;
+}
+
+pipeline::TemporalSignal RendererDeferred::temporalDiagnosticSignal() const
+{
+    return _temporalDiagnosticSignal;
+}
+
+void RendererDeferred::setTemporalDiagnosticSignal(pipeline::TemporalSignal value)
+{
+    if (uint32_t(value) > uint32_t(pipeline::TemporalSignal::ReflectedRadiance))
+    {
+        throw std::invalid_argument("Unknown temporal diagnostic signal");
+    }
+    _temporalDiagnosticSignal = value;
+}
+
+uint64_t RendererDeferred::temporalDiagnosticLayer() const
+{
+    return _temporalDiagnosticLayer;
+}
+
+void RendererDeferred::setTemporalDiagnosticLayer(uint64_t value)
+{
+    _temporalDiagnosticLayer = value;
+}
+
+bool RendererDeferred::temporalDiagnosticsAvailable() const
+{
+    return temporalSurfaceAvailable() && _configuration.temporal && _configuration.temporal->diagnosticsAvailable();
+}
+
+pipeline::TemporalSurfaceMetadata RendererDeferred::temporalSurfaceMetadata(uint32_t slotIndex, uint64_t layer) const
+{
+    const auto& slot = _targets.at(slotIndex);
+    if (layer == 0)
+    {
+        return {slot.opaqueTemporalSurface.token,slot.opaqueTemporalSurface.depth};
+    }
+    const auto found = slot.transparentTemporalSurfaces.find(layer);
+    return found == slot.transparentTemporalSurfaces.end() ? pipeline::TemporalSurfaceMetadata{} :
+        pipeline::TemporalSurfaceMetadata{found->second.token,found->second.depth};
+}
+
+void RendererDeferred::updateTemporalSurfaceStatus()
+{
+    if (!_temporalSurface)
+    {
+        _temporalSurfaceStatus = "Not initialized";
+    }
+    else if (!_temporalSurface->available())
+    {
+        _temporalSurfaceStatus = _temporalSurface->status();
+    }
+    else if (!_temporalSurfaceEnabled)
+    {
+        _temporalSurfaceStatus = "Disabled: experimental receiver metadata requires explicit opt-in; native validation pending";
+    }
+    else
+    {
+        _temporalSurfaceStatus = _configuration.temporal->surfaceMetadataAvailable() ?
+            "Enabled: experimental receiver metadata and local temporal rejection; native validation pending" :
+            _configuration.temporal->surfaceMetadataStatus();
+    }
 }
 
 pipeline::OverlayConfiguration RendererDeferred::overlayConfiguration() const
@@ -625,21 +732,28 @@ void RendererDeferred::update(const FrameContext& frame)
     _queue = slot.queue;
     stageProfile.next("renderer.temporalSignature");
     const auto signature = prepareTemporalSignature(slot.queue);
-    const bool componentChanged = !_historyState || !signature->equals(*_historyState);
+    const bool componentChanged = !_historyState || !signature->historyCompatible(*_historyState);
+    const bool sceneMotion = !componentChanged && signature->hasTransformChanges(*_historyState);
     bool changed = componentChanged;
-    std::vector<uint8_t> reference;
+    std::vector<uint8_t> reference, policyReference;
     const bool referenceEnabled = !_signatureReuseEnabled || _signatureValidationEnabled;
     if (referenceEnabled)
     {
         reference = fullTemporalSignature(slot.queue);
+        policyReference = historyPolicySignature(slot.queue);
         const std::vector<uint8_t> empty;
-        const auto& previous = _historySignatureCurrent ? _historySignature :
+        const auto& previous = _historySignatureCurrent ? _historyPolicySignature :
+            (_historyState ? _historyState->historyPolicyBytes() : empty);
+        const bool referenceChanged = !_historyState || policyReference != previous;
+        const auto& previousFull = _historySignatureCurrent ? _historySignature :
             (_historyState ? _historyState->flattened() : empty);
-        const bool referenceChanged = reference != previous;
+        const bool fullReferenceChanged = !_historyState || reference != previousFull;
+        const bool fullComponentChanged = !_historyState || !signature->equals(*_historyState);
         if (_signatureValidationEnabled &&
-            (signature->flattened() != reference || componentChanged != referenceChanged))
+            (signature->flattened() != reference || signature->historyPolicyBytes() != policyReference ||
+             componentChanged != referenceChanged || fullComponentChanged != fullReferenceChanged))
         {
-            throw std::logic_error("Cached temporal signature differs from full serialization");
+            throw std::logic_error("Cached temporal identity or history policy differs from reference serialization");
         }
         changed = _signatureReuseEnabled ? componentChanged : referenceChanged;
         base::CpuProfileScope::count("temporal.signatureReferenceBytes", reference.size(), "bytes");
@@ -650,20 +764,53 @@ void RendererDeferred::update(const FrameContext& frame)
         base::CpuProfileScope::count("temporal.signatureResets", 1);
         resetHistories();
     }
+    if (!_temporalCorrespondence)
+    {
+        _temporalCorrespondence = std::make_shared<TemporalCorrespondence>();
+    }
+    slot.preparedCorrespondence = _temporalCorrespondence->prepare(*signature,frame.sceneFrameNumber,_historyGeneration);
+    slot.recordedCorrespondence.reset();
+    slot.opaqueTemporalSurface = {};
+    slot.diagnostic.reset();
+    slot.diagnosticView = _temporalDiagnosticView;
+    slot.diagnosticSignal = _temporalDiagnosticSignal;
+    slot.diagnosticLayer = _temporalDiagnosticLayer;
+    slot.transparentTemporalSurfaces.clear();
+    updateTemporalSurfaceStatus();
+    slot.recordTemporalSurfaces = _temporalSurfaceEnabled && temporalSurfaceAvailable() &&
+        slot.preparedCorrespondence->identitiesValid;
+    if (_temporalSurfaceEnabled && temporalSurfaceAvailable() && !slot.preparedCorrespondence->identitiesValid)
+    {
+        _temporalSurfaceStatus = "Fallback for current scene: nonunique or empty temporal surface identities";
+    }
+    slot.sceneMotion = !changed && sceneMotion;
+    if (slot.sceneMotion)
+    {
+        base::CpuProfileScope::count("temporal.objectMotionObservations", 1);
+    }
     // Accepted history state is independent of derived-cache/fingerprint lookups.
     _historyState = signature;
     _historySignatureCurrent = referenceEnabled;
     if (referenceEnabled)
     {
         _historySignature = std::move(reference);
+        _historyPolicySignature = std::move(policyReference);
     }
     else
     {
         std::vector<uint8_t> empty;
         _historySignature.swap(empty); // Drop unused full-baseline storage.
+        std::vector<uint8_t> emptyPolicy;
+        _historyPolicySignature.swap(emptyPolicy);
     }
     stageProfile.next("renderer.beginTemporalAndFrameBindings");
-    _configuration.temporal->beginFrame(frame.frameSlot,frame.frameNumber,frame.sceneFrameNumber);
+    _configuration.temporal->beginFrame(frame.frameSlot,frame.frameNumber,frame.sceneFrameNumber,slot.sceneMotion);
+    // Retire metadata invocations even when replay was disabled since the last
+    // use of this slot. Only scene updates reach this point.
+    if (_temporalSurface)
+    {
+        _temporalSurface->beginFrame(frame.frameSlot,frame.frameNumber);
+    }
     _configuration.denoise->beginFrame(frame.frameSlot,frame.frameNumber);
     slot.camera = _upscaleCamera;
     slot.camera.view = _view;
@@ -816,11 +963,31 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     {
         throw std::logic_error("Update the acquired renderer slot before recording");
     }
+    // Resolve the predecessor at recording time, after any intervening ordered
+    // submission. Fingerprint queries and update-only work never publish it.
+    auto correspondence = _temporalCorrespondence->record(*slot.preparedCorrespondence,
+        frame.sceneFrameNumber,_historyGeneration,frame.commandBuffer.recordingCompletion());
+    slot.recordedCorrespondence = correspondence;
     if (slot.tracing)
     {
         slot.tracing->build(frame.commandBuffer);
     }
     pipeline::RasterFrame raster{&slot.queue, nullptr, &_frame, &_object, &_lights, &_environmentBinding};
+    std::vector<pipeline::TemporalSurfaceInstance> surfaceInstances;
+    if (slot.recordTemporalSurfaces)
+    {
+        surfaceInstances.reserve(slot.queue.items().size());
+        for (const auto& item : slot.queue.items())
+        {
+            // Canonical correspondence is node/submesh. objectId is only the
+            // current frame's selector for the existing raster object bindings.
+            const auto found = correspondence->instances.find({item.nodeId,item.submeshIndex});
+            if (found != correspondence->instances.end())
+            {
+                surfaceInstances.push_back({item.objectId,found->second.token,found->second.correspondenceValid});
+            }
+        }
+    }
     std::vector<pipeline::ImageBinding> gbuffer;
     const auto& contract = _configuration.layers[0].configuration.contract;
     for (size_t i = 0; i < contract.outputs.size(); ++i)
@@ -828,6 +995,11 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         gbuffer.push_back({contract.outputs[i].semantic, slot.gbuffer.at(i).get()});
     }
     dispatch(0, frame, {}, gbuffer, &raster);
+    if (slot.recordTemporalSurfaces)
+    {
+        gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalSurface",0,false);
+        slot.opaqueTemporalSurface = _temporalSurface->record(frame,raster,slot.gbuffer[0]->size(),surfaceInstances);
+    }
     pipeline::RenderTarget::copy(frame.commandBuffer, *slot.gbuffer[6], *slot.opaqueDepth);
     pipeline::RenderTarget::clear(frame.commandBuffer, *slot.colorA);
     dispatch(3, frame, {}, {{"color", slot.colorA.get()}, {"depth", slot.opaqueDepth.get()}});
@@ -844,8 +1016,23 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             const auto accumulated = [&]
             {
                 gpu::GpuTimingScope timing(frame.commandBuffer, "effect.temporal.record", layer, layer != 0);
+                pipeline::TemporalSurfaceMetadata metadata;
+                if (_configuration.temporal->surfaceMetadataAvailable())
+                {
+                    if (layer == 0)
+                    {
+                        metadata = {slot.opaqueTemporalSurface.token,slot.opaqueTemporalSurface.depth};
+                    }
+                    else if (const auto found = slot.transparentTemporalSurfaces.find(layer);
+                        found != slot.transparentTemporalSurfaces.end())
+                    {
+                        metadata = {found->second.token,found->second.depth};
+                    }
+                }
                 return _configuration.temporal->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
-                    frame.sceneFrameNumber,_historyGeneration,{kind,0,layer},signal,surface,view,material,maxRoughness});
+                    frame.sceneFrameNumber,_historyGeneration,{kind,0,layer},signal,surface,view,material,maxRoughness,metadata,
+                    slot.diagnosticView == pipeline::TemporalDiagnosticView::LocalHistory &&
+                        slot.diagnosticSignal == kind && slot.diagnosticLayer == layer});
             }();
             pipeline::DenoiseSignal filteredKind = pipeline::DenoiseSignal::Visibility;
             if (kind == pipeline::TemporalSignal::DiffuseRadiance)
@@ -1007,20 +1194,40 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             pipeline::RenderTarget::copy(frame.commandBuffer, *slot.opaqueDepth, *slot.gbuffer[6]);
             raster.item = item;
             dispatch(0, frame, {}, gbuffer, &raster);
-            composite(current, next,(uint64_t(item->objectId)<<32)|item->submeshIndex);
+            const uint64_t layer = (uint64_t(item->objectId)<<32)|item->submeshIndex;
+            if (slot.recordTemporalSurfaces)
+            {
+                gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalSurface",layer,true);
+                auto metadata = _temporalSurface->record(frame,raster,extent,surfaceInstances,slot.opaqueDepth.get(),0,layer);
+                // Every transparent receiver has its own retained token/depth
+                // owner. Never replace or borrow the opaque domain's metadata.
+                slot.transparentTemporalSurfaces.emplace(layer,std::move(metadata));
+            }
+            composite(current, next,layer);
             std::swap(current, next);
         }
     }
     slot.finalItem = raster.item;
+    if (slot.diagnosticView != pipeline::TemporalDiagnosticView::Off)
+    {
+        gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalDiagnostic",slot.diagnosticLayer,slot.diagnosticLayer != 0);
+        slot.diagnostic = _configuration.temporal->recordDiagnostic(frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+            {slot.diagnosticSignal,0,slot.diagnosticLayer},temporalSurfaceMetadata(frame.frameSlot,slot.diagnosticLayer),slot.diagnosticView);
+        if (slot.diagnostic)
+        {
+            current = slot.diagnostic.get();
+        }
+    }
     base::CpuProfileScope reconstructionCpu("renderer.reconstruction");
     gpu::GpuTimingScope reconstructionTiming(frame.commandBuffer, "renderer.reconstruction");
     UpscalerInput upscale{frame, *current, *slot.opaqueDepth, *slot.reconstructed, slot.camera, slot.jitteredProjection};
-    if (!_configuration.upscaler->available() || !_configuration.upscaler->record(upscale))
+    if (slot.diagnostic || !_configuration.upscaler->available() || !_configuration.upscaler->record(upscale))
     {
         _fallback->record(upscale);
     }
     frame.commandBuffer.transition(slot.reconstructed.get(), gpu::ImageLayout::ShaderReadOnly);
     slot.linearRecorded = true;
+    _temporalCorrespondence->publish(std::move(correspondence));
     return slot.reconstructed;
 }
 
@@ -1216,6 +1423,10 @@ void RendererDeferred::resetHistories()
         throw std::overflow_error("Renderer history generation exhausted");
     }
     ++_historyGeneration;
+    if (_temporalCorrespondence)
+    {
+        _temporalCorrespondence->invalidate();
+    }
     if (_configuration.temporal)
     {
         _configuration.temporal->invalidate();
@@ -1261,6 +1472,12 @@ void RendererDeferred::cleanup()
         _configuration.overlays.at(i - 1)->cleanup();
     }
     _initializedOverlays = 0;
+    if (_temporalSurface)
+    {
+        _temporalSurface->cleanup();
+        _temporalSurface.reset();
+    }
+    updateTemporalSurfaceStatus();
     if (_configuration.finalProcessor)
     {
         _configuration.finalProcessor->cleanup();
@@ -1305,6 +1522,7 @@ void RendererDeferred::cleanup()
         _configuration.denoise->cleanup();
     }
     _historySignature.clear();
+    _historyPolicySignature.clear();
     _historySignatureCurrent = false;
     _historyState.reset();
     _signatureCache.reset();
@@ -1320,6 +1538,9 @@ void RendererDeferred::cleanup()
     _lights.cleanup();
     _environmentBinding.cleanup();
     _targets.clear();
+    // cleanup's existing device drain precedes all correspondence releases. The
+    // next lifecycle may restart tokens only after old frame snapshots are gone.
+    _temporalCorrespondence.reset();
     _tracingResources.reset();
     _queue.clear();
     _drawLayout.reset();
@@ -1398,6 +1619,17 @@ std::shared_ptr<const TemporalSignatureState> RendererDeferred::prepareTemporalS
 std::vector<uint8_t> RendererDeferred::fullTemporalSignature(const RenderQueue& queue) const
 {
     base::CpuProfileScope profile("renderer.fullTemporalSignature");
+    return serializeTemporalSignature(queue, true);
+}
+
+std::vector<uint8_t> RendererDeferred::historyPolicySignature(const RenderQueue& queue) const
+{
+    base::CpuProfileScope profile("renderer.historyPolicySignature");
+    return serializeTemporalSignature(queue, false);
+}
+
+std::vector<uint8_t> RendererDeferred::serializeTemporalSignature(const RenderQueue& queue, bool includeTransforms) const
+{
     std::vector<uint8_t> bytes;
     auto append = [&](const auto& value)
     {
@@ -1440,7 +1672,10 @@ std::vector<uint8_t> RendererDeferred::fullTemporalSignature(const RenderQueue& 
         pointer(item.drawMesh.get());
         pointer(item.tracingMesh.get());
         pointer(item.drawMaterial.get());
-        append(item.worldMatrix);
+        if (includeTransforms)
+        {
+            append(item.worldMatrix);
+        }
         append(item.materialData);
         append(item.rayTracingEnabled);
         for (uint32_t i = 0; i < 6; ++i)
@@ -1525,7 +1760,7 @@ std::vector<uint8_t> RendererDeferred::fullTemporalSignature(const RenderQueue& 
     append(_configuration.denoise->depthSigma());
     append(_configuration.denoise->normalSigma());
     append(_configuration.denoise->spatialSigma());
-    base::CpuProfileScope::count("temporal.fullSignatureBytes", bytes.size(), "bytes");
+    base::CpuProfileScope::count(includeTransforms ? "temporal.fullSignatureBytes" : "temporal.policySignatureBytes", bytes.size(), "bytes");
     return bytes;
 }
 

@@ -21,7 +21,10 @@
 #include <bg2e/draw/all.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/LightComponent.hpp>
+#include <array>
 #include <stdexcept>
+#include <utility>
+#include <glm/gtc/matrix_transform.hpp>
 
 namespace bg2e::draw::tests {
 class SignatureDenoiseProbe : public pipeline::DenoiseFilter {
@@ -32,6 +35,19 @@ class SignatureDenoiseProbe : public pipeline::DenoiseFilter {
     uint32_t kernelRadius() const override
     {
         return effectiveRadius;
+    }
+};
+
+// Capture renderer observations even on the non-RT/IBL fallback path.
+class SignatureTemporalProbe : public pipeline::TemporalAccumulator {
+  public:
+    using TemporalAccumulator::TemporalAccumulator;
+    bool motionObserved = false;
+
+    void beginFrame(uint32_t slot, uint64_t serial, uint64_t sequence, bool sceneMotion = false) override
+    {
+        motionObserved = sceneMotion;
+        TemporalAccumulator::beginFrame(slot,serial,sequence,sceneMotion);
     }
 };
 
@@ -58,6 +74,10 @@ inline bool runTemporalInvalidationProbe(Engine& engine, const std::filesystem::
     denoiseConfiguration.shaderRoot = shaderRoot;
     auto denoise = std::make_shared<SignatureDenoiseProbe>(denoiseConfiguration);
     configuration.denoise = denoise;
+    pipeline::TemporalConfiguration temporalConfiguration;
+    temporalConfiguration.shaderRoot = shaderRoot;
+    auto temporal = std::make_shared<SignatureTemporalProbe>(temporalConfiguration);
+    configuration.temporal = temporal;
     RendererDeferred renderer(shaderRoot, 2);
     renderer.initialize(engine, configuration);
     renderer.setTemporalSignatureValidationEnabled(true);
@@ -114,10 +134,41 @@ inline bool runTemporalInvalidationProbe(Engine& engine, const std::filesystem::
     renderer.setCamera(view, projection);
     auto generation = update();
     require(generation > warm, "Projection changes must preserve the conservative global reset");
+    // Cover every cached/reference/validation combination, including mode changes
+    // immediately before and after transform edits and out-of-band queries.
+    const std::array<std::pair<bool,bool>,4> modes{{{true,false},{false,false},{true,true},{false,true}}};
     auto moved = glm::mat4(1);
-    moved[3].x = 0.1f;
-    a->setTransform(moved);
-    require(update() > generation, "Object motion must still invalidate every affected history");
+    for (const auto& mode : modes)
+    {
+        renderer.setTemporalSignatureReuseEnabled(mode.first);
+        renderer.setTemporalSignatureValidationEnabled(mode.second);
+        require(update() == generation && !temporal->motionObserved, "Mode switches must preserve the accepted baseline");
+        std::array<glm::mat4,4> transforms;
+        transforms[0] = glm::translate(moved,glm::vec3(0.1f,0,0));
+        transforms[1] = glm::rotate(transforms[0],0.2f,glm::vec3(0,1,0));
+        transforms[2] = glm::scale(transforms[1],glm::vec3(1.1f,0.9f,1.0f));
+        transforms[3] = glm::translate(transforms[2],glm::vec3(0.000001f,0,0));
+        for (const auto& transform : transforms)
+        {
+            const auto fingerprint = renderer.sceneFingerprint();
+            a->setTransform(transform);
+            // The queue is extracted by update, not by sceneFingerprint. This
+            // query must not replace the accepted motion baseline in either case.
+            require(!renderer.sceneFingerprint().empty(), "Out-of-band full fingerprint must remain available");
+            renderer.setTemporalSignatureReuseEnabled(mode.first);
+            require(update() == generation && temporal->motionObserved,
+                "Rigid transform edits must be observed without resetting global histories");
+            require(renderer.sceneFingerprint() != fingerprint,
+                "Frozen-scene fingerprints must change on motion even with stable history generation");
+            require(update() == generation && !temporal->motionObserved,
+                "Accepted motion must not be reported again on an unchanged scene");
+            moved = transform;
+        }
+    }
+    renderer.setTemporalSignatureValidationEnabled(true);
+    // Rebuilding geometry is still a global invalidation, independent of motion.
+    a->setMesh(geo::createPlane(2,1)); // Loaded drawables rebuild automatically.
+    require(update() > generation, "Mesh replacement must retain global invalidation");
     generation = renderer.historyGeneration();
     const auto independentRoughness = b->material().roughness();
     a->material().setRoughness(0.123f);

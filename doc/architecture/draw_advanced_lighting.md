@@ -52,14 +52,21 @@ sceneFrameNumber counts submitted scene work, independently of presentation/UI.
 Temporal keys separate signal/view/layer; reprojection rejection restarts pixel
 counts. maxFrames bounds the arithmetic then rolling/frozen display history.
 frameCount is nominal convergence, not an exact whole-image N-sample result.
-Object motion conservatively resets; there are no previous-object motion vectors.
+Transform-only object motion preserves global histories and FSR state. It permits
+rolling updates during motion and for exactly 3*maxFrames subsequent consecutive
+scene records per active signal/view/layer, then restores the authored freeze
+preference. There are no previous-object motion vectors. AO/GI/reflection trails,
+stale lighting on stationary receivers and FSR trails are accepted Phase 0 limits;
+the finite window does not guarantee exact convergence.
 Spatial denoise uses geometry guides/confidence and keeps HDR unpremultiplied.
 The display denoiser has no chart-ID guide. Exact UV bake averaging and chart-safe
 padding now belong to [bake](../api/bake/LightmapOutput.md); exact camera-image
 averaging and windowless execution remain separate pending products.
 
-Queued settings/editor/light/transform changes happen at a synchronized boundary,
-reset SDK and engine histories and request scene work. Direct camera teleport,
+Queued edits happen at a synchronized boundary and request scene work. Settings,
+light, material, membership and lifecycle changes retain global SDK/engine resets;
+transform-only changes use the rolling window. Explicit general editor callbacks
+may still invalidate or reattach scenes and must be reviewed separately. Direct camera teleport,
 in-place image upload or custom shader changes retaining identity require explicit
 Renderer::invalidateHistories. Catch partial material failures and notify as well;
 MaterialModifier itself owns no renderer. Pause animation for convergence comparisons.
@@ -85,3 +92,16 @@ lists remaining device/numerical/failure-path checks.
 
 See [integrated UV2 lightmaps](../tutorials/draw/12_lightmaps.md) for immutable
 bake snapshots, exact completion and explicit material adoption.
+
+Phase 1 temporal diagnostics are exposed through renderer reflection settings:
+temporalDiagnosticView (Off/Tokens/LocalHistory), temporalDiagnosticSignal and
+exact temporalDiagnosticLayer. Replay remains an independent default-off opt-in.
+LocalHistory captures the kernel's actual accepted flag in optional GPU storage;
+red means restart/first sample, green accepted, black uncovered and amber no capture.
+The diagnostic ABI is separate from base v1/v2 and cannot change accumulated signal
+values. Only active diagnostics allocate images/dispatch and use spatial reconstruction.
+No ordinary CPU readback/wait/submission is introduced. See
+[TemporalAccumulator](../api/draw/TemporalAccumulator.md) and
+[probe instructions](../../tests/draw/temporal_surface/README.md).
+Native acceptance remains pending; stable receiver identity does not detect changes
+to indirect illumination on an otherwise stationary surface.

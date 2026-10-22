@@ -25,6 +25,7 @@
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <algorithm>
+#include <charconv>
 #include <typeinfo>
 #include <mutex>
 #include <stdexcept>
@@ -180,6 +181,28 @@ void registerTypes()
 
         TypeInfoBuilder<RendererDeferred> renderer("bg2e.draw.renderer.deferred.v1");
         renderer.property("inspectOpaqueLayer", &RendererDeferred::inspectOpaqueLayer, &RendererDeferred::setInspectOpaqueLayer).category("Diagnostics");
+        renderer.property("temporalSurfaceEnabled", &RendererDeferred::temporalSurfaceEnabled, &RendererDeferred::setTemporalSurfaceEnabled).category("Diagnostics");
+        renderer.property("temporalDiagnosticView", &RendererDeferred::temporalDiagnosticView, &RendererDeferred::setTemporalDiagnosticView)
+            .category("Diagnostics").enumValue("Off",0).enumValue("Surface tokens",1).enumValue("Local history (red restart, green accepted)",2);
+        renderer.property("temporalDiagnosticSignal", &RendererDeferred::temporalDiagnosticSignal, &RendererDeferred::setTemporalDiagnosticSignal)
+            .category("Diagnostics").enumValue("Visibility",0).enumValue("Diffuse radiance",1).enumValue("Reflected radiance",2);
+        // Reflection has no uint64 scalar; decimal text preserves the complete layer key.
+        renderer.accessor<std::string>("temporalDiagnosticLayer", [](const RendererDeferred& o)
+        {
+            return std::to_string(o.temporalDiagnosticLayer());
+        }, [](RendererDeferred& o, const std::string& value)
+        {
+            uint64_t layer = 0;
+            const auto result = std::from_chars(value.data(),value.data()+value.size(),layer);
+            if (value.empty() || result.ec != std::errc{} || result.ptr != value.data()+value.size())
+            {
+                throw std::invalid_argument("Temporal diagnostic layer must be an unsigned 64-bit decimal integer");
+            }
+            o.setTemporalDiagnosticLayer(layer);
+        }).category("Diagnostics");
+        renderer.property("temporalDiagnosticsAvailable", &RendererDeferred::temporalDiagnosticsAvailable).category("Capabilities");
+        renderer.property("temporalSurfaceAvailable", &RendererDeferred::temporalSurfaceAvailable).category("Capabilities");
+        renderer.property("temporalSurfaceStatus", &RendererDeferred::temporalSurfaceStatus).category("Capabilities");
         renderer.property("queryGraphSelected", &RendererDeferred::usesQueryShadows).category("Capabilities");
         renderer.property("indirectLighting", &RendererDeferred::indirectLightingMode, &RendererDeferred::setIndirectLightingMode)
             .category("Indirect lighting").enumValue("IBL",0).enumValue("AO",1).enumValue("GI",2);

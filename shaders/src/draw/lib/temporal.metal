@@ -26,6 +26,10 @@ struct TemporalUniforms {
     uint4 extent;
     float4 cameraRoughness;
     uint4 flags;
+#if TEMPORAL_METADATA
+    float4x4 currentViewProjection;
+    float4 metadataRejection;
+#endif
 };
 kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     constant TemporalUniforms& dataBlock [[buffer(1)]],
@@ -43,7 +47,16 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     texture2d<float> materialImage [[texture(7)]],
     texture2d<float,access::write> outputImage [[texture(8)]],
     texture2d<float,access::write> outputPosition [[texture(9)]],
-    texture2d<float,access::write> outputNormal [[texture(10)]])
+    texture2d<float,access::write> outputNormal [[texture(10)]]
+#if TEMPORAL_METADATA
+    , texture2d<uint> tokenImage [[texture(11)]]
+    , depth2d<float> metadataDepthImage [[texture(12)]]
+    , texture2d<uint> previousTokenImage [[texture(13)]]
+#endif
+#if TEMPORAL_DIAGNOSTIC
+    , texture2d<float,access::write> outputAcceptance [[texture(14)]]
+#endif
+    )
 {
     if (any(pixel >= dataBlock.extent.zw))
     {
@@ -97,6 +110,29 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         previousUV = clip.xy/(abs(clip.w) > 1e-8 ? clip.w : 1.0)*float2(0.5,-0.5)+0.5;
     }
     accepted = accepted && all(previousUV >= float2(0)) && all(previousUV < float2(1));
+#if TEMPORAL_METADATA
+    if (dataBlock.flags.y != 0u)
+    {
+        accepted = accepted && dataBlock.flags.z != 0u;
+        if (accepted)
+        {
+            // UV is checked before conversion: an out-of-bounds predecessor never clamps.
+            uint2 metadataPixel = uint2(previousUV*float2(dataBlock.extent.xy));
+            uint token = tokenImage.read(uint2(sourcePixel)).r;
+            uint previousToken = previousTokenImage.read(metadataPixel).r;
+            float metadataDepth = metadataDepthImage.read(uint2(sourcePixel));
+#if TEMPORAL_WORLD
+            float4 currentClip = dataBlock.currentViewProjection*float4(position,1.0);
+            float receiverDepth = currentClip.z/(abs(currentClip.w) > 1e-8 ? currentClip.w : 1.0);
+            accepted = accepted && currentClip.w > 1e-8 && receiverDepth >= 0.0 && receiverDepth <= 1.0;
+#else
+            float receiverDepth = depth;
+#endif
+            accepted = accepted && token != 0u && token == previousToken &&
+                abs(metadataDepth-receiverDepth) <= dataBlock.metadataRejection.x;
+        }
+    }
+#endif
     if (accepted)
     {
         int2 previousPixel = int2(previousUV*float2(dataBlock.extent.zw));
@@ -144,4 +180,7 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     outputImage.write(result,pixel);
     outputPosition.write(float4(position,covered ? 1.0 : 0.0),pixel);
     outputNormal.write(float4(normal,count),pixel);
+#if TEMPORAL_DIAGNOSTIC
+    outputAcceptance.write(float4(covered ? (accepted ? float3(0,1,0) : float3(1,0,0)) : float3(0),1),pixel);
+#endif
 }

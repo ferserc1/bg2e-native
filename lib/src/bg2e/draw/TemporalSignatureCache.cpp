@@ -609,6 +609,59 @@ bool TemporalSignatureState::equals(const TemporalSignatureState& other) const
     return true;
 }
 
+bool TemporalSignatureState::historyCompatible(const TemporalSignatureState& other) const
+{
+    if (this == &other)
+    {
+        return true;
+    }
+    if (!sameComponent(camera, other.camera) || !sameComponent(lights, other.lights) ||
+        !sameComponent(environment, other.environment) || !sameComponent(settings, other.settings) || instances.size() != other.instances.size())
+    {
+        return false;
+    }
+    for (size_t i = 0; i < instances.size(); ++i)
+    {
+        const auto& a = instances[i];
+        const auto& b = other.instances[i];
+        if (!sameGeometry(a.geometry, b.geometry) || !sameMaterial(a.material, b.material))
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool TemporalSignatureState::hasTransformChanges(const TemporalSignatureState& other) const
+{
+    if (this == &other || instances.size() != other.instances.size())
+    {
+        return false;
+    }
+    // Preserve the cache's bucket policy when correspondence is not required.
+    // Active correspondence has already rejected empty/duplicate identities in prepare().
+    using Key = std::pair<std::string,uint32_t>;
+    std::map<Key,std::vector<const SignatureInstance*>> previous;
+    for (const auto& item : other.instances)
+    {
+        previous[{item.geometry->nodeId, item.geometry->submesh}].push_back(&item);
+    }
+    std::map<Key,size_t> consumed;
+    bool changed = false;
+    for (const auto& item : instances)
+    {
+        const Key key{item.geometry->nodeId, item.geometry->submesh};
+        const auto found = previous.find(key);
+        auto& index = consumed[key];
+        if (found == previous.end() || index >= found->second.size())
+        {
+            return false; // Membership changes are global resets, not motion.
+        }
+        changed |= !sameComponent(item.transform, found->second[index++]->transform);
+    }
+    return changed;
+}
+
 void TemporalSignatureState::countResetCauses(const TemporalSignatureState* previous) const
 {
     if (!previous)
@@ -632,7 +685,7 @@ void TemporalSignatureState::countResetCauses(const TemporalSignatureState* prev
     {
         base::CpuProfileScope::count("temporal.reset.settings", 1);
     }
-    bool membership = instances.size() != previous->instances.size(), geometryChanged = false, motion = false, materialChanged = false;
+    bool membership = instances.size() != previous->instances.size(), geometryChanged = false, materialChanged = false;
     for (size_t i = 0; i < std::min(instances.size(), previous->instances.size()); ++i)
     {
         const auto& a = instances[i];
@@ -640,7 +693,6 @@ void TemporalSignatureState::countResetCauses(const TemporalSignatureState* prev
         membership |= a.geometry->nodeId != b.geometry->nodeId || a.geometry->submesh != b.geometry->submesh ||
             a.geometry->objectId != b.geometry->objectId;
         geometryChanged |= !sameGeometry(a.geometry, b.geometry);
-        motion |= !sameComponent(a.transform, b.transform);
         materialChanged |= !sameMaterial(a.material, b.material);
     }
     if (membership)
@@ -650,10 +702,6 @@ void TemporalSignatureState::countResetCauses(const TemporalSignatureState* prev
     if (geometryChanged)
     {
         base::CpuProfileScope::count("temporal.reset.geometryOrInclusion", 1);
-    }
-    if (motion)
-    {
-        base::CpuProfileScope::count("temporal.reset.objectMotion", 1);
     }
     if (materialChanged)
     {
@@ -667,6 +715,25 @@ const std::vector<uint8_t>& TemporalSignatureState::flattened() const
     {
         return _bytes;
     }
+    _bytes = serialize(true);
+    base::CpuProfileScope::count("temporal.signatureFlattenedBytes", _bytes.size(), "bytes");
+    _flattened = true;
+    return _bytes;
+}
+
+const std::vector<uint8_t>& TemporalSignatureState::historyPolicyBytes() const
+{
+    if (!_policyFlattened)
+    {
+        _policyBytes = serialize(false);
+        base::CpuProfileScope::count("temporal.signaturePolicyFlattenedBytes", _policyBytes.size(), "bytes");
+        _policyFlattened = true;
+    }
+    return _policyBytes;
+}
+
+std::vector<uint8_t> TemporalSignatureState::serialize(bool includeTransforms) const
+{
     std::vector<uint8_t> bytes;
     const auto append = [&](const SignatureBytes& component)
     {
@@ -677,7 +744,10 @@ const std::vector<uint8_t>& TemporalSignatureState::flattened() const
     {
         append(item.geometry->prefix);
         append(item.material->identity);
-        append(*item.transform);
+        if (includeTransforms)
+        {
+            append(*item.transform);
+        }
         append(item.material->values);
         append(item.geometry->inclusion);
         append(item.material->textures);
@@ -685,9 +755,6 @@ const std::vector<uint8_t>& TemporalSignatureState::flattened() const
     append(*lights);
     append(*environment);
     append(*settings);
-    base::CpuProfileScope::count("temporal.signatureFlattenedBytes", bytes.size(), "bytes");
-    _bytes = std::move(bytes);
-    _flattened = true;
-    return _bytes;
+    return bytes;
 }
 }

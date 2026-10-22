@@ -23,6 +23,9 @@
 #include <bg2e/gpu/Factory.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>
+#include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/geo/plane.hpp>
 
 #include <cmath>
 #include <iostream>
@@ -269,6 +272,98 @@ void checkAverage(gpu::BackendType backend)
         "Average of linear 0.25/0.75 must match single linear 0.5 after final conversion");
 }
 
+class FrozenMotionProbe final : public draw::DefaultOffscreenApplicationDelegate {
+  public:
+    explicit FrozenMotionProbe(gpu::BackendType backend)
+        : DefaultOffscreenApplicationDelegate(std::make_unique<draw::RendererDeferred>()), _backend(backend)
+    {
+    }
+
+    void initConfig(int, char**, app::DrawOffscreenApplicationConfig& config) override
+    {
+        config.engine.backend = _backend;
+        config.extent = {8,6};
+        config.frames = 2;
+        config.timeStepSeconds = 0;
+    }
+
+    void didRenderFrame(uint64_t index, double) override
+    {
+        require(index == 0 && completedFrames() == 1, "Frozen motion job must complete only its initial sample");
+        auto* deferred = dynamic_cast<draw::RendererDeferred*>(renderer());
+        require(deferred != nullptr, "Expected deferred fingerprint implementation");
+        _generation = deferred->historyGeneration();
+        auto moved = glm::mat4(1);
+        moved[3].x = 0.1f;
+        _moving->setTransform(moved); // Completed stopped boundary, no scene replacement.
+    }
+
+    void render(const draw::FrameContext& frame) override
+    {
+        try
+        {
+            DefaultOffscreenApplicationDelegate::render(frame);
+        }
+        catch (const std::logic_error& error)
+        {
+            if (frame.sceneFrameNumber == 1 &&
+                std::string(error.what()) == "Frozen scene or history generation changed during accumulation")
+            {
+                auto* deferred = dynamic_cast<draw::RendererDeferred*>(renderer());
+                require(deferred && deferred->historyGeneration() == _generation,
+                    "Frozen motion rejection must rely on full identity with unchanged history generation");
+                rejectedMotion = true;
+            }
+            throw;
+        }
+    }
+
+    void cleanup() override
+    {
+        _moving.reset();
+        DefaultOffscreenApplicationDelegate::cleanup();
+    }
+
+    bool rejectedMotion = false;
+
+  protected:
+    std::shared_ptr<scene::Node> createScene() override
+    {
+        auto root = std::make_shared<scene::Node>("frozen motion probe");
+        _moving = std::make_shared<draw::Drawable>();
+        _moving->setRayTracingEnabled(false);
+        _moving->setMesh(geo::createPlane(1,1));
+        _moving->load(_engine);
+        root->addComponent(new scene::DrawableComponent(_moving));
+        return root;
+    }
+
+  private:
+    gpu::BackendType _backend;
+    std::shared_ptr<draw::Drawable> _moving;
+    uint64_t _generation = 0;
+};
+
+void checkFrozenMotion(gpu::BackendType backend)
+{
+    auto probe = std::make_shared<FrozenMotionProbe>(backend);
+    std::string failure;
+    {
+        app::OffscreenApplication application;
+        application.init(0,nullptr,"bg2e.offscreen.frozen_motion",probe);
+        try
+        {
+            application.run();
+        }
+        catch (const std::logic_error& error)
+        {
+            failure = error.what();
+        }
+    }
+    require(probe->rejectedMotion && failure == "Frozen scene or history generation changed during accumulation",
+        "Real offscreen delegate must reject a transform edit in a frozen job");
+}
+
 class DeferredProbe final : public draw::DefaultOffscreenApplicationDelegate {
   public:
     explicit DeferredProbe(gpu::BackendType backend)
@@ -343,6 +438,7 @@ int main(int argc, char** argv)
             application.run();
             require(deferred->completed == 1, "Empty-scene deferred frame did not complete");
             checkAverage(selected);
+            checkFrozenMotion(selected);
         }
         std::cout << "Offscreen lifecycle probe passed\n";
         return 0;

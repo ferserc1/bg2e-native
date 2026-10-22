@@ -65,3 +65,12 @@ exact completed counts, no early result, and one final conversion. Both jobs
 must produce identical tight final bytes. See ../frame_accumulation/README.md
 for CPU reference and configuration/mutation scenarios. No checks were executed
 by the agent. Encoded scene output remains M05-04/05.
+
+
+Phase 0 temporal regression: the optional `deferred` branch also runs a two-sample,
+zero-timestep job with a real loaded plane. After the first completed sample it
+changes only the drawable transform at the stopped boundary. The next render must
+throw `Frozen scene or history generation changed during accumulation`, while the
+RendererDeferred history generation remains unchanged. This exercises the actual
+DefaultOffscreenApplicationDelegate fingerprint guard, rather than emulating its
+comparison in a test. The new case has not been compiled or run by the agent.

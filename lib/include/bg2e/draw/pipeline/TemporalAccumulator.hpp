@@ -38,6 +38,10 @@ struct TemporalKey {
         return std::tie(signal,view,layer) < std::tie(other.signal,other.view,other.layer);
     }
 };
+enum class TemporalDiagnosticView : uint32_t
+{
+    Off, Tokens, LocalHistory
+};
 struct TemporalSettings {
     bool enabled = true, freezeAtLimit = false;
     uint32_t maxFrames = 32;
@@ -48,6 +52,11 @@ struct TemporalConfiguration {
     std::string shaderPrefix = "draw/temporal_accumulation", shaderInterface = "draw.temporal.v1";
     uint32_t maxHistories = 256;
     TemporaryPoolLimits poolLimits;
+    std::string metadataShaderInterface; // Optional draw.temporal.v2; v1 stays unchanged.
+    std::string metadataShaderPrefix = "draw/temporal_accumulation_v2";
+};
+struct TemporalSurfaceMetadata {
+    std::shared_ptr<gpu::Image> token, depth; // Both supplied or both absent.
 };
 // Public borrowed signal/surface profile; independent of private renderer targets.
 struct TemporalInput {
@@ -60,6 +69,8 @@ struct TemporalInput {
     TemporalView view;
     gpu::Image* material = nullptr; // Required for reflections: G=roughness.
     float maxRoughness = 1;
+    TemporalSurfaceMetadata metadata;
+    bool diagnoseAcceptance = false; // Optional built-in diagnostic kernel; no change to history samples.
 };
 struct TemporalResult {
     gpu::Image* image = nullptr;
@@ -75,8 +86,18 @@ class BG2E_API TemporalAccumulator {
 
     virtual void initialize(gpu::Device& device, gpu::BackendType backend, uint32_t slots);
     // Caller has completed this acquired slot. Only actual scene work calls this.
-    virtual void beginFrame(uint32_t slot, uint64_t serial, uint64_t sceneFrameNumber);
+    // Motion temporarily overrides freezing without changing authored settings.
+    // Custom overrides must accept the motion argument and forward it to the base
+    // when using its record(). Existing three-argument callers default to no motion.
+    virtual void beginFrame(uint32_t slot, uint64_t serial, uint64_t sceneFrameNumber, bool sceneMotion = false);
     virtual TemporalResult record(const TemporalInput& input);
+    // GPU-only diagnostic at receiver extent. Empty if optional support/metadata is absent.
+    // LocalHistory: red restart/first sample, green accepted, black uncovered,
+    // amber when this key has no acceptance diagnostic in the current scene.
+    std::shared_ptr<gpu::Image> recordDiagnostic(gpu::CommandBuffer& command, uint32_t slot, uint64_t serial,
+        const TemporalKey& key, const TemporalSurfaceMetadata& metadata, TemporalDiagnosticView view);
+    bool diagnosticsAvailable() const;
+
     virtual void invalidate(); // Logical reset; keeps submitted invocation owners alive.
     virtual void cleanup(); // Drains before releasing all owners.
 
@@ -90,6 +111,8 @@ class BG2E_API TemporalAccumulator {
     virtual void* settingsInstance();
     virtual bool available() const;
     const std::string& status() const;
+    virtual bool surfaceMetadataAvailable() const;
+    const std::string& surfaceMetadataStatus() const;
     uint64_t generation() const;
     uint32_t frameCount(const TemporalKey& key) const;
 
@@ -105,9 +128,12 @@ class BG2E_API TemporalAccumulator {
     struct History {
         std::shared_ptr<const gpu::detail::RecordingCompletion> recording;
         std::shared_ptr<gpu::Image> signal, position, normal;
+        TemporalSurfaceMetadata metadata;
+        std::shared_ptr<gpu::Image> acceptance;
         TemporalView view;
         uint64_t sequence = 0, generation = 0, reset = 0;
         uint32_t count = 1;
+        uint32_t rollingFramesRemaining = 0; // Subsequent consecutive scene records allowed to roll.
         SurfaceProfile profile{};
         gpu::Size2D surfaceExtent;
         float maxRoughness = 1;
@@ -117,10 +143,13 @@ class BG2E_API TemporalAccumulator {
         std::shared_ptr<History> previous, next;
         std::shared_ptr<gpu::Buffer> uniforms;
         std::shared_ptr<gpu::ResourceSet> resources;
+        std::shared_ptr<gpu::Image> diagnostic;
+        TemporalSurfaceMetadata diagnosticMetadata;
     };
     struct Slot {
         uint64_t serial = 0, sequence = 0;
         bool prepared = false;
+        bool sceneMotion = false;
         std::vector<Invocation> invocations;
     };
     TemporalConfiguration _configuration;
@@ -133,6 +162,16 @@ class BG2E_API TemporalAccumulator {
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::array<std::shared_ptr<gpu::ShaderModule>,4> _shaders;
     std::array<std::shared_ptr<gpu::ComputePipeline>,4> _pipelines;
+    std::shared_ptr<gpu::PipelineLayout> _metadataLayout;
+    std::array<std::shared_ptr<gpu::ShaderModule>,4> _metadataShaders;
+    std::array<std::shared_ptr<gpu::ComputePipeline>,4> _metadataPipelines;
+    std::shared_ptr<gpu::PipelineLayout> _acceptanceLayout;
+    std::array<std::shared_ptr<gpu::ShaderModule>,4> _acceptanceShaders;
+    std::array<std::shared_ptr<gpu::ComputePipeline>,4> _acceptancePipelines;
+    std::shared_ptr<gpu::PipelineLayout> _diagnosticLayout;
+    std::shared_ptr<gpu::ShaderModule> _diagnosticShader;
+    std::shared_ptr<gpu::ComputePipeline> _diagnosticPipeline;
+    std::string _metadataStatus = "Optional metadata interface not requested";
     std::map<TemporalKey,std::shared_ptr<History>> _histories;
     std::vector<Slot> _slots;
     uint64_t _generation = 1, _latestSequence = 0;

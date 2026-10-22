@@ -10,7 +10,7 @@ come from the phase 02 pack cache. The material lookup also captures native imag
 sampler identities and realization revisions. One component serves repeated
 references to the same captured source/revision, without merging independent
 materials by value. Geometry keys retain DrawMesh/BLAS owners and node/submesh
-correspondence. Exact world-matrix bits retain conservative object-motion resets.
+correspondence. Exact world-matrix bits retain full snapshot and fingerprint identity. A separate history-compatibility comparison omits only those transform bytes.
 
 The warm path checks ordered correspondence, source identities, effective revisions,
 world matrices and small global dependencies. When unchanged, it returns the same
@@ -29,9 +29,13 @@ and environment fields remain observable without requiring a new authored revisi
 API. Source mesh/native buffer immutability and explicit invalidation obligations
 for untracked in-place content writes remain the same as the reference path.
 
-This phase deliberately preserves the previous global invalidation policy:
+The interactive global invalidation policy separates rigid motion from other edits:
 
-- Object motion, extraction-order/membership changes, geometry/source identity,
+- Transform-only object motion preserves global generation and upscaler state.
+  Motion is observed using node/submesh correspondence and temporarily permits
+  rolling accumulation; it does not implement object motion vectors. Full frozen
+  offscreen fingerprints still change on transforms and reject mutation.
+- Extraction-order/membership changes, geometry/source identity,
   packed material or texture identity, lights, environment, projection/extent,
   indirect mode and effective settings retain their existing global reset behavior.
 - Camera view is excluded from the global scene signature as before; the temporal
@@ -48,12 +52,13 @@ At a synchronized update boundary:
 
 ```cpp
 renderer.setTemporalSignatureValidationEnabled(true); // Exact bytes + reset parity.
-renderer.setTemporalSignatureReuseEnabled(false);      // Full serialization baseline.
+renderer.setTemporalSignatureReuseEnabled(false);      // Independent reduced reset-policy reference.
 ```
 
 The full serializer is retained independently. Validation throws on a mismatch of
-component bytes or reset decisions. Baseline mode uses the full serialized vector
-for decisions, retaining its previous reference while active. Switching modes does
+full component bytes, reduced policy bytes, or their respective change decisions.
+Baseline mode uses an independent serialization with only world matrices omitted
+for reset decisions. Full and reduced reference baselines have separate storage. Switching modes does
 not itself invalidate histories. Derived-cache/fingerprint queries never replace
 the accepted history state, so an out-of-band fingerprint cannot consume an edit.
 `invalidateHistories()` remains the explicit global-reset API.
@@ -70,7 +75,16 @@ signatureCameraHits, signatureLightHits, signatureEnvironmentHits, signatureSett
 signatureStateHits, signatureFlattenedBytes and fullSignatureBytes (all with the
 `temporal.` prefix). Reset counters include signatureResets, explicitOrLifecycleResets
 and reset.initialSignature/frameConfiguration/membershipOrOrder/geometryOrInclusion/
-objectMotion/materialOrTextures/lights/environment/settings. Causes can overlap;
+materialOrTextures/lights/environment/settings. Transform-only edits increment
+objectMotionObservations instead of signatureResets or reset.objectMotion. Causes can overlap;
 do not sum them as independent resets. Separate update and explicit fingerprint
 calls when measuring hits/bytes; validation intentionally restores full serializer
 work. Native timings and visual acceptance remain pending.
+
+Phase 0 accepts trails on moving receivers and stale AO/GI/reflections on stationary
+receivers, including FSR artifacts from camera-only vectors. Motion renews a per-key
+rolling window lasting 3*maxFrames subsequent rendered scene records; it preserves
+the authored freeze preference. This is approximate stale-lighting recovery, not
+exact local invalidation. Existing application callbacks that explicitly invalidate
+or reattach scenes can still reset; these are separate integration concerns. Native
+visual validation and performance measurements remain pending.

@@ -81,12 +81,20 @@ class TemporalSignatureState {
     std::vector<SignatureInstance> instances;
 
     bool equals(const TemporalSignatureState& other) const;
+
+    // Global reset policy deliberately excludes rigid instance transforms.
+    bool historyCompatible(const TemporalSignatureState& other) const;
+    bool hasTransformChanges(const TemporalSignatureState& other) const;
+
     void countResetCauses(const TemporalSignatureState* previous) const;
     const std::vector<uint8_t>& flattened() const;
+    const std::vector<uint8_t>& historyPolicyBytes() const;
 
   private:
-    mutable bool _flattened = false;
-    mutable std::vector<uint8_t> _bytes;
+    std::vector<uint8_t> serialize(bool includeTransforms) const;
+
+    mutable bool _flattened = false, _policyFlattened = false;
+    mutable std::vector<uint8_t> _bytes, _policyBytes;
 };
 
 class TemporalSignatureCache {

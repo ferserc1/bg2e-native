@@ -25,6 +25,7 @@
 #include <bg2e/draw/pipeline/RTGlobalIllumination.hpp>
 #include <bg2e/draw/pipeline/RTReflections.hpp>
 #include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
+#include <bg2e/draw/pipeline/TemporalSurfacePass.hpp>
 #include <bg2e/draw/pipeline/DenoiseFilter.hpp>
 #include <bg2e/draw/pipeline/FinalProcessor.hpp>
 #include <bg2e/draw/pipeline/DeferredLayer.hpp>
@@ -32,10 +33,13 @@
 #include <bg2e/draw/environment/SkyboxRenderer.hpp>
 #include <bg2e/draw/RenderQueueVisitor.hpp>
 #include <bg2e/scene/Component.hpp>
+#include <map>
 
 namespace bg2e::draw {
 class TemporalSignatureCache;
 class TemporalSignatureState;
+class TemporalCorrespondence;
+struct TemporalCorrespondenceFrame;
 // Ordered single-sample deferred graph. Configuration.layers replaces matching
 // gbuffer/deferred/final/skybox contracts; missing stages get public defaults.
 // All lifecycle and prepareFrame calls require stopped background producers.
@@ -81,6 +85,23 @@ class BG2E_API RendererDeferred : public Renderer {
 
     std::shared_ptr<pipeline::TemporalAccumulator> temporal() const;
     std::shared_ptr<pipeline::DenoiseFilter> denoise() const;
+
+    // Experimental receiver replay. Opt in at a stopped update boundary; default
+    // stays off until native validation.
+    bool temporalSurfaceEnabled() const;
+    void setTemporalSurfaceEnabled(bool value);
+    bool temporalSurfaceAvailable() const;
+    const std::string& temporalSurfaceStatus() const;
+    pipeline::TemporalDiagnosticView temporalDiagnosticView() const;
+    void setTemporalDiagnosticView(pipeline::TemporalDiagnosticView value);
+    pipeline::TemporalSignal temporalDiagnosticSignal() const;
+    void setTemporalDiagnosticSignal(pipeline::TemporalSignal value);
+    uint64_t temporalDiagnosticLayer() const;
+    void setTemporalDiagnosticLayer(uint64_t value); // 0 opaque; exact transparent TemporalKey layer otherwise.
+    bool temporalDiagnosticsAvailable() const;
+    // Snapshot only at a synchronized frame boundary. Owners remain valid across slot reuse.
+    pipeline::TemporalSurfaceMetadata temporalSurfaceMetadata(uint32_t slot, uint64_t layer = 0) const;
+
     std::shared_ptr<pipeline::FinalProcessor> finalProcessor() const;
     const std::string& noiseStatus() const;
     std::shared_ptr<Upscaler> upscaler() const;
@@ -127,14 +148,26 @@ class BG2E_API RendererDeferred : public Renderer {
         std::shared_ptr<gpu::Image> ao, gi, reflections;
         RenderQueue queue;
         std::shared_ptr<pipeline::TracingSnapshot> tracing;
+        std::shared_ptr<const TemporalCorrespondenceFrame> preparedCorrespondence, recordedCorrespondence;
+        pipeline::TemporalSurfaceResult opaqueTemporalSurface;
+        std::map<uint64_t,pipeline::TemporalSurfaceResult> transparentTemporalSurfaces;
         uint64_t serial = 0;
         bool prepared = false, linearRecorded = false, finalRecorded = false;
+        bool sceneMotion = false; // Accepted transform observation; consumed by temporal scheduling.
+        pipeline::TemporalDiagnosticView diagnosticView = pipeline::TemporalDiagnosticView::Off;
+        pipeline::TemporalSignal diagnosticSignal = pipeline::TemporalSignal::Visibility;
+        uint64_t diagnosticLayer = 0;
+        std::shared_ptr<gpu::Image> diagnostic;
+        bool recordTemporalSurfaces = false; // Requested/capable state latched for this scene update.
         const RenderQueue::Item* finalItem = nullptr;
     };
 
     void buildTargets();
     void warnInitialization(const std::string& message);
+    void updateTemporalSurfaceStatus();
     std::vector<uint8_t> fullTemporalSignature(const RenderQueue& queue) const;
+    std::vector<uint8_t> historyPolicySignature(const RenderQueue& queue) const;
+    std::vector<uint8_t> serializeTemporalSignature(const RenderQueue& queue, bool includeTransforms) const;
     std::shared_ptr<const TemporalSignatureState> prepareTemporalSignature(const RenderQueue& queue) const;
     void resetHistories();
     UpscalerConfiguration upscaleConfiguration() const;
@@ -156,11 +189,19 @@ class BG2E_API RendererDeferred : public Renderer {
     bool _reflections = false;
     uint64_t _historyGeneration = 1;
     std::vector<uint8_t> _historySignature; // Full baseline only while diagnostics are active.
+    std::vector<uint8_t> _historyPolicySignature; // Reduced reference baseline; never full fingerprint bytes.
     bool _historySignatureCurrent = false;
     bool _transparentRegionsEnabled = true;
     bool _signatureReuseEnabled = true, _signatureValidationEnabled = false;
     mutable std::shared_ptr<TemporalSignatureCache> _signatureCache;
     std::shared_ptr<const TemporalSignatureState> _historyState;
+    std::shared_ptr<TemporalCorrespondence> _temporalCorrespondence;
+    std::unique_ptr<pipeline::TemporalSurfacePass> _temporalSurface;
+    bool _temporalSurfaceEnabled = false;
+    pipeline::TemporalDiagnosticView _temporalDiagnosticView = pipeline::TemporalDiagnosticView::Off;
+    pipeline::TemporalSignal _temporalDiagnosticSignal = pipeline::TemporalSignal::Visibility;
+    uint64_t _temporalDiagnosticLayer = 0;
+    std::string _temporalSurfaceStatus = "Not initialized";
     std::shared_ptr<scene::Node> _scene;
     std::unique_ptr<environment::EnvironmentGenerator> _generator;
     std::shared_ptr<const environment::EnvironmentResources> _environment;

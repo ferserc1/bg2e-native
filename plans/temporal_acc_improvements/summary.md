@@ -1,6 +1,6 @@
 # Incremental temporal accumulation improvements
 
-Status: implementation plan only. No engine changes, compilation, shader compilation, or runtime validation have been performed for this plan.
+Status: Phase 0 source implementation, regression fixtures and final review are finished (`implemented_unverified`); see progress.md for evidence and limitations. P1.1–P1.5 correspondence, token raster pass and renderer domain integration are also implemented_unverified; next source step: P2.1 (coordinate conventions and recorded frame chronology). Metadata replay requires explicit experimental opt-in and defaults off; the optional v2 consumer is provisioned independently and consumes metadata only on explicit replay opt-in. Compilation, shader compilation, native runtime validation, visual acceptance and performance measurements have not been performed. General application/editor callbacks may still explicitly reset or reattach scenes; end-to-end interactive acceptance is pending.
 
 ## Product decision
 
@@ -51,7 +51,7 @@ Phase 0 must remain useful and shippable even if all later work is postponed. Do
 
 ### Surface identity is persistent
 
-Use `(nodeId, submeshIndex)` as the CPU correspondence key. `RenderQueue::objectId` is assigned from extraction position and must not become a persistent identity. Use monotonic nonzero `uint32_t` surface tokens on GPU, never encode IDs in float/half. Token zero is uncovered/invalid. Replace tokens on geometry/material/texture revision changes in later phases, not on rigid transform changes. Do not recycle tokens during a renderer lifecycle; exhaust safely with a drained reset, never wrap to an old token.
+Use `(nodeId, submeshIndex)` as the CPU correspondence key. `RenderQueue::objectId` is assigned from extraction position and must not become a persistent identity. Use monotonic nonzero `uint32_t` surface tokens on GPU, never encode IDs in float/half. Token zero is uncovered/invalid. Replace tokens on geometry/material/texture revision changes in later phases, not on rigid transform changes. Do not recycle tokens during a renderer lifecycle; exhaust safely with a drained reset, never wrap to an old token. P1.1 retains the cursor across ordinary history resets and destroys it only during RendererDeferred::cleanup after its existing device drain and per-slot snapshot release; exhaustion throws and requires that cleanup before a fresh lifecycle.
 
 ### Metadata is generated in a separate raster pass
 
@@ -94,3 +94,5 @@ Each phase defines source checks and native scenarios separately. A missing back
 The mandatory qualitative acceptance is that continuous object movement no longer repeatedly destroys convergence in the static background, even when enhanced metadata is unavailable. Later phases must improve receiver reuse and disocclusion without breaking that guarantee. Global generation staying constant alone is insufficient evidence of pixel correctness.
 
 Reference material for implementation reasoning: [AMD temporal denoising](https://gpuopen.com/manuals/fidelityfx_sdk/techniques/denoiser/) and [NRD integration guide](https://github.com/NVIDIA-RTX/NRD/blob/master/README.md). These are conceptual references, not dependencies or authorization to import their code.
+
+P1.5 adds optional GPU token/actual-acceptance views and raster/chronology probe sources. All Phase 1 steps are implemented_unverified; native acceptance is pending and replay remains default off. No claim is made about indirect-light changes on stationary receivers.

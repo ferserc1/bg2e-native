@@ -50,6 +50,7 @@
 #include <bg2e/draw/pipeline/FullscreenPass.hpp>
 #include <bg2e/draw/pipeline/TemporaryResourcePool.hpp>
 #include <bg2e/draw/pipeline/GBuffer.hpp>
+#include <bg2e/draw/pipeline/TemporalSurfacePass.hpp>
 #include <bg2e/draw/pipeline/DeferredLayer.hpp>
 
 #include <bg2e/draw/pipeline/SoftShadowPass.hpp>

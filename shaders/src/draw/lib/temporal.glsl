@@ -26,6 +26,10 @@ layout(set=0,binding=0,std140) uniform TemporalUniforms
     uvec4 extent;
     vec4 cameraRoughness;
     uvec4 flags;
+#if TEMPORAL_METADATA
+    mat4 currentViewProjection;
+    vec4 metadataRejection;
+#endif
 } dataBlock;
 layout(set=0,binding=1) uniform texture2D normalImage;
 layout(set=0,binding=2) uniform texture2D positionImage;
@@ -43,6 +47,14 @@ layout(set=0,binding=10,rgba16f) uniform image2D outputImage;
 #endif
 layout(set=0,binding=11,rgba32f) uniform image2D outputPosition;
 layout(set=0,binding=12,rgba16f) uniform image2D outputNormal;
+#if TEMPORAL_METADATA
+layout(set=0,binding=13) uniform utexture2D tokenImage;
+layout(set=0,binding=14) uniform texture2D metadataDepthImage;
+layout(set=0,binding=15) uniform utexture2D previousTokenImage;
+#endif
+#if TEMPORAL_DIAGNOSTIC
+layout(set=0,binding=16,rgba16f) uniform image2D outputAcceptance;
+#endif
 void main()
 {
     uvec2 pixel = gl_GlobalInvocationID.xy;
@@ -98,6 +110,29 @@ void main()
         previousUV = clip.xy/(abs(clip.w) > 1e-8 ? clip.w : 1.0)*vec2(0.5,-0.5)+0.5;
     }
     accepted = accepted && all(greaterThanEqual(previousUV,vec2(0))) && all(lessThan(previousUV,vec2(1)));
+#if TEMPORAL_METADATA
+    if (dataBlock.flags.y != 0u)
+    {
+        accepted = accepted && dataBlock.flags.z != 0u;
+        if (accepted)
+        {
+            // UV is checked before conversion: an out-of-bounds predecessor never clamps.
+            ivec2 metadataPixel = ivec2(previousUV*vec2(dataBlock.extent.xy));
+            uint token = texelFetch(usampler2D(tokenImage,nearestSampler),sourcePixel,0).r;
+            uint previousToken = texelFetch(usampler2D(previousTokenImage,nearestSampler),metadataPixel,0).r;
+            float metadataDepth = texelFetch(sampler2D(metadataDepthImage,nearestSampler),sourcePixel,0).r;
+#if TEMPORAL_WORLD
+            vec4 currentClip = dataBlock.currentViewProjection*vec4(position,1.0);
+            float receiverDepth = currentClip.z/(abs(currentClip.w) > 1e-8 ? currentClip.w : 1.0);
+            accepted = accepted && currentClip.w > 1e-8 && receiverDepth >= 0.0 && receiverDepth <= 1.0;
+#else
+            float receiverDepth = depth;
+#endif
+            accepted = accepted && token != 0u && token == previousToken &&
+                abs(metadataDepth-receiverDepth) <= dataBlock.metadataRejection.x;
+        }
+    }
+#endif
     if (accepted)
     {
         ivec2 previousPixel = ivec2(previousUV*vec2(dataBlock.extent.zw));
@@ -145,4 +180,7 @@ void main()
     imageStore(outputImage,ivec2(pixel),result);
     imageStore(outputPosition,ivec2(pixel),vec4(position,covered ? 1.0 : 0.0));
     imageStore(outputNormal,ivec2(pixel),vec4(normal,count));
+#if TEMPORAL_DIAGNOSTIC
+    imageStore(outputAcceptance,ivec2(pixel),vec4(covered ? (accepted ? vec3(0,1,0) : vec3(1,0,0)) : vec3(0),1));
+#endif
 }
