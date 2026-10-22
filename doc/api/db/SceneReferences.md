@@ -21,8 +21,9 @@ separate realization stage.
 that context. Production Engine overloads are removed. `loadDrawableObj(path,
 drawEngine)` reuses CPU geometry parsing and imports supported MTL maps/settings.
 `loadDrawableBg2(path, drawEngine)` realizes supported geometry/material resources.
-[Complete draw resource IO](DrawResourceIO.md) adds static glTF import, native
-GPU-only HDR/mip archives and transactional scene/model publication. It requires
+[Complete draw resource IO](DrawResourceIO.md) adds static glTF import, standard
+image copying, assigned GPU-only mip-zero PNG/HDR export and transactional
+scene/model publication. Runtime placeholders are excluded. It requires
 an explicit draw Engine and remains separate from reference-only saving. Raw
 preservation is broader than typed component construction.
 

@@ -3,7 +3,7 @@
 `model_edit` is the independent editor in `apps/model_edit`, using the
 draw renderer and its existing application identity/preferences. See the [application README](../../apps/model_edit/README.md)
 for launch/backend options and the [complete IO contract](../api/db/DrawResourceIO.md)
-for supported import subsets and native sidecars.
+for supported import subsets and standard image resources.
 
 ## Launch
 
@@ -116,7 +116,7 @@ generator checks chart separation at texel centers, while the overlap diagnostic
 checks continuous triangle intersections, including within a chart.
 
 Choose ray-traced AO or GI, resolution, completed accumulation samples, samples
-per pixel, GI bounces, AO/ray limits, chart dilation and CPU export precision.
+per pixel, GI bounces, AO/ray limits, chart dilation and lightmap output format and GI exposure (RGB8 only).
 The baker records one sample into the draw frame command buffer and waits for that
 submission to complete before advancing the exact progress count. It uses the
 document graph, environment and lights; editor floor, fill light and camera
@@ -126,10 +126,11 @@ in-flight frame before releasing the baker.
 
 On completion, the editor automatically writes a temporary image and applies it
 to the AO texture slot on every target submesh. RGB8 uses linear PNG; float output
-uses `.bg2tex` to preserve HDR multipliers. The editor selects the explicit baked-AO
+uses standard Radiance `.hdr` to retain HDR multipliers with RGBE quantization. The editor selects the explicit baked-AO
 or baked-GI interpretation, linear sampling and UV2, and marks the document modified.
-Saving through complete model/scene export publishes the applied image as a
-native `.bg2tex` resource beside the document and references that durable copy.
+Saving through complete model/scene export copies the applied PNG/HDR source
+beside the document and references that durable copy. Images are reused by
+filename; runtime placeholders are not saved.
 The saved document does not depend on the temporary directory. The completed map
 preview remains visible below the UV1/UV2 previews after automatic application;
 starting another bake replaces it. Document replacement hides the previous result.

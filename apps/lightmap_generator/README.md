@@ -86,7 +86,7 @@ and `bake/`; it is also protected against output writes.
 Success reports the authoritative `output/lightmaps.json` path. Resolve its
 relative artifact paths to a complete unique generation; do not discover outputs
 by scanning the directory. RGB maps, per-target metadata and optional complete
-BG2/native-sidecar models are staged together. Copies retain model geometry,
+BG2/standard-image models are staged together. Copies retain model geometry,
 submesh placement/materials and chain joints; they do not export node placement,
 descendants or unrelated components. Original materials/assets are untouched.
 

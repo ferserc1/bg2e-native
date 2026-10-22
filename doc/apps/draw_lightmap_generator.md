@@ -49,7 +49,7 @@ and unsupported explicit combinations reject before GPU allocation.
 | `--max-distance meters` | 50; explicit GI-only control. |
 | `--ao-radius meters` | 0.1; explicit AO-only control. |
 | `--ray-bias meters` | 0.0005; selected distance/radius must exceed twice bias. |
-| `--cpu-format rgb8\|rgb32f` | rgb8; RGB32F uses exact native `.bg2tex`. |
+| `--cpu-format rgb8\|rgb32f` | rgb8; RGB32F uses standard Radiance RGBE `.hdr`. |
 | `--format png\|jpg\|jpeg\|bmp\|tga` | PNG, RGB8 only; JPEG is lossy. |
 | `--exposure EV` | 0, [-32,32], explicit RGB8 GI conversion only. |
 | `--dilation pixels` | 4, 0..resolution, nearest-chart output padding. |
@@ -99,11 +99,12 @@ protected batch inputs.
 
 Success reports `baked/lightmaps.json`, whose relative paths identify one complete
 unique generation. Read that manifest instead of scanning for flat filenames.
-RGB8 maps are linear UNORM; RGB32F maps are native RGBA32F with alpha one, no
-exposure/clamp and require the draw archive loader. Raw effect precision is
+RGB8 maps are linear UNORM; RGB32F maps use standard Radiance RGBE `.hdr`,
+without exposure/clamp. RGBE quantizes color and does not preserve alpha or exact
+float bits; the ordinary HDR loader reads these images. Raw effect precision is
 validated separately. JSON metadata records mode/UV2/color/orientation/conversion,
-samples and nearest-chart padding. Optional BG2 copies contain actual native
-map/other texture sidecars and explicit linear UV2 bakedAO/bakedGI semantics.
+samples and nearest-chart padding. Optional BG2 copies contain the assigned standard
+map/other image sidecars and explicit linear UV2 bakedAO/bakedGI semantics.
 They retain model/submesh geometry/materials/joints, not node placement or a full
 prefab hierarchy. Original assets and source materials are untouched.
 

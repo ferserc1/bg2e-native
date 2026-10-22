@@ -55,7 +55,7 @@ commit. Interrupts after publication do not undo a committed generation.
 ## Publication and models
 
 [LightmapOutputWriter](LightmapOutputWriter.md) stages maps/metadata and optional
-complete BG2/native-sidecar model copies, then publishes lightmaps.json LAST.
+complete BG2/standard-image model copies, then publishes lightmaps.json LAST.
 Resolve manifest-relative paths rather than scanning the directory. Original
 assets/materials and previous committed generations remain unchanged. Model
 copies carry model/submesh geometry/materials/joints, excluding node placement,

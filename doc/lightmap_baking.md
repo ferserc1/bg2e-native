@@ -38,7 +38,7 @@ Finished results carry UV2/indirect semantics and source/target generations.
 Material adoption uses the explicit RGB indirect map contract in the AO slot;
 a separate scalar AO texture cannot occupy that same slot simultaneously.
 
-Use the complete output writer for native model/material/texture archives and
+Use the complete output writer for BG2 model/material resources and standard PNG/HDR images and
 manifest publication. A saved GPU sampler alone is not a materialized image.
 Camera PNG export is a separate [offscreen workflow](apps/draw_offscreen_application.md).
 

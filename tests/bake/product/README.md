@@ -23,10 +23,10 @@ Checks include:
   identity/extent agreement. No directory scanning replaces manifest lookup.
 - PNG chunk CRCs, dimensions, zlib termination and all five row filters; raw
   RGB bytes retain top-row order. Nonlinear PNG encoding declarations reject.
-- Native format/type/mip/layer lengths, no truncation/trailing bytes, finite
-  nonnegative RGB32F and alpha one. The declared float encoding cannot be half.
+- Radiance HDR header, dimensions, flat/RLE RGBE scanlines and rejection of
+  truncation/trailing bytes. RGBE quantization is expected; no alpha is stored.
 - Linear UV2/multiplier/mode, conversion/exposure, sample/dilation metadata.
-- For model copies, the BG2 v1.2 material section, local complete native sidecars,
+- For model copies, the BG2 v1.2 material section, local standard image sidecars,
   unit AO scale/channel zero, bakedAO/bakedGI/linear/UV2, and actual baked map RGB
   equality with the separate map file (including HDR above 65504).
 
@@ -35,8 +35,8 @@ renderer, prove lighting correctness, validate chart masks/dilation boundaries,
 measure performance, verify source preservation or reconstruct cancelled jobs.
 Native engine reload and known-scene comparisons remain mandatory lead checks.
 It reads the on-disk material section, not a JSON substring guessed from binary.
-JSON duplicate keys and nonfinite constants reject. The archive enum ordinals are
-checked against engine source by the synthetic self-check suite.
+JSON duplicate keys and nonfinite constants reject. Synthetic fixtures exercise
+standard PNG and Radiance HDR decoding independently of engine execution.
 
 The optional expectation file maps **actual output identities** to independently
 chosen fixture expectations. For example, after obtaining identities from the

@@ -95,9 +95,12 @@ for hierarchies, non-identity Node transforms, node flags or custom components.
 The standalone model's display name follows its output filename; scenes preserve
 Node and drawable display names separately from generated resource filenames.
 
-A unique staging directory is created beside the destination. Resource sidecars
-receive unique generation names and are linked into the destination without
-replacement. The main model/scene file is replaced last using an atomic filesystem
+A unique staging directory is created beside the destination. Generated model resources and images materialized from GPU-only sources receive
+unique generation names. Filesystem images keep their filenames, and matching
+filenames already in the destination are reused without replacement. Distinct
+sources sharing a filename are not distinguished; texture-library collision
+handling is outside this contract. New resources are linked into the destination
+without replacement. The main model/scene file is replaced last using an atomic filesystem
 rename (MoveFileEx on Windows). Failure removes this transaction's new sidecars
 and staging directory, preserving an existing main file and its resources. The
 filesystem must support same-filesystem atomic replacement. If native hardlink
@@ -111,15 +114,17 @@ Standard images are decoded by the ordinary image loader. Proprietary texture
 archives are no longer supported; existing archives require external conversion.
 
 The [manual resource probe](../../../tests/draw/resource_io/README.md) checks
-GPU-only HDR/mip/metadata round-trip and rollback. Compilation, backend execution
+GPU-only HDR mip-zero export, placeholder exclusion, filename reuse, metadata
+round-trip and rollback. Compilation, backend execution
 and editor interaction validation are project-lead tasks; no execution evidence
 is implied by these source contracts.
 
 ## Model editor bake integration
 
 The draw model editor automatically applies completed bake output from a temporary
-filesystem texture (linear PNG for RGB8, native archive for float output). Complete
-save snapshots that applied GPU image into final native sidecars, preserving the
+filesystem texture (linear RGB8 PNG by default, standard Radiance HDR for float
+output). Temporary bake images have unique filenames. Complete save copies those
+source files into the destination, preserving the
 linear UV2 baked-AO/GI material metadata. A saved model does not depend on the
 original temporary path. Reference-only serialization is not a replacement for
 this resource materialization. See the [editor workflow](../../tutorials/draw/model_edit.md).

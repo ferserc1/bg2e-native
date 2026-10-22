@@ -109,20 +109,20 @@ owners inside Engine lifetime; CPU pixels can survive cleanup.
 
 Successful batch commit publishes `output/lightmaps.json` pointing to one complete
 unique generation. Read its paths; do not assume flat filenames or infer success
-from a target progress callback. RGB32F is exact native RGBA32F `.bg2tex`, not a
-general interchange HDR image. The draw resource loader reads this native archive. RGB8 GI applies exposure once
+from a target progress callback. RGB32F is exported as standard Radiance RGBE `.hdr`. RGBE retains dynamic
+range with quantization; it does not preserve exact float bits or alpha. RGB8 GI applies exposure once
 before clamp/round; AO and RGB32F ignore exposure. No gamma or receiver albedo is
 applied again. Raw GI precision is validated separately; a file encoder cannot
 recover invalid/saturated raw input.
 
 Model copies retain generated atlas and actual linear UV2 baked AO/GI resources,
-including native sidecars, but omit node placement/descendants. Reattach them at
+including standard image sidecars, but omit node placement/descendants. Reattach them at
 the intended scene placement; they are not full prefab exports. Sources and
 previous complete generations remain protected. An explicit overwrite only
 switches the manifest; old generation garbage collection is manual.
 
 Use the [independent artifact inspector](../../../tests/bake/product/README.md)
-for PNG/native pixel and material-section checks, and native draw model reload
+for PNG/HDR pixel and material-section checks, and native draw model reload
 for geometry/scene validation. Choose asymmetric known fixture pixels for
 orientation and actual chart-mask edge values for dilation; arbitrary lighting
 values are not a universal golden image. Synthetic inspector tests are not GPU

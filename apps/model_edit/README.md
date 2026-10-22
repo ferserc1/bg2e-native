@@ -55,7 +55,7 @@ documents on replacement and close; cancelled dialogs and failed IO retain the
 current document. Status messages report errors without terminating the editor.
 
 See [complete resource IO](../../doc/api/db/DrawResourceIO.md) for import
-subsets, source/relative-path behavior, native HDR/mip/sampler archives, sidecar
+subsets, source/relative-path behavior, standard PNG/HDR files, mip-zero readback and sampler metadata, sidecar
 publication and production compatibility. Preserve sidecars when moving a saved
 document. Old resource generations are retained. Selection, gizmos, material/submesh/geometry tools, environment/light/preset
 controls, bounds framing and best-view analysis are implemented by M06-03/04.
@@ -75,7 +75,7 @@ accounts for remaining workflows. Project-lead checks: build/run model_edit on
 available backends, settings/orbit/resize/minimize/cleanup, file dialogs/drop,
 unsaved prompts, failed operation recovery, complete save/reload and independent
 production editor preferences. The [resource IO probe](../../tests/draw/resource_io/README.md)
-adds GPU-only HDR/mip/metadata/rollback checks. No agent build, shader compilation,
+adds GPU-only HDR mip-zero/metadata/rollback checks. No agent build, shader compilation,
 probe or application run was performed.
 
 

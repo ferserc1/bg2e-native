@@ -41,7 +41,7 @@ sums/counts precede composition and nearest-original-seed dilation.
 The existing AO texture slot has explicit AmbientOcclusion, BakedAmbientOcclusion
 and BakedGlobalIllumination modes. Scalar AO and an RGB baked map do not occupy
 separate slots. Metadata alone does not materialize pixels: complete DB saves
-export actual native sidecars, and standalone batches publish their final manifest
+copy assigned image files and materialize assigned GPU-only images as PNG/HDR, and standalone batches publish their final manifest
 last. See [material/output integration](output_and_materials.md).
 
 Public signatures and validation rules are in the [draw API](../../api/draw/reference.md),

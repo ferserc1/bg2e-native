@@ -41,8 +41,9 @@ Compilation and backend visual verification remain project lead checks.
 ## Persisted standalone resources
 
 The [standalone bake writer](../bake/LightmapOutputWriter.md) exports actual pixels,
-then clones/updates materials with linear UV2 bakedAO/bakedGI and complete native
-sidecars. Native float file/model resources can preserve values beyond the
+then clones/updates materials with linear UV2 bakedAO/bakedGI and standard image
+sidecars. Radiance HDR file/model resources retain dynamic range with RGBE
+quantization and can preserve values beyond the
 interactive half-float display range; their file integrity does not promise the
 G-buffer can display those values without its independent range checks. Original
 material ownership remains unchanged. [Generic complete DB IO](../db/DrawResourceIO.md)

@@ -72,7 +72,7 @@ unit scale and channel zero. A retained sampled map is enough for integrated
 material adoption but is not persisted output. The standalone writer clones
 independent resources, attaches actual pixels and checks complete DB save's
 bool-noexcept result before staging a target success. A single-model export is
-not a full placed prefab scene. Generic DB image/archive/file APIs perform useful
+not a full placed prefab scene. Generic DB image/file APIs perform useful
 IO; they do not own protected whole-batch policy.
 
 Manifest publication is the batch's commit point. Each generation is unique and

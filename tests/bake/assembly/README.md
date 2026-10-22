@@ -23,7 +23,7 @@ Lead checks on available Metal/Vulkan:
   camera-less scenes. Check all authored transforms and chains, HDR/procedural
   environment paths, exact custom schema/resource/clone hooks and extra components.
 - BG2/VWGLB and OBJ/MTL standard Drawable references reuse CPU parsers. Check texture
-  paths, native archives, groups/names/visibility and authored scalar/material values.
+  paths, standard PNG/HDR resources, groups/names/visibility and authored scalar/material values.
   No glTF-hierarchy-to-single-Drawable conversion is supplied by this assembler.
 - Disabled branches stay in the graph/dependency list but are not selected targets.
   Empty/disabled-only prefabs, missing assets/textures, invalid structural/finite UV

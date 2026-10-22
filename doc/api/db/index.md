@@ -22,15 +22,16 @@ document preservation, graphics-free typed graphs and synchronous realization.
 
 The [bake API](../bake/index.md) publishes typed pixels and sampled GPU maps.
 Its [standalone writer](../bake/LightmapOutputWriter.md) owns protected complete-
-batch publication, native HDR maps and actual model snapshots. The former
+batch publication, standard Radiance HDR maps and actual model snapshots. The former
 DB-specialized writer has been removed. Persisting mode metadata
 alone does not materialize pixels or export a complete resource generation.
 
 ## Complete draw resources
 
-[Complete draw resource IO](DrawResourceIO.md) covers native GPU texture archives,
+[Complete draw resource IO](DrawResourceIO.md) covers standard image resource persistence,
 MTL/glTF import, transactional scene/model publication and editor document state.
-This explicit draw path materializes GPU-only HDR/mip resources. Single-document
+This explicit draw path copies assigned source files and materializes assigned GPU-only 2D mip zero
+as PNG/HDR. Runtime placeholders are not persisted. Single-document
 publication and protected whole-batch publication have separate contracts.
 
 ## Completed camera images

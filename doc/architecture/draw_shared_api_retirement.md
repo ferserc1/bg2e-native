@@ -32,15 +32,16 @@ components implement those hooks and return independent clones of their actual t
 [DB representation IO](../api/db/SceneReferences.md) retains raw JSON preservation,
 CPU BG2/VWGLB/OBJ/glTF parsing, OBJ/MTL dependency paths and draw realization. Explicit
 reference saves are distinct from complete bool-noexcept draw scene/model saves.
-Always check false before publishing success or clearing dirty state. Complete
-native image/mip/layer snapshots, source protection, unique sidecars and main-file-last
-publication remain unchanged. Node's old implicit resource-export serialize path
+Always check false before publishing success or clearing dirty state. Complete saves copy assigned image files by filename and export assigned
+GPU-only 2D mip zero as PNG/HDR. Placeholders are excluded and authored mip chains
+are not stored. Main-file-last publication and rollback remain supported. Node's old implicit resource-export serialize path
 and production specialized DB lightmap writer are removed. Component::serialize
 remains a common attribute hook; DrawableComponent::serialize is reference-only.
 
 [bake::LightmapOutputWriter](../api/bake/LightmapOutputWriter.md) retains its separate
-whole-batch final-manifest transaction and exact native RGB32F contract. Generic DB
-file/image/archive IO remains independent. The root bg2e/all.hpp now exports bake;
+whole-batch final-manifest transaction. RGB32F CPU values export as standard
+Radiance RGBE HDR with quantization, not exact float-bit preservation. Generic DB
+file/image IO remains independent. The root bg2e/all.hpp now exports bake;
 explicit bake/all.hpp remains supported.
 
 ## Editing, selection and preview lifetime

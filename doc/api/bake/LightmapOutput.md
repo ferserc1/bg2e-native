@@ -140,7 +140,7 @@ GPU-only texture ownership is not image/model export. See
 composition/dilation contract through synchronous internal submissions.
 [StandaloneBakeBatch](StandaloneBakeBatch.md) exports its completed typed pixels
 through the [bake LightmapOutputWriter](LightmapOutputWriter.md), including actual
-model resources. RGB32F native encoding preserves final multiplier bits without
-exposure/clamp; it does not remove the raw GI precision/saturation validation
-above or the interactive RGBA16F display bound. [Generic archive IO](../db/FileIO.md)
+model resources. RGB32F export uses standard Radiance RGBE HDR without
+exposure/clamp; RGBE quantizes the final multiplier values and discards alpha. This does not remove the raw GI precision/saturation validation
+above or the interactive RGBA16F display bound. [Generic image IO](../db/FileIO.md)
 is separate from batch source protection and authoritative manifest publication.

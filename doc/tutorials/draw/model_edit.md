@@ -122,7 +122,7 @@ completed map. The bake root is the document; stage floor/fill/camera fixtures
 are excluded.
 
 On completion, the editor writes a temporary linear PNG for RGB8 output or a
-native float texture archive for RGB32F, applies it to every target submesh using
+standard Radiance HDR file for RGB32F, applies it to every target submesh using
 UV2 and the chosen baked interpretation, and marks the document modified. You do
 not need a separate Apply button. The completed-map preview remains below the
 UV previews and shows the applied image. A new bake replaces that preview.
@@ -131,14 +131,16 @@ UV previews and shows the applied image. A new bake replaces that preview.
 
 Use File → Save As. Choose BG2 for a representable single model, or a supported
 scene format such as JSON to preserve a graph and its components. Complete draw
-resource export publishes actual GPU pixels, including the baked image, as native
-`.bg2tex` resources beside the saved document. The document references the final
+resource export copies the assigned image files, including the temporary baked
+PNG/HDR image, beside the saved document. Shared filenames are consolidated once;
+unassigned slots keep their runtime placeholders and produce no image files. The document references the final
 resources and does not depend on temporary bake paths.
 
 Reopen the saved document and inspect the materials and applied map. Verify this
-with the application's deployed resource tree, not an isolated executable. Native
-archives preserve HDR values and authored mip/layer data; reference-only scene IO
-does not materialize those resources. See [complete draw resource IO](../../api/db/DrawResourceIO.md).
+with the application's deployed resource tree, not an isolated executable.
+Assigned procedural/GPU-only 2D images without a source file export mip zero as
+PNG (RGBA8) or HDR (RGBA32F); mipmaps regenerate on load when enabled. Reference-only
+scene IO does not materialize resources. See [complete draw resource IO](../../api/db/DrawResourceIO.md).
 
 Before replacing a dirty document or quitting, Save/Discard/Cancel lets you choose
 what happens to edits. Resource errors appear in the status bar. The application

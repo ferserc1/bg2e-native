@@ -690,8 +690,9 @@ properties. Graphics Settings contains no profiling controls.
 
 Completed baking writes a temporary texture and automatically updates live and
 CPU material definitions. A separately retained completed image keeps the preview
-alive after baker invalidation. Complete resource export publishes native texture
-sidecars independently of temporary files. The document graph is the bake root;
+alive after baker invalidation. Complete resource export copies those temporary PNG/HDR source files into the
+document directory and references the durable copies. Runtime placeholders are
+not exported; assigned GPU-only 2D images without files use mip-zero PNG/HDR readback. The document graph is the bake root;
 editor floor, stage light and camera are fixtures outside that graph. Composer and
 standalone batch orchestration are not supplied by this application integration.
 

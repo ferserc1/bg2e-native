@@ -8,13 +8,13 @@ stopping every scene/resource producer. Scratch destinations must be fresh,
 caller-owned directories outside all protected assets. Do not use packaging or
 production assets as writable fixtures.
 
-- `runBakePublicationProbe(scratch)` exercises CPU archive exact float bits
-  (100000 > 65504), invalid archive rejection before file creation, OS no-clobber
+- `runBakePublicationProbe(scratch)` exercises standard CPU HDR encoding/decoding
+  above one, rejection of float export to a non-HDR extension, OS no-clobber
   publication and explicit replacement. No graphics initialization is needed.
 - `runLightmapOutputProbe(engine,target,inputModel,scratch)` needs an initialized
   stopped offscreen draw Engine and a loaded standard UV2 target in a private
-  scene. It exercises complete model export/reload, linear UV2 bakedGI and exact
-  float map bytes, RGB8 lossless decode, no publication during staging, duplicate
+  scene. It exercises complete model export/reload, linear UV2 bakedGI and
+  HDR dynamic range with byte-identical source-file copying, RGB8 lossless decode, no publication during staging, duplicate
   writes/identities, incomplete/repeated commit, overwrite rejection, protected
   manifest rejection, changed scene rejection, abandoned replacement and source
   asset/material preservation. The fixture assumes standard builtin components;
@@ -32,7 +32,7 @@ Additional integration matrix for the lead (both supported native backends):
 3. Change transform/material/texture/mesh/node membership in a callback; expect
    rejection without publication. Change `Options.current` validity and check
    cancellation. Changes to frozen caller settings must not alter the job.
-4. Protect OBJ files with multiple MTL files, BG2/native sidecars, environment
+4. Protect OBJ files with multiple MTL files, BG2/standard image sidecars, environment
    images, context and prefab JSON, disabled-node sources, custom resolver files
    and explicit protected directories. Exercise manifest symlinks, hardlink
    aliases and output namespace intersections. Undeclared custom subclasses,

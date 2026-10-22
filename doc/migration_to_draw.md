@@ -18,7 +18,7 @@ Preserve authored Drawable component identities and CPU data concepts; realize
 resources through a draw Engine. Deep clones retain independent mesh/material/
 texture state, while material() after loading is a live alias. Safe rare edits
 must stop producers and coordinate device completion. Scene saves/resource exports
-materialize complete CPU/native archive data and report bool-noexcept failure;
+persist CPU model data and assigned standard image resources and report bool-noexcept failure;
 keep parents, rollback and no-clobber behavior.
 
 Settings use current stable component/property identities and strict typed payloads.

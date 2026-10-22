@@ -105,5 +105,5 @@ backend/package coverage remains unspecified. No probe was executed by the agent
   light local ranges X/Z `[-3,3]`, Y `[0,3]`. Remove every light and save/restore
   the environment preset; no minimum count or automatic replacement is imposed.
 - Positive-area UV2 overlaps warn and continue. Completed RGB8 maps use a temporary
-  linear PNG, float maps retain HDR in a native archive, and complete save/reload
-  keeps final native resources after temporary paths are unavailable.
+  linear PNG, float maps retain dynamic range in standard Radiance HDR with RGBE quantization, and complete save/reload
+  keeps final standard image resources after temporary paths are unavailable.

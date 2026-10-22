@@ -100,7 +100,7 @@ directory. A simplified shape (generation/name are illustrative):
 ```
 
 A private `.lightmaps-stage-<id>` directory holds the complete batch. Each model
-has its own directory with native sidecars. `.lightmaps.lock` excludes cooperating
+has its own directory with standard image sidecars. `.lightmaps.lock` excludes cooperating
 writers. Commit renames a complete unique generation, then atomically publishes
 the manifest LAST through [db::publishFile](../db/FileIO.md). Existing manifests
 require explicit overwrite; symlink/nonregular manifests reject. Readers resolve

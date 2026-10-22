@@ -17,7 +17,7 @@ Call manually from an initialized draw app with submissions stopped and an
 existing disposable directory. It checks independent CPU/GPU mesh/material/image
 objects, independent geometry/material edits through complete scene save/reload,
 and restoration of live source references. Also run the existing
-[complete HDR/mip/UV2 resource probe](../resource_io/README.md).
+[complete HDR mip-zero/UV2 resource probe](../resource_io/README.md).
 
 ## Application regression matrix
 
@@ -56,7 +56,7 @@ the normal platform generator so the app's new DocumentIo.cpp is discovered.
 | Repeat Open/drop/Save/New/Close during scene load | No overlapping replacement or save; Close is deferred/rejected until the pending load finishes; no stale worker publication |
 | Invalid JSON, missing resource, or shutdown/exception while reading | Error reported with old document retained before adoption; CPU worker joined before UI/Engine teardown; queued completion of the exiting run is cancelled |
 | Open primitives_scene with full tracing temporarily disabled | Null entries warn/skip, camera and all eight drawables load; per-component resource progress appears; separately track the known tracing capacity overflow rather than attributing it to JSON IO |
-| Reopen saved bakedGI/AO model/scene | GPU-only HDR/mips, linear UV2 mode, sampler/color/inversion and indirect metadata remain correct |
+| Reopen saved bakedGI/AO model/scene | GPU-only HDR mip-zero export, filename reuse, placeholder exclusion, linear UV2 mode, sampler/color/inversion and indirect metadata remain correct |
 
 Production `bg2e_composer` and `draw_model_edit` remain regression references.
 
