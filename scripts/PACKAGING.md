@@ -14,54 +14,60 @@ bash scripts/package_macos.sh Debug /existing/package/directory "$VULKAN_SDK"
 bash scripts/package_linux.sh Release /existing/package/directory "$VULKAN_SDK"
 ```
 
-Configuration and destination are mandatory. No configuration defaults to Release.
-All scripts reject staged, unstaged and untracked changes, dirty submodules,
-and uninitialized or mismatched submodules before creating files or building.
-Commit the packaging changes before using the scripts. Ignored files do not count
-as pending Git changes. Build inputs should be tracked to make the commit useful
-as an identifier.
+Configuration and destination are mandatory; there is no implicit Release default.
+Use the CLI supported by the selected platform:
 
-Each invocation creates a fresh temporary build tree and retains it for diagnostics.
-Its runtime output uses bin/windows/Debug or bin/windows/Release inside that tree
-(on other platforms, bin/linux or bin/macos). Existing project bin/ output is never
-used, so deleted applications and stale shaders cannot leak into a package.
-The destination must be outside the repository. Existing packages are not overwritten.
+| Platform | Script and generator | Archive | Optional behavior |
+|---|---|---|---|
+| Linux | package_linux.sh; Ninja | `.tar.gz` | `--allow-dirty` and `--overwrite` before positional arguments. |
+| macOS | package_macos.sh; Xcode | `.zip` | No dirty-check bypass or overwrite flag. |
+| Windows | package_windows.ps1; Visual Studio 17 2022, x64 | `.zip` | Optional `-VulkanSdk`; no dirty-check bypass or overwrite switch. |
 
-The folder and ZIP are named bg2engine_<12-character-or-longer-local-HEAD-hash>.
-This identifies the commit actually built, without fetching or switching to GitHub's
-latest remote commit. build-info.json records its full hash and configuration.
-Use separate destinations for Debug and Release of the same commit.
-The ZIP contains the named folder and all its contents.
+All platforms require initialized, matching submodules. Clean-checkout validation
+includes staged, unstaged and untracked changes, excluding ignored files. Linux
+can explicitly bypass the working-tree check with --allow-dirty; its package name
+and build-info still identify HEAD and do not encode uncommitted modifications.
+A packaging instruction is not an instruction to commit unrelated work.
 
-CMake's bg2e_distribution target builds bg2e and executable targets recursively
-registered under apps/, including their dependencies. Register new application
-folders in apps/CMakeLists.txt normally; no packaging script target list needs editing.
-BG2E_BUILD_EXAMPLES and BG2E_BUILD_TESTS default to ON for normal builds and are
-turned OFF by the scripts. Distribution install rules are opt-in via BG2E_PACKAGE_APPS.
+Destinations must be outside the repository. Linux/macOS require an existing
+destination directory; Windows creates its package directory under the supplied
+external destination. Existing folder/archive paths are rejected except for
+Linux's explicit --overwrite, which removes those named outputs before building.
 
-Windows packages contain application executables, the engine DLL, recursively
-resolved non-system DLL imports, the MSVC redistributable runtime, built assets
-and shaders, and target PDBs for Debug. Import/static libraries and intermediate
-build files are excluded. Missing runtime dependencies fail installation.
-The engine currently uses /MD in both configurations; Debug therefore packages
-symbols and the release CRT. This does not change the project's runtime selection.
+Each invocation retains a fresh temporary build tree for diagnostics and builds
+bg2e_distribution with examples/tests OFF and BG2E_PACKAGE_APPS ON. No previous
+bin/ binaries or stale shaders are package inputs. CMake recursively collects
+executable targets under apps/: model_edit, bg2e_composer and lightmap_generator.
+Their presence is checked after Distribution install. The camera export tool is
+an example and is not included by these default application-package scripts.
 
-InstallRequiredSystemLibraries supplies compiler runtimes; the CMake runtime
-dependency scanner resolves other imported DLLs using the output and Vulkan SDK
-Bin directories. Dynamically loaded plugins/layers are not discoverable through
-binary imports and need explicit install rules if an application requires them.
-Target machines still need a compatible graphics driver/Vulkan implementation.
+The unpacked folder is bg2engine_<12-character-or-longer-local-HEAD-hash>.
+build-info.json records the full commit and configuration. Linux emits a matching
+.tar.gz; macOS and Windows emit .zip. Use distinct destinations for Debug/Release
+of the same commit. Archives contain the named folder. No fetch or remote checkout
+occurs. Dirty Linux builds do not make the commit a complete input identifier.
 
-macOS uses Xcode and existing app bundle resource/library rules; Linux uses Ninja,
-installs shared dependencies with an executable-relative RPATH, and leaves the
-platform C runtime to the host. These scripts require validation on their native
-platforms; they are not a claim of universal Linux portability or signed macOS distribution.
+Linux stages install/archive in the temporary tree before moving them to the
+destination. It removes top-level external .so files copied by CMake, retaining
+only libbg2e.so variants. Target hosts must provide compatible external graphics,
+SDL/desktop and C++ runtime libraries; the executable-relative RPATH locates the
+engine, not a bundled distribution of the host system stack. macOS/Windows install
+directly into the destination package; failure can leave partial output to inspect.
+These procedures do not promise atomic package replacement or power-loss durability.
 
-References:
-- https://cmake.org/cmake/help/latest/module/InstallRequiredSystemLibraries.html
-- https://cmake.org/cmake/help/latest/command/install.html#installing-runtime-dependencies
+macOS retains the existing app bundle Vulkan/MoltenVK/SDL/resource rules and
+project-disabled code signing; it is not a signed distribution. Windows packages
+executables, engine DLL, resolved non-system imported DLLs, compiler redistributable
+runtime, shaders/assets and Debug PDBs. Import/static libraries and build
+intermediates are excluded. The engine uses /MD in both configurations, so Debug
+symbols do not imply a debug CRT. Binary dependency scanning cannot discover every
+dynamically loaded plugin/layer; compatible driver/runtime deployment still matters.
 
-## Experimental draw/bake shader resources
+All scripts guard against a changed HEAD during the build. macOS/Windows and clean
+Linux builds also recheck the working tree. Native package/relocation validation
+remains project-lead work; source inspection is not a package execution result.
+
+## Production draw/bake shader resources
 
 The engine also installs the paired native `shaders/draw` and `shaders/bake`
 trees through the RuntimeShaders component. Preserve their relative paths in
@@ -72,8 +78,9 @@ contain `bake/uv_surface/surface.vert.metallib`; Vulkan uses the matching `.spv`
 After updating an older checkout with missing bake registration, reload CMake
 and rebuild the application, then use its refreshed bundle. See
 [shader deployment](../doc/api/gpu/ShaderLibraries.md#engine-paired-drawbake-deployment)
-and [draw_lightmaps](../doc/apps/draw_lightmaps.md#build-and-resources). These
-resource rules do not provide a standalone draw bake scheduler or image exporter.
+and [draw_lightmaps](../doc/apps/draw_lightmaps.md#build-and-resources). Resource deployment itself does not execute baking or export. The delivered
+[bake scheduler/writer](../doc/api/bake/StandaloneBakeBatch.md) and camera CLI
+provide those distinct application workflows.
 
 The [draw offscreen CLI](../doc/apps/draw_offscreen_application.md#build-and-resources)
 is registered as `draw_offscreen_application` using the standard example resource
@@ -147,3 +154,12 @@ standalone project are left alone and no longer bundled as engine shaders.
 The update is not transactional: a copy failure can require rerunning it. Existing
 build-producing behavior is unchanged; do not execute an updater merely to inspect
 its source. Build/package/standalone launch validation remains project-lead-owned.
+
+## Standalone shader preflight
+
+The shell and PowerShell creators/updaters require the canonical paired stages
+`draw/raster/gbuffer.frag.spv` and `bake/uv_surface/surface.frag.spv`. Shell scripts
+also require their `.metallib` counterparts on macOS. Creators check these files
+before writing the project; updaters check them after building and before copying.
+Build current sources first. File presence does not establish binary/header ABI
+compatibility or successful standalone execution.

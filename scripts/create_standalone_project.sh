@@ -196,11 +196,11 @@ fi
 
 [ -d "${SHADER_DIR}" ] || die "Cannot find compiled shaders at ${SHADER_DIR}\n  Build the project first: cmake --build build"
 # Require the canonical paired engine trees, not stale flat outputs.
-for stage in draw/raster/gbuffer.frag.spv bake/uv_surface.frag.spv; do
+for stage in draw/raster/gbuffer.frag.spv bake/uv_surface/surface.frag.spv; do
     [ -f "${SHADER_DIR}/${stage}" ] || die "Missing engine shader: ${SHADER_DIR}/${stage}. Rebuild bg2e first."
 done
 if [ "${CURRENT_PLATFORM}" = "macos" ]; then
-    for stage in draw/raster/gbuffer.frag.metallib bake/uv_surface.frag.metallib; do
+    for stage in draw/raster/gbuffer.frag.metallib bake/uv_surface/surface.frag.metallib; do
         [ -f "${SHADER_DIR}/${stage}" ] || die "Missing Metal engine shader: ${SHADER_DIR}/${stage}. Rebuild bg2e first."
     done
 fi

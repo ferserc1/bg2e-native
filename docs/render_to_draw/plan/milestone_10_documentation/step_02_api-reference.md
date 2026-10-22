@@ -129,3 +129,18 @@ M10 audits that delivered documentation and makes localized corrections; do not
 defer missing API, tutorial, build or application authoring to this milestone.
 
 Read actual draw/Renderer.hpp, Upscaler.hpp, SettingsCatalog.hpp, SettingsCodec.hpp and RenderSettingsPreferences.hpp; bake/BakerContext.hpp and standalone owner headers; scene/DrawableComponent.hpp and ComponentFactoryRegistry.hpp; db/scene.hpp; GPU native GUI seams. Check exclusive renderer ownership, retained shared component owners, generation-safe settings, deep clones, live material aliases, borrowed bake devices and one live target. Concrete standalone APIs are implemented: StandaloneBakerContext, StandaloneLightmapBaker, StandaloneBakeSceneAssembler, StandaloneBakeBatch and LightmapOutputWriter.
+
+## M10-01 current inventory handoff — 2026-10-22
+
+Use [inventory.md](inventory.md), [page-inventory.tsv](page-inventory.tsv),
+[header-coverage.tsv](header-coverage.tsv) and
+[product-coverage.tsv](product-coverage.tsv) for the current source/page baseline
+at HEAD e2a32164a781dbf420a4464b25ddce9feb862c6a. All 229 maintained pages,
+317 public headers and 33 products have inventory owners. Headers are mapped at
+module discovery depth; per-symbol semantics still require the API audit.
+Applications now live directly under apps/ with targets model_edit,
+bg2e_composer and lightmap_generator. Historical M09 product paths/hashes are
+preserved evidence, superseded for current usage by this inventory. Twenty-one
+pages changed with the later app relocation; M10-01 corrects two additional stale
+DB-writer availability descriptions. No substantive authoring gap was identified
+at inventory depth; semantic/native/performance verification is not inferred.

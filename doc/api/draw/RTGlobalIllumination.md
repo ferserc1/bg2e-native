@@ -1,6 +1,6 @@
 # RTGlobalIllumination
 
-`<bg2e/draw/pipeline/RTGlobalIllumination.hpp>` provides a public Device-backed diffuse GI pass, also included by draw/all.hpp. Production render remains separate.
+`<bg2e/draw/pipeline/RTGlobalIllumination.hpp>` provides a public Device-backed diffuse GI pass, also included by draw/all.hpp. It is a component of the production draw API.
 
 ```cpp
 auto gi = std::make_shared<bg2e::draw::pipeline::RTGlobalIllumination>();

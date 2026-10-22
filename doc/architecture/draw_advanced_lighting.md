@@ -30,7 +30,7 @@ or transparent secondary transport. Native material sampling initially uses LOD0
 | AO / query shadows | Compute queries and acceleration structures; effect-specific formats |
 | GI / reflections on Vulkan | Native ray-tracing pipeline with raygen/miss/closest/any-hit, recursion depth one |
 | GI / reflections on Metal | Independently authored compute intersection-query kernels |
-| Advanced textured tracing | Nonuniform indexed resources, complete device-clamped tables up to 16384, v2 native shaders and required output formats |
+| Advanced textured tracing | Nonuniform indexed resources, complete device-clamped tables up to 16384, v3 native effect shaders and required output formats |
 | Temporal / denoise / SMAA | Their own formats and native kernels; RT not required |
 | FSR | Supported Vulkan backend, SDK/runtime and camera requirements; primitive RT support is unrelated |
 

@@ -29,7 +29,7 @@ public:
 `MainLoop` owns one `Loader` and wires it to a worker thread for you:
 
 ```cpp
-app::MainLoop::current()->asyncLoad([](bg2e::ui::Loader* loader) {
+app::MainLoop::current()->asyncLoad([tasks](bg2e::ui::Loader* loader) {
     loader->setMessage("Importing scene...");           // safe off-thread
 
     for (uint32_t i = 0; i < tasks.size(); ++i) {
@@ -39,16 +39,18 @@ app::MainLoop::current()->asyncLoad([](bg2e::ui::Loader* loader) {
 }, glm::vec4{0.1f, 0.1f, 0.1f, 1.f});                  // clear color while paused
 ```
 
-The sequence (`lib/src/bg2e/app/MainLoop.cpp`, `MainLoop::asyncLoad`):
+This fragment assumes caller-provided CPU-only tasks/process and a live MainLoop;
+it is not a standalone source file. Captured task data lives through the worker.
+The sequence in lib/src/bg2e/app/MainLoop.cpp is:
 
-```
-asyncLoad(fn, clearColor)
-  1. _renderLoop.pauseScene(clearColor)          // scene freezes, still presents
-  2. _userInterface.setFrameOverride(draw loader) // normal delegate->drawUI() is bypassed
-  3. std::thread: fn(&_loader)                    // detached worker
-  4. worker exit -> main-thread queue:
-        _userInterface.clearFrameOverride()
-        _renderLoop.resumeScene()
+```text
+asyncLoad(fn, clearColor, onComplete)
+  1. Pause scene through the active graphics execution adapter.
+  2. Install Loader frame override when UI is initialized.
+  3. Start a loop-owned std::jthread; invoke fn and capture exceptions.
+  4. Queue a SafeUpdateToken-guarded main-thread completion.
+  5. If current: clear override, resume scene, invoke onComplete(error).
+  6. On exit: join workers, expire tokens, then release UI/graphics resources.
 ```
 
 Because the override swaps out the whole UI for the loader, users cannot
@@ -62,10 +64,13 @@ behavior.
 - Do not call into `draw::Engine`, the scene graph, or VMA from the worker.
   Cross-thread scene changes must be posted with
   `MainLoop::safeUpdateScene(fn)` (runs at a safe point between frames).
-- The thread is **detached**: `fn` must complete; it cannot be cancelled, and
-  exceptions escaping it terminate the process. Report failures by storing a
-  result and acting on it after `asyncLoad` returns control (e.g. in a timer
-  or in the next `drawUI`).
+- Workers are joined, not detached. The callable must finish without waiting
+  for main-thread completion; it has no automatic cancellation parameter. Use
+  application-owned cooperative cancellation for long CPU work. Native scene/GPU
+  calls belong on the stopped main thread.
+- Worker exceptions do not escape the thread: supply the optional onComplete
+  callback to receive std::exception_ptr and report errors. Completion is suppressed
+  for an exiting run. See [MainLoop](../app/MainLoop.md#asynchronous-loading).
 - `asyncLoad` returns immediately — do not assume the work is finished on the
   next line.
 
@@ -88,4 +93,4 @@ width.
 
 - [quick_start — Recipe 14](quick_start.md#recipe-14-modal-loader-during-async-work)
 - [UserInterface](UserInterface.md) — the frame-override mechanism.
-- `doc/safe_update_scene.md` — cross-thread scene mutations.
+- [Safe scene updates](../../safe_update_scene.md) — cross-thread scene mutations.

@@ -121,3 +121,11 @@ UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
 - [Migration](../../migration_to_draw.md)
 
 - [Upscaler extension contract](Upscaler.md)
+
+## Resource reuse and diagnostics
+
+- [TemporaryResourcePool](TemporaryResourcePool.md): recording completion, resource leases and bounded retention.
+- [TemporalInvalidation](TemporalInvalidation.md): lazy signatures and explicit invalidation.
+- [TransparentRegions](TransparentRegions.md): conservative raster/composition bounds and full fallbacks.
+- [UpdateSynchronization](UpdateSynchronization.md): typed final-color updates and conservative generic callbacks.
+- [CPU/GPU profiling](../../architecture/cpu_profiling.md): collection, recording, native granularity and Performance UI ownership.

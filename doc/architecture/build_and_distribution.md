@@ -38,7 +38,8 @@ Use scripts/create_standalone_project.sh TARGET [NAME] or the PowerShell sibling
 for an external precompiled-library project. The template uses the draw deferred
 renderer. Keep copied headers, platform library, assets and paired shader/helper
 resources together. scripts/update_libraries.sh PROJECT Debug|Release (or its
-PowerShell sibling) refreshes the engine library/headers/shaders/helper. It replaces
+PowerShell sibling) is intended to refresh the engine library/headers/shaders/helper.
+After shader preflight, its copy phase replaces
 engine draw/bake shader directories while preserving custom application resources
 outside them; refresh is not transactional. Platform library lookup follows current
 configuration-specific paths and macOS fallbacks.
@@ -46,3 +47,21 @@ configuration-specific paths and macOS fallbacks.
 Build, install, package, launch and standalone creator execution are separate
 validation activities. Source inspection of registrations or scripts does not
 establish a native execution result.
+
+## Standalone shader preflight
+
+Creators and updaters check the canonical paired shader paths
+`draw/raster/gbuffer.frag.spv` and `bake/uv_surface/surface.frag.spv` before copying.
+The shell scripts also require the corresponding `.metallib` files on macOS.
+Build current sources first; these checks establish file presence, not binary/header
+ABI compatibility. See [packaging details](../../scripts/PACKAGING.md#standalone-shader-preflight).
+
+## Package scope by platform
+
+Linux emits .tar.gz and alone offers --allow-dirty/--overwrite; macOS and Windows
+emit .zip and require a clean checkout with unused output paths. Linux retains
+only the engine among installed top-level shared libraries and relies on target
+system dependencies. Windows resolves non-system DLL imports/compiler runtimes;
+macOS retains bundle runtime rules. Application packaging disables examples/tests,
+so draw_offscreen_application is not included by those default scripts. None of
+these source rules establishes successful installation, relocation or execution.

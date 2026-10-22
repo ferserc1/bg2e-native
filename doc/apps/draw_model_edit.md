@@ -1,9 +1,20 @@
-# Draw draw model editor
+# Model editor
 
 `model_edit` is the independent editor in `apps/model_edit`, using the
 draw renderer and its existing application identity/preferences. See the [application README](../../apps/model_edit/README.md)
 for launch/backend options and the [complete IO contract](../api/db/DrawResourceIO.md)
 for supported import subsets and native sidecars.
+
+## Launch
+
+Run `model_edit [--backend vulkan|metal]` with its deployed shaders/assets;
+`--help` or `-h` prints usage without initializing graphics. The backend argument
+uses two tokens, accepts lowercase values and may appear only once. Metal needs
+a supported macOS host; the default is Metal on macOS and Vulkan elsewhere.
+Invalid arguments/backend initialization report an error and return 1. On macOS
+launch model_edit.app or its Contents/MacOS/model_edit executable. See the
+[build/distribution guide](../architecture/build_and_distribution.md) for platform
+generators, SDK and package/standalone limitations.
 
 ## Workspace layout and menus
 
@@ -132,7 +143,7 @@ transformed document roots do not apply them twice. Presets replace environment/
 light components, preserving other document nodes and custom content. Former light
 nodes can remain as empty transform nodes and can be removed through properties.
 The explicit personal default is `draw_model_edit_environment.json` in the app
-settings directory. Nothing automatically reads the production editor's env.json.
+settings directory. Nothing automatically reads the former editor's env.json.
 
 ## Saving and lifetime
 
@@ -153,7 +164,7 @@ File menu shortcuts are Ctrl+O, Ctrl+S, Ctrl+Shift+S and Ctrl+Q. The Model
 Properties and Environment Options docked panels toggle from the toolbar or Window
 menu. UI Settings and Graphics Settings open from the Window
 menu. The Graphics window uses live reflected renderer/effect/upscaler settings with
-explicit save/restore/import, rather than copied production RT toggle enums.
+explicit save/restore/import, rather than copied rendering-toggle enums.
 Widget previews retire through the draw UI session's completion-aware registry;
 application cleanup detaches bindings before renderer and stage resources.
 

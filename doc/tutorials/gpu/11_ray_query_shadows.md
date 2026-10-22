@@ -383,9 +383,15 @@ while (running)
     );
     lightData.lightColor = glm::vec4(1.0f, 0.97f, 0.9f, 1.6f);
     lightData.ambient    = glm::vec4(0.12f, 0.12f, 0.14f, 1.0f);
+    // This sample serializes frames before rewriting the shared light UBO.
+    device->waitIdle();
     lightUbo->updateUniformBuffer(lightData);
 
     auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
     auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
     cmd->begin();
@@ -429,10 +435,11 @@ populateInstances();
 rayTracingScene->buildOrUpdate(cmd.get());
 ```
 
-The TLAS is rebuilt **every frame** before `beginRendering()`. This is required because:
-
-1. `buildOrUpdate()` must be called **outside** an active rendering scope (before `beginRendering()`)
-2. The API requires rebuilding when the instance list changes (even if geometry is static, the API does not track changes)
+The primitive example rebuilds its TLAS **every frame** before `beginRendering()`
+to exercise the build path. A build, when needed, must occur outside an active
+rendering scope. That scope rule does not itself require a build every frame.
+Changes to instances require rebuilding; unchanged completed generations can be
+reused by higher-level owners that track their identities.
 
 In this example the geometry is static (only the light moves), so the instance list is identical each frame. The rebuild is done to exercise the dynamic build path. In production, you could skip the rebuild if the instance list has not changed.
 
@@ -698,6 +705,13 @@ The light UBO is updated each frame:
 ```cpp
 lightUbo->updateUniformBuffer(lightData);
 ```
+
+The sample calls `device->waitIdle()` before rewriting its shared light UBO,
+so every previous GPU reader has completed. This deliberately serializes frames
+for simplicity. Applications that need overlapping submissions can instead use
+per-slot buffers/sets as in [tutorial 07](07_uniform_buffers.md), retiring each
+slot before writing it. Updating buffer contents does not require rebuilding the
+resource set.
 
 This only updates the buffer contents -- the resource set does not need to be re-created or re-updated. The descriptor still points to the same buffer, and the new data is visible to the shader on the next draw call. This is the standard pattern for per-frame UBO updates.
 

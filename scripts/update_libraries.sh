@@ -115,11 +115,11 @@ cmake --build "${BUILD_DIR}" --config "${BUILD_CONFIG}" --target bg2e --parallel
 [ -f "${SOURCE_LIBRARY}" ] || die "Build finished but the library was not found at ${SOURCE_LIBRARY}"
 
 SOURCE_SHADERS="${PRODUCT_DIR}/shaders"
-for stage in draw/raster/gbuffer.frag.spv bake/uv_surface.frag.spv; do
+for stage in draw/raster/gbuffer.frag.spv bake/uv_surface/surface.frag.spv; do
     [ -f "${SOURCE_SHADERS}/${stage}" ] || die "Build finished without required shader: ${stage}"
 done
 if [ "${CURRENT_PLATFORM}" = "macos" ]; then
-    for stage in draw/raster/gbuffer.frag.metallib bake/uv_surface.frag.metallib; do
+    for stage in draw/raster/gbuffer.frag.metallib bake/uv_surface/surface.frag.metallib; do
         [ -f "${SOURCE_SHADERS}/${stage}" ] || die "Build finished without required Metal shader: ${stage}"
     done
 fi

@@ -5,7 +5,9 @@ in RendererConfiguration::upscaler. identifier/label provide stable identity and
 UI naming. requirements declares opaque depth, camera motion, jitter and storage
 needs; primitive support is separate from optional SDK availability.
 
-initialize(Engine&, UpscalerConfiguration) and resize configure resources;
+All calls run on the render thread. Initialize, resize and cleanup require a
+drained device. Per-slot descriptors and borrowed inputs survive GPU completion.
+initialize(Engine&, const UpscalerConfiguration&) and resize configure resources;
 available/status report runtime support. prepare(camera, sceneFrameNumber) returns
 the projection for recording, unjittered by default. UpscalerInput borrows frame,
 linear HDR color, preserved opaqueDepth, output, unjittered camera and the actual

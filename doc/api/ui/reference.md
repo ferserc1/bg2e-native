@@ -117,7 +117,10 @@ may update it while the main thread draws it.
 
 Normally driven via `app::MainLoop::asyncLoad(callback, clearColor)`, which
 installs `loader.draw()` as UI frame override while `callback` runs in a
-detached thread and resumes the scene when it returns.
+loop-owned joinable worker. Worker exceptions are captured and forwarded to the
+optional main-thread completion callback after restoration. Workers join before
+graphics teardown; queued exit completions are cancelled. See
+[MainLoop async ownership](../app/MainLoop.md#asynchronous-loading).
 
 ---
 

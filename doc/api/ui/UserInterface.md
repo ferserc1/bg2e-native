@@ -62,8 +62,9 @@ void drawUI() override        // called between NewFrame() and Render()
   `MainLoop` on resize, so the resize callback can drive `Workspace::resize`).
 - The **default** `drawUI()` shows `DemoWindow` — always override it in real
   applications.
-- Capture `this` freely in UI callbacks: the delegate lives as long as the
-  `Application`.
+- Immediate widget callbacks may capture their live delegate. Queued/asynchronous
+  actions must instead retain or validate their owners and document/resource
+  identities; Application ownership alone does not keep every captured target current.
 
 Use DrawMaterialEditor, DrawTextureWidgets and BakeLightmapPreview with draw
 resources. Old MaterialEditor/TextureWidgets/UvMapPreview variants are removed.

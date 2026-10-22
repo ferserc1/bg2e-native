@@ -110,7 +110,7 @@ owners inside Engine lifetime; CPU pixels can survive cleanup.
 Successful batch commit publishes `output/lightmaps.json` pointing to one complete
 unique generation. Read its paths; do not assume flat filenames or infer success
 from a target progress callback. RGB32F is exact native RGBA32F `.bg2tex`, not a
-production-loader or general interchange HDR image. RGB8 GI applies exposure once
+general interchange HDR image. The draw resource loader reads this native archive. RGB8 GI applies exposure once
 before clamp/round; AO and RGB32F ignore exposure. No gamma or receiver albedo is
 applied again. Raw GI precision is validated separately; a file encoder cannot
 recover invalid/saturated raw input.

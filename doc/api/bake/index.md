@@ -95,7 +95,7 @@ provides the example completion boundary; it does not add a render-loop callback
 - [StandaloneBakerContext](StandaloneBakerContext.md) and [StandaloneLightmapBaker](StandaloneLightmapBaker.md): borrowed offscreen Engine, one live target, completed samples/generations/reset/cancel.
 - [StandaloneBakeSceneAssembler](StandaloneBakeSceneAssembler.md): camera-less model/prefab/context, staged independent UV2 and retained Scene/root owners.
 - [StandaloneBakeBatch](StandaloneBakeBatch.md): frozen serial jobs, full preflight, callbacks and complete commit.
-- [LightmapOutputWriter](LightmapOutputWriter.md): protected sources, typed files, independent models and authoritative manifest; separate from the production DB writer.
+- [LightmapOutputWriter](LightmapOutputWriter.md): protected sources, typed files, independent models and authoritative manifest; replaces the removed DB per-target writer.
 - [Standalone C++ tutorial](../../tutorials/draw/standalone_lightmaps.md), [CLI/build guide](../../apps/draw_lightmap_generator.md) and [ownership architecture](../../architecture/draw_standalone_lightmaps.md).
 
 The new product deliberately fails invalid required targets rather than skipping

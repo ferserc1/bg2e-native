@@ -1,0 +1,21 @@
+{
+  "lib/include/bg2e/bake/UvSurfacePass.hpp": "0ff36859dd5aa6241516a5cca0771049fa2eb79965ecaaeaa721948501daa76f",
+  "lib/include/bg2e/gpu/Factory.hpp": "4c42398637c543673fb21d6d9e5f06d7d780354b034c2058e8a6fe0812ef85f1",
+  "lib/include/bg2e/gpu/SurfaceFrame.hpp": "8109b30a2f98a95cf4f9cc12c1cfedc73256f51ee0f8068dac20ee28349d6ecc",
+  "lib/include/bg2e/gpu/detail/SubmissionState.hpp": "9d086a340ad809b331bf649f0e2af938eeddd62c6f586a1884bf3ac454586ec2",
+  "lib/include/bg2e/gpu/vk/CommandPoolState.hpp": "f31140d7d9ef411d828bc937be6bd965195d336c83f6f6dabd7399312f2f68cb",
+  "lib/src/bg2e/app/MainLoop.cpp": "c31db8d1b761d00a7131bffd829fdd6f876546b75efd89bfe517327b3a6c1661",
+  "lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp": "c8248d4bb5987078e978760d31d2c9d1e0aa6f98a2ffdb8038a0d0c750745537",
+  "lib/src/bg2e/draw/Engine.cpp": "ea538862376194c92b7f9090b6fb0905ada053a8688afad9bbfb7dd177aa8065",
+  "lib/src/bg2e/draw/RenderLoop.cpp": "2d5f2ec3f11216b927aaa03f20f2bfffd3f5ba13240f630777100f252ea7ab38",
+  "lib/src/bg2e/gpu/CleanupManager.cpp": "713b0776dfa19b7cef7eb7563cea86cef65d0e1cf9400bf2e9b8da097cdd27f6",
+  "lib/src/bg2e/gpu/metal/Device.cpp": "e3b2133de219862bcac404c69d11bcff25300fd5e4ff0b9f6c90e4d2532659cc",
+  "lib/src/bg2e/gpu/metal/GuiRenderer.cpp": "33d818076ca39062a7d20dbc4fb691d7c04a83da4a0cfcce5b874c8686d52bac",
+  "lib/src/bg2e/gpu/metal/Queue.cpp": "d972c26f21e8d80d6dfbb3cb36294b001e7cd4ca94cc56327426e0ff7dcc597d",
+  "lib/src/bg2e/gpu/metal/WindowSurface.cpp": "54af156e2aae069445a364fe8381aa1ee9d8caead7b7457eb3b3e8dc68770ae7",
+  "lib/src/bg2e/gpu/vk/Device.cpp": "dcae585f0311c450fc0cf6df38f08e4a8199127ea7ed9f9b43654e9af8003d3a",
+  "lib/src/bg2e/gpu/vk/GuiRenderer.cpp": "f6485f4dbfcc1d0f09b4f5929f7fcf605b5b4491eead9d5b82fdc5815edb2431",
+  "lib/src/bg2e/gpu/vk/Queue.cpp": "628c318391462928fd164491b4e6372929a5f8a26047cbf14090149a585bed27",
+  "lib/src/bg2e/gpu/vk/WindowSurface.cpp": "c4c7dbfc1913f372f0fc7e158416a1c4eaaa24f5159d13548e110dd6d6bd07db",
+  "lib/src/bg2e/json/JsonParser.cpp": "1550547aebd3a068d3fb39ac4a1fc123c9ad824c290672d5051b52146dcb42ab"
+}

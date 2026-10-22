@@ -3,7 +3,7 @@
 **Header:** `<bg2e/utils/ViewpointAnalyzer.hpp>`  
 **Namespace:** `bg2e::utils`
 
-`ViewpointAnalyzer` is an draw/GPU-backed utility for scoring
+`ViewpointAnalyzer` is a draw/GPU-backed utility for scoring
 camera candidates from scene geometry. It borrows a `draw::Engine*`; call
 `init()` before analysis and `cleanup()` before engine teardown.
 
@@ -18,8 +18,8 @@ if (best)
 }
 ```
 
-Analysis renders candidate views to small identifier/depth targets and reads
-them back synchronously. Stop scene and GPU producers while `analyze()` runs;
+Analysis renders candidate views to RGBA8 identifier and D32 depth targets and
+reads them back synchronously. Stop scene and GPU producers while `analyze()` runs;
 it is an explicit action, not per-frame work. `analyzedSubmeshes()` maps
 analysis identifiers back to weak scene node/drawable references. These
 identifiers are local to the analysis snapshot.

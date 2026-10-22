@@ -113,3 +113,22 @@ awaiting lead acceptance; M09-08 must author cumulative documentation before
 M09 closure. M10 audits that delivery. R01–R14 optimization/profiling source and
 manual probes remain preserved; no new native coverage or performance result is
 claimed by this review. Historical planning assumptions above remain historical.
+
+## M10-06 final audit mapping — 2026-10-22
+
+[Final requirement ledger](milestone_10_documentation/final-requirement-coverage.tsv)
+reconciles all 43 decisions above to current contract/page/source evidence.
+[R01–R14 ledger](milestone_10_documentation/final-preservation-coverage.tsv) retains
+independent optimization/profiling evidence limits. The [final review](milestone_10_documentation/review.md)
+awaits lead acceptance; M10-05 accepted by continuation. No next implementation
+milestone is scheduled. The later explicitly requested source corrections implement canonical standalone
+shader preflight and serialized shared UBO writes in GPU 11/13; their validation
+record below supersedes the initial final-review findings.
+
+## Requested source corrections delivered — 2026-10-22
+
+[Source correction evidence](milestone_10_documentation/source-corrections.md)
+supersedes the previously open shared-UBO and standalone-preflight findings.
+Both source corrections and maintained guidance are delivered; no open finding
+remains from them. Final lead validation/acceptance is pending. Earlier findings
+are historical; no build/native execution or successor milestone is implied.

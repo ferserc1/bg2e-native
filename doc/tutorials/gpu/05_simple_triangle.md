@@ -371,6 +371,10 @@ The push constants are computed each frame with three sine waves at different fr
 
 ```cpp
     auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
     auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
     cmd->begin();

@@ -5,7 +5,8 @@ Target: `draw_offscreen_application`. Source:
 The CLI uses draw over Vulkan/Metal and renders the deferred sample scene with
 textured/transparent models, floor, four lights and an HDR environment. Camera/light
 animation is frozen and editor UI, selection, gizmos and overlays are absent.
-Production render applications remain supported separately.
+The former rendering framework has been removed; this is the canonical camera
+export example, separate from UV bake batch output.
 
 ## Run and options
 

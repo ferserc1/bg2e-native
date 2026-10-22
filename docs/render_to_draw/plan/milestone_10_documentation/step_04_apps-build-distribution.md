@@ -112,3 +112,56 @@ M10 audits that delivered documentation and makes localized corrections; do not
 defer missing API, tutorial, build or application authoring to this milestone.
 
 Audit draw_model_edit, draw_bg2e_composer and draw_lightmap_generator under apps/draw; draw_offscreen_application remains the camera render example. Keep configuration identities and import server protocols. Verify paired draw/bake shader trees, optional FFX/SMAA, standalone deferred default, updater scope and native SDK/runtime copies against current scripts. Reused output directories do not imply purging stale flat artifacts. Creator/package/launch behavior is source-reviewed unless lead execution evidence specifies otherwise.
+
+## M10-01 current inventory handoff — 2026-10-22
+
+Use [inventory.md](inventory.md), [page-inventory.tsv](page-inventory.tsv),
+[header-coverage.tsv](header-coverage.tsv) and
+[product-coverage.tsv](product-coverage.tsv) for the current source/page baseline
+at HEAD e2a32164a781dbf420a4464b25ddce9feb862c6a. All 229 maintained pages,
+317 public headers and 33 products have inventory owners. Headers are mapped at
+module discovery depth; per-symbol semantics still require the API audit.
+Applications now live directly under apps/ with targets model_edit,
+bg2e_composer and lightmap_generator. Historical M09 product paths/hashes are
+preserved evidence, superseded for current usage by this inventory. Twenty-one
+pages changed with the later app relocation; M10-01 corrects two additional stale
+DB-writer availability descriptions. No substantive authoring gap was identified
+at inventory depth; semantic/native/performance verification is not inferred.
+
+## M10-02 API audit handoff — 2026-10-22
+
+Consume [api-reference-audit.md](api-reference-audit.md) and
+[api-contracts.tsv](api-contracts.tsv) alongside the original inventory. Current
+reference corrections cover retired API/writer/preview availability, live/stored
+materials, actual catalog identities and persistence opt-in, raw bake filtering,
+borrowed GUI ownership and completed acceleration reuse without refit. Native
+v3/v5 capacity/reserve/binding contracts and R01–R14 remain preserved. Draw API
+navigation now links the existing optimization/profiling references directly.
+M10-01 page hashes remain historical; api-page-changes.tsv records the subsequent
+18-page delta. No build/runtime/native/performance evidence is added. Retain the
+separate tutorial, CLI/distribution and global validation scopes of M10-03–05.
+
+## M10-03 tutorial audit handoff — 2026-10-22
+
+Use [tutorials-audit.md](tutorials-audit.md), tutorial-coverage.tsv and
+tutorial-snippets.tsv for all 31 tutorial pages/26 numbered products. Draw 06
+now describes EnvironmentGenerator/SkyboxRenderer instead of the old manual
+conversion recipe. Other corrections cover Model Edit target spelling, GLSL
+binding syntax, acquired-slot retirement, borrowed resource retention, history
+invalidation and actual capability/customization behavior. Tutorials 12/13 still
+reconstruct their sources ignoring whitespace. No CMake/source/native execution.
+
+Preserve the explicit source follow-up: primitive GPU 11/13 samples share mutable
+light/camera UBOs without a proof that all readers are complete before host writes.
+The tutorial wording now states that limitation; sample binaries are unchanged.
+M10-06 must record the overlap risk separately from completed documentation and
+unspecified native acceptance. Whole-document validation/package/build audits
+must not claim it was repaired by documentation or by continuation alone.
+
+## Source correction delivered — 2026-10-22
+
+The user subsequently authorized source repair. Both findings are corrected in
+[source-corrections.md](source-corrections.md): GPU 11/13 serialize shared UBO access,
+and all four standalone helpers check the canonical paired shader paths. Earlier
+finding/handoff paragraphs and stored audit hashes above are historical snapshots,
+not current open issues. Native validation and final lead acceptance remain pending.

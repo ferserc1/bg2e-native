@@ -27,7 +27,7 @@ struct FrameContext {
 | `extent` | Target pixel dimensions. |
 | `frameNumber` | Window presentation sequence or offscreen scene sequence. |
 | `frameSlot` | Reusable in-flight resource slot; distinct from the accumulated frame number and swapchain image index. |
-| `deltaSeconds` | Window elapsed seconds or fixed offscreen step; production render callbacks use milliseconds. |
+| `deltaSeconds` | Window elapsed seconds or fixed offscreen step. Both delta fields use seconds. |
 | `sceneFrameNumber` | Zero-based scene submission sequence; paused/UI-only presentations do not advance it. |
 | `sceneDeltaSeconds` | Active elapsed time since the previous submitted scene, excluding paused time. |
 

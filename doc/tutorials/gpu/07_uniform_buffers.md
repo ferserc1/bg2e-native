@@ -317,7 +317,8 @@ This is the core pattern for per-frame data. Two `FrameResourceRing` instances a
 
 **`modelSetRing`** -- one `ResourceSet` per in-flight frame:
 - Each set binds the corresponding buffer from `modelUboRing` via `sharedAt(i)`.
-- The `shared_ptr` ensures the buffer stays alive as long as the set references it.
+- The shared_ptr setter forwards a borrowed buffer pointer; the buffer ring, not
+  that overload, retains ownership. Keep both rings alive through GPU completion.
 - Once `update()` is called, the set is **never re-updated** -- only the buffer contents change.
 
 **Why two rings?** The model UBO changes every frame, so it needs one buffer per in-flight frame to avoid writing to a buffer the GPU is still reading. The resource set that references it must also be duplicated because each set points to a different buffer.
@@ -404,6 +405,10 @@ while (running)
     modelData.model = glm::rotate(glm::mat4(1.0f), t, glm::normalize(glm::vec3(0.4f, 1.0f, 0.2f)));
 
     auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
     auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
     auto* modelUbo = modelUboRing.current();
@@ -438,8 +443,8 @@ Each frame follows this sequence:
 
 1. **Event handling** -- process SDL events including window close and resize. Resize requires `device->waitIdle()` before resizing the surface.
 2. **Compute time** -- `SDL_GetTicks64()` provides milliseconds since startup, converted to seconds for smooth rotation.
-3. **Update model UBO** -- compute the rotation matrix and write it to the current frame's buffer with `updateUniformBuffer`. This is a direct CPU write to host-visible memory (no staging, no GPU sync).
-4. **Begin frame** -- `surface->beginFrame()` acquires the next swapchain image and returns a `SurfaceFrame`.
+3. **Begin frame** -- acquire a non-null `SurfaceFrame` before accessing a ring slot. Acquisition waits for that slot's previous GPU users. Skip unavailable drawables.
+4. **Update model UBO** -- write the current retired slot with `updateUniformBuffer`. The host write itself provides no GPU synchronization; the preceding acquisition establishes safe reuse.
 5. **Record commands** -- transition attachments, begin rendering, clear buffers, bind pipeline and all three resource sets, draw the cube.
 6. **Bind resource sets** -- set 0 (camera, persistent), set 1 (model, per-frame), set 2 (texture, persistent).
 7. **Present** -- transition to present layout and submit.
@@ -510,7 +515,7 @@ Key concepts:
 - **Vertex inputs** -- `inPosition` (location 0, vec3) and `inTexCoord` (location 1, vec2) match the `MeshPU` vertex layout. These come from the vertex buffer.
 - **Camera UBO (set 0, binding 0)** -- a single `mat4 projectionView`. Declared as a `uniform` block, it reads from the buffer bound to descriptor set 0.
 - **Model UBO (set 1, binding 0)** -- a single `mat4 model`. Declared as a `uniform` block, it reads from the buffer bound to descriptor set 1.
-- **Transformation chain** -- `gl_Position = projectionView * model * position`. The camera matrix is applied first (world to clip space), then the model matrix (local to world space). This is the standard MVP transformation with view and projection pre-combined.
+- **Transformation chain** -- `gl_Position = projectionView * model * position`. The model matrix is applied first (local to world space), then the combined camera matrix (world to clip space). This is the standard MVP transformation with view and projection pre-combined.
 - **Texture coordinate passthrough** -- `inTexCoord` is passed to the fragment shader as `fragUV` via rasterization interpolation.
 
 ### Fragment shader (`cube.frag.glsl`)
@@ -569,15 +574,22 @@ The `FrameResourceRing<T>` template solves the CPU-GPU synchronization problem f
 gpu::FrameResourceRing<gpu::Buffer> ring;
 ring.create(surface.get(), [&](uint32_t i) {
     // Create one resource per in-flight frame
-    return device->createBuffer("Ring[" + std::to_string(i) + "]");
+    auto buffer = device->createBuffer("Ring[" + std::to_string(i) + "]");
+    buffer->createUniformBuffer(ModelUBO{});
+    return buffer;
 });
 
+ModelUBO newData{}; // Fill this frame's model matrix before upload.
 // Each frame:
+// Only after a successful beginFrame has retired this slot:
 auto* res = ring.current();  // Get current frame's resource
 res->updateUniformBuffer(newData);  // Write new data (host-visible, no sync)
 ```
 
-The ring size matches `surface->inFlightFrames()` (typically 2 for windowed rendering). On frame N, the CPU writes to slot N % 2, and the GPU reads from slot (N-1) % 2. Since the CPU only writes to slots the GPU is done reading, no synchronization is needed.
+The ring size matches `surface->inFlightFrames()`. Select the surface's current
+slot after successful acquisition; do not infer it from frame-number parity or
+swapchain image index. The ring selects storage but performs no wait itself.
+Acquisition supplies retirement synchronization; the host write adds no wait.
 
 **Reference:** [FrameResourceRing API](../../api/gpu/FrameResourceRing.md)
 

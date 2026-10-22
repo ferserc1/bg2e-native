@@ -2,7 +2,7 @@
 
 Header: `<bg2e/draw/pipeline/TracingSceneResources.hpp>`.
 Namespace: `bg2e::draw::pipeline`. These public draw resources consume a RenderQueue;
-they do not depend on production render or private RendererDeferred targets.
+they do not depend on private RendererDeferred targets.
 
 Construct TracingSceneResources(Device&, capacity) with a capacity in [1,16384]
 supported by the device. Choose from Device::resourceArrayCapabilities().profileCapacity
@@ -150,7 +150,11 @@ templates, not a size restriction. Their native shader interfaces are v3; custom
 replacements must use specialization ID0 and Vulkan set2 arrays and the unchanged Metal record bindings.
 
 All six material slots retain image/view/sampler and UV/color/channel conventions.
-Cutout acceptance is albedo alpha times material alpha >= cutoff at explicit LOD0;
+Authored alpha-test cutoff defaults to zero. Packing disables testing below
+0.02 and preserves cutoffs at or above 0.02; authored values remain unchanged.
+The glTF importer assigns MASK a cutoff of 0.5 and other modes zero. Noncutout
+instances use ForceOpaque; cutouts use ForceNonOpaque.
+Cutout acceptance is albedo alpha times material alpha >= effective cutoff at explicit LOD0;
 ForceNonOpaque exposes candidates and rejected hits continue behind holes. Both
 blended classes are excluded as occluders/secondary geometry by default. Huge scenes
 still fail for invalid geometry/buffer ranges. Material image/sampler table overflow

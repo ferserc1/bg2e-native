@@ -1,0 +1,29 @@
+{
+  "kind": "static_final_documentation_review",
+  "head": "e2a32164a781dbf420a4464b25ddce9feb862c6a",
+  "requirements": 43,
+  "preservation_requirements": 14,
+  "maintained_pages": 229,
+  "public_headers": 317,
+  "products": 33,
+  "historical_handoff_reports": 9,
+  "historical_handoff_rows": 216,
+  "source_hash_occurrences_checked": 373,
+  "distinct_revalidated_source_paths": 350,
+  "errors": [],
+  "source_findings": [],
+  "acceptance": "M10-05 accepted by lead continuation; M10-06 final acceptance pending",
+  "limits": "No build/runtime/package/diagram/performance execution; source hashes preserve earlier semantic audits, not independent re-execution of every audit. Original source/page checks describe pre-correction snapshot; source-corrections-checks.json and delta supersede changed paths.",
+  "product_paths_rechecked": true,
+  "public_header_hashes_rechecked": 317,
+  "new_and_updated_plan_links_checked": true,
+  "unchanged_step_entry_non_plan_files": 2739,
+  "changed_preexisting_plan_files": [
+    "docs/render_to_draw/plan/index.md",
+    "docs/render_to_draw/plan/milestone_10_documentation/step_06_final-review.md",
+    "docs/render_to_draw/plan/milestone_10_documentation/summary.md",
+    "docs/render_to_draw/plan/progress.md",
+    "docs/render_to_draw/plan/requirements-map.md"
+  ],
+  "source_corrections": "source-corrections.md; both original findings repaired at user request; lead validation pending"
+}

@@ -21,8 +21,8 @@ between frames and drains the device before saving.
   groups, scales and clamp addressing are retained. Separate opacity maps,
   height-to-normal conversion, texture offsets and turbulence require conversion
   before import and raise an error. A missing MTL raises an error.
-- `loadGltf(path, engine, progress)` returns an owning shared Node. The same
-  cgltf parser serves the existing production overload. It imports the selected
+- `loadGltf(path, engine, progress)` returns an owning shared Node. The CPU
+  cgltf parser is shared with readGltf. Realization imports the selected
   scene's static mesh hierarchy, local matrices, two UV sets, PBR color and
   metallic/roughness maps, normal/AO/emission maps, alpha mode and sampler settings.
   Embedded images use the importer's temporary image cache. Materials follow the

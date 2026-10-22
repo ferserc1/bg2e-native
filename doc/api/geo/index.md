@@ -26,3 +26,5 @@ must be scheduled separately through [`app::Uv2SafeReload`](../app/Uv2SafeReload
 
 See [Lightmap baking](../../lightmap_baking.md) for the editor workflow and
 [the render API](../draw/index.md) for UV previews and baking.
+
+See the [module reference](reference.md) for the maintained geo symbol catalog.

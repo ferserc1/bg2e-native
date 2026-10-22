@@ -997,11 +997,8 @@ if (drawable)
     delegate->enqueueRendererUpdate(delegate->rendererGeneration(),
         [drawable, patch](draw::Renderer& renderer)
     {
+        renderer.invalidateHistories(); // Also covers partial patch failure.
         patch.applyAll(*drawable, std::string("body/front"));
-        if (auto* deferred = dynamic_cast<draw::RendererDeferred*>(&renderer))
-        {
-            deferred->invalidateHistories();
-        }
     });
 }
 ```
@@ -1009,6 +1006,9 @@ if (drawable)
 This exact-string overload changes the `body/front` group only, even when a
 different submesh of the same drawable supplied the selection. The operation
 is queued, so texture or GPU material work does not run while constructing UI.
+Invalidate before applying a potentially partial patch. Applications with imports
+or deferred document replacement must additionally validate document/node/resource
+membership when the callback executes; renderer generation alone is not job validity.
 
 Add `"Regex: all body groups"` with the same target lookup and queued-callback
 structure. Use patch `{"metalness":0.1}` and capture a
@@ -1466,3 +1466,28 @@ The [manual integration matrix](../../../tests/draw/advanced_integration/README.
 covers native diagnostics, missing SDK/profiles, no RT, edits/resize/rebind and
 output-owner lifetime. Tutorial snippets were checked against declarations/source;
 no compilation/runtime execution was performed by the documentation agent.
+
+## Current capability and customization checks
+
+The shipped scene example does not implement a `--no-rt` switch. For a raster
+comparison choose IBL, disable query shadows and traced reflections through the
+live graphics controls, and compare that with execution on a device lacking the
+requested tracing support. Those are different checks: disabling a request does
+not prove the unsupported-capability fallback. FSR stays disabled initially and
+falls back to bilinear when the SDK/backend is unavailable.
+
+For custom passes/renderers, preserve the public contracts described in
+[Renderer](../../api/draw/Renderer.md), [Upscaler](../../api/draw/Upscaler.md) and
+[TracingSceneResources](../../api/draw/TracingSceneResources.md). Match paired
+GLSL/Metal interfaces, formats and native indices; tracing uses v3 and query
+shadows v5 with exact device-clamped tables, up to 16384 entries. A filename suffix
+such as _256 is a specialization template, not a scene limit. Supply live metadata
+and its matching complete instance address; a copied settings object does not
+configure the installed pass. Generic queued edits remain synchronized callbacks.
+
+The canopy explicitly authors cutoff 0.5; the library default is zero, with an
+effective threshold of 0.02. Loaded clones own independent editable resources;
+immutable derived-cache reuse does not merge those material objects. Settings
+round trips use the current catalog identity and typed codec. Example-owned
+lightPose IDs require matching extensions or the explicit unknown-setting policy
+in a different application. A successful import does not prove native effect support.

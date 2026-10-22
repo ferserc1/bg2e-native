@@ -487,6 +487,10 @@ while (running)
     const float t = static_cast<float>(SDL_GetTicks64()) / 1000.0f;
 
     auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
     auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
     cmd->begin();

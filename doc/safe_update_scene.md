@@ -20,12 +20,14 @@ in the frame loop: after the GPU is idle and before any traversal begins.
 
 ### Frame Loop
 
-The main loop in `MainLoop::run()` executes the following sequence each frame:
+The following is a schematic of the MainLoop ordering; focus throttling, timers,
+main-thread work and renderer preparation remain part of the actual loop:
 
 ```
 1. Process SDL events (input, window events)
 2. executeSafeUpdateScene()    ← deferred scene mutations run here
-3. acquireAndPresent()         ← rendering (traversals, draw calls)
+3. Drain main-thread work and due timers
+4. Active execution prepares/acquires/renders/presents when a frame is due
 ```
 
 `executeSafeUpdateScene()` does:
@@ -33,25 +35,59 @@ The main loop in `MainLoop::run()` executes the following sequence each frame:
 ```cpp
 void MainLoop::executeSafeUpdateScene()
 {
-    _engine.device().waitIdle();           // wait for GPU
-    for (auto& entry : _safeUpdateScene)
+    std::vector<SafeUpdateSceneEntry> local;
     {
-        auto token = entry.token.lock();
-        if (!entry.hasToken || (token && token->alive->load()))
+        std::lock_guard lock(_safeUpdateSceneMutex);
+        if (_safeUpdateScene.empty())
         {
-            entry.function();              // execute deferred lambda
+            return;
+        }
+        std::swap(local, _safeUpdateScene);
+    }
+    // The execution exists only during an active run; outside a run there is
+    // no GPU work in flight to wait for.
+    if (_execution)
+    {
+        base::CpuProfileScope profile("app.waitIdle.safeSceneUpdate");
+        base::CpuProfileScope::count("app.safeSceneUpdatesWaiting", local.size());
+        _execution->waitIdle();
+    }
+    bool updated = false;
+    for (auto& entry : local)
+    {
+        if (!entry.hasToken)
+        {
+            entry.function();
+            updated = true;
+            continue;
+        }
+
+        auto token = entry.token.lock();
+        if (token && token->alive->load())
+        {
+            entry.function();
+            updated = true;
         }
     }
-    _safeUpdateScene.clear();              // flush the queue
+    if (updated && _execution)
+    {
+        requestSceneFrame();
+    }
 }
 ```
 
 Key properties:
 
-- All queued lambdas execute **once**, in order, at the start of the next frame.
-- The GPU is guaranteed idle before any lambda runs.
+- A mutex-protected snapshot of queued entries is consumed in order; callbacks
+  queued while that snapshot executes wait for a later drain. Expired tokens skip
+  their callbacks. Keep callbacks nonthrowing if the rest of the snapshot must run.
+- A nonempty snapshot drains the active execution once before callbacks.
+  Outside an active run there is no execution to drain. Stop background producers;
+  waitIdle reopens submission admission and is not a permanent device freeze.
 - Lambdas execute on the **main thread**, synchronously, before rendering.
-- The queue is cleared after execution — lambdas run exactly once.
+- Entries are removed from the shared queue before execution. A throwing callback
+  propagates and later local entries are not automatically retried. Successful
+  callbacks request a scene refresh when an execution is active.
 
 ### Basic Usage
 
@@ -64,8 +100,10 @@ bg2e::app::MainLoop::current()->safeUpdateScene([&]() {
 });
 ```
 
-The lambda captures whatever it needs. The scene modification happens safely at the
-start of the next frame.
+This small fragment assumes sceneRoot/oldNode/newNode remain alive until the
+callback runs. In an editor, use retained/weak owners and an appropriate validity
+token instead of capturing short-lived references. The mutation runs at the next
+safe drain, not during traversal.
 
 ## The SafeUpdateToken
 

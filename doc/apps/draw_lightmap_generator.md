@@ -1,9 +1,9 @@
 # Draw standalone lightmap generator
 
 `lightmap_generator` bakes camera-less model/prefab AO/GI batches through
-`bg2e::draw` and `bg2e::bake`. It is separate from the preserved production
-[lightmap_generator](lightmap_generator/index.md); there is no implicit production
-renderer fallback. Required native tracing/kernel/format support must exist.
+`bg2e::draw` and `bg2e::bake`. This is the canonical
+[standalone lightmap workflow](lightmap_generator/index.md); the former renderer
+implementation is removed. Required native tracing/kernel/format support must exist.
 
 ## Commands
 
@@ -131,7 +131,7 @@ complete manifest has already been published.
 
 ## Build and resources
 
-Target `lightmap_generator` is registered under apps/draw and uses bundle_app.
+Target `lightmap_generator` is registered under apps/lightmap_generator and uses bundle_app.
 The repository still requires VULKAN_SDK for its shared build, including a Metal
 selection. Use Ninja on Linux and Visual Studio 17 2022 on Windows; macOS Xcode
 is the native-dialog/distribution path (Ninja development builds retain the
@@ -149,8 +149,10 @@ source registration is not proof of a native installed/relocated run. Follow
 [packaging instructions](../../scripts/PACKAGING.md) for clean-checkout,
 external-destination and platform-generator requirements. Precompiled standalone
 projects must retain full headers, native libraries and both shader trees; the
-current generated default main still uses the production API, so replace its generated main with an
-explicit delivered draw/bake caller rather than assume that default is this CLI.
+generated default main uses a deferred draw scene, not this CLI. Replace it with
+an explicit draw/bake caller when creating a headless product. The current
+creator/updater shader preflight is documented in
+[build/distribution](../architecture/build_and_distribution.md#standalone-shader-preflight).
 
 ## Verification
 

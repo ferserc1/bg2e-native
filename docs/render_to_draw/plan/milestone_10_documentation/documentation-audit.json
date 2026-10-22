@@ -1,0 +1,21 @@
+{
+  "kind": "nonexecuting_documentation_audit",
+  "pages": 229,
+  "local_links_and_anchors": 1870,
+  "project_include_occurrences": 111,
+  "illustrative_header_exceptions": [
+    {
+      "page": "doc/api/reflection/Registration.md",
+      "header": "bg2e/scene/MyComponent.hpp",
+      "reason": "user-defined sample component"
+    },
+    {
+      "page": "doc/api/reflection/quick_start.md",
+      "header": "bg2e/scene/MyComponent.hpp",
+      "reason": "user-defined sample component"
+    }
+  ],
+  "errors": [],
+  "page_set_sha256": "eee731fed8273fdbef4a5da3327a2c228e22ce127e866f315015103c68a93053",
+  "limits": "Markdown links/heading slugs and project includes only; no C++ parse, external URL fetch, build, runtime, package or binary validation."
+}

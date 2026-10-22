@@ -32,8 +32,10 @@ changes are needed when editing this file.
 The C++ blocks under the numbered steps are consecutive pieces of that one
 file. Copy them in order, without adding namespace or class wrappers. Some
 blocks leave a class or function open so the next step can continue it.
-Together, the source blocks form the complete application, including its
-license header, includes, and `main()`. The two projection blocks marked
+Together, the numbered source blocks form the teaching application, including
+its license header, includes, and `main()`. Apply the later graphics-window
+replacements as instructed. These staged fragments are not a verbatim snapshot
+of the shipped source, which also has an optional material-revision probe. The two projection blocks marked
 **Alternative** illustrate valid API choices and are not part of the assembled
 file. Shell commands are separate build instructions.
 
@@ -907,9 +909,9 @@ binding is not applied to a different renderer binding.
 The callback captures a weak delegate reference rather than retaining the
 delegate indefinitely through its own queue. It also captures the operation by
 value, moving it into the lambda. At execution time, lock the weak pointer and
-apply the operation to the current state if the delegate still exists. The
-`draw::Renderer&` parameter is part of the queue API; these scene edits do not
-need to access the renderer directly.
+apply the operation to the current state if the delegate still exists. Use the callback's `draw::Renderer&` to invalidate histories before mutation,
+including a patch that may fail partway through. Generic callbacks drain the
+device; they are not the specialized typed final-color no-drain path.
 
 This helper is sufficient for our light, scalar-material, and visibility edits.
 Replacing meshes or texture images would also need the corresponding drawable
@@ -921,10 +923,11 @@ and texture bindings intact.
     void edit(const std::shared_ptr<SceneDelegate>& delegate, std::function<void(SceneState&)> operation)
     {
         const auto weakDelegate = std::weak_ptr<SceneDelegate>(delegate);
-        delegate->enqueueRendererUpdate(delegate->rendererGeneration(), [weakDelegate, operation = std::move(operation)](draw::Renderer&)
+        delegate->enqueueRendererUpdate(delegate->rendererGeneration(), [weakDelegate, operation = std::move(operation)](draw::Renderer& renderer)
         {
             if (auto activeDelegate = weakDelegate.lock())
             {
+                renderer.invalidateHistories();
                 operation(activeDelegate->state());
             }
         });
@@ -1164,3 +1167,28 @@ The [manual integration matrix](../../../tests/draw/advanced_integration/README.
 covers native diagnostics, missing SDK/profiles, no RT, edits/resize/rebind and
 output-owner lifetime. Tutorial snippets were checked against declarations/source;
 no compilation/runtime execution was performed by the documentation agent.
+
+## Current capability and customization checks
+
+The shipped scene example does not implement a `--no-rt` switch. For a raster
+comparison choose IBL, disable query shadows and traced reflections through the
+live graphics controls, and compare that with execution on a device lacking the
+requested tracing support. Those are different checks: disabling a request does
+not prove the unsupported-capability fallback. FSR stays disabled initially and
+falls back to bilinear when the SDK/backend is unavailable.
+
+For custom passes/renderers, preserve the public contracts described in
+[Renderer](../../api/draw/Renderer.md), [Upscaler](../../api/draw/Upscaler.md) and
+[TracingSceneResources](../../api/draw/TracingSceneResources.md). Match paired
+GLSL/Metal interfaces, formats and native indices; tracing uses v3 and query
+shadows v5 with exact device-clamped tables, up to 16384 entries. A filename suffix
+such as _256 is a specialization template, not a scene limit. Supply live metadata
+and its matching complete instance address; a copied settings object does not
+configure the installed pass. Generic queued edits remain synchronized callbacks.
+
+The canopy explicitly authors cutoff 0.5; the library default is zero, with an
+effective threshold of 0.02. Loaded clones own independent editable resources;
+immutable derived-cache reuse does not merge those material objects. Settings
+round trips use the current catalog identity and typed codec. Example-owned
+lightPose IDs require matching extensions or the explicit unknown-setting policy
+in a different application. A successful import does not prove native effect support.

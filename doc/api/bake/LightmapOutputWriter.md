@@ -1,9 +1,9 @@
 # LightmapOutputWriter (draw/bake)
 
 **Header:** `<bg2e/bake/LightmapOutputWriter.hpp>`.
-**Namespace:** `bg2e::bake`. The separate production
-[db::LightmapOutputWriter](../db/LightmapOutputWriter.md) remains a legacy
-per-target writer; these classes are not aliases or interchangeable transactions.
+**Namespace:** `bg2e::bake`. The former DB per-target writer has been removed.
+See [output ownership](../db/LightmapOutputWriter.md) for the migration boundary;
+there is no legacy writer alias.
 
 ```cpp
 LightmapOutputWriter(draw::Engine& engine, std::filesystem::path outputDirectory,

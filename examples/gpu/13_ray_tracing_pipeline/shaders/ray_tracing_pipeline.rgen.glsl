@@ -141,8 +141,7 @@ void main()
     imageStore(accumImage, ivec2(gl_LaunchIDEXT.xy), vec4(accum, 1.0));
 
     // Reinhard tone mapping + gamma correction for the 8-bit output image.
-    // Store as .bgr because the image is byte-copied into the BGRA8 swapchain.
     vec3 mapped = accum / (accum + vec3(1.0));
     mapped = pow(mapped, vec3(1.0 / 2.2));
-    imageStore(outputImage, ivec2(gl_LaunchIDEXT.xy), vec4(mapped.bgr, 1.0));
+    imageStore(outputImage, ivec2(gl_LaunchIDEXT.xy), vec4(mapped, 1.0));
 }

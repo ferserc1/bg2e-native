@@ -9,7 +9,11 @@ establishes submesh attributes; `load(Engine*)` realizes resources. Set material
 names, groups, transforms and visibility per submesh. `material(index)` addresses
 live attributes once loaded; use `updateMaterials()` when resource realization
 must change. Scalar live attributes and texture/resource replacement have distinct
-costs; do not rebuild textures every frame.
+costs; do not rebuild textures every frame. `materialDefinition(index)` addresses
+the stored CPU definition even after loading. Live edits do not automatically
+synchronize that definition. Cloning takes current live attributes, and cleanup
+snapshots live state back into definitions; arbitrary stored/live divergence is
+not preserved across those operations.
 
 `clone()` duplicates CPU geometry, GPU mesh/material realizations and mutable
 texture/image/sampler ownership, including built acceleration resources. It is

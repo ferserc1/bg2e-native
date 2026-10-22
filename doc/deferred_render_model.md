@@ -18,9 +18,10 @@ pause independently of UI presentation; frame slots are not scene sample counts.
 ```mermaid
 flowchart LR
     Scene --> G[G-buffer and opaque depth]
-    G --> L[IBL / AO / GI and reflections]
-    L --> T[Temporal accumulation and denoise]
-    T --> U[HDR reconstruction]
+    G --> R[Raw AO / GI / reflection signals]
+    R --> T[Independent temporal histories and denoise]
+    T --> L[Lighting and IBL composition]
+    L --> U[HDR reconstruction]
     U --> F[Final color and optional SMAA]
     F --> O[Overlays]
     O --> UI[Retained output and UI presentation]

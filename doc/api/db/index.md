@@ -22,16 +22,16 @@ document preservation, graphics-free typed graphs and synchronous realization.
 
 The [bake API](../bake/index.md) publishes typed pixels and sampled GPU maps.
 Its [standalone writer](../bake/LightmapOutputWriter.md) owns protected complete-
-batch publication, native HDR maps and actual model snapshots. The production
-DB writer above remains a separate legacy contract. Persisting mode metadata
+batch publication, native HDR maps and actual model snapshots. The former
+DB-specialized writer has been removed. Persisting mode metadata
 alone does not materialize pixels or export a complete resource generation.
 
 ## Complete draw resources
 
 [Complete draw resource IO](DrawResourceIO.md) covers native GPU texture archives,
 MTL/glTF import, transactional scene/model publication and editor document state.
-This explicit draw path materializes GPU-only HDR/mip resources; the production
-LightmapOutputWriter retains its separate contract.
+This explicit draw path materializes GPU-only HDR/mip resources. Single-document
+publication and protected whole-batch publication have separate contracts.
 
 ## Completed camera images
 
@@ -52,3 +52,5 @@ complete GPU-only texture/material/scene resource export.
 readback and atomic no-replace/explicit-replace publishFile. These generic helpers
 remain distinct from specialized bake source protection and final-manifest policy.
 ObjMesh::sourcePaths records original OBJ/read MTL inputs for dependency inventory.
+
+See the [module reference](reference.md) for the maintained db symbol catalog.

@@ -1,8 +1,8 @@
 # Draw API Reference
 
-The high-level successor to production render uses the abstract
-gpu backend. The umbrella header is `<bg2e/draw/all.hpp>`; production render is
-supported and is not deprecated.
+The production high-level renderer uses the abstract gpu backend. Its umbrella
+header is `<bg2e/draw/all.hpp>`. The former rendering API has been removed;
+see [migration guidance](../../migration_to_draw.md) for the breaking changes.
 
 | Symbol | Header | Responsibility |
 |---|---|---|
@@ -50,3 +50,11 @@ mode metadata, live/stored adoption and the updated HDR G-buffer format.
 - [FrameAccumulator](FrameAccumulator.md): synchronous CPU double linear mean
   over completed RGBA16F samples, final upload and count validation.
 - [Offscreen scene tutorial](../../tutorials/draw/13_offscreen_application.md).
+
+## Resource reuse and diagnostics
+
+- [TemporaryResourcePool](TemporaryResourcePool.md): recording completion, resource leases and bounded retention.
+- [TemporalInvalidation](TemporalInvalidation.md): lazy signatures and explicit invalidation.
+- [TransparentRegions](TransparentRegions.md): conservative raster/composition bounds and full fallbacks.
+- [UpdateSynchronization](UpdateSynchronization.md): typed final-color updates and conservative generic callbacks.
+- [CPU/GPU profiling](../../architecture/cpu_profiling.md): collection, recording, native granularity and Performance UI ownership.

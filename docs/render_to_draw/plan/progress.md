@@ -9,17 +9,82 @@ This is the execution record for all implementation chats. The **Next step to im
 | Field | Value |
 |---|---|
 | Workflow state | `awaiting_project_lead` |
-| Current milestone | M09 — Remove render and promote draw to production |
-| Active step | M09-08 — Update cumulative implementation documentation |
-| Last implemented step | M09-08 — Update cumulative implementation documentation |
-| Last accepted step | M09-07 — accepted by project lead continuation instruction |
-| Awaiting project lead validation | M09-08 cumulative documentation |
-| Next step to implement | [M10-01 — Documentation inventory](milestone_10_documentation/step_01_documentation-inventory.md) |
+| Current milestone | M10 — Final audit of cumulative documentation |
+| Active step | M10-06 — GPU 13 presentation crash correction |
+| Last implemented step | M10-06 — Final review with requested source corrections |
+| Last accepted step | M10-05 — accepted by project lead continuation instruction |
+| Awaiting project lead validation | M10-06 — GPU 13 display correction and final acceptance |
+| Next step to implement | None — final step delivered; [final review](milestone_10_documentation/review.md) awaits lead acceptance. |
 | Next action | `wait_for_project_lead` |
-| Condition before starting | Await M09-08 acceptance; continuation accepts documentation/milestone closure and selects M10-01. |
+| Condition before starting | No successor; requested source corrections delivered, final lead validation pending. |
 | Record initialization baseline | `b955833f314d09a191de13b83c90cacc10666ae7`; current M09-01 entry HEAD `1889bdb12ade85d820eaab4a7365760fa9c34f50`, clean checkout. |
 | Validation owner | Human user / project lead |
 | Agent build/runtime execution | Not performed; delegated to the project lead by default. |
+
+Latest delivery: [GPU 13 presentation correction](milestone_10_documentation/rt-display-correction.md).
+Lead reported cross-format copy validation abort. RGBA storage is now sampled by
+a fullscreen display pass into the actual surface format; shaders store normal
+RGB, Metal closes its compute encoder and resize rebinds display resources.
+Example/tutorial corrected; CMake and engine/backend APIs unchanged. Static checks
+pass; no compilation/native execution. Rebuild of example and new shaders plus
+lead native validation pending; no successor. Earlier notes are historical.
+
+Latest delivery: [requested source corrections](milestone_10_documentation/source-corrections.md).
+GPU 11/13 now wait for prior GPU work before shared UBO writes; GPU 13 counts only
+successfully acquired frames. All four standalone preflights use canonical paired
+bake shader paths. Maintained guides and final review describe current behavior;
+both findings are removed from open issues. Static/isolated preflight checks pass.
+No compilation, native runtime or full creator/updater execution. Source corrections
+and final acceptance await the lead; no successor. Earlier notes are historical.
+
+Latest delivery: [M10-06 final review](milestone_10_documentation/review.md).
+M10-05 accepted by continuation. Reconciled 43 plan decisions, R01–R14, nine
+historical handoffs, 229 pages, 317 headers and 33 products. Revalidated 350 source
+paths; maintained audit passes with 1,913 links/anchors and 111 includes.
+Final documentation audit delivered; no successor implementation milestone.
+Final lead acceptance pending. F01/F02 remain explicit source requirements;
+this review does not certify unconditional implementation-plan closure.
+No build/runtime/package/performance execution. Older notes are historical.
+
+Latest delivery: [M10-05 documentation validation](milestone_10_documentation/documentation-validation.md).
+M10-04 accepted by continuation. All 229 pages reachable; corrected 16 pages,
+30 exact excerpts match source, six diagrams reviewed statically. Checks pass:
+1,913 links/anchors, 111 includes, 1,276 unchanged non-document files.
+No compilation/runtime execution. Both source follow-ups remain unresolved.
+M10-05 awaits lead validation; M10-06 final review is next. Older notes are history.
+
+Latest delivery: [M10-04 apps/CLI/distribution audit](milestone_10_documentation/apps-distribution-audit.md).
+M10-03 accepted by lead continuation. Reconciled 18 contract families/17 pages,
+38 option rows and 292 derived shader outputs; corrected ten documents.
+Fresh maintained check: 1,899 links/anchors, 111 includes, zero errors.
+Standalone creator/updater preflight checks an obsolete flat bake path; fresh
+canonical builds fail that check. The four scripts are unchanged. This new source
+follow-up and prior shared-UBO risk remain open, without native reproduction.
+M10-04 awaits lead review; M10-05 is next. Earlier delivery notes are history.
+
+Latest delivery: [M10-03 tutorial audit](milestone_10_documentation/tutorials-audit.md).
+M10-02 accepted by lead continuation. Audited 31 tutorial pages/26 examples;
+426 numbered code blocks classified, 350 source-token matches and 76 reviewed
+recipes. Corrected 14 pages, including current draw 06 environment/skybox usage.
+Tutorials 12/13 reconstruct main.cpp ignoring whitespace. Fresh check: 1,891
+links/anchors and 111 includes, zero errors; implementation files unchanged.
+Primitive GPU 11/13 shared-UBO overlap risk is documented as an unrepaired source
+follow-up. No build/runtime evidence. M10-03 awaits acceptance; M10-04 is next.
+
+Latest delivery: [M10-02 API reference audit](milestone_10_documentation/api-reference-audit.md).
+M10-01 accepted by lead continuation. Reviewed 37 contract families across 55
+maintained pages and 115 source anchors; localized corrections in 18 pages.
+Fresh check: 229 pages, 1,881 links/anchors and 111 includes, zero errors.
+All 1,276 step-entry non-vendored implementation/build/script/test files unchanged.
+No compilation/runtime/native/performance execution. M10-02 awaits acceptance;
+M10-03 tutorial audit is next. Earlier delivery notes below are historical.
+
+Latest delivery: [M10-01 inventory audit](milestone_10_documentation/inventory.md).
+M09-08 accepted by lead continuation; M09 documentation/milestone closure accepted.
+All 229 pages, 317 public headers and 33 current products have inventory owners.
+Historical handoffs preserved; later app relocation reconciled at current HEAD.
+Two stale writer descriptions corrected; links/includes pass. No build/runtime.
+M10-01 awaits acceptance; M10-02 is next. Older delivery notes below are history.
 
 Latest delivery: [M09-08 cumulative documentation](milestone_09_cleanup/documentation.md).
 M09-07 accepted by continuation. Final maintained set: 229 pages, 1,870 checked
@@ -77,7 +142,13 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 
 | Step and plan link | State | Implementation revision / working-tree scope | Agent static checks | Project lead validation / acceptance basis | Issues and handoff |
 |---|---|---|---|---|---|
-| [M09-08](milestone_09_cleanup/step_08_documentation.md) | `awaiting_project_lead` | Maintained documentation, page dispositions/audit and handoff; no runtime/CMake edits. | 229 pages, 1,870 links/anchors, 111 includes; 1,327 implementation hashes unchanged. | Pending; prior M09-07 accepted by continuation. | [documentation.md](milestone_09_cleanup/documentation.md); next M10-01. |
+| [M10-06](milestone_10_documentation/step_06_final-review.md) | `awaiting_project_lead` | Final review plus requested corrections to GPU 11/13 and four standalone preflights; maintained guides updated. | 18 isolated/static correction checks, shell syntax, maintained links/includes, full draw 12/13 assemblies, source/change boundaries and whitespace pass; no compilation/native execution. | Source corrections and final acceptance pending lead validation. | [review.md](milestone_10_documentation/review.md), [source-corrections.md](milestone_10_documentation/source-corrections.md); both findings repaired; no successor. |
+| [M10-05](milestone_10_documentation/step_05_documentation-validation.md) | `accepted` | Whole-document audit and 16-page correction; inherited work preserved. | 229 reachable pages; 1,913 links/anchors, 111 includes; 30 exact excerpts, six static diagrams; 1,276 non-doc hashes unchanged; whitespace checks. | Accepted by project lead continuation instruction; backend/scenario details not specified. | [documentation-validation.md](milestone_10_documentation/documentation-validation.md); both source follow-ups open; next M10-06. |
+| [M10-04](milestone_10_documentation/step_04_apps-build-distribution.md) | `accepted` | HEAD e2a32164 plus inherited M10-01–03; ten document corrections including PACKAGING, source/CLI/deployment evidence and final-review handoffs. No executable-script/CMake edits. | 18 contracts/17 pages, 50 source hashes, 38 option rows, 292 derived outputs; 1,899 links/anchors and 111 includes; 1,275 unchanged non-doc files excluding PACKAGING; whitespace checks. | Accepted by project lead continuation; coverage unspecified. | [apps-distribution-audit.md](milestone_10_documentation/apps-distribution-audit.md); standalone path blocker and inherited UBO source follow-up open; next M10-05. |
+| [M10-03](milestone_10_documentation/step_03_tutorials.md) | `accepted` | HEAD e2a32164 plus inherited M10-01/02; 14-page tutorial delta and source/snippet/coverage evidence. No engine/example/shader/CMake edits. | 31 pages/26 examples, 426 blocks, full 12/13 source assemblies, 189 source hashes; 1,891 links/anchors/111 includes; 1,276 non-doc hashes unchanged; whitespace checks. | Accepted by project lead continuation; coverage unspecified. | [tutorials-audit.md](milestone_10_documentation/tutorials-audit.md); shared UBO source follow-up explicit; next M10-04. |
+| [M10-02](milestone_10_documentation/step_02_api-reference.md) | `accepted` | HEAD e2a32164 plus inherited M10-01; 18-page localized API delta, source/contract mapping, pending audit handoffs. No engine/CMake/shader changes. | 37 contract families, 55 pages, 115 source anchors; 1,881 links/anchors, 111 includes, zero errors; 1,276 preserved non-doc files and whitespace checks. | Accepted by project lead continuation; coverage unspecified. | [api-reference-audit.md](milestone_10_documentation/api-reference-audit.md); next M10-03. |
+| [M10-01](milestone_10_documentation/step_01_documentation-inventory.md) | `accepted` | HEAD e2a32164a781dbf420a4464b25ddce9feb862c6a; inventory/source/product/handoff artifacts, two localized writer descriptions and pending audit handoffs. No source/CMake edits. | 241 dispositions reconcile 229 pages; nine handoffs, 317 headers, 33 products; 1,870 links/anchors and 111 includes, zero errors; whitespace checks. No build/runtime. | Accepted by project lead continuation; backend/scenario coverage unspecified. | [inventory.md](milestone_10_documentation/inventory.md); next M10-02. |
+| [M09-08](milestone_09_cleanup/step_08_documentation.md) | `accepted` | Maintained documentation, page dispositions/audit and handoff; no runtime/CMake edits. | 229 pages, 1,870 links/anchors, 111 includes; 1,327 implementation hashes unchanged. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | [documentation.md](milestone_09_cleanup/documentation.md); next M10-01. |
 | [M09-07](milestone_09_cleanup/step_07_review.md) | `accepted` | Review, 1,620-row retirement reconciliation, 232-page handoff and pending M09-08/M10 plan updates; source unchanged. | Final/native/product source audits, original-manifest reconciliation and 1,327 preservation hashes. No build/runtime execution. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | [review.md](milestone_09_cleanup/review.md); next M09-08. |
 | [M01-01](milestone_01_deferred_renderer/step_01_public-contracts.md) | `accepted` | Baseline `b955833f314d09a191de13b83c90cacc10666ae7` plus existing planning edits; new Renderer.hpp, pipeline/RenderLayer.hpp, environment/all.hpp, draw/all.hpp includes and contracts.md. Uncommitted. | Include/dependency, signatures, ownership and FrameContext call-site inspection; `git diff --check`. No builds/runtime tests. | Accepted by project lead continuation instruction; backend coverage unspecified. | Shared component ownership, borrowed per-call bindings, single-sample contracts and validated virtual dispatch; see contracts.md. |
 | [M01-02](milestone_01_deferred_renderer/step_02_gpu-rendering-primitives.md) | `accepted` | Baseline `b955833f314d09a191de13b83c90cacc10666ae7` plus preserved planning/M01-01 edits. Common/GraphicsPipeline/CommandBuffer/PhysicalDevice/Device/Image headers; Vulkan and Metal implementations, Vulkan extension loading, new gpu/Rendering.cpp and tests/gpu/mrt_probe fixtures. Uncommitted. | Diff/signatures/ownership/callers, every PixelFormat mapping, Metal vendor-header API spellings, block balance and no higher-level GPU includes; `git diff --check`. No builds, shader compilation or runtime execution. | Accepted by project lead continuation instruction; backend/scenario coverage unspecified. | See gpu-rendering-primitives.md. Probe requires manual linking; CMake untouched. New attachment path is single-level 2D until M01-03. |
@@ -149,6 +220,16 @@ Add a row for each started step. Steps absent from this table are `not_started`.
 
 
 ## Open issues
+
+GPU 13 presentation correction is delivered for the reported cross-format copy
+abort; native confirmation remains pending. See
+[correction](milestone_10_documentation/rt-display-correction.md). No new native
+backend/driver validation result is inferred.
+
+
+No open source finding remains from M10-03/04. The requested corrections are
+delivered in [source-corrections.md](milestone_10_documentation/source-corrections.md)
+and await lead validation. Older issue entries below retain historical status.
 
 M07 correction awaiting validation: the lead reports macOS exiting with tracing tables at
 images=129, samplers=129, capacity=128. This is an engine table/profile overflow,
@@ -2889,3 +2970,169 @@ guidance to final production draw/bake, retired obsolete render reference pages,
 added final migration/product/extension coverage and reconciled every page hash.
 Static checks passed without build/runtime execution. Await lead acceptance,
 then enter M10-01 final documentation inventory audit.
+
+### 2026-10-22 — M09-08 accepted; M10-01 inventory audit delivered
+
+Lead continuation accepts M09-08 and closes M09. Entry HEAD is
+`e2a32164a781dbf420a4464b25ddce9feb862c6a`, initially clean. Reconciled all
+232 original M09 handoff rows plus nine additions and twelve removals against
+229 actual maintained pages, hashes, source and audit owners. M01–M09 reports
+supply 216 explicit historical page mappings, with grouped foundation coverage
+preserved. Module discovery maps 317 public headers; current product coverage
+maps all 33 registrations and guides.
+
+Later app relocation and target renaming are incorporated without rewriting
+historical M09 evidence. Twenty-one pages had already changed with that commit.
+Corrected two additional stale bake descriptions claiming the removed DB writer
+remained available. No substantive authoring gap identified at inventory depth;
+per-symbol, tutorial, build and consistency audits remain M10-02–05. Updated their
+current-source handoffs and final-review inputs. Optimization/profiling references,
+settings identity and independent evidence limits remain explicit.
+
+Static page/hash/disposition/source/header/product checks and 1,870 local links/
+anchors plus 111 project includes pass, with two existing illustrative-header
+exceptions. No engine/shader/CMake/script implementation change or configure,
+compile, native/test/package/output/performance execution. M10-01 awaits lead
+validation; M10-02 is linked next and has not started.
+
+### 2026-10-22 — M10-01 accepted; M10-02 API reference audit delivered
+
+Lead continuation accepts M10-01 including the two writer-description corrections.
+HEAD remains e2a32164a781dbf420a4464b25ddce9feb862c6a with inherited uncommitted
+M10-01 artifacts preserved. Reviewed final renderer/upscaler/frame ownership,
+live catalog/codec/facade, clone/root/factory/DB boundaries, manipulation/material/
+preview/UI, native capability/GUI contracts, integrated/standalone bake and
+R01–R14. Actual source overrides historical review names and coexistence.
+
+Recorded 37 contract families across 55 maintained pages with 115 hashed source
+anchors. Corrected 18 pages: stale production/DB/glTF/preview availability,
+seconds delta, stored/live material divergence, generic settings identity and
+opt-in automatic persistence, raw-executor denoise rejection, borrowed ImGui
+versus owned GL context, device-clamped capacity and completed acceleration reuse
+without refit. Clarified renderer/upscaler lifetimes, alpha/default/import routing
+and RGBA8/D32 analysis; linked existing optimization/profiling API references.
+
+Static contract/declaration/metadata/source/path/hash checks and maintained audit
+pass: 229 pages, 1,881 local links/anchors, 111 includes and two retained illustrative
+header exceptions. All 1,276 step-entry non-vendored implementation/build/script/
+test files retain hashes. No compile/configure/shader/probe/native/package/output/
+performance execution; no new feature or CMake edit. Original M10-01 page/hash
+artifacts remain historical; separate API delta/source/audit artifacts record this
+step. No substantive authoring gap identified in the audited contract families.
+M10-02 awaits lead review; M10-03 is linked next and has not started.
+
+### 2026-10-22 — M10-02 accepted; M10-03 tutorial audit delivered
+
+Lead continuation accepts M10-02. Entry/finishing HEAD remains
+`e2a32164a781dbf420a4464b25ddce9feb862c6a`; all inherited M10-01/02 work is retained.
+Audited 31 tutorial pages: 26 numbered draw/GPU examples, three application/API
+workflows and two indexes, with source/target/registration mapping. Classified
+426 C++/GLSL/Metal blocks: 350 literal-token matches ignoring comments/whitespace,
+76 reviewed extracts/recipes/alternatives. Tutorial 12's 17 blocks and tutorial
+13's 22 reconstruct complete main.cpp files ignoring whitespace.
+
+Corrected 14 maintained pages. Draw 06 now teaches actual EnvironmentGenerator/
+SkyboxRenderer ownership, bindings, sizes/mips/HDR and lifecycle instead of old
+manual generation. Other repairs include Model Edit command, Sobel binding syntax,
+null acquisition guards, ring storage initialization/borrowing/retirement, matrix
+order, offscreen frame association, nonwaiting endFrame, generic history
+invalidation before partial edits and current capability/customization limits.
+Standalone native archive wording and staged-versus-literal assembly are clear.
+
+Static source inspection found a shared mutable light/camera UBO overlap risk
+in primitive GPU 11/13, distinct from production RendererDeferred. Documented the
+limit and safe application ownership contract; no sample-source correction or
+reproduced native failure is claimed. Added explicit source follow-up to final
+review/open issues; continuation must not imply that risk was repaired.
+
+All 1,276 step-entry non-vendored implementation/build/script/test files retain
+hashes. Matrix/source/page/hash/link/whitespace checks pass; maintained audit has
+229 pages, 1,891 local links/anchors, 111 includes and two existing illustrative
+header exceptions. No configure/compile/shader/native/test/package/output/profiling
+execution. M10-03 awaits lead review; M10-04 is linked next and has not started.
+
+### 2026-10-22 — M10-03 accepted; M10-04 applications/distribution audit delivered
+
+Lead continuation accepts M10-03. HEAD remains
+`e2a32164a781dbf420a4464b25ddce9feb862c6a`; inherited M10 work is preserved.
+Audited app/current target and preference identities, workspace/scene/import/
+Chain/table/environment policies, integrated bake and complete bool-checked saves,
+Composer live/recorded Performance ownership, all three app parsers and camera CLI.
+Mapped 18 contract families across 17 guides to 50 source anchors, 38 parser option
+rows (including all 25 valued bake options), and 292 paired stage output paths.
+
+Corrected ten documents (nine doc/ pages plus scripts/PACKAGING.md): obsolete
+production coexistence and app paths/default-template wording, Model Edit launch,
+Composer HTTP menu/preferences/worker/publication, Performance, current batch
+comparison, platform archive/dirty/overwrite/dependency and deployment behavior.
+No engine/app/example/shader/CMake or executable script changes.
+
+Found a source integration blocker: all four standalone creators/updaters check
+an obsolete flat bake/uv_surface.frag filename, while current compilation preserves
+uv_surface/surface.frag. Fresh canonical trees cannot pass the test; docs now state
+that rebuilding alone does not fix it. Source correction remains an explicit
+M09-05 follow-up for final review, alongside inherited GPU 11/13 shared mutable UBO
+risk. Neither risk is reproduced/cleared by this documentation audit or acceptance.
+
+Static source/declaration/CLI/path/hash/output-uniqueness and whitespace checks pass.
+Fresh maintained audit covers 229 pages, 1,899 links/anchors and 111 includes with
+two existing illustrative-header exceptions. All 1,275 step-entry non-vendored
+files outside doc/ and PACKAGING retain hashes. No configure/build, shader/parser/
+app/HTTP/native/package/install/creator/updater/output/profiling execution.
+M10-04 awaits lead review; M10-05 is linked next and has not started.
+
+### 2026-10-22 — M10-04 accepted; M10-05 documentation validation delivered
+
+Lead continuation accepts M10-04. All 229 maintained pages reconciled to inventory
+and reachable from doc/index.md after navigation repairs. Corrected 16 pages,
+including joined async lifetime, safe-update/callback ownership, current tracing
+ABI and native effect order, bake accumulation/publication diagrams and obsolete
+names. Thirty exact source excerpts now match current tokens; six diagrams received
+static semantic review. Final checks cover 1,913 links/anchors and 111 includes
+with two declared illustrative-header exceptions; fences/JSON checks pass with
+two documented trailing-comma examples. All 1,276 non-document entry hashes remain
+unchanged. No compilation, runtime, package or performance execution. Historical
+audits preserved. Shared mutable UBO risk and standalone shader preflight blocker
+remain unrepaired source follow-ups. M10-05 awaits lead validation; M10-06 is next.
+
+### 2026-10-22 — M10-05 accepted; M10-06 final review delivered
+
+Lead continuation accepts M10-05. HEAD remains e2a32164 with inherited uncommitted
+M10 evidence preserved. Final review reconciles all 43 requirements-map decisions,
+R01–R14, nine M01–M09 handoff reports/216 explicit page mappings, 229 maintained
+pages, 317 public headers and 33 products. Revalidated 373 stored hash occurrences
+across 350 distinct source paths; maintained page hashes unchanged since M10-05.
+Fresh maintained audit: 1,913 links/anchors, 111 includes, zero errors, two declared
+illustrative headers. No source/shader/script/CMake/maintained-page edits or build,
+runtime, package, output or performance execution. All non-plan entry hashes are
+preserved. Review records intentional refinements/exclusions and evidence limits.
+F01 shared mutable UBO risk and F02 unmet M09-05 standalone shader preflight remain
+unrepaired source findings; documentation acceptance cannot silently resolve them.
+M10-06 awaits final lead acceptance. No successor implementation step; the plan is
+not unconditionally certified complete by this delivery.
+
+### 2026-10-22 — Requested source corrections delivered after M10-06
+
+The lead explicitly requested repairs to both recorded findings and corresponding
+documentation cleanup. GPU 11/13 now serialize shared UBO access with waitIdle;
+GPU 11 guards null acquisition and GPU 13 increments sample count only after
+successful acquisition. Four standalone helpers now check the canonical paired
+bake shader paths, including shell macOS Metal. No CMake/engine/shader changes.
+Current guides and final review no longer describe these findings as open; earlier
+reports/hash ledgers remain historical with superseding correction notes. Shell
+syntax and isolated canonical/missing/obsolete-only preflight fixtures pass;
+PowerShell paths and source ordering checked statically. No build/native/full
+creator/updater execution. Corrections await lead validation; final acceptance
+remains pending and no successor milestone is added.
+
+### 2026-10-22 — GPU 13 reported crash corrected
+
+Lead reported std::invalid_argument from copyImage validation in the RT pipeline
+example. RGBA storage and the normally BGRA surface are not identical copy
+formats. Replaced the copy with a surface-format fullscreen graphics pass and
+paired GLSL/Metal display shaders, removed manual BGR swizzles, closed the Metal
+RT compute encoder before transitions, and rebind display resources on resize.
+Updated tutorial and final-review correction handoff; no engine/backend/CMake
+changes. Static checks and maintained links/includes pass. No build or native
+execution; lead must rebuild the example/new shaders and confirm launch/resize.
+M10-06 corrections and final acceptance remain pending, with no successor.

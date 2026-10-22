@@ -223,3 +223,62 @@ claimed by this review. Historical planning assumptions above remain historical.
 Maintained [documentation](../../../doc/index.md) now describes production draw
 and bake. [Coverage and checks](milestone_09_cleanup/documentation.md) accompany
 the delivery. M09-07 is accepted; M09-08 awaits lead acceptance before M10-01.
+
+## M10-01 inventory audit delivered
+
+[Current cumulative inventory](milestone_10_documentation/inventory.md) reconciles
+229 maintained pages, all nine documentation handoffs, 317 public headers and
+33 products at HEAD e2a32164. Later app relocation/renaming is reflected in the
+current product catalog; historical M09 artifacts remain unchanged. Two stale
+writer descriptions are corrected. M09-08 is accepted by continuation; M10-01
+awaits lead validation. See progress for the M10-02 successor and condition.
+
+## M10-02 API reference audit delivered
+
+[API contract/source reconciliation](milestone_10_documentation/api-reference-audit.md)
+records final renderer/settings/clone/IO/bake/native/optimization contracts and
+localized corrections in 18 maintained pages. Current production status, catalog
+identity and resource lifetimes supersede historical coexistence prose. M10-01
+accepted by continuation; M10-02 awaits validation. Progress links M10-03 tutorials.
+No implementation/build/native/performance execution is claimed by this audit.
+
+## M10-03 tutorial audit delivered
+
+[Delivered-example tutorial reconciliation](milestone_10_documentation/tutorials-audit.md)
+covers all 31 tutorial pages and 26 numbered examples, with source correspondence,
+full lightmap/offscreen assemblies and corrections to 14 pages. Primitive shared-
+UBO overlap is an explicit unrepaired source follow-up, not a native test result.
+M10-02 accepted by continuation; M10-03 awaits lead review. Progress links M10-04.
+
+## M10-04 applications and distribution audit delivered
+
+[Current app/CLI/package source reconciliation](milestone_10_documentation/apps-distribution-audit.md)
+records corrected guidance and platform contracts. Four standalone helper scripts
+retain an obsolete shader preflight path, an explicit source integration blocker;
+the prior primitive shared-UBO follow-up also remains open. Documentation changes
+do not repair or validate those sources. M10-03 accepted by continuation;
+M10-04 awaits review. Progress links M10-05 documentation validation.
+
+## M10-05 documentation validation delivered
+
+[Whole-document consistency and navigation](milestone_10_documentation/documentation-validation.md)
+reconciles 229 pages, fixes 16 pages and refreshes exact source excerpts and diagrams.
+Static checks pass; implementation files are unchanged. M10-04 accepted by
+continuation; M10-05 awaits validation. M10-06 final review is next, with both
+unrepaired source follow-ups retained explicitly.
+
+## Final M10-06 review delivered — acceptance pending
+
+[Final cumulative review](milestone_10_documentation/review.md) accounts for the
+43 decisions, R01–R14, all nine documentation handoffs, 229 pages, 317 public
+headers and 33 products. M10-05 accepted by continuation; M10-06 awaits final lead
+acceptance, with no successor implementation step. The subsequently requested source corrections are delivered;
+see the correction record below for validation and current source disposition.
+
+## Requested source corrections delivered — 2026-10-22
+
+[Source correction evidence](milestone_10_documentation/source-corrections.md)
+supersedes the previously open shared-UBO and standalone-preflight findings.
+Both source corrections and maintained guidance are delivered; no open finding
+remains from them. Final lead validation/acceptance is pending. Earlier findings
+are historical; no build/native execution or successor milestone is implied.

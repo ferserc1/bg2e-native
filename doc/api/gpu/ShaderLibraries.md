@@ -564,3 +564,8 @@ also consumes this exact paired deployment. Source registration/refresh rules do
 not prove a native installed or relocated run. Precompiled projects need both
 trees and compatible native runtime libraries; native model `.bg2tex` output is
 job data, not a replacement shader/resource layout.
+
+The standalone creator/updater representative-file checks use the canonical
+paired bake stage `bake/uv_surface/surface.frag.spv` and the corresponding Metal
+stage on macOS. See [standalone shader preflight](../../architecture/build_and_distribution.md#standalone-shader-preflight).
+The source-to-runtime paths in the table above remain the canonical paths.

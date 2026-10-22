@@ -45,6 +45,9 @@ to continue while scene rendering is paused or unchanged.
 
 ### 1. Headers and includes
 
+The snippet shows selected includes; the linked source supplies the full include list.
+The window title below is the shipped sample's label, not the API's production status.
+
 ```cpp
 #include <bg2e/app/Application.hpp>
 #include <bg2e/app/MainLoop.hpp>
@@ -128,7 +131,7 @@ Do not store references from `FrameContext` for later frames.
 ```cpp
 void init(draw::Engine*, ui::UserInterface*) override
 {
-    _window.setTitle("Draw draw controls");
+    _window.setTitle("Experimental draw controls");
     _window.setPosition(20, 20);
     _window.setSize(380, 300);
     _window.options.noClose = true;

@@ -14,7 +14,7 @@ launch the app bundle or its `Contents/MacOS/model_edit` executable so its
 bundled engine, shaders and assets can be found. Metal is available on macOS:
 
 ```sh
-./draw_model_edit --backend metal
+./model_edit --backend metal
 ```
 
 To select Vulkan explicitly, use `--backend vulkan`. `--help` prints the accepted

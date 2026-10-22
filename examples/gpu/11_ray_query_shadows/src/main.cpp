@@ -334,9 +334,15 @@ int main(int argc, char** argv)
             1.0f);
         lightData.lightColor = glm::vec4(1.0f, 0.97f, 0.9f, 1.6f);
         lightData.ambient = glm::vec4(0.12f, 0.12f, 0.14f, 1.0f);
+        // This sample serializes frames before rewriting the shared light UBO.
+        device->waitIdle();
         lightUbo->updateUniformBuffer(lightData);
 
         auto frame = surface->beginFrame();
+        if (!frame)
+        {
+            continue;
+        }
         auto cmd = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();

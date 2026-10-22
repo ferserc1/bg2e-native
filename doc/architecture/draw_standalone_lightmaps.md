@@ -18,8 +18,9 @@ flowchart TD
     Accumulate --> Sample
     Accumulate --> Final[Validate, compose, nearest-chart dilate, read typed pixels]
     Final --> Stage[Private maps + metadata + independent model resources]
-    Stage --> Job
-    Stage --> Generation[Rename complete generation]
+    Stage --> Release[Release current baker]
+    Release -->|More targets| Job
+    Release -->|All targets staged| Generation[Rename complete generation]
     Generation --> Manifest[Atomically publish lightmaps.json LAST]
 ```
 

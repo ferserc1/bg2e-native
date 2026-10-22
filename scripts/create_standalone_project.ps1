@@ -68,7 +68,7 @@ if (-not (Test-Path "$RepoRoot\bin\windows\shaders")) {
     exit 1
 }
 
-foreach ($Stage in @('draw\raster\gbuffer.frag.spv', 'bake\uv_surface.frag.spv')) {
+foreach ($Stage in @('draw\raster\gbuffer.frag.spv', 'bake\uv_surface\surface.frag.spv')) {
     if (-not (Test-Path "$RepoRoot\bin\windows\shaders\$Stage" -PathType Leaf)) {
         throw "Missing engine shader: $Stage. Rebuild bg2e first."
     }

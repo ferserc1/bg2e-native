@@ -383,6 +383,10 @@ while (running)
     modelData.model = glm::rotate(glm::mat4(1.0f), t, glm::normalize(glm::vec3(0.4f, 1.0f, 0.2f)));
 
     auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
     auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
     auto* modelUbo = modelUboRing.current();
@@ -630,7 +634,7 @@ Identical to tutorial 07. Samples the procedural texture using separate image an
 layout(local_size_x = 16, local_size_y = 16) in;
 
 layout(set = 0, binding = 0, rgba8) uniform readonly image2D inputImage;
-layout(set = 0, binding 1, rgba8) uniform image2D outputImage;
+layout(set = 0, binding = 1, rgba8) uniform image2D outputImage;
 ```
 
 The compute shader declares:

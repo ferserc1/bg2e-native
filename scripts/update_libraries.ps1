@@ -106,7 +106,7 @@ if (-not (Test-Path "$LibDir\bg2e.lib" -PathType Leaf)) {
 }
 
 $SourceShaders = "$Products\shaders"
-foreach ($Stage in @('draw\raster\gbuffer.frag.spv', 'bake\uv_surface.frag.spv')) {
+foreach ($Stage in @('draw\raster\gbuffer.frag.spv', 'bake\uv_surface\surface.frag.spv')) {
     if (-not (Test-Path "$SourceShaders\$Stage" -PathType Leaf)) {
         Stop-WithError "Build finished without required shader: $Stage"
     }

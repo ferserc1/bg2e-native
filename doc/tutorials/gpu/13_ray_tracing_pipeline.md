@@ -170,7 +170,7 @@ Note that **set 0 uses two `StorageImage` bindings** — the 8-bit output image 
 ```cpp
 auto outputImage = device->createImage({
     {kWindowWidth, kWindowHeight}, gpu::PixelFormat::R8G8B8A8_UNORM,
-    gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc,
+    gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled,
     gpu::ImageType::Image2D, 1, 0, "RT output image"
 });
 cleanup.push(outputImage);
@@ -185,7 +185,7 @@ cleanup.push(accumImage);
 
 Two images are created for the render target:
 
-- **Output image** (`R8G8B8A8_UNORM`): a 4-byte-per-pixel format compatible with the swapchain. The final `copyImage()` command copies this directly into the swapchain's color image as a 1:1 texel copy. This format is the portable storage format that supports `read_write` on both Vulkan and Metal.
+- **Output image** (`R8G8B8A8_UNORM`): portable storage for the tonemapped RGBA result. A fullscreen graphics pass samples this image and writes to the actual surface format, including BGRA surfaces. Equal byte sizes do not make different formats valid for `copyImage()`.
 - **Accumulation image** (`R32G32B32A32_SFLOAT`): a 16-byte-per-pixel floating-point format used to store the running average of the Monte Carlo samples. An 8-bit format would cause banding and prevent convergence. The path tracer blends each new frame into this image with weight `1/frameCount`, producing a progressive refinement.
 
 **Reference:** [GPU API -- Image](../../api/gpu/Image.md)
@@ -433,6 +433,61 @@ On Vulkan, the pipeline owns a Shader Binding Table (SBT) that maps the ray type
 
 **Reference:** [GPU API -- RayTracingPipeline: Architecture](../../api/gpu/RayTracingPipeline.md#architecture)
 
+### Display pipeline setup
+
+The `display` GLSL/Metal vertex and fragment shader pair draws a fullscreen triangle
+without vertex buffers. It samples RGBA storage and writes logical RGBA color to
+the surface's actual attachment format. The shader sources are included in the
+existing example shader discovery; no CMake edit is needed.
+
+```cpp
+// Display the RGBA result through a graphics pass in the surface format.
+auto displayVs = shaderLib->vertex("display", device.get());
+auto displayFs = shaderLib->fragment("display", device.get());
+cleanup.push(displayVs);
+cleanup.push(displayFs);
+
+gpu::PipelineLayoutDescription displayLayoutDesc{};
+displayLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+displayLayoutDesc.resourceBindings.push_back({0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+auto displayLayout = device->createPipelineLayout(displayLayoutDesc);
+cleanup.push(displayLayout);
+
+auto displaySampler = device->createSampler({
+    .addressModeU = gpu::AddressMode::ClampToEdge,
+    .addressModeV = gpu::AddressMode::ClampToEdge,
+    .debugName = "RT display sampler"});
+cleanup.push(displaySampler);
+
+auto createDisplaySet = [&](gpu::Image* image)
+{
+    auto set = device->createResourceSet(displayLayout.get(), 0, "RT display set");
+    set->setSampledImage({.vulkan = 0, .metal = 0}, image);
+    set->setSampler({.vulkan = 1, .metal = 0}, displaySampler.get());
+    set->update();
+    cleanup.push(set);
+    return set;
+};
+auto displaySet = createDisplaySet(outputImage.get());
+
+gpu::GraphicsPipelineDescription displayDesc{};
+displayDesc.vertexShader = displayVs.get();
+displayDesc.fragmentShader = displayFs.get();
+displayDesc.layout = displayLayout.get();
+displayDesc.colorFormat = surface->colorFormat();
+displayDesc.depthFormat = surface->depthFormat();
+displayDesc.depthState = gpu::DepthState{.testEnabled = false, .writeEnabled = false};
+displayDesc.cullMode = gpu::CullMode::None;
+displayDesc.debugName = "RT display pipeline";
+auto displayPipeline = device->createGraphicsPipeline(displayDesc);
+cleanup.push(displayPipeline);
+```
+
+The GLSL fragment bindings are sampled image 0 and sampler 1 in set 0; Metal uses
+texture 0 and sampler 0. Depth testing/writes and culling are disabled. UVs map
+the top of the drawable to the top of the output image. Sampling also accommodates
+a drawable extent that differs from the traced image extent.
+
 ### 13. Render loop with progressive accumulation
 
 ```cpp
@@ -464,10 +519,25 @@ while (running)
         lastProj = camData.projInverse;
     }
 
+    // Complete prior readers before rewriting the shared camera UBO.
+    // This also serializes access to the shared accumulation images.
+    device->waitIdle();
+    auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
+
     frameCount++;
     camData.misc.x = static_cast<float>(frameCount);
     cameraUbo->updateUniformBuffer(camData);
 ```
+
+The sample completes prior GPU work with `device->waitIdle()` before acquiring
+and rendering another frame. Its shared camera UBO and accumulation images are
+therefore used serially. A failed acquisition skips the dispatch without advancing
+the sample count. Applications that need overlapping submissions should provide
+completion-aware per-slot storage as in [tutorial 07](07_uniform_buffers.md).
 
 The render loop tracks a `frameCount` that drives the progressive accumulation. Each frame:
 
@@ -490,9 +560,6 @@ This produces a progressively refined image — the first frame is noisy, but th
 ### 14. Ray tracing dispatch
 
 ```cpp
-auto frame = surface->beginFrame();
-if (!frame) continue;
-
 auto cmd = graphicsQueue.createCommandBuffer("Frame");
 
 cmd->begin();
@@ -505,6 +572,10 @@ cmd->bindResourceSet(rtPipeline.get(), 0, outputSet.get());
 cmd->bindResourceSet(rtPipeline.get(), 1, sceneSet.get());
 cmd->bindResourceSet(rtPipeline.get(), 2, dataSet.get());
 cmd->traceRays(outputImage->width(), outputImage->height(), 1);
+if (backendType == gpu::BackendType::Metal)
+{
+    cmd->endCompute();
+}
 ```
 
 The dispatch sequence:
@@ -516,12 +587,18 @@ The dispatch sequence:
 
 On Vulkan, `traceRays()` calls `vkCmdTraceRaysKHR` with the pipeline's internal SBT. On Metal, it dispatches the rgen compute kernel as `ceil(width/8) × ceil(height/8) × 1` threadgroups.
 
-### 15. Copy to swapchain and present
+### 15. Render to the surface and present
 
 ```cpp
-cmd->transition(outputImage.get(), gpu::ImageLayout::TransferSrc);
-cmd->transition(frame->colorImage(), gpu::ImageLayout::TransferDst);
-cmd->copyImage(outputImage.get(), frame->colorImage());
+// Sampling converts RGBA to the surface format and scales to its extent.
+cmd->transition(outputImage.get(), gpu::ImageLayout::ShaderReadOnly);
+cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
+cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
+cmd->beginRendering(frame.get());
+cmd->bindPipeline(displayPipeline.get());
+cmd->bindResourceSet(displayPipeline.get(), 0, displaySet.get());
+cmd->draw(3);
+cmd->endRendering();
 cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 
 surface->present(cmd.get());
@@ -531,15 +608,12 @@ graphicsQueue.submit(cmd.get());
 surface->endFrame(frame.get());
 ```
 
-After tracing:
-
-1. The output image is transitioned to `TransferSrc`
-2. The swapchain color image is transitioned to `TransferDst`
-3. `copyImage()` performs a 1:1 texel copy from the 8-bit output image to the swapchain
-4. The swapchain image is transitioned to `Present`
-5. The frame is presented
-
-The output image is an `R8G8B8A8_UNORM` format that is byte-compatible with the swapchain's `BGRA8` format (the shader writes `.bgr` swizzled channels to account for this).
+After tracing, the output transitions from storage to shader-read layout. The
+Metal ends its compute encoder before these transitions. The
+surface color/depth attachments enter rendering layouts, and the display pipeline
+samples the output into the surface color format. Rendering ends before the
+surface transitions to Present. No cross-format image copy or manual red/blue
+swizzle is used.
 
 ### 16. Window resize handling
 
@@ -555,7 +629,7 @@ if (event.type == SDL_WINDOWEVENT &&
     outputImage->cleanup();
     auto newOutput = device->createImage({
         {newWidth, newHeight}, gpu::PixelFormat::R8G8B8A8_UNORM,
-        gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc,
+        gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled,
         gpu::ImageType::Image2D, 1, 0, "RT output image"
     });
     cleanup.push(newOutput);
@@ -575,6 +649,9 @@ if (event.type == SDL_WINDOWEVENT &&
     newOutputSet->setStorageImage({.vulkan = 2, .metal = 1}, newAccum.get());
     newOutputSet->update();
     cleanup.push(newOutputSet);
+
+    displaySet->cleanup();
+    displaySet = createDisplaySet(newOutput.get());
 
     outputImage = std::move(newOutput);
     accumImage  = std::move(newAccum);
@@ -777,7 +854,7 @@ The `traceRayEXT()` call parameters:
 
     vec3 mapped = accum / (accum + vec3(1.0));
     mapped = pow(mapped, vec3(1.0 / 2.2));
-    imageStore(outputImage, ivec2(gl_LaunchIDEXT.xy), vec4(mapped.bgr, 1.0));
+    imageStore(outputImage, ivec2(gl_LaunchIDEXT.xy), vec4(mapped, 1.0));
 }
 ```
 
@@ -790,7 +867,7 @@ The tone mapping step converts HDR radiance to LDR:
 
 1. **Reinhard tone mapping**: `mapped = accum / (accum + 1)` — compresses the HDR range to [0, 1)
 2. **Gamma correction**: `pow(mapped, 1/2.2)` — converts from linear to sRGB color space
-3. **Channel swizzle**: `mapped.bgr` — the output image is byte-copied into a BGRA8 swapchain, so blue and red must be swapped in the shader
+3. **RGBA output**: `mapped` is stored in normal RGB order; the display attachment handles the surface channel format.
 
 ### Miss shader (`ray_tracing_pipeline.rmiss.glsl`)
 
@@ -932,7 +1009,7 @@ This is computed incrementally with `mix(prev, radiance, 1/N)`. The `frameCount`
 The two-image approach is necessary because:
 
 - **Accumulation** requires floating-point precision (`R32G32B32A32_SFLOAT`) to store the running average without quantization artifacts
-- **Swapchain copy** requires an 8-bit format (`R8G8B8A8_UNORM`) for direct byte-copy compatibility
+- **Display** samples the tonemapped `R8G8B8A8_UNORM` output through a fullscreen graphics pass using the surface attachment format
 
 The shader writes the tonemapped result to the 8-bit image while storing the linear HDR result in the float image. This avoids the precision loss that would occur if the accumulation were done in 8-bit.
 

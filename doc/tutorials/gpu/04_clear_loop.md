@@ -181,6 +181,10 @@ The result is a color that cycles through all hues over approximately 6.3 second
 
 ```cpp
     auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
 ```
 
 `beginFrame()` acquires the next available image from the swapchain. It returns a `std::shared_ptr<SurfaceFrame>` containing:
@@ -262,7 +266,7 @@ In this example, no draw calls are issued between `beginRendering()` and `endRen
     surface->endFrame(frame.get());
 ```
 
-The final four operations complete the frame:
+The final operations complete the frame:
 
 | Step | Method | Purpose |
 |------|--------|---------|
@@ -270,11 +274,14 @@ The final four operations complete the frame:
 | 2 | `surface->present(cmd)` | Record presentation commands into the command buffer |
 | 3 | `cmd->end()` | Finalize the command buffer for submission |
 | 4 | `graphicsQueue.submit(cmd)` | Submit the recorded commands to the GPU for execution |
-| 5 | `surface->endFrame(frame)` | Increment the frame counter and handle synchronization |
+| 5 | `surface->endFrame(frame)` | Validate submission and advance the frame slot |
 
 The `present()` call records the platform-specific presentation commands (e.g., Vulkan's `vkQueuePresentKHR` setup) into the command buffer. The actual presentation happens when the GPU processes the submitted commands.
 
-`endFrame()` handles synchronization -- on Vulkan it manages fences and semaphores to ensure the GPU has finished rendering before the next `beginFrame()` reuses the image.
+`endFrame()` validates a submitted acquired frame and advances its slot; it does
+not wait for GPU completion. The next successful `beginFrame()` waits for the
+selected slot's previous submissions before reuse. Keep command/resource owners
+alive through completion. See the [completion contract](../../api/gpu/Submission_tracking_and_waitIdle.md).
 
 **Reference:** [Surface API -- present(), endFrame()](../../api/gpu/Surface.md), [Queue API -- submit()](../../api/gpu/Queue.md)
 
@@ -431,6 +438,10 @@ int main(int argc, char** argv)
         };
 
         auto frame = surface->beginFrame();
+    if (!frame)
+    {
+        continue;
+    }
         auto cmd   = graphicsQueue.createCommandBuffer("Frame command buffer");
 
         cmd->begin();

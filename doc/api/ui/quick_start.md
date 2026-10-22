@@ -68,7 +68,7 @@ Individual headers:
 ```
 
 **Key points:**
-- The module is Layer 8: it depends on `render`, `scene`, `manipulation`,
+- The module is Layer 8: it depends on `draw`, `scene`, `manipulation`,
   `reflection`, `app`, `base`, `math`. Include it only from application/UI code.
 - ImGui itself is **not** re-exported: engine widgets are enough for typical
   layouts, and headers like `imgui.h` are private to the `.cpp` files.
@@ -351,7 +351,7 @@ int32_t fpsId  = _toolBar.addButton({ .label = "60 fps", .action = nullptr },
 ```
 
 The id survives for the lifetime of the toolbar; use it to react to state
-changes outside the UI thread of logic:
+changes on the owning UI/main thread, outside widget construction:
 
 ```cpp
 void onUndoStackChanged()
@@ -643,7 +643,10 @@ if (auto* info = reflection::TypeRegistry::get().type("bg2e::base::Light"))
 - `ComponentInspector` lists components even without reflection data (with a
   "No reflection data" note) and can remove them; the removal is deferred
   until after the component iteration, so it is safe to remove during
-  `draw()`. The "Add Component" button is an unimplemented extension point.
+  `draw()` in immediate mode. Registered Add actions are implemented. For live
+  draw scenes, configure onAddRequested/onRemoveRequested/onDrawComponent so the
+  application stages/queues mutations and rechecks ownership at a stopped boundary.
+  Iteration safety alone does not make immediate GPU resource edits safe.
 
 ---
 
@@ -654,7 +657,7 @@ if (auto* info = reflection::TypeRegistry::get().type("bg2e::base::Light"))
 
 ```cpp
 MainLoop::current()->asyncLoad([](ui::Loader* loader) {
-    loader->setMessage("Baking irradiance map...");   // safe from the worker thread
+    loader->setMessage("Parsing CPU mesh data...");   // safe from the worker thread
     for (float p = 0.f; p <= 1.f; p += 0.05f) {
         doWorkSlice();
         loader->setProgress(p);
@@ -663,14 +666,17 @@ MainLoop::current()->asyncLoad([](ui::Loader* loader) {
 ```
 
 **Key points:**
-- `asyncLoad()` pauses the scene (solid clear color), installs the loader as
+- `asyncLoad()` pauses scene updates, retaining valid scene color (the clear
+  color is used for replacement targets), installs the loader as
   `UserInterface` **frame override** (the delegate's `drawUI()` is bypassed),
-  and spawns a detached worker thread.
+  and starts a loop-owned joinable worker thread.
 - `setMessage`/`setProgress` are mutex-guarded — call them from any thread.
   `draw()` itself must run on the main thread only (the override guarantees
   that).
-- When the callable returns, the queue drains on the main thread, the override
-  is cleared and the scene resumes. **Never touch engine/scene objects inside
+- Worker exceptions are captured and passed to the optional onComplete callback.
+  When its token remains live, completion runs on the main thread, clears the
+  override and resumes the scene before notifying the caller. Workers join before
+  graphics teardown; exiting run tokens cancel queued restoration callbacks. **Never touch engine/scene objects inside
   the callable** — schedule through `MainLoop::safeUpdateScene()` or the main
   thread queue instead.
 - `Loader` can also be used standalone: call `loader.draw()` manually once per
@@ -692,7 +698,7 @@ MainLoop::current()->asyncLoad([](ui::Loader* loader) {
 | Window position "snaps back" | `noMove`/`noResize` set | With those flags the engine re-applies position/size every frame; that is the lock mechanism |
 | `setEditMaterial()` does nothing | A `SelectionManager` is installed on the editor | Selection mode wins: `clear` the manager or use a second editor |
 | Texture preview shows the wrong image after a pick inside `draw()` | `setEditTexture()` called mid-frame | Use `setDeferredTexture()` inside draw code paths |
-| UI freezes a frame when switching textures outside draw | `clearDS()` → `waitIdle()` | Normal; batch texture swaps to non-render times |
+| UI freezes during a real texture/resource replacement | Stopped resource update may drain outstanding work | Queue rare edits at a coordinated boundary; unchanged realized textures can reuse existing resources |
 | Menu shortcut never fires | Item added after the first `Menu::draw()` | Build the full `MenuItem` tree before the first draw |
 | Scene input reacts while dragging sliders | Input delegate is not filtered by ImGui | Ignore scene input while UI has capture (check your input delegate state; see `doc/input_delegate.md`) |
 | Enum combo shows `<no enum options>` | No `enumValue()` metadata was registered | Add the allowed label/value pairs to the property definition |

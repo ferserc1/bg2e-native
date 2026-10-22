@@ -39,49 +39,113 @@ serialized on the CPU; GPU execution is not held under that transaction lock.
 
 ## CompletionRecord: latch one submission
 
-Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 35–76. Exact excerpt:
+Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 35–139. Exact excerpt:
 
 ```cpp
 class BG2E_API CompletionRecord {
-public:
-    CompletionRecord(std::function<bool()> poll, std::function<void()> wait)
-        : _poll(std::move(poll)), _wait(std::move(wait)) {}
-
-    bool completed() {
-        std::lock_guard lock(_mutex);
-        if (!_terminal) {
-            try { if (_poll()) finish(); }
-            catch (...) { fail(std::current_exception()); }
-        }
-        if (_error) std::rethrow_exception(_error);
-        return _terminal;
+  public:
+    CompletionRecord(std::function<bool()> poll, std::function<void()> wait,
+        std::function<void(bool)> terminal = {})
+        : _poll(std::move(poll)), _wait(std::move(wait)), _onTerminal(std::move(terminal))
+    {
     }
 
-    void wait() {
+    bool completed()
+    {
         std::lock_guard lock(_mutex);
-        if (!_terminal) {
-            try { _wait(); finish(); }
-            catch (...) { fail(std::current_exception()); }
+        return pollLocked();
+    }
+
+    // Profiling must not block behind a normal wait() holding this mutex.
+    bool pollNonblocking()
+    {
+        std::unique_lock lock(_mutex, std::try_to_lock);
+        return lock.owns_lock() && pollLocked();
+    }
+
+    void wait()
+    {
+        std::lock_guard lock(_mutex);
+        if (!_terminal)
+        {
+            try
+            {
+                _wait();
+                finish();
+            }
+            catch (...)
+            {
+                fail(std::current_exception());
+            }
         }
-        if (_error) std::rethrow_exception(_error);
+        if (_error)
+        {
+            std::rethrow_exception(_error);
+        }
     }
 
     // Submission failed before GPU admission; never wait on its native fence.
-    void cancel(std::exception_ptr error) {
+    void cancel(std::exception_ptr error)
+    {
         std::lock_guard lock(_mutex);
         fail(error);
     }
 
     uint64_t id = 0;
 
-private:
-    void finish() { _terminal = true; _poll = {}; _wait = {}; }
-    void fail(std::exception_ptr error) { _error = error; finish(); }
+  private:
+    bool pollLocked()
+    {
+        if (!_terminal)
+        {
+            try
+            {
+                if (_poll())
+                {
+                    finish();
+                }
+            }
+            catch (...)
+            {
+                fail(std::current_exception());
+            }
+        }
+        if (_error)
+        {
+            std::rethrow_exception(_error);
+        }
+        return _terminal;
+    }
+
+    void finish(bool success = true)
+    {
+        _terminal = true;
+        if (_onTerminal)
+        {
+            try
+            {
+                _onTerminal(success);
+            }
+            catch (...)
+            {
+                // Optional diagnostics must not change completion semantics.
+            }
+            _onTerminal = {};
+        }
+        _poll = {};
+        _wait = {};
+    }
+    void fail(std::exception_ptr error)
+    {
+        _error = error;
+        finish(false);
+    }
     std::mutex _mutex;
     bool _terminal = false;
     std::exception_ptr _error;
     std::function<bool()> _poll;
     std::function<void()> _wait;
+    std::function<void(bool)> _onTerminal;
 };
 ```
 
@@ -100,19 +164,26 @@ does not add automatic synchronization between different GPU queues.
 
 ## SubmissionState: admission, tracking and snapshots
 
-Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 81–87. Exact excerpt:
+Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 198–211. Exact excerpt:
 
 ```cpp
-    std::unique_lock<std::mutex> admit() {
+std::unique_lock<std::mutex> admit()
+    {
         std::unique_lock lock(_mutex);
-        _changed.wait(lock, [&] { return !_draining; });
-        if (_closed) throw std::logic_error("GPU device is closed to submissions");
+        _changed.wait(lock, [&]
+                      {
+                          return !_draining;
+                      });
+        if (_closed)
+        {
+            throw std::logic_error("GPU device is closed to submissions");
+        }
         retire();
         return lock;
     }
 ```
 
-Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 90–93. Exact excerpt:
+Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 214–218. Exact excerpt:
 
 ```cpp
     void track(const std::shared_ptr<CompletionRecord>& record) {
@@ -121,7 +192,7 @@ Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/b
     }
 ```
 
-Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 102–107. Exact excerpt:
+Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 233–242. Exact excerpt:
 
 ```cpp
     std::vector<std::shared_ptr<CompletionRecord>> snapshot() {
@@ -149,7 +220,7 @@ queue in this implementation.
 
 ## Drain algorithm and synchronization boundary
 
-Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 109–109. Exact excerpt:
+Source: [lib/include/bg2e/gpu/detail/SubmissionState.hpp](../../../lib/include/bg2e/gpu/detail/SubmissionState.hpp), lines 269–269. Exact excerpt:
 
 ```cpp
     void drain(std::function<void()> nativeWait = {}
@@ -200,41 +271,95 @@ lifecycle operations still require owner coordination.
 
 ## Metal: retain each native command buffer and commit asynchronously
 
-Source: [lib/src/bg2e/gpu/metal/Queue.cpp](../../../lib/src/bg2e/gpu/metal/Queue.cpp), lines 110–144. Exact excerpt:
+Source: [lib/src/bg2e/gpu/metal/Queue.cpp](../../../lib/src/bg2e/gpu/metal/Queue.cpp), lines 139–227. Exact excerpt:
 
 ```cpp
 void Queue::submit(gpu::CommandBuffer* cmd) const
 {
-    if (!_submissions) throw std::logic_error("Metal queue has no device");
+    base::CpuProfileScope profile("metal.queue.submit");
+    if (!_submissions)
+    {
+        throw std::logic_error("Metal queue has no device");
+    }
     auto admission = _submissions->admit();
     auto* command = dynamic_cast<metal::CommandBuffer*>(cmd);
     if (!command || command->_device != _device || !command->handle() ||
         command->handle()->commandQueue() != _commandQueue)
+    {
         throw std::invalid_argument("Metal command buffer belongs to another queue/device");
+    }
     if (command->_submitted || command->_recording || !command->_executable)
+    {
         throw std::logic_error("Metal command buffer is already submitted or not executable");
+    }
+    struct TimingFailure {
+        std::shared_ptr<detail::SubmissionTimingTicket> ticket;
+        bool accepted = false;
+
+        ~TimingFailure()
+        {
+            if (ticket && !accepted)
+            {
+                ticket->complete(false);
+            }
+        }
+    } timingFailure{command->_submissionTiming};
     auto* handle = command->handle();
     handle->retain();
-    auto native = std::shared_ptr<MTL::CommandBuffer>(handle, [](MTL::CommandBuffer* value) { value->release(); });
+    auto native = std::shared_ptr<MTL::CommandBuffer>(handle, [](MTL::CommandBuffer* value)
+                                                      {
+                                                          value->release();
+                                                      });
     auto record = std::make_shared<detail::CompletionRecord>(
-        [native] {
+        [native]
+        {
             auto status = native->status();
             if (status == MTL::CommandBufferStatusError)
+            {
                 throw std::runtime_error("Metal command buffer execution failed");
+            }
             return status == MTL::CommandBufferStatusCompleted;
         },
-        [native] {
+        [native]
+        {
+            base::CpuProfileScope waitProfile("metal.queue.waitUntilCompleted");
+            base::CpuProfileScope::count("metal.queue.completionWaits", 1);
             native->waitUntilCompleted();
             if (native->status() == MTL::CommandBufferStatusError)
+            {
                 throw std::runtime_error("Metal command buffer execution failed");
+            }
+        },
+        [ticket = command->_submissionTiming](bool success)
+        {
+            // Success is resolved by the native completed handler. A failed
+            // admission/execution may never deliver valid native timestamps.
+            if (ticket && !success)
+            {
+                ticket->complete(false);
+            }
         });
-    try {
+    try
+    {
         _submissions->track(record);
+        if (command->_submissionTiming)
+        {
+            command->_submissionTiming->markSubmitted(record->id);
+        }
         command->_completion = record;
-        if (command->_submissionFrame) command->_submissionFrame->trackSubmission(record);
+        if (command->_submissionFrame)
+        {
+            command->_submissionFrame->trackSubmission(record);
+        }
         handle->commit();
     }
-    catch (...) { _submissions->cancel(record, std::current_exception()); throw; }
+    catch (...)
+    {
+        _submissions->cancel(record, std::current_exception());
+        throw;
+    }
+    timingFailure.accepted = true;
+    command->publishRecordingSubmission(record);
     command->_submitted = true;
     command->_executable = false;
 }
@@ -257,16 +382,22 @@ drain runs; actual recording is not covered by the device-wide guard.
 
 Device wait and synchronous immediate submission use the same infrastructure:
 
-Source: [lib/src/bg2e/gpu/metal/Device.cpp](../../../lib/src/bg2e/gpu/metal/Device.cpp), lines 107–110. Exact excerpt:
+Source: [lib/src/bg2e/gpu/metal/Device.cpp](../../../lib/src/bg2e/gpu/metal/Device.cpp), lines 146–155. Exact excerpt:
 
 ```cpp
 void Device::waitIdle()
 {
-    if (_device) _submissions->drain();
+    base::CpuProfileScope profile("metal.device.waitIdle");
+    if (_device)
+    {
+        base::CpuProfileScope drainProfile("metal.device.drainSubmissions");
+        base::CpuProfileScope::count("metal.device.drainCalls", 1);
+        _submissions->drain();
+    }
 }
 ```
 
-Source: [lib/src/bg2e/gpu/metal/Device.cpp](../../../lib/src/bg2e/gpu/metal/Device.cpp), lines 217–225. Exact excerpt:
+Source: [lib/src/bg2e/gpu/metal/Device.cpp](../../../lib/src/bg2e/gpu/metal/Device.cpp), lines 256–264. Exact excerpt:
 
 ```cpp
 void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function)
@@ -290,17 +421,23 @@ must submit through gpu Queue or explicitly coordinate outside this contract.
 
 ## Vulkan: native wait plus the same immutable completion records
 
-Source: [lib/src/bg2e/gpu/vk/Device.cpp](../../../lib/src/bg2e/gpu/vk/Device.cpp), lines 312–320. Exact excerpt:
+Source: [lib/src/bg2e/gpu/vk/Device.cpp](../../../lib/src/bg2e/gpu/vk/Device.cpp), lines 400–414. Exact excerpt:
 
 ```cpp
 void Device::waitIdle()
 {
-    if (_device == VK_NULL_HANDLE) return;
-    _submissions->drain([this] {
-        auto result = vkDeviceWaitIdle(_device);
-        if (result != VK_SUCCESS)
-            throw std::runtime_error("vkDeviceWaitIdle failed: " + std::to_string(result));
-    });
+    if (_device == VK_NULL_HANDLE)
+    {
+        return;
+    }
+    _submissions->drain([this]
+                        {
+                            auto result = vkDeviceWaitIdle(_device);
+                            if (result != VK_SUCCESS)
+                            {
+                                throw std::runtime_error("vkDeviceWaitIdle failed: " + std::to_string(result));
+                            }
+                        });
 }
 ```
 
@@ -318,61 +455,99 @@ cleanup. Vulkan validation rejects commands from another queue/device, open
 recording or an incomplete previous send. The present path allows one submit for
 an acquired Vulkan frame, although generic slot tracking supports vectors.
 
-Source: [lib/src/bg2e/gpu/vk/Queue.cpp](../../../lib/src/bg2e/gpu/vk/Queue.cpp), lines 116–134. Exact excerpt:
+Source: [lib/src/bg2e/gpu/vk/Queue.cpp](../../../lib/src/bg2e/gpu/vk/Queue.cpp), lines 213–247. Exact excerpt:
 
 ```cpp
     VkFence fence = presenting ? frame->inFlightFence() : VK_NULL_HANDLE;
     std::shared_ptr<VkFence> ownedFence;
-    if (!presenting) {
+    if (!presenting)
+    {
         auto info = Info::fenceCreateInfo();
         check(vkCreateFence(_device, &info, nullptr, &fence), "vkCreateFence");
-        ownedFence = std::shared_ptr<VkFence>(new VkFence(fence), [device = _device](VkFence* value) {
-            vkDestroyFence(device, *value, nullptr); delete value;
-        });
+        ownedFence = std::shared_ptr<VkFence>(new VkFence(fence), [device = _device](VkFence* value)
+                                              {
+                                                  vkDestroyFence(device, *value, nullptr);
+                                                  delete value;
+                                              });
     }
     auto record = std::make_shared<detail::CompletionRecord>(
-        [device = _device, fence, ownedFence, allocation = cmd->_allocation] {
+        [device = _device, fence, ownedFence, allocation = cmd->_allocation]
+        {
             auto result = vkGetFenceStatus(device, fence);
-            if (result == VK_NOT_READY) return false;
-            check(result, "vkGetFenceStatus"); return true;
+            if (result == VK_NOT_READY)
+            {
+                return false;
+            }
+            check(result, "vkGetFenceStatus");
+            return true;
         },
-        [device = _device, fence, ownedFence, allocation = cmd->_allocation] {
+        [device = _device, fence, ownedFence, allocation = cmd->_allocation]
+        {
             check(vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX), "vkWaitForFences");
+        },
+        [ticket = cmd->_submissionTiming](bool success)
+        {
+            if (ticket)
+            {
+                ticket->complete(success);
+            }
         });
+    auto info = Info::commandBufferSubmitInfo(cmd->handle());
 ```
 
-Source: [lib/src/bg2e/gpu/vk/Queue.cpp](../../../lib/src/bg2e/gpu/vk/Queue.cpp), lines 135–164. Exact excerpt:
+Source: [lib/src/bg2e/gpu/vk/Queue.cpp](../../../lib/src/bg2e/gpu/vk/Queue.cpp), lines 248–298. Exact excerpt:
 
 ```cpp
-    try {
+    try
+    {
         _submissions->track(record);
+        if (cmd->_submissionTiming)
+        {
+            cmd->_submissionTiming->markSubmitted(record->id);
+        }
         cmd->_completion = record;
-        if (cmd->_submissionFrame) cmd->_submissionFrame->trackSubmission(record);
-        if (presenting) {
+        if (cmd->_submissionFrame)
+        {
+            cmd->_submissionFrame->trackSubmission(record);
+        }
+        if (presenting)
+        {
             check(vkResetFences(_device, 1, &fence), "vkResetFences");
             auto wait = Info::semaphoreSubmitInfo(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, frame->imageAvailable());
             auto signal = Info::semaphoreSubmitInfo(VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT, frame->renderFinished());
             auto submit = Info::submitInfo(&info, &signal, &wait);
             check(queueSubmit2(_queue, 1, &submit, fence), "vkQueueSubmit2");
-        } else {
+        }
+        else
+        {
             auto submit = Info::submitInfo(&info, nullptr, nullptr);
             check(queueSubmit2(_queue, 1, &submit, fence), "vkQueueSubmit2");
         }
-    } catch (...) {
+    }
+    catch (...)
+    {
         _submissions->cancel(record, std::current_exception());
         throw;
     }
+    timingFailure.accepted = true;
+    cmd->publishRecordingSubmission(record);
     cmd->_executable = false;
     // Presentation is in the same admission transaction as submission.
-    if (presenting) {
+    if (presenting)
+    {
         auto semaphore = frame->renderFinished();
         auto swapchain = frame->swapchain();
         auto index = frame->imageIndex();
         auto info = Info::presentInfo(swapchain, semaphore, index);
         auto result = queuePresent(_queue, &info);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
+        {
             frame->requestRecreate();
-        else check(result, "vkQueuePresentKHR");
+        }
+        else
+        {
+            check(result, "vkQueuePresentKHR");
+        }
     }
 ```
 
@@ -390,7 +565,7 @@ is alive/in flight. Its mutex protects allocation/free/cleanup. This permits
 recording distinct command buffers on distinct live pools without sharing one
 externally synchronized VkCommandPool between recording threads.
 
-Source: [lib/include/bg2e/gpu/vk/CommandPoolState.hpp](../../../lib/include/bg2e/gpu/vk/CommandPoolState.hpp), lines 28–53. Exact excerpt:
+Source: [lib/include/bg2e/gpu/vk/CommandPoolState.hpp](../../../lib/include/bg2e/gpu/vk/CommandPoolState.hpp), lines 28–65. Exact excerpt:
 
 ```cpp
 struct CommandPoolState {
@@ -398,11 +573,18 @@ struct CommandPoolState {
     VkDevice device = VK_NULL_HANDLE;
     VkCommandPool pool = VK_NULL_HANDLE;
 
-    ~CommandPoolState() { cleanup(); }
+    ~CommandPoolState()
+    {
+        cleanup();
+    }
 
-    void cleanup() {
+    void cleanup()
+    {
         std::lock_guard lock(mutex);
-        if (pool) vkDestroyCommandPool(device, pool, nullptr);
+        if (pool)
+        {
+            vkDestroyCommandPool(device, pool, nullptr);
+        }
         pool = VK_NULL_HANDLE;
         device = VK_NULL_HANDLE;
     }
@@ -411,11 +593,17 @@ struct CommandPoolState {
 struct CommandAllocation {
     std::shared_ptr<CommandPoolState> pool;
     VkCommandBuffer command = VK_NULL_HANDLE;
-    ~CommandAllocation() {
-        if (!command) return;
+    ~CommandAllocation()
+    {
+        if (!command)
+        {
+            return;
+        }
         std::lock_guard lock(pool->mutex);
         if (pool->pool && command)
+        {
             vkFreeCommandBuffers(pool->device, pool->pool, 1, &command);
+        }
     }
 };
 ```
@@ -430,19 +618,39 @@ SurfaceFrame privately tracks completion records through backend friends.
 Association happens in Surface::present (or beginRendering(frame) in backend
 paths); a successful Queue::submit adds the record to that associated frame.
 
-Source: [lib/include/bg2e/gpu/SurfaceFrame.hpp](../../../lib/include/bg2e/gpu/SurfaceFrame.hpp), lines 49–60. Exact excerpt:
+Source: [lib/include/bg2e/gpu/SurfaceFrame.hpp](../../../lib/include/bg2e/gpu/SurfaceFrame.hpp), lines 57–87. Exact excerpt:
 
 ```cpp
-    void trackSubmission(const std::shared_ptr<detail::CompletionRecord>& record) { _submissions.push_back(record); }
-    bool hasSubmissions() const { return !_submissions.empty(); }
-    void waitForSubmissions() {
+void trackSubmission(const std::shared_ptr<detail::CompletionRecord>& record)
+    {
+        _submissions.push_back(record);
+    }
+    bool hasSubmissions() const
+    {
+        return !_submissions.empty();
+    }
+    void waitForSubmissions()
+    {
         std::exception_ptr error;
-        for (const auto& record : _submissions) {
-            try { record->wait(); }
-            catch (...) { if (!error) error = std::current_exception(); }
+        for (const auto& record : _submissions)
+        {
+            try
+            {
+                record->wait();
+            }
+            catch (...)
+            {
+                if (!error)
+                {
+                    error = std::current_exception();
+                }
+            }
         }
         _submissions.clear();
-        if (error) std::rethrow_exception(error);
+        if (error)
+        {
+            std::rethrow_exception(error);
+        }
     }
 ```
 
@@ -452,18 +660,33 @@ its old frame, and requests nextDrawable. No drawable/zero size returns nullptr
 without advancing the current slot/counter. The acquired SurfaceFrame retains
 the drawable and wraps its texture.
 
-Source: [lib/src/bg2e/gpu/metal/WindowSurface.cpp](../../../lib/src/bg2e/gpu/metal/WindowSurface.cpp), lines 125–143. Exact excerpt:
+Source: [lib/src/bg2e/gpu/metal/WindowSurface.cpp](../../../lib/src/bg2e/gpu/metal/WindowSurface.cpp), lines 177–210. Exact excerpt:
 
 ```cpp
 std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 {
-    if (_currentFrame) throw std::logic_error("Metal surface already has an acquired frame");
-    if (!_size.width || !_size.height || !_layer) return nullptr;
+    if (_currentFrame)
+    {
+        throw std::logic_error("Metal surface already has an acquired frame");
+    }
+    if (!_size.width || !_size.height || !_layer)
+    {
+        return nullptr;
+    }
     auto& slot = _frames[_currentFrameIndex];
-    if (slot) slot->waitForSubmissions();
+    if (slot)
+    {
+        base::CpuProfileScope profile("metal.surface.waitSlotSubmissions");
+        slot->waitForSubmissions();
+    }
     slot.reset();
+    base::CpuProfileScope profile("metal.surface.nextDrawable");
     auto* drawable = _layer->nextDrawable();
-    if (!drawable) return nullptr;
+    profile.next("metal.surface.wrapDrawable");
+    if (!drawable)
+    {
+        return nullptr;
+    }
     auto frame = std::make_shared<metal::SurfaceFrame>();
     frame->setDrawable(drawable);
     auto color = std::make_unique<metal::Image>();
@@ -476,13 +699,15 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 }
 ```
 
-Source: [lib/src/bg2e/gpu/metal/WindowSurface.cpp](../../../lib/src/bg2e/gpu/metal/WindowSurface.cpp), lines 154–161. Exact excerpt:
+Source: [lib/src/bg2e/gpu/metal/WindowSurface.cpp](../../../lib/src/bg2e/gpu/metal/WindowSurface.cpp), lines 223–232. Exact excerpt:
 
 ```cpp
 void WindowSurface::endFrame(gpu::SurfaceFrame* frame)
 {
     if (!_currentFrame || frame != _currentFrame.get() || !frame->hasSubmissions())
+    {
         throw std::logic_error("Metal endFrame requires a submitted acquired frame");
+    }
     _currentFrame.reset();
     _currentFrameIndex = (_currentFrameIndex + 1) % 2;
     ++_frameCounter;
@@ -500,24 +725,33 @@ use fence. This is essential: a CleanupManager snapshot holding an old record
 must not later read the state of the same fence after reuse for a different send.
 Once terminal, the old record does not query/wait that native fence again.
 
-Source: [lib/src/bg2e/gpu/vk/WindowSurface.cpp](../../../lib/src/bg2e/gpu/vk/WindowSurface.cpp), lines 347–362. Exact excerpt:
+Source: [lib/src/bg2e/gpu/vk/WindowSurface.cpp](../../../lib/src/bg2e/gpu/vk/WindowSurface.cpp), lines 393–415. Exact excerpt:
 
 ```cpp
-        // Latch old records before the fence can be reset by a later submit.
+// Latch old records before the fence can be reset by a later submit.
         frame->waitForSubmissions();
         VkDevice device = vkDevice()->handle();
         auto result = vkWaitForFences(device, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
-        if (result != VK_SUCCESS) throw std::runtime_error("Vulkan frame-slot wait failed");
+        if (result != VK_SUCCESS)
+        {
+            throw std::runtime_error("Vulkan frame-slot wait failed");
+        }
         uint32_t imageIndex = 0;
         result = acquireNextImage(device, _swapchain, UINT64_MAX,
-            _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
-        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-            resize({ uint32_t(width), uint32_t(height) });
+                                  _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+        {
+            resize({uint32_t(width), uint32_t(height)});
             continue;
         }
-        if (result == VK_TIMEOUT || result == VK_NOT_READY) return nullptr;
+        if (result == VK_TIMEOUT || result == VK_NOT_READY)
+        {
+            return nullptr;
+        }
         if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+        {
             throw std::runtime_error("Vulkan image acquisition failed: " + std::to_string(result));
+        }
 ```
 
 Acquisition retries recoverable out-of-date swapchains with bounded attempts;
@@ -529,19 +763,21 @@ Recreation/release drains all users because render targets are shared.
 
 ## Completion-based deferred cleanup
 
-Source: [lib/src/bg2e/gpu/CleanupManager.cpp](../../../lib/src/bg2e/gpu/CleanupManager.cpp), lines 92–98. Exact excerpt:
+Source: [lib/src/bg2e/gpu/CleanupManager.cpp](../../../lib/src/bg2e/gpu/CleanupManager.cpp), lines 114–122. Exact excerpt:
 
 ```cpp
 void CleanupManager::defer(std::function<void()>&& cleanup)
 {
     if (!_surface || !_surface->_device)
+    {
         throw std::logic_error("CleanupManager::defer requires a device-backed surface");
+    }
     auto dependencies = _surface->_device->submissionState()->snapshot();
-    _deferredCleanups.push_back({ std::move(dependencies), std::move(cleanup) });
+    _deferredCleanups.push_back({std::move(dependencies), std::move(cleanup)});
 }
 ```
 
-Source: [lib/src/bg2e/gpu/CleanupManager.cpp](../../../lib/src/bg2e/gpu/CleanupManager.cpp), lines 100–122. Exact excerpt:
+Source: [lib/src/bg2e/gpu/CleanupManager.cpp](../../../lib/src/bg2e/gpu/CleanupManager.cpp), lines 124–167. Exact excerpt:
 
 ```cpp
 void CleanupManager::flushDeferred()
@@ -554,18 +790,39 @@ void CleanupManager::flushDeferred()
         bool completed = true;
         for (const auto& record : it->dependencies)
         {
-            try { if (!record->completed()) completed = false; }
-            catch (...) { if (!error) error = std::current_exception(); }
+            try
+            {
+                if (!record->completed())
+                {
+                    completed = false;
+                }
+            }
+            catch (...)
+            {
+                if (!error)
+                {
+                    error = std::current_exception();
+                }
+            }
         }
         if (completed)
         {
             ready.push_back(std::move(it->cleanup));
             it = _deferredCleanups.erase(it);
         }
-        else ++it;
+        else
+        {
+            ++it;
+        }
     }
-    for (auto& cleanup : ready) cleanup();
-    if (error) std::rethrow_exception(error);
+    for (auto& cleanup : ready)
+    {
+        cleanup();
+    }
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
 }
 ```
 

@@ -21,10 +21,10 @@ This widget shows the baked multiplier texture. For mesh UV coverage, per-submes
 wireframes and atlas boundaries, use `bake::UvMapPreviewRenderer`, which supports
 UV1 and UV2, does not mutate the source CPU mesh, and produces a sampled image
 through `gpu::Device`. The diagnostic is rasterized on CPU and uploaded as RGBA8;
-it has no production renderer or backend-specific draw dependency. Bind its
+it has no camera-renderer or backend-specific draw dependency. Bind its
 `image()` through `BakeLightmapPreview::setImage` to display it in the same draw
-UI session. The legacy `ui::UvMapPreview` remains available for production-render
-applications. No ImGui or native graphics types are exposed by these APIs.
+UI session. The former `ui::UvMapPreview` has been removed; use the bake diagnostic
+and this UI bridge. No ImGui or native graphics types are exposed by these APIs.
 
 
 ## Public methods

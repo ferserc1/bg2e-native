@@ -57,18 +57,24 @@ retains factory-owned backends; caller-owned backends remain borrowed. This
 supports a controlled single shared-instance lifetime, not simultaneous active
 engines for independent backends.
 
-Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp), lines 97–102. Exact excerpt:
+Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp), lines 100–111. Exact excerpt:
 
 ```cpp
-    void prepare(const std::string& applicationId) override
+void prepare(const std::string& applicationId) override
     {
-        if (_backend) return;
-        if (_config.applicationName.empty()) _config.applicationName = applicationId;
+        if (_backend)
+        {
+            return;
+        }
+        if (_config.applicationName.empty())
+        {
+            _config.applicationName = applicationId;
+        }
         _backend = gpu::Factory::acquireBackend(_config.backend);
     }
 ```
 
-Source: [lib/src/bg2e/draw/Engine.cpp](../../lib/src/bg2e/draw/Engine.cpp), lines 36–68. Exact excerpt:
+Source: [lib/src/bg2e/draw/Engine.cpp](../../lib/src/bg2e/draw/Engine.cpp), lines 37–68. Exact excerpt:
 
 ```cpp
 struct Engine::Impl {
@@ -78,7 +84,7 @@ struct Engine::Impl {
     gpu::Instance* instance = nullptr;          // Non-owning (shared with Backend)
     std::unique_ptr<gpu::PhysicalDevice> physicalDevice;
     std::unique_ptr<gpu::Device> device;
-    std::unique_ptr<gpu::WindowSurface> surface;
+    std::unique_ptr<gpu::Surface> surface;
     std::unique_ptr<gpu::CleanupManager> cleanupManager;
     EngineConfig config;
     bool initialized = false;
@@ -114,16 +120,40 @@ lifetime and cleans it. Window/backend references are borrowed, with the optiona
 lease keeping a factory backend alive. Stage flags support rollback while
 preserving the original initialization exception.
 
-Source: [lib/src/bg2e/draw/Engine.cpp](../../lib/src/bg2e/draw/Engine.cpp), lines 79–128. Exact excerpt:
+Source: [lib/src/bg2e/draw/Engine.cpp](../../lib/src/bg2e/draw/Engine.cpp), lines 86–194. Exact excerpt:
 
 ```cpp
 void Engine::init(SDL_Window* window, gpu::Backend& backend, const EngineConfig& config)
 {
+    if (!window)
+    {
+        throw std::invalid_argument("draw::Engine::init requires an SDL window.");
+    }
+    initialize(window, {}, backend, config, false);
+}
+
+void Engine::init(gpu::Size2D extent, gpu::Backend& backend, const EngineConfig& config)
+{
+    if (extent.isZero() || !gpu::pixelFormatBytes(config.colorFormat) || gpu::isDepthFormat(config.colorFormat) ||
+        gpu::isUnsignedIntegerFormat(config.colorFormat) || gpu::isSignedIntegerFormat(config.colorFormat) ||
+        (config.depthFormat != gpu::PixelFormat::Undefined && !gpu::isDepthFormat(config.depthFormat)))
+    {
+        throw std::invalid_argument("draw::Engine offscreen extent or color/depth formats are invalid.");
+    }
+    initialize(nullptr, extent, backend, config, true);
+}
+
+void Engine::initialize(SDL_Window* window, gpu::Size2D extent, gpu::Backend& backend,
+    const EngineConfig& config, bool offscreen)
+{
     if (_impl->initialized || _impl->instanceCreationStarted || _impl->cleaning)
+    {
         throw std::logic_error("draw::Engine is already initialized or changing lifecycle state.");
-    if (!window) throw std::invalid_argument("draw::Engine::init requires an SDL window.");
+    }
     if (backend.backendType() != config.backend)
+    {
         throw std::invalid_argument("draw::Engine backend does not match EngineConfig::backend.");
+    }
 
     try
     {
@@ -132,38 +162,73 @@ void Engine::init(SDL_Window* window, gpu::Backend& backend, const EngineConfig&
         _impl->backend = &backend;
         _impl->config = config;
         _impl->instance = backend.sharedInstance();
-        if (!_impl->instance) throw std::runtime_error("Draw backend returned no Instance.");
+        if (!_impl->instance)
+        {
+            throw std::runtime_error("Draw backend returned no Instance.");
+        }
         // The backend owns the wrapper; this Engine owns its initialized lifetime.
         // Do not overwrite an instance used by another context.
         if (_impl->instance->presentationMode() != gpu::PresentationMode::Undefined)
+        {
             throw std::logic_error("Draw backend shared Instance is already in use.");
+        }
         _impl->instanceCreationStarted = true;
         _impl->instance->setApplicationName(config.applicationName);
         _impl->instance->enableDebugMode(config.debug);
-        _impl->instance->create(window);
-
-        _impl->surface = backend.createWindowSurface(_impl->instance, config.colorFormat, config.depthFormat);
+        if (offscreen)
+        {
+            _impl->instance->create();
+            _impl->surface = backend.createOffscreenSurface(_impl->instance, extent, config.colorFormat, config.depthFormat);
+        }
+        else
+        {
+            _impl->instance->create(window);
+            _impl->surface = backend.createWindowSurface(_impl->instance, config.colorFormat, config.depthFormat);
+        }
         if (!_impl->surface)
-            throw std::runtime_error("Draw backend returned no WindowSurface.");
+        {
+            throw std::runtime_error("Draw backend returned no rendering surface.");
+        }
         _impl->physicalDevice = backend.createPhysicalDevice();
-        if (!_impl->physicalDevice) throw std::runtime_error("Draw backend returned no PhysicalDevice.");
+        if (!_impl->physicalDevice)
+        {
+            throw std::runtime_error("Draw backend returned no PhysicalDevice.");
+        }
         _impl->physicalDevice->choose(*_impl->instance, *_impl->surface);
-        if (!_impl->physicalDevice->isValid()) throw std::runtime_error("No suitable draw GPU device.");
+        if (!_impl->physicalDevice->isValid())
+        {
+            throw std::runtime_error("No suitable draw GPU device.");
+        }
         _impl->device = backend.createDevice();
-        if (!_impl->device) throw std::runtime_error("Draw backend returned no Device.");
+        if (!_impl->device)
+        {
+            throw std::runtime_error("Draw backend returned no Device.");
+        }
         _impl->deviceCreationStarted = true;
         // Device::create also creates the surface render target.
         _impl->device->create(_impl->instance, _impl->physicalDevice.get(), _impl->surface.get());
-        if (!_impl->device->isValid()) throw std::runtime_error("Draw GPU Device creation failed.");
+        if (!_impl->device->isValid())
+        {
+            throw std::runtime_error("Draw GPU Device creation failed.");
+        }
         // Vulkan surface validity includes its swapchain, created by Device.
-        if (!_impl->surface->isValid()) throw std::runtime_error("Draw surface render target creation failed.");
+        if (!_impl->surface->isValid())
+        {
+            throw std::runtime_error("Draw surface render target creation failed.");
+        }
         _impl->cleanupManager = std::make_unique<gpu::CleanupManager>(_impl->surface.get());
         _impl->initialized = true;
     }
     catch (...)
     {
         const auto error = std::current_exception();
-        try { cleanup(); } catch (...) { /* Preserve the initialization failure. */ }
+        try
+        {
+            cleanup();
+        }
+        catch (...)
+        { /* Preserve the initialization failure. */
+        }
         std::rethrow_exception(error);
     }
 }
@@ -176,16 +241,18 @@ coordinator and UI, then supplies preparation/composition callbacks. Engine has
 no UI ownership. Neither abstract gpu nor draw scene contracts require ImGui or
 native Metal declarations.
 
-Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp), lines 104–129. Exact excerpt:
+Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp), lines 113–142. Exact excerpt:
 
 ```cpp
-    void initialize(
+void initialize(
         SDL_Window* window,
         Application& application,
-        ui::UserInterface& userInterface
-    ) override
+        ui::UserInterface& userInterface) override
     {
-        if (!_backend) throw std::logic_error("Draw backend has not been prepared.");
+        if (!_backend)
+        {
+            throw std::logic_error("Draw backend has not been prepared.");
+        }
         _engine.init(window, *_backend, _config);
         _engineInitialized = true;
         _userInterface = &userInterface;
@@ -198,23 +265,31 @@ Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/a
         userInterface.setDelegate(application.uiDelegate());
         userInterface.init(&_engine);
         _uiInitialized = true;
-        _renderLoop.setUIFramePreparationCallback([this](auto& command, auto& frame) {
-            _userInterface->newFrame(command, frame);
-        });
-        _renderLoop.setUICompositionCallback([this](auto& command, auto& frame) {
-            _userInterface->draw(command, frame);
-        });
+        _renderLoop.setUIFramePreparationCallback([this](auto& command, auto& frame)
+                                                  {
+                                                      _userInterface->newFrame(command, frame);
+                                                  });
+        _renderLoop.setUICompositionCallback([this](auto& command, auto& frame)
+                                             {
+                                                 _userInterface->draw(command, frame);
+                                             });
     }
 ```
 
-Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp), lines 142–155. Exact excerpt:
+Source: [lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp](../../lib/src/bg2e/app/detail/DrawGraphicsExecution.cpp), lines 155–174. Exact excerpt:
 
 ```cpp
-    void frame(float deltaMilliseconds, bool renderingAllowed) override
+void frame(float deltaMilliseconds, bool renderingAllowed) override
     {
-        if (!renderingAllowed || !_engineInitialized) return;
+        if (!renderingAllowed || !_engineInitialized)
+        {
+            return;
+        }
         const auto size = drawableSize();
-        if (size.isZero()) return;
+        if (size.isZero())
+        {
+            return;
+        }
         if (_resizePending || size != _lastDrawableSize)
         {
             _engine.surface()->resize(size);
@@ -259,23 +334,48 @@ Each positive available frame:
 
 This excerpt is the concrete GPU submission tail, not pseudocode:
 
-Source: [lib/src/bg2e/draw/RenderLoop.cpp](../../lib/src/bg2e/draw/RenderLoop.cpp), lines 152–165. Exact excerpt:
+Source: [lib/src/bg2e/draw/RenderLoop.cpp](../../lib/src/bg2e/draw/RenderLoop.cpp), lines 382–420. Exact excerpt:
 
 ```cpp
     command.transition(_impl->sceneColor.get(), gpu::ImageLayout::TransferSrc);
     command.transition(presentationColor, gpu::ImageLayout::TransferDst);
     command.copyImage(_impl->sceneColor.get(), presentationColor);
     command.transition(presentationColor, gpu::ImageLayout::ColorAttachment);
-    if (_uiComposition) _uiComposition(command, *frame);
-    if (command.hasActiveScope()) throw std::logic_error("Draw UI composition left an active command scope.");
+    if (_uiComposition)
+    {
+        base::CpuProfileScope profile("frame.uiComposition");
+        gpu::GpuTimingScope gpuProfile(command, "frame.uiComposition");
+        _uiComposition(command, *frame);
+    }
+    if (command.hasActiveScope())
+    {
+        throw std::logic_error("Draw UI composition left an active command scope.");
+    }
     command.transition(presentationColor, gpu::ImageLayout::Present);
+    stageProfile.next("frame.encodePresentAndEnd");
     surface->present(&command);
     command.end();
+    stageProfile.next("frame.submit");
     queue.submit(&command);
+    stageProfile.next("frame.endFrame");
     _impl->colorInitialized = true;
-    if (refresh && revision == _sceneRevision) _sceneDirty = false;
+    if (refresh)
+    {
+        ++_renderedSceneCount;
+        _sceneDeltaSeconds = 0.0f;
+        _sceneFrameElapsed = _sceneMaxFrameRate > 0.0
+            ? std::fmod(_sceneFrameElapsed, 1.0 / _sceneMaxFrameRate) : 0.0;
+        if (revision == _sceneRevision)
+        {
+            _sceneDirty = false;
+        }
+    }
     surface->endFrame(frame.get());
+    ++_presentationCount;
+    frameProfile.frameCompleted(_presentationCount, _renderedSceneCount, refresh);
+    stageProfile.next("frame.deferredCleanup");
     _engine->cleanupManager().flushDeferred();
+    _impl->collectTimings(*_engine->device());
 ```
 
 The dirty revision is captured before scene callbacks. A request made during
@@ -306,7 +406,7 @@ changes refresh backend state; renderer recreation drains GPU users first.
 before the native ImGui draw call. No render callback API remains.
 
 
-Source: [lib/src/bg2e/gpu/vk/GuiRenderer.cpp](../../lib/src/bg2e/gpu/vk/GuiRenderer.cpp). Exact excerpt:
+Source: [lib/src/bg2e/gpu/vk/GuiRenderer.cpp](../../lib/src/bg2e/gpu/vk/GuiRenderer.cpp), lines 115–130. Exact excerpt:
 
 ```cpp
     void draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame) override
@@ -332,7 +432,7 @@ preparation descriptor from the acquired texture and caches generation/format/
 sample count. Composition opens a distinct pass with no depth/stencil and LOAD/
 STORE color actions. GPU owns the encoder and ends it once; the GPU GUI bridge borrows it:
 
-Source: [lib/src/bg2e/gpu/metal/GuiRenderer.cpp](../../lib/src/bg2e/gpu/metal/GuiRenderer.cpp). Exact excerpt:
+Source: [lib/src/bg2e/gpu/metal/GuiRenderer.cpp](../../lib/src/bg2e/gpu/metal/GuiRenderer.cpp), lines 114–141. Exact excerpt:
 
 ```cpp
     void draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame) override
@@ -383,18 +483,21 @@ A paused scene preserves last valid color while presentation/UI continue.
 Requests stay pending until resume. Resize cannot preserve an obsolete-size
 image, so a new target receives pause clear color.
 
-Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 403–408. Exact excerpt:
+Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 470–478. Exact excerpt:
 
 ```cpp
 void MainLoop::requestSceneFrame()
 {
-    if (!_execution) throw std::logic_error("MainLoop::requestSceneFrame requires an active run.");
+    if (!_execution)
+    {
+        throw std::logic_error("MainLoop::requestSceneFrame requires an active run.");
+    }
     _execution->requestSceneFrame();
     requestFrame();
 }
 ```
 
-Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 430–462. Exact excerpt:
+Source: [lib/src/bg2e/app/MainLoop.cpp](../../lib/src/bg2e/app/MainLoop.cpp), lines 506–546. Exact excerpt:
 
 ```cpp
 void MainLoop::executeSafeUpdateScene()
@@ -402,13 +505,18 @@ void MainLoop::executeSafeUpdateScene()
     std::vector<SafeUpdateSceneEntry> local;
     {
         std::lock_guard lock(_safeUpdateSceneMutex);
-        if (_safeUpdateScene.empty()) return;
+        if (_safeUpdateScene.empty())
+        {
+            return;
+        }
         std::swap(local, _safeUpdateScene);
     }
     // The execution exists only during an active run; outside a run there is
     // no GPU work in flight to wait for.
     if (_execution)
     {
+        base::CpuProfileScope profile("app.waitIdle.safeSceneUpdate");
+        base::CpuProfileScope::count("app.safeSceneUpdatesWaiting", local.size());
         _execution->waitIdle();
     }
     bool updated = false;
@@ -428,7 +536,10 @@ void MainLoop::executeSafeUpdateScene()
             updated = true;
         }
     }
-    if (updated && _execution) requestSceneFrame();
+    if (updated && _execution)
+    {
+        requestSceneFrame();
+    }
 }
 ```
 
@@ -460,37 +571,83 @@ coordinator/delegate and retained targets, UI while Device still lives, Engine
 resources/surface/device/Instance, then backend lease. Engine's concrete cleanup
 also handles partial initialization:
 
-Source: [lib/src/bg2e/draw/Engine.cpp](../../lib/src/bg2e/draw/Engine.cpp), lines 130–158. Exact excerpt:
+Source: [lib/src/bg2e/draw/Engine.cpp](../../lib/src/bg2e/draw/Engine.cpp), lines 196–270. Exact excerpt:
 
 ```cpp
 void Engine::cleanup()
 {
-    if (_impl->cleaning) return;
+    if (_impl->cleaning)
+    {
+        return;
+    }
     _impl->cleaning = true;
     std::exception_ptr error;
-    const auto attempt = [&error](auto&& operation) {
-        try { operation(); } catch (...) { if (!error) error = std::current_exception(); }
+    const auto attempt = [&error](auto&& operation)
+    {
+        try
+        {
+            operation();
+        }
+        catch (...)
+        {
+            if (!error)
+            {
+                error = std::current_exception();
+            }
+        }
     };
     // Callers stop frame/background producers before entering this method and
     // keep them stopped: waitIdle's submission gate reopens on return.
     if (_impl->deviceCreationStarted && _impl->device->isValid())
-        attempt([&] { _impl->device->waitIdle(); });
+    {
+        attempt([&]
+                {
+                    _impl->device->waitIdle();
+                });
+    }
     if (_impl->cleanupManager)
     {
-        attempt([&] { _impl->cleanupManager->flushAllDeferred(); });
-        attempt([&] { _impl->cleanupManager->flush(); });
+        attempt([&]
+                {
+                    _impl->cleanupManager->flushAllDeferred();
+                });
+        attempt([&]
+                {
+                    _impl->cleanupManager->flush();
+                });
         _impl->cleanupManager.reset();
     }
     // Keep the device alive while surfaces release frame command wrappers,
     // depth targets, swapchain images and presentation synchronization.
-    if (_impl->surface) attempt([&] { _impl->surface->cleanup(); });
+    if (_impl->surface)
+    {
+        attempt([&]
+                {
+                    _impl->surface->cleanup();
+                });
+    }
     _impl->surface.reset();
-    if (_impl->deviceCreationStarted) attempt([&] { _impl->device->cleanup(); });
+    if (_impl->deviceCreationStarted)
+    {
+        attempt([&]
+                {
+                    _impl->device->cleanup();
+                });
+    }
     _impl->device.reset();
     _impl->physicalDevice.reset();
-    if (_impl->instanceCreationStarted) attempt([&] { _impl->instance->cleanup(); });
+    if (_impl->instanceCreationStarted)
+    {
+        attempt([&]
+                {
+                    _impl->instance->cleanup();
+                });
+    }
     _impl->reset();
-    if (error) std::rethrow_exception(error);
+    if (error)
+    {
+        std::rethrow_exception(error);
+    }
 }
 ```
 

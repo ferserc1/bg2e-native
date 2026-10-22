@@ -1,0 +1,15 @@
+{
+  "kind": "nonexecuting_cumulative_inventory",
+  "baseline": "e2a32164a781dbf420a4464b25ddce9feb862c6a",
+  "maintained_pages": 229,
+  "m09_handoff_rows": 232,
+  "disposition_rows": 241,
+  "retired": 12,
+  "changed_since_m09": 23,
+  "explicit_historical_page_mappings": 216,
+  "milestone_handoffs": 9,
+  "products": 33,
+  "public_hpp_files": 317,
+  "errors": [],
+  "limits": "Path/hash/module ownership inventory and source registration only; detailed semantic audits M10-02..05. Historical tables preserved. No compilation/runtime/performance evidence."
+}

@@ -1,4 +1,4 @@
-# Draw draw Composer
+# Composer
 
 `bg2e_composer`, implemented in [apps/bg2e_composer](../../apps/bg2e_composer/README.md), edits complete scenes through `bg2e::draw`. The standalone draw lightmap generator is not delivered by Composer.
 
@@ -6,7 +6,21 @@
 
 Run `bg2e_composer [--backend vulkan|metal]`; `--help` lists accepted arguments. Use a backend available on the host. The existing CMake target is `bg2e_composer`; the shared SDL bundle helper deploys engine shaders and assets. Launch with that resource tree, or the macOS bundle and its `Contents/MacOS/bg2e_composer` executable. Native file dialogs require Xcode on macOS; use Ninja on Linux and Visual Studio 17 2022 on Windows. The repository configuration requires `VULKAN_SDK`. See [packaging](../../scripts/PACKAGING.md); source routing alone does not establish native package launch coverage.
 
-Graphics preferences use `draw.bg2e_composer.graphics`, separately from document lighting and production preferences. Window → Graphics Settings exposes active renderer settings; changes persist automatically. JSON import/export is optional. Window → UI Settings controls foreground/background scene FPS independently of UI presentation; a zero cap is unlimited.
+Graphics preferences use `draw.bg2e_composer.graphics`, separately from document lighting and former application preference scopes. Window → Graphics Settings exposes active renderer settings; changes persist automatically. JSON import/export is optional. Window → UI Settings controls foreground/background scene FPS independently of UI presentation; a zero cap is unlimited.
+
+## Performance collection and recording
+
+Window → Performance opens live CPU/GPU charts without creating a capture file.
+Start Recording selects a JSONL destination; Stop Recording ends that file session.
+Closing/reopening the window releases/reacquires only its live collection lease,
+so closing the window does not stop an active recording. MainLoop shutdown stops
+recording before normal teardown. Graphics Settings has no profiler controls;
+Model Edit and the headless tools do not expose this Composer window.
+
+GPU results are polled asynchronously. Vulkan pipeline-boundary intervals and
+Metal encoder envelopes have different granularity; overlapping submissions and
+nested CPU scopes must not be summed as whole-frame time. See
+[profiling ownership and evidence](../architecture/cpu_profiling.md).
 
 ## Scene editing
 
@@ -32,7 +46,7 @@ Save/Save As uses the Name/Name.json layout and [complete resource IO](../api/db
 
 The UV/Lightmap window targets its preview drawable, selected hierarchy subtrees or all document drawables. Generate UV2 where needed. Genuine overlaps warn without excluding targets. One live baker and one submitted frame run at a time against frozen sources; all targets complete before material preparation/adoption. Cancel, import or source edits invalidate pending work. Required RT capability failures leave ordinary editing usable; no-RT rendering does not promise RT baking.
 
-Select a completed target for its own map preview. Applied maps use linear RGB UV2 with explicit baked AO/GI metadata. RGB8 uses temporary PNG sources; float output uses native HDR archives. Applied images and temporary sources remain available for complete Save. Interactive adoption rejects values outside finite half-float range. A failure after material mutation can leave partial dirty edits and retained sources; this is separate from complete DB publication and does not provide future standalone whole-batch output guarantees.
+Select a completed target for its own map preview. Applied maps use linear RGB UV2 with explicit baked AO/GI metadata. RGB8 uses temporary PNG sources; float output uses native HDR archives. Applied images and temporary sources remain available for complete Save. Interactive adoption rejects values outside finite half-float range. A failure after material mutation can leave partial dirty edits and retained sources; this is separate from complete DB publication and does not provide the [standalone batch](../api/bake/StandaloneBakeBatch.md)'s protected whole-generation publication guarantees.
 
 Tracing tables use exact device budgets up to 16384, including sampler limits. Excess image/sampler pairs warn and use neutral texture fallback while keeping geometry and raster materials. Direct query shadows also retain the scene on overflow. Materials remain independently owned. See [tracing resources](../api/draw/TracingSceneResources.md) and [query shadows](../api/draw/RendererDeferred.md).
 

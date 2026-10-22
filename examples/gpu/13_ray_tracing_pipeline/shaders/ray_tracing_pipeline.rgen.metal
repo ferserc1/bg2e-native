@@ -187,8 +187,7 @@ kernel void rgenMain(
     accumImage.write(float4(accum, 1.0), gid);
 
     // Reinhard tone mapping + gamma correction for the 8-bit output image.
-    // Store as .bgr because the image is byte-copied into the BGRA8 swapchain.
     float3 mapped = accum / (accum + float3(1.0));
     mapped = pow(mapped, float3(1.0 / 2.2));
-    outputImage.write(float4(mapped.bgr, 1.0), gid);
+    outputImage.write(float4(mapped, 1.0), gid);
 }

@@ -1,6 +1,6 @@
 # RTReflections
 
-`<bg2e/draw/pipeline/RTReflections.hpp>` exposes the public draw reflection pass; draw/all.hpp includes it. This remains separate from production render.
+`<bg2e/draw/pipeline/RTReflections.hpp>` exposes the public draw reflection pass; draw/all.hpp includes it. It is a component of the production draw API.
 
 ```cpp
 auto reflections = std::make_shared<bg2e::draw::pipeline::RTReflections>();

@@ -1,0 +1,24 @@
+{
+  "kind": "nonexecuting_tutorial_audit",
+  "baseline": "e2a32164a781dbf420a4464b25ddce9feb862c6a",
+  "pages": 31,
+  "numbered_examples": 26,
+  "numbered_cpp_glsl_metal_blocks": 426,
+  "literal_token_matches": 350,
+  "reviewed_recipes": 76,
+  "changed_pages": 14,
+  "source_files": 189,
+  "preserved_non_doc_files": 1276,
+  "full_assemblies": {
+    "12_lightmaps": {
+      "blocks": 17,
+      "equal_ignoring_whitespace": true
+    },
+    "13_offscreen_application": {
+      "blocks": 22,
+      "equal_ignoring_whitespace": true
+    }
+  },
+  "errors": [],
+  "limits": "Lexical source correspondence plus manual contract/excerpt review; no parser/compiler/shader/backend/package execution. Shared mutable UBO overlap remains a source limitation in primitive examples, documented separately."
+}

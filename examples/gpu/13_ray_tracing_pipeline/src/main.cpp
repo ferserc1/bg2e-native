@@ -139,13 +139,9 @@ int main(int argc, char** argv)
     auto layout = device->createPipelineLayout(layoutDesc);
     cleanup.push(layout);
 
-    // 4. Create output storage image.
-    //    Must be a 4-byte/pixel format compatible with the swapchain so the
-    //    final copyImage() is a valid 1:1 texel copy. R8G8B8A8_UNORM is the
-    //    portable storage format that supports shader read_write on both
-    //    Vulkan and Metal (a float format like R32G32B32A32_SFLOAT is 16
-    //    bytes/pixel and cannot be byte-copied into the 8-bit swapchain).
-    auto outputImage = device->createImage({{kWindowWidth, kWindowHeight}, gpu::PixelFormat::R8G8B8A8_UNORM, gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc, gpu::ImageType::Image2D, 1, 0, "RT output image"});
+    // 4. Create portable RGBA storage, sampled by a format-aware display pass.
+    //    Presentation may use BGRA and a different drawable extent.
+    auto outputImage = device->createImage({{kWindowWidth, kWindowHeight}, gpu::PixelFormat::R8G8B8A8_UNORM, gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled, gpu::ImageType::Image2D, 1, 0, "RT output image"});
     cleanup.push(outputImage);
 
     // 4b. Create HDR accumulation image. The path tracer integrates many noisy
@@ -353,6 +349,47 @@ int main(int argc, char** argv)
     auto rtPipeline = device->createRayTracingPipeline(pipelineDesc);
     cleanup.push(rtPipeline);
 
+    // Display the RGBA result through a graphics pass in the surface format.
+    auto displayVs = shaderLib->vertex("display", device.get());
+    auto displayFs = shaderLib->fragment("display", device.get());
+    cleanup.push(displayVs);
+    cleanup.push(displayFs);
+
+    gpu::PipelineLayoutDescription displayLayoutDesc{};
+    displayLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
+    displayLayoutDesc.resourceBindings.push_back({0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+    auto displayLayout = device->createPipelineLayout(displayLayoutDesc);
+    cleanup.push(displayLayout);
+
+    auto displaySampler = device->createSampler({
+        .addressModeU = gpu::AddressMode::ClampToEdge,
+        .addressModeV = gpu::AddressMode::ClampToEdge,
+        .debugName = "RT display sampler"});
+    cleanup.push(displaySampler);
+
+    auto createDisplaySet = [&](gpu::Image* image)
+    {
+        auto set = device->createResourceSet(displayLayout.get(), 0, "RT display set");
+        set->setSampledImage({.vulkan = 0, .metal = 0}, image);
+        set->setSampler({.vulkan = 1, .metal = 0}, displaySampler.get());
+        set->update();
+        cleanup.push(set);
+        return set;
+    };
+    auto displaySet = createDisplaySet(outputImage.get());
+
+    gpu::GraphicsPipelineDescription displayDesc{};
+    displayDesc.vertexShader = displayVs.get();
+    displayDesc.fragmentShader = displayFs.get();
+    displayDesc.layout = displayLayout.get();
+    displayDesc.colorFormat = surface->colorFormat();
+    displayDesc.depthFormat = surface->depthFormat();
+    displayDesc.depthState = gpu::DepthState{.testEnabled = false, .writeEnabled = false};
+    displayDesc.cullMode = gpu::CullMode::None;
+    displayDesc.debugName = "RT display pipeline";
+    auto displayPipeline = device->createGraphicsPipeline(displayDesc);
+    cleanup.push(displayPipeline);
+
     // 12. Render loop
     auto& graphicsQueue = device->graphicsQueue();
     uint32_t frameCount = 0;
@@ -391,7 +428,7 @@ int main(int argc, char** argv)
 
                 // Recreate output and accumulation images for the new size
                 outputImage->cleanup();
-                auto newOutput = device->createImage({{newWidth, newHeight}, gpu::PixelFormat::R8G8B8A8_UNORM, gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc, gpu::ImageType::Image2D, 1, 0, "RT output image"});
+                auto newOutput = device->createImage({{newWidth, newHeight}, gpu::PixelFormat::R8G8B8A8_UNORM, gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled, gpu::ImageType::Image2D, 1, 0, "RT output image"});
                 cleanup.push(newOutput);
 
                 accumImage->cleanup();
@@ -406,6 +443,9 @@ int main(int argc, char** argv)
                 newOutputSet->setStorageImage({.vulkan = 2, .metal = 1}, newAccum.get());
                 newOutputSet->update();
                 cleanup.push(newOutputSet);
+
+                displaySet->cleanup();
+                displaySet = createDisplaySet(newOutput.get());
 
                 outputImage = std::move(newOutput);
                 accumImage = std::move(newAccum);
@@ -431,15 +471,18 @@ int main(int argc, char** argv)
             lastProj = camData.projInverse;
         }
 
-        frameCount++;
-        camData.misc.x = static_cast<float>(frameCount);
-        cameraUbo->updateUniformBuffer(camData);
-
+        // Complete prior readers before rewriting the shared camera UBO.
+        // This also serializes access to the shared accumulation images.
+        device->waitIdle();
         auto frame = surface->beginFrame();
         if (!frame)
         {
             continue;
         }
+
+        frameCount++;
+        camData.misc.x = static_cast<float>(frameCount);
+        cameraUbo->updateUniformBuffer(camData);
 
         auto cmd = graphicsQueue.createCommandBuffer("Frame");
 
@@ -455,11 +498,20 @@ int main(int argc, char** argv)
         cmd->bindResourceSet(rtPipeline.get(), 1, sceneSet.get());
         cmd->bindResourceSet(rtPipeline.get(), 2, dataSet.get());
         cmd->traceRays(outputImage->width(), outputImage->height(), 1);
+        if (backendType == gpu::BackendType::Metal)
+        {
+            cmd->endCompute();
+        }
 
-        // Copy output to swapchain
-        cmd->transition(outputImage.get(), gpu::ImageLayout::TransferSrc);
-        cmd->transition(frame->colorImage(), gpu::ImageLayout::TransferDst);
-        cmd->copyImage(outputImage.get(), frame->colorImage());
+        // Sampling converts RGBA to the surface format and scales to its extent.
+        cmd->transition(outputImage.get(), gpu::ImageLayout::ShaderReadOnly);
+        cmd->transition(frame->colorImage(), gpu::ImageLayout::ColorAttachment);
+        cmd->transition(frame->depthImage(), gpu::ImageLayout::DepthAttachment);
+        cmd->beginRendering(frame.get());
+        cmd->bindPipeline(displayPipeline.get());
+        cmd->bindResourceSet(displayPipeline.get(), 0, displaySet.get());
+        cmd->draw(3);
+        cmd->endRendering();
         cmd->transition(frame->colorImage(), gpu::ImageLayout::Present);
 
         surface->present(cmd.get());

@@ -34,9 +34,11 @@ image/sampler owners. Explicit resources must belong to the same Device.
 ## Public pass reuse and completion
 
 BakePassConfiguration can supply exclusive public UV/AO/GI, accumulator and
-composition objects; null entries select bake defaults. Their initialization,
+composition objects; null surface/AO/GI/accumulator/composition entries select
+bake defaults, while null denoise disables filtering. Their initialization,
 format/capability/interface and chart/signal contracts must be compatible. A
-DenoiseFilter without chart isolation is rejected. Passes must not share mutable
+DenoiseFilter is rejected by the current raw-sample executor, which has no
+chart-isolated filtering path. Passes must not share mutable
 slots with display rendering or another job. The batch/CLI expose compatible
 LightmapSettings rather than arbitrary camera-renderer profiles.
 

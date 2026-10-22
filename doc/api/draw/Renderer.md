@@ -39,7 +39,11 @@ are separate from UI/presentation cadence. invalidateHistories marks camera cuts
 and in-place resource edits. sceneFingerprint supplies frozen scene identity for
 offscreen jobs; the base rejects unsupported identity queries. Optional
 supportsLinearRecording/recordLinear/recordFinal hooks expose linear output to
-camera accumulation before final conversion.
+camera accumulation before final conversion. `recordLinear` returns an
+output-sized, single-level RGBA16F image with Sampled/TransferSrc/TransferDst
+usage; preserve its contents until completion and stopped slot reuse.
+`recordFinal` consumes that linear format on the same updated slot without
+repeating scene work. The base throws for unsupported linear/final operations.
 
 ## Compatible extension points
 

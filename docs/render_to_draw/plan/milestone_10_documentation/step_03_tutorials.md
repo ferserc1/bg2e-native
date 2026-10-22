@@ -64,3 +64,32 @@ M10 audits that delivered documentation and makes localized corrections; do not
 defer missing API, tutorial, build or application authoring to this milestone.
 
 Audit examples/draw/01..13 and examples/gpu targets using final-products.tsv, not old numbered legacy tutorials. Cover no-RT behavior, portable upscaler fallback, paired native custom shaders and metadata-backed settings. Baking uses one live target/context and a global submission serial; camera PNG offscreen rendering is a separate workflow.
+
+## M10-01 inventory handoff
+
+Use [inventory.md](inventory.md) and [product-coverage.tsv](product-coverage.tsv)
+for current tutorial/product destinations. Applications moved to apps/model_edit,
+apps/bg2e_composer and apps/lightmap_generator; their targets drop the draw_ prefix.
+Numbered draw/GPU example targets are unchanged. Historical M09 paths remain
+evidence only. Tutorial semantics/snippet verification remain this step's work.
+
+## M10-02 API audit handoff — 2026-10-22
+
+Consume [api-reference-audit.md](api-reference-audit.md) and
+[api-contracts.tsv](api-contracts.tsv) alongside the original inventory. Current
+reference corrections cover retired API/writer/preview availability, live/stored
+materials, actual catalog identities and persistence opt-in, raw bake filtering,
+borrowed GUI ownership and completed acceleration reuse without refit. Native
+v3/v5 capacity/reserve/binding contracts and R01–R14 remain preserved. Draw API
+navigation now links the existing optimization/profiling references directly.
+M10-01 page hashes remain historical; api-page-changes.tsv records the subsequent
+18-page delta. No build/runtime/native/performance evidence is added. Retain the
+separate tutorial, CLI/distribution and global validation scopes of M10-03–05.
+
+## Source correction delivered — 2026-10-22
+
+The user subsequently authorized source repair. Both findings are corrected in
+[source-corrections.md](source-corrections.md): GPU 11/13 serialize shared UBO access,
+and all four standalone helpers check the canonical paired shader paths. Earlier
+finding/handoff paragraphs and stored audit hashes above are historical snapshots,
+not current open issues. Native validation and final lead acceptance remain pending.

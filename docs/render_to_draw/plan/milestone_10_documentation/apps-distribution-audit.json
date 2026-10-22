@@ -1,0 +1,17 @@
+{
+  "kind": "nonexecuting_apps_cli_distribution_audit",
+  "baseline": "e2a32164a781dbf420a4464b25ddce9feb862c6a",
+  "contract_families": 18,
+  "mapped_pages": 17,
+  "source_files": 50,
+  "cli_options": 38,
+  "paired_stage_outputs": 292,
+  "changed_documents": 10,
+  "preserved_non_doc_files": 1275,
+  "documented_source_findings": [
+    "Four standalone creator/updater scripts check obsolete bake/uv_surface.frag output; fresh canonical trees fail preflight.",
+    "Inherited M10-03 primitive GPU 11/13 shared mutable UBO overlap risk remains unchanged."
+  ],
+  "unresolved_inventory_errors": [],
+  "limits": "Source names/rules/contracts only; no CMake/configure/compiler/shader/parser/app/HTTP/package/standalone execution or native output inspection."
+}

@@ -720,3 +720,12 @@ and [submission tracking](Submission_tracking_and_waitIdle.md).
 
 See [rendering/subresources and transfer](Subresources_and_rendering.md) for
 MRT attachments, explicit views/layouts, capability limits and synchronous IO.
+
+## Reference catalogs and native seams
+
+- [Complete GPU reference](reference.md) and [common enums/structures](Common.md).
+- [WindowType](WindowType.md) and [PresentationMode](PresentationMode.md).
+- [Vulkan Info helpers](Info.md) and [Metal handle declarations](MetalHandleTypes.md).
+
+Native helper fields do not expand the production draw feature set: a native
+sample-count parameter is not an implemented draw MSAA mode.

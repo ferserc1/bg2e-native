@@ -21,13 +21,18 @@ Stable renderer/component/property IDs are serialization identities, independent
 of UI labels and C++ addresses. Application passes/upscalers supply their own live
 metadata; no closed engine effect/upscaler enumeration is required.
 
-`RenderSettingsPreferences` is a shared stateless facade. Optional
+`RenderSettingsPreferences` is a shared live facade with catalog/lifecycle state
+and no duplicate editable settings-value model. Optional
 `app::Preferences*` persistence is borrowed. `connect(shared_delegate, extensions)`
 installs weak attach/detach callbacks before first renderer binding. `queueSet`,
 `queueImport` and `queueRestore` commit through the delegate's pre-acquisition
 safe boundary and reject stale renderer/catalog generations. Direct bind/apply/
-restore require a stopped boundary. No values load implicitly: explicit settings
-documents bypass stored defaults; absent properties retain current live values.
+restore require a stopped boundary. Automatic persistence is disabled by default.
+`setAutomaticPersistence(true)` opts into a one-time restore on first renderer
+attachment and persistence of successful queued edits/imports; install it before
+attachment when that restore is wanted. Enabling it requires a borrowed
+Preferences service. Explicit settings documents bypass stored
+defaults; absent properties retain current live values.
 Preferences retains its existing log-only disk durability reporting.
 
 Use `SettingsCodec::readFile`, `exportFile`, `parse` and `stringify` for strict
@@ -123,9 +128,14 @@ See [GraphicsSettingsWindow](../ui/GraphicsSettingsWindow.md),
 
 ## Serialized document identity
 
-The codec writes schema `bg2e.draw.settings`, version string `1`, renderer identity
-`bg2e.draw.deferred.v1` and a components list. Each component stores id, type and
-properties; each writable available property stores type and value. Effect type
+The codec writes schema `bg2e.draw.settings`, version string `1`, the current
+`SettingsCatalog::rendererId()` and a components list. The deferred renderer binds
+`bg2e.draw.deferred.v1`; the standalone UV tool binds `bg2e.bake.standalone.v1`
+with target `bake` and type `bg2e.bake.lightmapSettings.v1`. A custom catalog must
+supply its own nonempty identity. Import requires that exact bound identity even
+with SkipUnknownOrUnavailable; that policy does not accept schema/type mismatches.
+Each component stores id, type and properties; each writable, available graphics
+property stores type and value. Scene/diagnostic properties are excluded. Effect type
 IDs are `bg2e.draw.rtao.v1`, `bg2e.draw.rtgi.v1`,
 `bg2e.draw.reflections.v1`, `bg2e.draw.temporal.v1`, `bg2e.draw.denoise.v1`
 and, for the shipped processor, `bg2e.draw.smaa.v1`. Read-only capabilities are not

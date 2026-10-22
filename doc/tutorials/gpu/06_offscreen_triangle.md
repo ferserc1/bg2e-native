@@ -347,7 +347,10 @@ graphicsQueue.submit(cmd.get());
 surface->endFrame(frame.get());
 ```
 
-For offscreen surfaces, `present()` records the presentation command (which is a no-op for offscreen targets), then the command buffer is ended and submitted to the GPU. `endFrame()` finalizes the frame.
+For offscreen surfaces, `present()` associates the command with the acquired
+frame even though there is no native window presentation. Submit before
+`endFrame()`, which verifies a submitted frame and advances the slot; it does not
+wait. The following device wait establishes readback completion.
 
 ### 18. Wait for GPU completion
 
@@ -526,6 +529,7 @@ auto frame = surface->beginFrame();
 auto cmd = graphicsQueue.createCommandBuffer();
 cmd->begin();
 // ... record commands ...
+surface->present(cmd.get()); // Associate the command with this acquired frame.
 cmd->end();
 graphicsQueue.submit(cmd.get());
 surface->endFrame(frame.get());
@@ -714,7 +718,7 @@ int main(int argc, char** argv)
     graphicsQueue.submit(cmd.get());
     surface->endFrame(frame.get());
 
-    // Wait for GPU to finish — offscreen submit has no fence
+    // Wait for the tracked offscreen submission before readback
     device->waitIdle();
 
     // 9. Read back pixels and save to disk
