@@ -62,7 +62,7 @@ copies carry model/submesh geometry/materials/joints, excluding node placement,
 descendants and unrelated components; they are not exported prefab scenes.
 
 The batch uses actual completed [typed output](LightmapOutput.md). RGB32F is exact
-native RGBA32F `.bg2tex`, not an 8-bit conversion. Required unsupported RT/kernel/
+Radiance RGBE `.hdr`, not an 8-bit conversion. Required unsupported RT/kernel/
 format support fails; there is no neutral no-RT bake fallback. Device/Engine must
 outlive context/bakers/assembly and any externally retained GPU owner. Result
 paths are CPU values and can survive normal native cleanup.

@@ -6,7 +6,7 @@ boundary, using a disposable existing output directory. It is not a CMake target
 and has not been compiled or run by the implementing agent.
 
 The probe checks quoted/backslash/newline JSON strings; a source-less GPU float
-texture with HDR values and two authored mips; native archive bytes; bakedGI/UV2,
+texture with HDR values and two authored mips; standard HDR pixels; bakedGI/UV2,
 scale, linear color and sampler metadata after complete scene save/reload; and
 failure rollback when a custom component has no reference serializer. It also
 checks that temporary Drawable paths are restored. Run on available Vulkan and
@@ -25,9 +25,9 @@ Additional project-lead checks:
 4. Save a scene with registered custom schema/reference/draw hooks; compare its
    custom fields and chain-joint metadata. Raw/schema-only probes remain in
    `tests/draw/db_levels`; unknown typed components must fail explicitly.
-5. Inspect all `.bg2tex` mip/layer payloads for an authored cubemap archive and
-   load supported 2D material archives on both backends. Verify truncated/header/
-   length/trailing-byte rejection and uninitialized/unsupported image rejection.
+5. Confirm cubemap and unsupported GPU format export fail explicitly. Standard
+   PNG/HDR exports preserve mip zero; mipmaps regenerate on reload when enabled.
+   Verify placeholders do not produce files and shared filenames consolidate once.
 6. Open/import/drop files in draw_model_edit; cancel dialogs and dirty prompts;
    exercise Save/Discard/Cancel for open and close. Force missing inputs,
    unsupported BG2 graph exports and unwritable destinations. Failed load/save
@@ -37,4 +37,4 @@ Additional project-lead checks:
    and failure. New sidecars are unique; previous generations remain. Move the
    main file together with its sidecars, reopen, and verify relative paths.
 8. Confirm production model_edit and production PNG/HDR saves still work. Draw
-   `.bg2tex` sidecars intentionally require the draw loader.
+   PNG/HDR sidecars use standard image decoding.

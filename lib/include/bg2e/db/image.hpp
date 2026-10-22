@@ -29,6 +29,8 @@
 #include <string_view>
 #include <vector>
 
+namespace bg2e::gpu { class Image; }
+
 namespace bg2e {
 namespace db {
 
@@ -58,6 +60,13 @@ extern BG2E_API std::vector<uint8_t> decodeImageRGBA8(
     size_t encodedSize,
     uint32_t& width,
     uint32_t& height);
+
+// Write linear RGB/RGBA floating-point pixels as standard Radiance HDR.
+extern BG2E_API void saveImage(const std::filesystem::path& filePath,
+    const float* data, uint32_t width, uint32_t height, uint32_t channels);
+
+// Export mip zero of a 2D GPU image as PNG or HDR; authored mipmaps are not stored.
+extern BG2E_API void saveImage(const std::filesystem::path& filePath, gpu::Image& image);
 
 extern BG2E_API void saveImage(
     const std::filesystem::path& filePath,

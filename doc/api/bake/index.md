@@ -99,7 +99,7 @@ provides the example completion boundary; it does not add a render-loop callback
 - [Standalone C++ tutorial](../../tutorials/draw/standalone_lightmaps.md), [CLI/build guide](../../apps/draw_lightmap_generator.md) and [ownership architecture](../../architecture/draw_standalone_lightmaps.md).
 
 The new product deliberately fails invalid required targets rather than skipping
-into zero-success. RGB32F file encoding preserves HDR in a native archive; raw GI
+into zero-success. RGB32F file encoding preserves dynamic range in standard Radiance HDR with RGBE quantization; raw GI
 precision and interactive half-range material display remain separate limits.
 Engine/Device outlive every retained GPU owner. Source/optimization preservation
 and native evidence are distinct: ten synthetic inspector tests do not establish

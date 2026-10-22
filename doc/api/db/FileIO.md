@@ -1,36 +1,23 @@
-# Generic native texture archives and file publication
+# Standard images and file publication
 
 These `bg2e::db` helpers provide file/data operations. They do not own bake jobs,
 complete scene exports or protected batch publication; those contracts belong to
 [complete draw IO](DrawResourceIO.md) and the
 [bake output writer](../bake/LightmapOutputWriter.md).
 
-## TextureArchive
+## Standard image export
 
-Include `<bg2e/db/texture_archive.hpp>` or `<bg2e/db/all.hpp>`.
-TextureArchive has `gpu::ImageDescription description` and
-`vector<vector<uint8_t>> subresources` ordered **layer, then mip**.
+Include `<bg2e/db/image.hpp>` or `<bg2e/db/all.hpp>`.
+`saveImage(path, bytes, width, height, channels)` writes PNG/JPEG/BMP/TGA.
+`saveImage(path, floats, width, height, channels)` writes linear RGB/RGBA
+pixels as Radiance `.hdr`. RGBE preserves dynamic range with quantization;
+it does not preserve exact floating-point bits or alpha.
 
-```cpp
-TextureArchive readTextureArchive(const std::filesystem::path& path);
-void writeTextureArchive(const std::filesystem::path& path, gpu::Image& image);
-void writeTextureArchive(const std::filesystem::path& path, const TextureArchive& archive);
-```
-
-The CPU overload creates no GPU resource. Supply explicit mipLevels and
-minMipSize zero, supported native color format, valid 2D/cubemap extent and exact
-native byte count for every layer/mip. Cubemaps have six layers. Invalid counts/
-sizes reject before creating the output file. The GPU overload synchronously
-reads native subresources; Device/image must remain alive with producers stopped.
-Neither overload creates destination parents or protects arbitrary source paths;
-callers stage/publicize files according to their product policy.
-
-BG2TEX01 version 1 stores native format/type/width/height/mip count and length-
-prefixed subresources. Current byte order support is little endian. Format bits,
-HDR values and authored mips/layers are not gamma-converted or quantized. Reads
-validate lengths/truncation/trailing bytes. The draw texture loader recognizes
-`.bg2tex`; ordinary image codecs remain distinct from native texture archive decoding.
-Native format enum interpretation follows the current engine archive contract.
+`saveImage(path, gpuImage)` synchronously reads mip zero of a 2D RGBA8 UNORM
+or RGBA32F image and writes PNG or HDR respectively. Other GPU formats and
+cubemaps are rejected explicitly. Images require TransferSrc; callers must
+stop producers. Mipmaps are regenerated on load according to texture settings.
+No proprietary texture archive is written or loaded.
 
 ## publishFile
 
@@ -61,7 +48,6 @@ This CPU inventory does not mutate parsing/material behavior or discover custom
 resources. The bake writer combines it with material/environment/explicit inputs
 for its stronger protection contract.
 
-Sources: [archive declarations](../../../lib/include/bg2e/db/texture_archive.hpp),
-[archive encoding](../../../lib/src/bg2e/db/texture_archive.cpp),
-[file publication](../../../lib/src/bg2e/db/file.cpp),
-[OBJ reader](../../../lib/src/bg2e/db/mesh_obj_db.cpp).
+Sources: [image declarations](../../../lib/include/bg2e/db/image.hpp),
+[image codecs](../../../lib/src/bg2e/db/image_db.cpp),
+[file publication](../../../lib/src/bg2e/db/file.cpp).

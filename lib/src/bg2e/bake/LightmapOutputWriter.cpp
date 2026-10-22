@@ -20,7 +20,6 @@
 #include <bg2e/db/file.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/db/mesh_obj.hpp>
-#include <bg2e/db/texture_archive.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/draw/RenderQueueVisitor.hpp>
 #include <bg2e/gpu/RayTracingMesh.hpp>
@@ -523,7 +522,7 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
         }
         const auto name = stem(t.identity, i);
         OutputPaths out{t.identity, s.generation / (name + (s.settings.cpuFormat() == LightmapPixelFormat::RGB32F ?
-            ".bg2tex" : std::string(db::canonicalImageExtension(s.format)))),
+            ".hdr" : std::string(db::canonicalImageExtension(s.format)))),
             s.generation / (name + ".lightmap.json"), std::nullopt};
         if (writeModelCopies)
         {
@@ -635,20 +634,11 @@ void LightmapOutputWriter::write(const LightmapPixels& pixels, const std::string
     else
     {
         const auto& rgb = std::get<std::vector<float>>(pixels.rgb);
-        std::vector<float> rgba(rgb.size() / 3 * 4, 1.0f);
-        for (size_t i = 0; i < rgb.size() / 3; ++i)
+        db::saveImage(image, rgb.data(), pixels.width, pixels.height, 3);
+        std::unique_ptr<base::Image> decoded(db::loadImage(image));
+        if (!decoded || !decoded->dataf() || decoded->width() != pixels.width || decoded->height() != pixels.height)
         {
-            std::copy_n(rgb.data() + i * 3, 3, rgba.data() + i * 4);
-        }
-        db::TextureArchive archive;
-        archive.description.size = {pixels.width, pixels.height};
-        archive.description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
-        archive.subresources.emplace_back(rgba.size() * sizeof(float));
-        std::memcpy(archive.subresources[0].data(), rgba.data(), archive.subresources[0].size());
-        db::writeTextureArchive(image, archive);
-        if (db::readTextureArchive(image).subresources != archive.subresources)
-        {
-            throw std::runtime_error("Bake output: float archive verification failed");
+            throw std::runtime_error("Bake output: HDR decode verification failed");
         }
     }
     if (out.modelPath)
@@ -689,13 +679,13 @@ void LightmapOutputWriter::write(const LightmapPixels& pixels, const std::string
         {"rowZero", JSON("v=0")}, {"uvSet", JSON(1)}, {"signal", JSON("indirectMultiplierRGB")},
         {"indirectTextureMode", JSON(s.settings.mode() == LightmapMode::RTAO ? "bakedAO" : "bakedGI")},
         {"cpuFormat", JSON(pixels.format == LightmapPixelFormat::RGB8 ? "RGB8" : "RGB32F")},
-        {"storageFormat", JSON(pixels.format == LightmapPixelFormat::RGB8 ? "RGB8" : "RGBA32F-alpha-one")},
+        {"storageFormat", JSON(pixels.format == LightmapPixelFormat::RGB8 ? "RGB8" : "Radiance-RGBE")},
         {"exposureApplied", JSON(pixels.format == LightmapPixelFormat::RGB8 && s.settings.mode() == LightmapMode::RTGI)},
         {"exposureEV", JSON(s.settings.exposureEV())}, {"dilationPixels", JSON(s.settings.dilationPixels())},
         {"accumulationFrames", JSON(s.settings.accumulationFrames())}, {"samplesPerPixel", JSON(s.settings.samplesPerPixel())},
         {"aoRadius", JSON(s.settings.aoRadius())}, {"maxRayDistance", JSON(s.settings.maxRayDistance())},
         {"rayBias", JSON(s.settings.rayBias())}, {"padding", JSON("nearest-chart")},
-        {"conversion", JSON(pixels.format == LightmapPixelFormat::RGB32F ? "identity" :
+        {"conversion", JSON(pixels.format == LightmapPixelFormat::RGB32F ? "Radiance-RGBE-quantization" :
             s.settings.mode() == LightmapMode::RTGI ? "linear-exp2-exposure-clamp-round-unorm8" : "linear-clamp-round-unorm8")},
         {"giBounces", JSON(s.settings.giBounces())}, {"byteEncodingLossy", JSON(s.format == db::ImageFormat::JPEG && pixels.format == LightmapPixelFormat::RGB8)}
     }));

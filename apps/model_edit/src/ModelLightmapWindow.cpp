@@ -260,7 +260,7 @@ void ModelLightmapWindow::drawContents()
     bg2e::ui::Value::comboBox("Resolution", {"128", "256", "512", "1024", "2048", "4096"}, _resolutionIndex);
     bg2e::ui::Numeric::sliderInt("Completed samples", &_frames, 1, 512);
     bg2e::ui::Numeric::sliderInt("Samples per pixel", &_samples, 1, 256);
-    bg2e::ui::Value::comboBox("CPU export precision", {"RGB8 linear", "RGB32F HDR"}, _formatIndex);
+    bg2e::ui::Value::comboBox("Lightmap output", {"PNG RGB8 linear", "Radiance HDR"}, _formatIndex);
     bg2e::ui::Numeric::sliderInt("GI bounces", &_bounces, 1, 8);
     bg2e::ui::Numeric::slider("AO radius", &_aoRadius, 0.001f, 10.0f);
     bg2e::ui::Numeric::slider("Maximum ray distance", &_maxDistance, 0.01f, 10000.0f);

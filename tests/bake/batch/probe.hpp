@@ -21,7 +21,7 @@
 #include <bg2e/bake/StandaloneBakeBatch.hpp>
 #include <bg2e/db/file.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
-#include <bg2e/db/texture_archive.hpp>
+#include <bg2e/db/image.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <cstring>
 #include <fstream>
@@ -81,23 +81,15 @@ inline void runBakePublicationProbe(const std::filesystem::path& directory)
         "No-replace publication damaged existing bytes");
     db::publishFile(pending, destination, true);
     batchRequire(batchFileBytes(destination) == "second", "Atomic replacement failed");
-    db::TextureArchive archive;
-    archive.description.size = {1, 1};
-    archive.description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
-    const float values[]{0.0f, 100000.0f, 2.5f, 1.0f};
-    archive.subresources.emplace_back(sizeof(values));
-    std::memcpy(archive.subresources[0].data(), values, sizeof(values));
-    const auto texture = directory / "hdr.bg2tex";
-    db::writeTextureArchive(texture, archive);
-    batchRequire(db::readTextureArchive(texture).subresources == archive.subresources,
-        "CPU archive did not preserve exact HDR bits");
-    archive.subresources[0].pop_back();
+    const float values[]{1.0f, 2.0f, 4.0f};
+    const auto texture = directory / "hdr.hdr";
+    db::saveImage(texture, values, 1, 1, 3);
+    std::unique_ptr<base::Image> decoded(db::loadImage(texture));
+    batchRequire(decoded->dataf() && decoded->dataf()[2] == 4.0f, "HDR did not retain linear range");
     batchReject([&]
     {
-        db::writeTextureArchive(directory / "invalid.bg2tex", archive);
+        db::saveImage(directory / "invalid.png", values, 1, 1, 3);
     });
-    batchRequire(!std::filesystem::exists(directory / "invalid.bg2tex"),
-        "Malformed archive created a file");
 }
 
 // Stopped offscreen Engine, loaded plain UV2 target and existing source model.
@@ -141,17 +133,15 @@ inline void runLightmapOutputProbe(draw::Engine& engine, std::shared_ptr<scene::
         target->drawable()->drawable()->material().indirectTextureMode() == originalMode &&
         target->drawable()->drawable()->material().aoTexture() == originalTexture,
         "Export mutated a source asset/material");
-    const auto image = db::readTextureArchive(outputs[0].imagePath);
-    float hdr;
-    std::memcpy(&hdr, image.subresources[0].data() + sizeof(float), sizeof(float));
-    batchRequire(hdr == 100000.0f, "Writer clamped HDR");
+    std::unique_ptr<base::Image> image(db::loadImage(outputs[0].imagePath));
+    batchRequire(image->dataf() && image->dataf()[1] > 99000.0f, "Writer clamped HDR");
     auto model = db::loadDrawableBg2(*outputs[0].modelPath, engine);
     const auto& m = model->material();
     batchRequire(m.aoUVSet() == 1 && m.aoTexture()->colorType() == base::Color::TypeLinear &&
         m.indirectTextureMode() == base::MaterialAttributes::IndirectTextureMode::BakedGlobalIllumination,
         "Exported model lost UV2/linear/baked GI semantics");
-    const auto nativeMap = db::readTextureArchive(m.aoTexture()->imageFilePath());
-    batchRequire(nativeMap.subresources == image.subresources, "Model did not embed actual HDR pixels");
+    batchRequire(batchFileBytes(m.aoTexture()->imageFilePath()) == batchFileBytes(outputs[0].imagePath),
+        "Model did not preserve the HDR source file");
     const auto oldManifest = batchFileBytes(directory / "lightmaps.json");
     batchReject([&]
     {

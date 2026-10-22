@@ -61,12 +61,14 @@ logged failure. Check the result before declaring document/batch success; a
 try/catch alone cannot detect it. The example fragment assumes live root/engine/
 modelNode and includes `<stdexcept>`. Destination parents are created by export.
 Export requires realized drawables owned by the supplied Engine and no unresolved
-pending texture updates. It snapshots live material attributes and each actual GPU
-texture, including a GPU-only baked map with an empty source path. Every image
-layer/mip is read in its native format into a `.bg2tex` sidecar; format, HDR values
-and authored mips survive without gamma conversion or mip regeneration. Images
-must support TransferSrc and have initialized color subresources. Unsupported
-readback fails the transaction instead of falling back to an old source file.
+pending texture updates. It snapshots live material attributes. Only explicitly
+assigned textures are persisted: missing slots remain absent and the renderer
+recreates its neutral placeholders. Filesystem images retain their filenames and
+are copied once per filename. An already consolidated filename is reused; distinct
+sources with identical names are not distinguished by this contract.
+Procedural and GPU-only assigned images use synchronous readback to standard PNG
+(RGBA8) or Radiance HDR (RGBA32F). Only mip zero of 2D images is exported;
+other GPU formats and cubemaps fail explicitly. Authored mipmaps are not preserved.
 
 Sampler settings, color interpretation, UV sets/scales/channels/inversion and
 `IndirectTextureMode` travel in material JSON. The AO slot retains linear RGB
@@ -105,22 +107,8 @@ atomicity, not a power-loss durability guarantee. Old generations
 remain on disk: export deliberately does not delete possibly shared resources.
 Keep the main file and its generated sidecars together when moving a document.
 
-`.bg2tex` is the native texture archive format consumed by draw resource loading.
-Keep complete generated archives alongside their model/scene references; exporting
-sampler metadata alone does not materialize GPU-only image content.
-
-## Native texture archive version 1
-
-`<bg2e/db/texture_archive.hpp>` exposes `readTextureArchive(path)` as CPU IO and
-`writeTextureArchive(path, image)` as synchronous GPU readback plus encoding.
-The reader does not create a device. The format begins with eight ASCII bytes
-`BG2TEX01`, followed by five little-endian uint32 values: PixelFormat, ImageType,
-width, height and explicit mip count. For each array layer, then each mip, it stores
-a little-endian uint64 byte length followed by tightly packed native texels.
-Image2D has one layer and Cubemap six. Depth, unknown formats/types, invalid
-sizes/mips, truncated payloads and trailing data are rejected. Version 1 uses the
-current GPU enum numeric values; changing those assignments requires a new
-archive version. Native texels currently require a little-endian host.
+Standard images are decoded by the ordinary image loader. Proprietary texture
+archives are no longer supported; existing archives require external conversion.
 
 The [manual resource probe](../../../tests/draw/resource_io/README.md) checks
 GPU-only HDR/mip/metadata round-trip and rollback. Compilation, backend execution
@@ -166,5 +154,4 @@ not a background GPU-loading or immutable filesystem snapshot API.
 The [bake writer](../bake/LightmapOutputWriter.md) reuses complete bool-checked
 model snapshots inside private per-target directories, then publishes a complete
 batch manifest last. Complete single-document DB publication by itself does not
-supply that source-protection/overwrite/multi-target transaction. Generic native
-CPU archive/file publication is documented in [FileIO](FileIO.md).
+supply that source-protection/overwrite/multi-target transaction. Generic image/file publication is documented in [FileIO](FileIO.md).

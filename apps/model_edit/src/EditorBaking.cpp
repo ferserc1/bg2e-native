@@ -24,7 +24,6 @@
 #include <bg2e/draw/Texture.hpp>
 #include <bg2e/base/Texture.hpp>
 #include <bg2e/db/image.hpp>
-#include <bg2e/db/texture_archive.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 
 #include <atomic>
@@ -360,8 +359,8 @@ void AppDelegate::applyLightmapBake()
             }
             while (!std::filesystem::create_directory(directory));
             const auto pixels = owner->_baker->readPixels();
-            const auto path = directory / (pixels.format == bg2e::bake::LightmapPixelFormat::RGB8
-                ? "lightmap.png" : "lightmap.bg2tex");
+            const auto path = directory / (directory.filename().string() + (pixels.format == bg2e::bake::LightmapPixelFormat::RGB8
+                ? ".png" : ".hdr"));
             if (pixels.format == bg2e::bake::LightmapPixelFormat::RGB8)
             {
                 const auto& rgb = std::get<std::vector<uint8_t>>(pixels.rgb);
@@ -370,7 +369,8 @@ void AppDelegate::applyLightmapBake()
             else
             {
                 // Preserve HDR multipliers instead of clamping them into PNG.
-                bg2e::db::writeTextureArchive(path, *result->image);
+                const auto& rgb = std::get<std::vector<float>>(pixels.rgb);
+                bg2e::db::saveImage(path, rgb.data(), pixels.width, pixels.height, 3);
             }
             auto settings = std::make_shared<bg2e::base::Texture>(path);
             settings->setColorType(bg2e::base::Color::TypeLinear);

@@ -44,9 +44,9 @@ warning policy; malformed required geometry still fails.
 
 `--cpu-format rgb8` uses `--format png|jpg|jpeg|bmp|tga`. JPEG is lossy. RGB8 GI
 applies `--exposure` before linear UNORM clamp/round in the bake composition step.
-`--cpu-format rgb32f` preserves HDR with no exposure/clamp and uses native
-RGBA32F `.bg2tex` files (alpha one). The draw native loader is required for those
-files; they are not general interchange HDR images. Explicit `--format` or
+`--cpu-format rgb32f` preserves HDR with no exposure/clamp and uses standard
+Radiance RGBE `.hdr` files. Standard HDR decoding is used for those
+files. RGBE introduces quantization and does not preserve exact float bits. Explicit `--format` or
 `--exposure` with RGB32F is rejected. AO uses `--ao-radius`; GI uses
 `--gi-bounces` / `--max-distance`; explicit options for the wrong mode reject.
 See standalone `--help` for all ranges/options.

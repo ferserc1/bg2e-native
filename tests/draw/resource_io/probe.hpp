@@ -19,7 +19,7 @@
 #pragma once
 
 #include <bg2e/db/scene.hpp>
-#include <bg2e/db/texture_archive.hpp>
+#include <bg2e/db/image.hpp>
 #include <bg2e/draw/MaterialBase.hpp>
 #include <bg2e/geo/cube.hpp>
 #include <bg2e/json/JsonParser.hpp>
@@ -76,7 +76,7 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
     live->materialAttributes().setAoUVSet(1);
     live->materialAttributes().setAoScale(glm::vec2(2, 3));
     const auto path = directory / "resource-round-trip.json";
-    db::saveScene(node.get(), engine, path);
+    require(db::saveScene(node.get(), engine, path));
     require(node->getComponent<scene::DrawableComponent>()->resourcePath().empty());
     auto loaded = db::loadScene(path, engine);
     auto output = loaded->rootNode()->children().at(0)->getComponent<scene::DrawableComponent>()->drawable();
@@ -85,14 +85,40 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
     require(material.indirectTextureMode() == base::MaterialAttributes::IndirectTextureMode::BakedGlobalIllumination);
     require(material.aoTexture()->colorType() == base::Color::TypeLinear &&
         material.aoTexture()->addressModeU() == base::Texture::AddressModeClampToEdge);
-    auto archive = db::readTextureArchive(material.aoTexture()->imageFilePath());
-    require(archive.description.format == description.format && archive.description.mipLevels == 2);
-    const auto equal = [](const std::vector<uint8_t>& bytes, const auto& values)
+    std::unique_ptr<base::Image> saved(db::loadImage(material.aoTexture()->imageFilePath()));
+    require(saved->dataf() && saved->width() == 2 && saved->height() == 2);
+    for (size_t i = 0; i < 4; ++i)
     {
-        const auto* begin = reinterpret_cast<const uint8_t*>(values.data());
-        return bytes == std::vector<uint8_t>(begin, begin + sizeof(values));
-    };
-    require(equal(archive.subresources.at(0), mip0) && equal(archive.subresources.at(1), mip1));
+        for (size_t c = 0; c < 3; ++c)
+        {
+            require(saved->dataf()[i * saved->channels() + c] == mip0[i * 4 + c]);
+        }
+    }
+    require(!material.albedoTexture() && !material.normalTexture() && !material.roughnessTexture());
+    size_t imageFiles = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(directory))
+    {
+        if (entry.path().extension() == ".hdr" || entry.path().extension() == ".png")
+        {
+            ++imageFiles;
+        }
+    }
+    require(imageFiles == 1); // Missing maps remain placeholders, not files.
+    auto shared = output->drawMaterial(0);
+    auto attributes = shared->materialAttributes();
+    attributes.setLightEmissionTexture(attributes.aoTexture());
+    shared->setMaterialAttributes(attributes);
+    shared->updateTextures();
+    require(db::saveScene(loaded->rootNode(), engine, directory / "shared.json"));
+    size_t sharedImages = 0;
+    for (const auto& entry : std::filesystem::directory_iterator(directory))
+    {
+        if (entry.path().extension() == ".hdr")
+        {
+            ++sharedImages;
+        }
+    }
+    require(sharedImages == 1); // Both slots reuse the existing source filename.
 
     // A failing custom serializer must leave the previous main and resources readable.
     class RejectExport final : public scene::Component {
@@ -106,16 +132,7 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
     };
     const auto before = db::readSceneDocument(path)->serialize();
     node->addComponent(new RejectExport());
-    bool rejected = false;
-    try
-    {
-        db::saveScene(node.get(), engine, path);
-    }
-    catch (const std::exception&)
-    {
-        rejected = true;
-    }
-    require(rejected && db::readSceneDocument(path)->serialize() == before &&
+    require(!db::saveScene(node.get(), engine, path) && db::readSceneDocument(path)->serialize() == before &&
         node->getComponent<scene::DrawableComponent>()->resourcePath().empty());
     auto recovered = db::loadScene(path, engine);
     require(recovered->rootNode()->children().size() == 1);

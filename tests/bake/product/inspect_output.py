@@ -1,7 +1,7 @@
 """Read-only M08 product artifact inspection; no engine/GPU dependency.
 
-Supports the writer's PNG and native RGB32F maps. BG2 inspection covers its
-material section and referenced native textures, not geometry or engine reload.
+Supports the writer's PNG and Radiance HDR maps. BG2 inspection covers its
+material section and referenced standard images, not geometry or engine reload.
 """
 import argparse
 import hashlib
@@ -49,30 +49,47 @@ def artifact(root, relative):
     return path
 
 
-def native_texture(path):
-    require(path.stat().st_size <= 64 * 1024 * 1024, "Native texture exceeds inspector's 64 MiB file limit")
-    data = path.read_bytes()
-    require(len(data) >= 36 and data[:8] == b"BG2TEX01", "Invalid native texture header")
-    fmt, kind, width, height, mips = struct.unpack_from("<5I", data, 8)
-    # gpu::PixelFormat native archive ordinals; checked against Common.hpp in self-checks.
-    sizes = {1: 4, 2: 4, 3: 4, 4: 4, 5: 8, 6: 16,
-             11: 1, 12: 2, 13: 2, 14: 4, 15: 4, 16: 8, 17: 4, 18: 4, 19: 8, 20: 16}
-    require(fmt in sizes and kind in (0, 1) and width > 0 and height > 0 and
-            1 <= mips <= max(width, height).bit_length(), "Invalid native texture description")
-    require(kind != 1 or width == height, "Nonsquare cubemap")
-    payloads = []
-    offset = 28
-    for _layer in range(6 if kind else 1):
-        for mip in range(mips):
-            require(offset + 8 <= len(data), "Truncated native subresource size")
-            size, = struct.unpack_from("<Q", data, offset)
-            offset += 8
-            expected = max(1, width >> mip) * max(1, height >> mip) * sizes[fmt]
-            require(size == expected and offset + size <= len(data), "Invalid native subresource payload")
-            payloads.append(data[offset:offset + size])
-            offset += size
-    require(offset == len(data), "Native texture has trailing bytes")
-    return fmt, kind, width, height, payloads
+def hdr_rgb(path):
+    require(path.stat().st_size <= 64 * 1024 * 1024, "HDR exceeds file limit")
+    with path.open("rb") as stream:
+        require(stream.readline().strip() in (b"#?RADIANCE", b"#?RGBE"), "Invalid HDR signature")
+        while True:
+            line = stream.readline()
+            require(line, "Truncated HDR header")
+            if not line.strip():
+                break
+        resolution = stream.readline().split()
+        require(len(resolution) == 4 and resolution[0] == b"-Y" and resolution[2] == b"+X", "Unsupported HDR orientation")
+        height, width = int(resolution[1]), int(resolution[3])
+        require(width > 0 and height > 0 and width * height <= 4 * 1024 * 1024, "Invalid HDR extent")
+        rgb = []
+        for _ in range(height):
+            first = stream.read(4)
+            require(len(first) == 4, "Truncated HDR row")
+            if 8 <= width < 32768 and first[:2] == b"\x02\x02":
+                require(int.from_bytes(first[2:], "big") == width, "Invalid HDR scanline")
+                channels = []
+                for _ in range(4):
+                    channel = bytearray()
+                    while len(channel) < width:
+                        code = stream.read(1)
+                        require(code and code[0] != 0, "Invalid HDR run")
+                        count = code[0] - 128 if code[0] > 128 else code[0]
+                        payload = stream.read(1 if code[0] > 128 else count)
+                        require(len(payload) == (1 if code[0] > 128 else count), "Truncated HDR run")
+                        channel.extend(payload * count if code[0] > 128 else payload)
+                        require(len(channel) <= width, "HDR run exceeds row")
+                    channels.append(channel)
+                row = zip(*channels)
+            else:
+                data = first + stream.read(width * 4 - 4)
+                require(len(data) == width * 4, "Truncated HDR pixels")
+                row = struct.iter_unpack("4B", data)
+            for r, g, b, exponent in row:
+                scale = math.ldexp(1.0, exponent - 136) if exponent else 0.0
+                rgb.extend((r * scale, g * scale, b * scale))
+        require(not stream.read(1), "HDR has trailing bytes")
+    return width, height, rgb
 
 
 def paeth(a, b, c):
@@ -141,13 +158,8 @@ def png_rgb(path):
 def read_map(path, metadata):
     fmt = metadata["cpuFormat"]
     if fmt == "RGB32F":
-        require(path.suffix == ".bg2tex", "Float map requires native archive")
-        native, kind, width, height, levels = native_texture(path)
-        require(native == 6 and kind == 0 and len(levels) == 1, "Float map must be one RGBA32F mip")
-        rgb = []
-        for r, g, b, a in struct.iter_unpack("<4f", levels[0]):
-            require(a == 1 and all(math.isfinite(v) and v >= 0 for v in (r, g, b)), "Invalid HDR/alpha texel")
-            rgb.extend((r, g, b))
+        require(path.suffix == ".hdr", "Float map requires Radiance HDR")
+        width, height, rgb = hdr_rgb(path)
     else:
         require(fmt == "RGB8" and path.suffix == ".png", "Inspector supports PNG/RGB32F; use an independent decoder for JPEG/BMP/TGA")
         width, height, rgb = png_rgb(path)
@@ -181,20 +193,11 @@ def inspect_model(path, metadata, map_rgb):
             if not isinstance(material.get(slot), str):
                 continue
             relative = material[slot]
-            require(len(PurePosixPath(relative).parts) == 1 and relative.endswith(".bg2tex"), "Model texture is not a local native sidecar")
+            require(len(PurePosixPath(relative).parts) == 1, "Model texture is not local")
             resource = artifact(path.parent, relative)
-            native, kind, width, height, payloads = native_texture(resource)
             checked.add(resource)
             if slot == "ambientOcclussion":
-                require(kind == 0 and (width, height) == (metadata["width"], metadata["height"]), "Model map extent differs")
-                if metadata["cpuFormat"] == "RGB32F":
-                    require(native == 6, "Model downgraded HDR format")
-                    rgba_values = list(struct.iter_unpack("<4f", payloads[0]))
-                    require(all(rgba[3] == 1 for rgba in rgba_values), "Model float map alpha differs")
-                    actual = [v for rgba in rgba_values for v in rgba[:3]]
-                else:
-                    require(native == 1, "Model byte map must remain linear RGBA8")
-                    actual = bytearray(v for i, v in enumerate(payloads[0]) if i % 4 != 3)
+                _, _, actual = read_map(resource, metadata)
                 require(actual == map_rgb, "Model baked map pixels differ from exported image")
     return len(checked)
 
@@ -236,8 +239,8 @@ def inspect(manifest, expectations=None):
                 "Invalid bake settings metadata")
         floating = metadata["cpuFormat"] == "RGB32F"
         exposed = not floating and metadata["indirectTextureMode"] == "bakedGI"
-        conversion = "identity" if floating else "linear-exp2-exposure-clamp-round-unorm8" if exposed else "linear-clamp-round-unorm8"
-        require(metadata["storageFormat"] == ("RGBA32F-alpha-one" if floating else "RGB8") and
+        conversion = "Radiance-RGBE-quantization" if floating else "linear-exp2-exposure-clamp-round-unorm8" if exposed else "linear-clamp-round-unorm8"
+        require(metadata["storageFormat"] == ("Radiance-RGBE" if floating else "RGB8") and
                 metadata["exposureApplied"] == exposed and metadata["conversion"] == conversion and
                 metadata["byteEncodingLossy"] is False, "Invalid encoding/conversion metadata")
         width, height, rgb = read_map(paths["image"], metadata)

@@ -18,6 +18,9 @@
 
 #include <bg2e/db/image.hpp>
 
+#include <bg2e/gpu/Image.hpp>
+#include <cstring>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <algorithm>
@@ -144,7 +147,7 @@ std::string_view canonicalImageExtension(ImageFormat format)
 
 bg2e::base::Image* loadImage(const std::filesystem::path& filePath)
 {
-    if (filePath.extension() == ".hdr")
+    if (equalsIgnoreCase(filePath.extension().string(), ".hdr"))
     {
         int width, height, channels;
         float* data = stbi_loadf(filePath.string().c_str(), &width, &height, &channels, 4);
@@ -240,6 +243,59 @@ std::vector<uint8_t> decodeImageRGBA8(
     width = static_cast<uint32_t>(decodedWidth);
     height = static_cast<uint32_t>(decodedHeight);
     return result;
+}
+
+void saveImage(const std::filesystem::path& filePath, const float* data,
+    uint32_t width, uint32_t height, uint32_t channels)
+{
+    if (!equalsIgnoreCase(filePath.extension().string(), ".hdr") || !data ||
+        !width || !height || (channels != 3 && channels != 4) ||
+        width > uint32_t(std::numeric_limits<int>::max()) ||
+        height > uint32_t(std::numeric_limits<int>::max()))
+    {
+        throw std::invalid_argument("HDR export requires .hdr and valid RGB/RGBA pixels");
+    }
+    for (size_t i = 0; i < size_t(width) * height * channels; ++i)
+    {
+        if (!std::isfinite(data[i]) || data[i] < 0.0f)
+        {
+            throw std::invalid_argument("HDR pixels must be finite and nonnegative");
+        }
+    }
+    if (!stbi_write_hdr(filePath.string().c_str(), width, height, channels, data))
+    {
+        throw std::runtime_error("Error writing HDR image at path " + filePath.string());
+    }
+}
+
+void saveImage(const std::filesystem::path& filePath, gpu::Image& image)
+{
+    if (image.imageType() != gpu::ImageType::Image2D)
+    {
+        throw std::invalid_argument("Standard image export requires a 2D texture");
+    }
+    const gpu::ImageSubresourceRange range{0, 1, 0, 1};
+    std::vector<uint8_t> bytes;
+    image.readPixels(bytes, range, image.currentLayout(range));
+    const auto size = image.size();
+    if (bytes.size() != size_t(size.width) * size.height * gpu::pixelFormatBytes(image.pixelFormat()))
+    {
+        throw std::runtime_error("GPU image readback returned an unexpected byte count");
+    }
+    if (image.pixelFormat() == gpu::PixelFormat::R32G32B32A32_SFLOAT)
+    {
+        std::vector<float> pixels(bytes.size() / sizeof(float));
+        std::memcpy(pixels.data(), bytes.data(), bytes.size());
+        saveImage(filePath, pixels.data(), size.width, size.height, 4);
+    }
+    else if (image.pixelFormat() == gpu::PixelFormat::R8G8B8A8_UNORM)
+    {
+        saveImage(filePath, bytes.data(), size.width, size.height, 4);
+    }
+    else
+    {
+        throw std::invalid_argument("Unsupported GPU pixel format for standard image export");
+    }
 }
 
 void saveImage(

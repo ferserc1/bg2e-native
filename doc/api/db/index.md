@@ -46,9 +46,9 @@ complete GPU-only texture/material/scene resource export.
 
 - [Shared scene/root/custom component contracts](../scene/index.md) and [Composer document workflow](../../apps/draw_composer.md).
 
-## Generic file and native archive IO
+## Generic file and image IO
 
-[FileIO](FileIO.md) documents CPU/GPU TextureArchive encoding, native BG2TEX01
+[FileIO](FileIO.md) documents standard PNG/HDR encoding, GPU image
 readback and atomic no-replace/explicit-replace publishFile. These generic helpers
 remain distinct from specialized bake source protection and final-manifest policy.
 ObjMesh::sourcePaths records original OBJ/read MTL inputs for dependency inventory.

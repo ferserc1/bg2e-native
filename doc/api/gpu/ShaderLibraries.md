@@ -562,7 +562,7 @@ No native compile/install/package execution is claimed by this reference update.
 The [standalone draw lightmap generator](../../apps/draw_lightmap_generator.md#build-and-resources)
 also consumes this exact paired deployment. Source registration/refresh rules do
 not prove a native installed or relocated run. Precompiled projects need both
-trees and compatible native runtime libraries; native model `.bg2tex` output is
+trees and compatible native runtime libraries; model PNG/HDR output is
 job data, not a replacement shader/resource layout.
 
 The standalone creator/updater representative-file checks use the canonical

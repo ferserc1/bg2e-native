@@ -61,10 +61,10 @@ writes. Resolvers are read-only CPU callbacks; keep producers stopped.
 
 RGB8 uses selected PNG/JPEG/BMP/TGA without a second exposure conversion.
 Lossless formats are decoded and compared byte-for-byte; explicit JPEG is lossy
-and receives a dimension check. RGB32F writes native RGBA32F `.bg2tex`, alpha one,
-then reads back and compares exact bytes. There is no gamma/exposure/clamp or
-65504 cap in this encoder. This requires the draw native loader, not a general
-interchange HDR codec. Raw bake pass precision remains independently validated;
+and receives a dimension check. RGB32F writes standard Radiance RGBE `.hdr`,
+then verifies that it decodes with the expected dimensions and floating-point data.
+RGBE quantizes color values and does not preserve alpha or exact float bits.
+There is no gamma/exposure/clamp or 65504 cap in this encoder. Raw bake pass precision remains independently validated;
 file encoding cannot recover already invalid/saturated input.
 
 Per-target JSON declares identity/image/extent, linear color, top row v=0,
@@ -75,7 +75,7 @@ is not inferred from alpha one or neutral white. See [LightmapOutput](LightmapOu
 Optional model copies clone independent CPU/GPU mesh/material/native texture
 owners, set the actual staged map on the AO slot with linear color/UV2/scale one/
 channel zero and explicit baked AO/GI mode, then update clone materials. Complete
-`db::storeDrawableBg2(path, engine, node)` snapshots all native texture mips/layers;
+`db::storeDrawableBg2(path, engine, node)` copies assigned image sources and materializes GPU-only textures as PNG/HDR;
 its bool-noexcept false is checked and fails before publication. Models contain
 submesh placement/materials/joints, not node placement or a full hierarchy.
 Exported sidecars no longer depend on staging paths. Source materials/assets are
@@ -92,7 +92,7 @@ directory. A simplified shape (generation/name are illustrative):
   "version": 1,
   "targets": [{
     "identity": "target/0",
-    "image": "lightmaps-unique-id/target-0-target_0.bg2tex",
+    "image": "lightmaps-unique-id/target-0-target_0.hdr",
     "metadata": "lightmaps-unique-id/target-0-target_0.lightmap.json",
     "model": "lightmaps-unique-id/target-0-target_0-model/model.bg2"
   }]

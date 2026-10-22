@@ -10,7 +10,7 @@ python3 tests/bake/product/inspect_output.py /scratch/baked/lightmaps.json --exp
 ```
 
 Supported maps are the writer's noninterlaced 8-bit RGB/RGBA PNG and single-mip
-RGBA32F BG2TEX01 files. JPEG/BMP/TGA jobs require another independent decoder and
+Radiance RGBE HDR files. JPEG/BMP/TGA jobs require another independent decoder and
 the lead-run engine probes; this inspector rejects unsupported formats instead
 of reporting partial success. Native/PNG files and decoded PNG data are limited
 to 64 MiB per file/map for bounded validation memory. Larger outputs need another

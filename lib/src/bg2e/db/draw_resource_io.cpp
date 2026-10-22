@@ -18,7 +18,7 @@
 
 #include <bg2e/db/scene.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
-#include <bg2e/db/texture_archive.hpp>
+#include <bg2e/db/image.hpp>
 #include <bg2e/draw/MaterialBase.hpp>
 #include <bg2e/scene/ChainJoint.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
@@ -28,6 +28,7 @@
 #include <cmath>
 #include <cstdio>
 #include <map>
+#include <set>
 #include <stdexcept>
 #include <system_error>
 #ifdef _WIN32
@@ -88,6 +89,23 @@ class Publication {
         return directory / (prefix + "-" + std::to_string(sequence++) + extension);
     }
 
+    std::filesystem::path imageResource(const std::filesystem::path& source)
+    {
+        const auto target = directory / source.filename();
+        if (source.filename() == destination.filename())
+        {
+            throw std::invalid_argument("Image filename conflicts with the scene document");
+        }
+        // Filename identity is the current resource-sharing contract.
+        if (!std::filesystem::exists(target))
+        {
+            const auto existing = destination.parent_path() / source.filename();
+            std::filesystem::copy_file(std::filesystem::exists(existing) ? existing : source, target);
+        }
+        reusedNames.insert(source.filename());
+        return target;
+    }
+
     void commit(const std::filesystem::path& main)
     {
         // Collect before modifying the directory iterator's directory.
@@ -103,6 +121,10 @@ class Publication {
         for (const auto& source : resources)
         {
             auto target = destination.parent_path() / source.filename();
+            if (std::filesystem::exists(target) && reusedNames.contains(source.filename()))
+            {
+                continue; // Reuse already consolidated images by filename.
+            }
             published.push_back(target); // Reserve rollback bookkeeping first.
             std::error_code error;
             std::filesystem::create_hard_link(source, target, error);
@@ -154,6 +176,7 @@ class Publication {
     size_t sequence = 0;
     bool committed = false;
     std::vector<std::filesystem::path> published;
+    std::set<std::filesystem::path> reusedNames;
 };
 
 struct ReferenceRestore {
@@ -167,6 +190,12 @@ struct ReferenceRestore {
         }
     }
 };
+
+using TextureGetter = std::shared_ptr<base::Texture> (base::MaterialAttributes::*)() const;
+const TextureGetter Getters[] = {
+    &base::MaterialAttributes::albedoTexture, &base::MaterialAttributes::metalnessTexture,
+    &base::MaterialAttributes::roughnessTexture, &base::MaterialAttributes::normalTexture,
+    &base::MaterialAttributes::aoTexture, &base::MaterialAttributes::lightEmissionTexture};
 
 using TextureSetter = void (base::MaterialAttributes::*)(std::shared_ptr<base::Texture>);
 const TextureSetter Setters[] = {
@@ -197,18 +226,28 @@ Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publicati
         auto live = drawable->drawMaterial(sub);
         for (uint32_t slot = 0; slot < 6; ++slot)
         {
-            auto texture = live->texture(static_cast<draw::TextureSlot>(slot));
-            if (!texture)
+            const auto authored = (material.*Getters[slot])();
+            if (!authored)
             {
                 continue;
             }
-            if (texture->engine() != &engine || !texture->image())
+            auto settings = draw::cloneTextureSettings(*authored);
+            std::filesystem::path path;
+            if (authored->type() == base::Texture::TypeFilesystem && !authored->imageFilePath().empty())
             {
-                throw std::invalid_argument("Export texture belongs to another context or has no image");
+                path = publication.imageResource(authored->imageFilePath());
             }
-            const auto path = publication.resource(".bg2tex");
-            writeTextureArchive(path, *texture->image());
-            auto settings = draw::cloneTextureSettings(*texture->base());
+            else
+            {
+                auto texture = live->texture(static_cast<draw::TextureSlot>(slot));
+                if (!texture || texture->engine() != &engine || !texture->image())
+                {
+                    throw std::invalid_argument("Export texture belongs to another context or has no image");
+                }
+                path = publication.resource(texture->image()->pixelFormat() == gpu::PixelFormat::R32G32B32A32_SFLOAT
+                    ? ".hdr" : ".png");
+                saveImage(path, *texture->image());
+            }
             settings->setImageFilePath(path.string());
             (material.*Setters[slot])(settings);
         }

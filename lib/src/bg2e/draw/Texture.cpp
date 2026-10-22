@@ -19,7 +19,6 @@
 #include <bg2e/draw/Texture.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/db/image.hpp>
-#include <bg2e/db/texture_archive.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
 
@@ -158,23 +157,6 @@ void Texture::load(std::shared_ptr<base::Texture> settings)
         throw std::invalid_argument("draw::Texture requires settings");
     }
     auto independent = cloneTextureSettings(*settings);
-    if (independent->type() == base::Texture::TypeFilesystem &&
-        std::filesystem::path(independent->imageFilePath()).extension() == ".bg2tex")
-    {
-        auto archive = db::readTextureArchive(independent->imageFilePath());
-        auto image = _engine->device()->createImage(archive.description);
-        size_t index = 0;
-        for (uint32_t layer = 0; layer < image->arrayLayers(); ++layer)
-        {
-            for (uint32_t mip = 0; mip < image->mipLevels(); ++mip)
-            {
-                const auto& bytes = archive.subresources.at(index++);
-                image->upload({bytes.data(), bytes.size(), 0, mip, layer});
-            }
-        }
-        load(independent, std::move(image));
-        return;
-    }
     std::unique_ptr<base::Image> pixels(independent->type() == base::Texture::TypeProcedural
         ? independent->generateImage() : db::loadImage(independent->imageFilePath()));
     load(*pixels, *independent);

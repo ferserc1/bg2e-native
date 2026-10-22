@@ -379,7 +379,7 @@ void printUsage(std::ostream& output)
         "  --max-distance meters              Default: 50 (GI only)\n"
         "  --ao-radius meters                 Default: 0.1 (AO only)\n"
         "  --ray-bias meters                  Default: 0.0005\n"
-        "  --cpu-format rgb8|rgb32f            Default: rgb8; float uses exact HDR .bg2tex\n"
+        "  --cpu-format rgb8|rgb32f            Default: rgb8; float uses Radiance HDR .hdr\n"
         "  --format png|jpg|jpeg|bmp|tga        RGB8 only; default: png; JPEG is lossy\n"
         "  --exposure EV                      Default: 0 (RGB8 GI conversion only)\n"
         "  --dilation pixels                  Default: 4 (0..resolution)\n"
