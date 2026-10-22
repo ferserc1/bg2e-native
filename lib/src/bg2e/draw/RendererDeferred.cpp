@@ -167,6 +167,7 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
         pipeline::TemporalConfiguration configuration;
         configuration.shaderRoot = _shaderRoot;
         configuration.metadataShaderInterface = "draw.temporal.v2";
+        configuration.reprojectionShaderInterface = "draw.temporal.v3";
         _configuration.temporal = std::make_shared<pipeline::TemporalAccumulator>(configuration);
     }
     _configuration.temporal->initialize(*engine.device(),engine.backendType(),count);
@@ -403,7 +404,7 @@ pipeline::TemporalDiagnosticView RendererDeferred::temporalDiagnosticView() cons
 
 void RendererDeferred::setTemporalDiagnosticView(pipeline::TemporalDiagnosticView value)
 {
-    if (uint32_t(value) > uint32_t(pipeline::TemporalDiagnosticView::LocalHistory))
+    if (uint32_t(value) > uint32_t(pipeline::TemporalDiagnosticView::PreviousNormal))
     {
         throw std::invalid_argument("Unknown temporal diagnostic view");
     }
@@ -439,16 +440,23 @@ bool RendererDeferred::temporalDiagnosticsAvailable() const
     return temporalSurfaceAvailable() && _configuration.temporal && _configuration.temporal->diagnosticsAvailable();
 }
 
+bool RendererDeferred::temporalSurfaceDiagnosticsAvailable() const
+{
+    return temporalSurfaceAvailable() && _configuration.temporal && _configuration.temporal->surfaceDiagnosticsAvailable();
+}
+
 pipeline::TemporalSurfaceMetadata RendererDeferred::temporalSurfaceMetadata(uint32_t slotIndex, uint64_t layer) const
 {
     const auto& slot = _targets.at(slotIndex);
     if (layer == 0)
     {
-        return {slot.opaqueTemporalSurface.token,slot.opaqueTemporalSurface.depth};
+        return {slot.opaqueTemporalSurface.token,slot.opaqueTemporalSurface.depth,
+            slot.opaqueTemporalSurface.previousPosition,slot.opaqueTemporalSurface.previousNormal,slot.opaqueTemporalSurface.legacyCompatible,slot.opaqueTemporalSurface.motion};
     }
     const auto found = slot.transparentTemporalSurfaces.find(layer);
     return found == slot.transparentTemporalSurfaces.end() ? pipeline::TemporalSurfaceMetadata{} :
-        pipeline::TemporalSurfaceMetadata{found->second.token,found->second.depth};
+        pipeline::TemporalSurfaceMetadata{found->second.token,found->second.depth,
+            found->second.previousPosition,found->second.previousNormal,found->second.legacyCompatible,found->second.motion};
 }
 
 void RendererDeferred::updateTemporalSurfaceStatus()
@@ -467,9 +475,16 @@ void RendererDeferred::updateTemporalSurfaceStatus()
     }
     else
     {
-        _temporalSurfaceStatus = _configuration.temporal->surfaceMetadataAvailable() ?
-            "Enabled: experimental receiver metadata and local temporal rejection; native validation pending" :
-            _configuration.temporal->surfaceMetadataStatus();
+        if (_configuration.temporal->surfaceReprojectionAvailable())
+        {
+            _temporalSurfaceStatus = "Enabled: experimental rigid receiver reprojection; native validation pending";
+        }
+        else
+        {
+            _temporalSurfaceStatus = _configuration.temporal->surfaceMetadataAvailable() ?
+                "Enabled: static receiver validation; "+_configuration.temporal->surfaceReprojectionStatus() :
+                _configuration.temporal->surfaceMetadataStatus();
+        }
     }
 }
 
@@ -966,7 +981,8 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     // Resolve the predecessor at recording time, after any intervening ordered
     // submission. Fingerprint queries and update-only work never publish it.
     auto correspondence = _temporalCorrespondence->record(*slot.preparedCorrespondence,
-        frame.sceneFrameNumber,_historyGeneration,frame.commandBuffer.recordingCompletion());
+        frame.sceneFrameNumber,_historyGeneration,frame.commandBuffer.recordingCompletion(),
+        {{slot.camera.view,slot.camera.projection,slot.jitteredProjection,true},_configuration.internalExtent});
     slot.recordedCorrespondence = correspondence;
     if (slot.tracing)
     {
@@ -984,10 +1000,14 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             const auto found = correspondence->instances.find({item.nodeId,item.submeshIndex});
             if (found != correspondence->instances.end())
             {
-                surfaceInstances.push_back({item.objectId,found->second.token,found->second.correspondenceValid});
+                surfaceInstances.push_back({item.objectId,found->second.token,found->second.previousValid,
+                    found->second.previousWorld,true});
             }
         }
     }
+    const pipeline::TemporalSurfaceCamera surfaceCamera{
+        correspondence->camera.transforms.projection*correspondence->camera.transforms.view,
+        correspondence->previousCamera.transforms.projection*correspondence->previousCamera.transforms.view};
     std::vector<pipeline::ImageBinding> gbuffer;
     const auto& contract = _configuration.layers[0].configuration.contract;
     for (size_t i = 0; i < contract.outputs.size(); ++i)
@@ -998,7 +1018,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     if (slot.recordTemporalSurfaces)
     {
         gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalSurface",0,false);
-        slot.opaqueTemporalSurface = _temporalSurface->record(frame,raster,slot.gbuffer[0]->size(),surfaceInstances);
+        slot.opaqueTemporalSurface = _temporalSurface->record(frame,raster,slot.gbuffer[0]->size(),surfaceInstances,nullptr,0,0,surfaceCamera);
     }
     pipeline::RenderTarget::copy(frame.commandBuffer, *slot.gbuffer[6], *slot.opaqueDepth);
     pipeline::RenderTarget::clear(frame.commandBuffer, *slot.colorA);
@@ -1011,23 +1031,17 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
             surface.depthOrPosition = slot.gbuffer[6].get();
-            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
-            const pipeline::TemporalView view{_view,_projection,slot.jitteredProjection,true};
+            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
+            const pipeline::TemporalView view{slot.camera.view,slot.camera.projection,slot.jitteredProjection,true};
             const auto accumulated = [&]
             {
                 gpu::GpuTimingScope timing(frame.commandBuffer, "effect.temporal.record", layer, layer != 0);
-                pipeline::TemporalSurfaceMetadata metadata;
-                if (_configuration.temporal->surfaceMetadataAvailable())
+                auto metadata = temporalSurfaceMetadata(frame.frameSlot,layer);
+                // Injected legacy components retain the previous admission contract.
+                if (!_configuration.temporal->surfaceMetadataAvailable() ||
+                    (!_configuration.temporal->surfaceReprojectionAvailable() && !metadata.legacyCompatible))
                 {
-                    if (layer == 0)
-                    {
-                        metadata = {slot.opaqueTemporalSurface.token,slot.opaqueTemporalSurface.depth};
-                    }
-                    else if (const auto found = slot.transparentTemporalSurfaces.find(layer);
-                        found != slot.transparentTemporalSurfaces.end())
-                    {
-                        metadata = {found->second.token,found->second.depth};
-                    }
+                    metadata = {};
                 }
                 return _configuration.temporal->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                     frame.sceneFrameNumber,_historyGeneration,{kind,0,layer},signal,surface,view,material,maxRoughness,metadata,
@@ -1045,7 +1059,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             }
             gpu::GpuTimingScope denoiseTiming(frame.commandBuffer, "effect.denoise.record", layer, layer != 0);
             return _configuration.denoise->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
-                {filteredKind,0,layer},*accumulated.image,surface,_view,material,maxRoughness}).image;
+                {filteredKind,0,layer},*accumulated.image,surface,slot.camera.view,material,maxRoughness}).image;
         };
         base::CpuProfileScope compositeCpu("renderer.composite");
         gpu::GpuTimingScope compositeProfile(frame.commandBuffer, "renderer.composite", layer, layer != 0);
@@ -1066,7 +1080,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
             surface.depthOrPosition = slot.gbuffer[6].get();
-            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
+            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
             _configuration.ambientOcclusion->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                 uint32_t(frame.sceneFrameNumber),surface,*slot.ao});
             auto* signal = slot.ao.get();
@@ -1084,7 +1098,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                 pipeline::SurfaceInputs surface;
                 surface.normal = slot.gbuffer[1].get();
                 surface.depthOrPosition = slot.gbuffer[6].get();
-                surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
+                surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
                 _configuration.globalIllumination->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                     uint32_t(frame.sceneFrameNumber),surface,*slot.gi,slot.queue.lights(),_environment});
             }
@@ -1105,8 +1119,8 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
             surface.depthOrPosition = slot.gbuffer[6].get();
-            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*_view);
-            const auto camera = glm::vec3(glm::inverse(_view)[3]);
+            surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
+            const auto camera = glm::vec3(glm::inverse(slot.camera.view)[3]);
             _configuration.reflections->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                 uint32_t(frame.sceneFrameNumber),surface,*slot.reflections,*slot.gbuffer[2],
                 _configuration.outputExtent,camera,slot.queue.lights(),_environment});
@@ -1132,7 +1146,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             transparent.push_back(&item);
         }
     }
-    const glm::vec3 camera(glm::inverse(_view)[3]);
+    const glm::vec3 camera(glm::inverse(slot.camera.view)[3]);
     std::stable_sort(transparent.begin(), transparent.end(), [&](const auto* a, const auto* b)
     {
         const auto da = glm::vec3(a->worldMatrix[3]) - camera;
@@ -1170,7 +1184,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                     item->worldMatrix[2][3] == 0 && item->worldMatrix[3][3] == 1)
                 {
                     raster.region = pipeline::projectProcessingRegion(bounds->minimum, bounds->maximum,
-                        slot.jitteredProjection*_view*item->worldMatrix, extent);
+                        slot.jitteredProjection*slot.camera.view*item->worldMatrix, extent);
                 }
             }
             base::CpuProfileScope::count("transparent.fullPixels", fullArea, "pixels");
@@ -1198,7 +1212,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             if (slot.recordTemporalSurfaces)
             {
                 gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalSurface",layer,true);
-                auto metadata = _temporalSurface->record(frame,raster,extent,surfaceInstances,slot.opaqueDepth.get(),0,layer);
+                auto metadata = _temporalSurface->record(frame,raster,extent,surfaceInstances,slot.opaqueDepth.get(),0,layer,surfaceCamera);
                 // Every transparent receiver has its own retained token/depth
                 // owner. Never replace or borrow the opaque domain's metadata.
                 slot.transparentTemporalSurfaces.emplace(layer,std::move(metadata));
@@ -1221,6 +1235,10 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     base::CpuProfileScope reconstructionCpu("renderer.reconstruction");
     gpu::GpuTimingScope reconstructionTiming(frame.commandBuffer, "renderer.reconstruction");
     UpscalerInput upscale{frame, *current, *slot.opaqueDepth, *slot.reconstructed, slot.camera, slot.jitteredProjection};
+    // Always borrow the opaque result captured before the transparent loop.
+    // Transparent motion is not motion of the composited/refraction color.
+    upscale.opaqueMotion = {slot.opaqueTemporalSurface.motion.get(),slot.opaqueTemporalSurface.token.get(),
+        slot.opaqueTemporalSurface.motion,slot.opaqueTemporalSurface.token};
     if (slot.diagnostic || !_configuration.upscaler->available() || !_configuration.upscaler->record(upscale))
     {
         _fallback->record(upscale);

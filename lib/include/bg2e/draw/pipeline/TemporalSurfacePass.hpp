@@ -24,20 +24,29 @@
 
 namespace bg2e::draw::pipeline {
 // objectId selects this extracted queue's bindings; it is not persistent identity.
-// Canonical tokens come from renderer correspondence. Invalid static matches still
+// Canonical tokens come from renderer correspondence. Invalid matches still
 // draw/write depth, but emit zero so an occluder cannot expose a token behind it.
 struct TemporalSurfaceInstance {
     uint32_t objectId = 0, token = 0;
     bool correspondenceValid = false;
+    // Optional recorded affine model; absence means the current model (static caller).
+    glm::mat4 previousWorld{1};
+    bool hasPreviousWorld = false;
 };
 struct TemporalSurfaceResult {
     std::shared_ptr<gpu::Image> token, depth;
+    std::shared_ptr<gpu::Image> motion, previousPosition, previousNormal;
+    bool legacyCompatible = true; // P1 consumer cannot transport moving receivers.
+};
+
+struct TemporalSurfaceCamera {
+    glm::mat4 currentViewProjection{1}, previousViewProjection{1}; // Unjittered.
 };
 
 // Separate full-extent receiver replay for the exact built-in GBuffer contract.
 // initialize/cleanup require stopped users. Inputs/bindings belong to completed-slot
 // rings and remain alive through GPU completion. Returned images are immutable after
-// recording; retain both through every history reader, and release before Device.
+// recording; retain every consumed image through its readers, and release before Device.
 class BG2E_API TemporalSurfacePass {
   public:
     explicit TemporalSurfacePass(std::filesystem::path shaderRoot = {}, TemporaryPoolLimits limits = {});
@@ -56,7 +65,8 @@ class BG2E_API TemporalSurfacePass {
     // Unsupported initialization returns empty metadata without recording GPU work.
     TemporalSurfaceResult record(const FrameContext& frame, const RasterFrame& raster,
         gpu::Size2D extent, std::span<const TemporalSurfaceInstance> instances,
-        gpu::Image* opaqueDepth = nullptr, uint64_t view = 0, uint64_t layer = 0);
+        gpu::Image* opaqueDepth = nullptr, uint64_t view = 0, uint64_t layer = 0,
+        const TemporalSurfaceCamera& camera = {});
 
     bool available() const;
     const std::string& status() const;

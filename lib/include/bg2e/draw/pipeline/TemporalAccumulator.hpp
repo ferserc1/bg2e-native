@@ -40,7 +40,7 @@ struct TemporalKey {
 };
 enum class TemporalDiagnosticView : uint32_t
 {
-    Off, Tokens, LocalHistory
+    Off, Tokens, LocalHistory, Motion, PreviousPosition, PreviousNormal
 };
 struct TemporalSettings {
     bool enabled = true, freezeAtLimit = false;
@@ -54,9 +54,15 @@ struct TemporalConfiguration {
     TemporaryPoolLimits poolLimits;
     std::string metadataShaderInterface; // Optional draw.temporal.v2; v1 stays unchanged.
     std::string metadataShaderPrefix = "draw/temporal_accumulation_v2";
+    std::string reprojectionShaderInterface; // Optional draw.temporal.v3; requires v2 metadata support.
+    std::string reprojectionShaderPrefix = "draw/temporal_accumulation_v3";
 };
 struct TemporalSurfaceMetadata {
     std::shared_ptr<gpu::Image> token, depth; // Both supplied or both absent.
+    // Optional matching retained RGBA32F position / RGBA16F normal, in previous world space.
+    std::shared_ptr<gpu::Image> previousPosition, previousNormal;
+    bool legacyCompatible = true; // False: a token-only consumer must use Phase 0 fallback.
+    std::shared_ptr<gpu::Image> motion; // Optional retained RG16F, for diagnostics only.
 };
 // Public borrowed signal/surface profile; independent of private renderer targets.
 struct TemporalInput {
@@ -97,6 +103,7 @@ class BG2E_API TemporalAccumulator {
     std::shared_ptr<gpu::Image> recordDiagnostic(gpu::CommandBuffer& command, uint32_t slot, uint64_t serial,
         const TemporalKey& key, const TemporalSurfaceMetadata& metadata, TemporalDiagnosticView view);
     bool diagnosticsAvailable() const;
+    bool surfaceDiagnosticsAvailable() const;
 
     virtual void invalidate(); // Logical reset; keeps submitted invocation owners alive.
     virtual void cleanup(); // Drains before releasing all owners.
@@ -113,6 +120,8 @@ class BG2E_API TemporalAccumulator {
     const std::string& status() const;
     virtual bool surfaceMetadataAvailable() const;
     const std::string& surfaceMetadataStatus() const;
+    virtual bool surfaceReprojectionAvailable() const;
+    const std::string& surfaceReprojectionStatus() const;
     uint64_t generation() const;
     uint32_t frameCount(const TemporalKey& key) const;
 
@@ -133,6 +142,7 @@ class BG2E_API TemporalAccumulator {
         TemporalView view;
         uint64_t sequence = 0, generation = 0, reset = 0;
         uint32_t count = 1;
+        uint32_t metadataMode = 0; // 0=v1, 1=token-only v2, 2=rigid camera-depth v3.
         uint32_t rollingFramesRemaining = 0; // Subsequent consecutive scene records allowed to roll.
         SurfaceProfile profile{};
         gpu::Size2D surfaceExtent;
@@ -168,9 +178,13 @@ class BG2E_API TemporalAccumulator {
     std::shared_ptr<gpu::PipelineLayout> _acceptanceLayout;
     std::array<std::shared_ptr<gpu::ShaderModule>,4> _acceptanceShaders;
     std::array<std::shared_ptr<gpu::ComputePipeline>,4> _acceptancePipelines;
+    std::shared_ptr<gpu::PipelineLayout> _reprojectionLayout, _reprojectionAcceptanceLayout;
+    std::array<std::shared_ptr<gpu::ShaderModule>,2> _reprojectionShaders, _reprojectionAcceptanceShaders;
+    std::array<std::shared_ptr<gpu::ComputePipeline>,2> _reprojectionPipelines, _reprojectionAcceptancePipelines;
+    std::string _reprojectionStatus = "Optional reprojection interface not requested";
     std::shared_ptr<gpu::PipelineLayout> _diagnosticLayout;
-    std::shared_ptr<gpu::ShaderModule> _diagnosticShader;
-    std::shared_ptr<gpu::ComputePipeline> _diagnosticPipeline;
+    std::shared_ptr<gpu::ShaderModule> _diagnosticShader, _surfaceDiagnosticShader;
+    std::shared_ptr<gpu::ComputePipeline> _diagnosticPipeline, _surfaceDiagnosticPipeline;
     std::string _metadataStatus = "Optional metadata interface not requested";
     std::map<TemporalKey,std::shared_ptr<History>> _histories;
     std::vector<Slot> _slots;

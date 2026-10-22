@@ -21,6 +21,7 @@
 #include "TemporalSignatureCache.hpp"
 #include <bg2e/gpu/detail/SubmissionState.hpp>
 #include <map>
+#include <bg2e/draw/pipeline/MotionVectorGenerator.hpp>
 
 namespace bg2e::draw {
 using TemporalInstanceKey = std::pair<std::string,uint32_t>;
@@ -38,7 +39,17 @@ struct TemporalInstanceRecord {
 
 // Renderer-private immutable values. Preparation never advances scene chronology.
 // The recorded version retains the exact command recording that owns this scene.
+struct TemporalCameraRecord {
+    // RH view; zero-to-one clip depth. Projection matrices are engine matrices.
+    pipeline::TemporalView transforms;
+    gpu::Size2D extent{1,1}; // Internal receiver framebuffer, not output extent.
+};
+
 struct TemporalCorrespondenceFrame {
+    TemporalCameraRecord camera, previousCamera;
+    bool previousCameraValid = false;
+    // Retain only the predecessor completion, avoiding an unbounded frame chain.
+    std::shared_ptr<const gpu::detail::RecordingCompletion> previousRecording;
     std::map<TemporalInstanceKey,TemporalInstanceRecord> instances;
     uint64_t sequence = 0, generation = 0;
     bool identitiesValid = true;
@@ -52,7 +63,8 @@ class TemporalCorrespondence {
 
     std::shared_ptr<const TemporalCorrespondenceFrame> record(const TemporalCorrespondenceFrame& prepared,
         uint64_t sequence, uint64_t generation,
-        std::shared_ptr<const gpu::detail::RecordingCompletion> recording) const;
+        std::shared_ptr<const gpu::detail::RecordingCompletion> recording,
+        const TemporalCameraRecord& camera = {}) const;
     void publish(std::shared_ptr<const TemporalCorrespondenceFrame> recorded);
     void invalidate();
 

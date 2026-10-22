@@ -3,20 +3,20 @@
 ## Resume pointer
 
 - Plan: [summary.md](summary.md)
-- Current phase: Phase 1 source implementation complete (implemented_unverified); Phase 0 remains implemented_unverified; Phase 2 not_started
-- Next step: **P2.1** in [phase_2_object_reprojection.md](phase_2_object_reprojection.md)
+- Current phase: Phase 2 source complete (P2.1–P2.5 implemented_unverified); Phase 3 not_started; previous phases implemented_unverified
+- Next step: **P3.1** in [phase_3_disocclusion.md](phase_3_disocclusion.md)
 - State: `implemented_unverified`
-- Last completed plan step: P1.5 (implemented_unverified)
-- Next exact action: mark P2.1 in_progress on the next request; lock camera/framebuffer conventions and capture immutable current/previous jittered/unjittered camera recording state with the preceding submitted scene. Do not implement P2.2 motion attachments in that step.
+- Last completed plan step: P2.5 (implemented_unverified)
+- Next exact action: mark P3.1 in_progress; read phase_3_disocclusion.md and version the enhanced footprint contract/oracle for q=previousUV*historyExtent-0.5, individually validated taps with candidate-center metadata mapping and renormalized valid weights. Do not implement P3.2–P3.5 in that step.
 
 ## Authorization and workspace
 
-- Authorized now: P1.5 source implementation requested 2026-10-22. Added optional renderer/accumulator diagnostics, paired diagnostic kernels and native/internal probe sources; updated API/architecture/plan docs. No compilation/shader compilation/runtime authorization; no CMake changes.
+- Authorized now: P2.5 source implementation requested 2026-10-22; completed without compilation. Previous P1.5 work: Added optional renderer/accumulator diagnostics, paired diagnostic kernels and native/internal probe sources; updated API/architecture/plan docs. No compilation/shader compilation/runtime authorization; no CMake changes.
 - Compilation/shader compilation: not authorized by the plan-writing request; do not run.
 - Native runtime validation/benchmarks: not run.
 - CMake changes: prohibited unless explicitly requested.
 - skills.md: repository search repeated on 2026-10-22; still absent. Only root AGENTS.md was found; no nested instructions were found. Fallback architecture documents read: doc/architecture/MainLoop_render_draw_gpu.md, draw_advanced_lighting.md, and draw_offscreen_rendering.md. Current source is authoritative where those documents describe older behavior.
-- Fresh implementation-start `git status --short`: empty (clean checkout). No unrelated dirty paths are present. The earlier planning-time dirty paths are historical only.
+- P2.5 implementation-start `git status --short`: existing modified/untracked P2.1–P2.4 source/shader/probe/documentation paths; preserved. Earlier clean-checkout records refer to their original steps.
 
 ## Fixed decisions
 
@@ -25,7 +25,7 @@
 - Freeze preference remains unchanged; temporarily roll during motion and for 3 * maxFrames subsequent rendered scene frames.
 - No changes to maxFrames for thawing; no invalidating setters during interaction.
 - Stable CPU key is nodeId/submesh; GPU token is a nonzero monotonic uint32.
-- Separate metadata raster pass; preserve the six-color G-buffer and depth index. Experimental renderer replay requires temporalSurfaceEnabled=true (default false until native validation/default tuning); availability/status are separate from the request. P1.4 consumers remain pending.
+- Separate metadata raster pass; preserve the six-color G-buffer and depth index. Experimental renderer replay requires temporalSurfaceEnabled=true (default false until native validation/default tuning); availability/status are separate from the request. P1.4 token consumers are implemented; optional v3 motion/previous-geometry consumption is implemented_unverified in P2.3.
 - Phase 0 camera reset policy remains unchanged. Phase 2 enables continuous-camera reprojection on supported built-in paths.
 - Global material/light/environment/topology/membership reset policy remains unless explicitly scoped otherwise in a later approved change.
 - Deferred: deformation history, virtual reflection motion, adaptive ray counts, external denoiser integration.
@@ -36,19 +36,16 @@
 |---|---|---|---|---|
 | 0 | implemented_unverified (P0.1–P0.5 source work finished) | P0.5 final review passed | not_run | not_run |
 | 1 | implemented_unverified (P1.1–P1.5 source complete) | P1.5 static ABI/source review passed | not_run | not_run |
-| 2 | not_started | not_run | not_run | not_run |
+| 2 | implemented_unverified (P2.1–P2.5 source complete) | P2.5 static review/source-math checks passed | not_run | not_run |
 | 3 | not_started | not_run | not_run | not_run |
 | 4 | not_started | not_run | not_run | not_run |
 | 5 | not_started | not_run | not_run | not_run |
 
 ## Current step work record
 
-- Step: P1.5 (implemented_unverified)
-- Actual files: renderer/accumulator headers and implementations, settings reflection, shared temporal helpers, eight diagnostic accumulation variants, paired display kernel, temporal and temporal_surface probe sources, API/architecture/plan docs.
-- Behavior: optional exact GPU acceptance/token diagnostics, frame-latched view/signal/layer controls, retained owners and source-only raster/chronology probes. Replay remains default off and base v1/v2 math unchanged.
-- Workspace: all prior Phase 0/P1.1–P1.4 changes preserved. No unrelated paths, CMake edits or build artifacts introduced. Pre-step snapshots in /tmp/bg2e-p15-before support exact source comparisons.
-- Source checks: paired shader profile/math parity, CPU/backend bindings, source delimiters/includes/licenses, reset/fingerprint preservation, synchronized lifetime and no ordinary readback/wait/submission reviewed. git diff --check passed.
-- Known risks: all new C++/shaders and native probe assertions remain uncompiled/unexecuted; no actual format/pixel/visual/performance acceptance. See the P1.5 record and temporal_surface README for scenarios and manual validation still pending.
+- Step: P2.5 (implemented_unverified). See the final P2.5 record and Phase 2 native acceptance matrix.
+- Source implementation and static review complete; compilation and native validation not_run.
+- Next: P3.1 validated footprint specification/sampling only. Phase 2 native acceptance remains pending.
 
 ## P0.5 final verification and handoff (2026-10-22)
 
@@ -433,3 +430,288 @@ The public C++ API and packed layer key remain uint64; malformed/overflow input
 rejects before mutation. Updated API/probe docs. Source review and diff whitespace
 checks passed; no compilation was run by the agent. The user's build failure is
 recorded evidence, not a successful native validation. Next plan step stays P2.1.
+
+P2.1 started 2026-10-22: capture immutable camera recording state in TemporalCorrespondence.hpp/.cpp and RendererDeferred.cpp; extend correspondence probe and API/phase documentation. No motion attachments, compilation or CMake changes. skills.md search repeated: absent; root instructions and draw architecture fallback read. Initial git status clean.
+
+
+Step ID and date: P2.1, 2026-10-22
+State: implemented_unverified
+Files: TemporalCorrespondence.hpp/.cpp, RendererDeferred.cpp, correspondence_probe.hpp,
+RendererDeferred API, temporal_surface README, phase_2/summary/progress documentation.
+Behavior: immutable current/previous TemporalView and internal extent captured from
+slot camera state at recording; preceding submitted scene completion retained, no
+CPU completion requirement or recursive frame retention. Existing per-instance
+snapshots now reject nonfinite/singular/non-affine matrices locally. Camera validity,
+projection/extent, generation and consecutive scene checks gate previous state.
+Phase 1 static-only receiver acceptance remains; no motion shader/FSR changes.
+Checks: git diff --check passed; manually reviewed camera latch after upscaler prepare,
+record-time resolution, ownership, exact projection comparison and finite inverse
+checks. Probe source covers camera snapshot immutability, incomplete submission,
+unsubmitted/abandoned recording, sequence gap, invalid camera and singular instance.
+No compiler, shader compiler, probe execution or benchmark run. Vulkan/Metal not_run.
+No CMake, GPU, bake or legacy render changes. skills.md absent on repeated search;
+read current draw architecture fallback. Native future validation: execute internal
+correspondence fixture, then test jittered two/three ordered slots and abandoned
+recordings; motion pixel acceptance awaits P2.2/P2.5. No native success claimed.
+Next: P2.2 in phase_2_object_reprojection.md; dedicated metadata uniforms/attachments.
+
+P2.2 started 2026-10-22 (in_progress): TemporalSurfacePass.hpp/.cpp, paired dedicated surface shaders, RendererDeferred integration, source probe and contract docs. Preserve current P2.1 dirty paths. skills.md still absent; root instructions and current draw architecture fallback read. No compile/CMake/runtime authorization.
+
+
+Step ID and date: P2.2, 2026-10-22
+State: implemented_unverified
+Files: TemporalSurfacePass.hpp/.cpp; five new surface_v2 GLSL/Metal shader/helper
+files; RendererDeferred.cpp; temporal_surface/probe.hpp and new rigid_probe.hpp;
+API/phase/summary/progress/probe documentation. Existing P2.1 dirty paths preserved.
+Behavior: four separately retained sampled/color attachments (uint token, RG16F
+motion, RGBA32F previous position, RGBA16F previous normal), original private depth
+and full coverage/transparent semantics preserved. Capability/aggregate gates and
+initialization-only versioned shader failure fallback. Dedicated 288-byte uniform
+has explicit/asserted offsets, Vulkan set 2 vertex binding 0/fragment binding 1,
+Metal vertex buffer 9/fragment buffer 8. Distinct Metal indices avoid ResourceSet
+cross-stage entry collisions. Original GBuffer and v1 surface shaders unchanged.
+Recorded previousValid/model and current/previous unjittered cameras feed metadata;
+current jittered frame binding still rasterizes. Per-fragment divides, finite/w/
+half-range checks; GBuffer-matched mapped normal transformed to previous space.
+Nonfinite/singular/non-affine/reflected models reject locally. Supported movement
+keeps stable tokens. Nonuniform affine math implemented; mapped-normal native visual
+acceptance pending. No deformation/skin/custom vertex support introduced.
+Temporary integration boundary: moving metadata cannot feed the unchanged P1
+consumer safely. Result.legacyCompatible gates renderer domains with valid moving
+receivers to Phase 0/v1 until P2.3; static domains keep P1 metadata. No global reset
+or ordinary GPU wait/submission/readback added. New images remain owned per-slot/
+invocation, separately for opaque/transparent domains. No FSR integration yet.
+Checks passed: git diff --check; exact preservation of original surface shaders;
+paired v2 uniform offsets, include targets, GPL headers, delimiters and fragment
+finite/half-range/sign checks. Reviewed CPU/backend stage bindings, color capability
+limits, normal-map alpha/UV coverage, full clears, retained owners and renderer
+camera/model chronology. Independent standard-library numerical oracle passed odd
+101x73 pixel translation sign (-10.1,-3.65), previous point recovery and rotated/
+nonuniform normal recovery. Initial optional numpy attempt unavailable; no dependency
+installed, successful arithmetic check used Python standard library only. This is
+math/source verification, not execution of the C++/shader implementation.
+Probe sources: native moved-token expectation now nonzero; new independent
+rigidSurfaceReference and source assertions for translation/depth, rotated/
+nonuniform normals and stationary unjittered motion. All C++ fixtures uncompiled/unrun.
+Build authorization/commands: none. C++ and shader compilation not_run.
+Vulkan/Metal native formats, pixels, in-flight ownership, visual convergence and
+performance: not_run. Replay remains default off. No CMake/GPU/bake/vendor changes.
+Remaining: P2.3 consumer transport and diagnostic acceptance, P2.4 FSR sharing,
+P2.5 expanded native regressions. Reflected transforms conservatively unsupported;
+nonuniform mapped normals and perspective interpolation need native verification.
+Next: P2.3 in phase_2_object_reprojection.md; add compatible versioned consumer
+inputs for expected previous geometry and remove the temporary moving-domain gate.
+
+P2.3 started 2026-10-22 (in_progress): TemporalAccumulator.hpp/.cpp, renderer domain inputs, new versioned rigid GLSL/Metal compute families and diagnostics, source fixtures and API/plan docs. Preserve all existing P2.1/P2.2 dirty/untracked files. skills.md still absent; root instructions and draw architecture fallback reviewed. No compilation, native execution, CMake changes or FSR work authorized.
+
+
+Step ID and date: P2.3, 2026-10-22
+State: implemented_unverified
+Files/symbols:
+- TemporalAccumulator.hpp/.cpp: trailing optional previousPosition/previousNormal
+  owners and legacyCompatible flag; independent reprojection v3 interface/prefix,
+  pipelines/status, per-history metadataMode, strict pair validation, 352-byte
+  uniform, previous view matrix, v3 camera-only compatibility selection and captures.
+- Ten new shader files: temporal_reprojection.glsl/.metal plus camera scalar/HDR
+  v3 production/diagnostic wrappers. V1/v2 shared helpers and wrappers unchanged.
+- RendererDeferred.cpp: provision owned v3; exact-domain full pair snapshots;
+  replace blanket moving-domain gate with v3/capability admission; recordLinear
+  consistently uses captured slot camera for surfaces, effects/denoise and transparent
+  projection/order. Injected legacy components retain original capability fallback.
+- Native source fixture temporal/reprojection_probe.hpp; malformed pair cases in
+  temporal/probe.hpp; explicit token-only scope in temporal_surface/probe.hpp;
+  previous-camera tolerance CPU oracle in rigid_probe.hpp; API/plan/probe docs.
+Behavior/ABI decisions:
+- draw.temporal.v3 requires optional v2 support; initializes/fails independently and
+  never retries on ordinary frames. Default external configs remain v1, existing
+  v2/custom families receive only their own bindings/uniform sizes. Renderer replay
+  remains default off. V3 defines camera_scalar/camera_hdr only, with explicit
+  CameraDepth + reproject + affine view + full pair selection.
+- V3 appends previousView at byte 288 (352 total) to exact v2 prefix. Sampled binding
+  17/18 maps to Metal texture 15/16. Diagnostics retain storage 16/Metal14. C++/Metal
+  assert offsets and GLSL explicitly fixes previousView offset. The v1=208/v2=288
+  layouts remain unchanged, including diagnostic display/capture ABI.
+- Reproject expected previous world point through previous jittered VP. Compare
+  previous stored position/normal against expected previous position/normalized
+  normal; tolerance is absolute + relative*length((previousView*expectedPoint).xyz).
+  Require finite/valid metadata and history, positive/zero-to-one previous clip,
+  strict UV bounds before conversion, nonzero matching tokens, previous coverage
+  and current metadata-vs-actual receiver depth agreement. Reject locally to raw
+  signal while storing current guides; no motion texture consumed yet.
+- Only compatible v3 bypasses legacy 0.001 camera-motion rejection; exact projection,
+  generation, sequence, extent/profile and explicit cut resets remain. Metadata
+  mode switches reset only that key. Incapable/world-explicit/legacy moving inputs
+  use Phase 0/v1, static inputs retain v2. Reflection/GI/freeze/count math unchanged.
+- All consumed metadata owners live with History and invocation chains; recorded
+  previous views remain immutable. No ordinary wait, immediate submit, readback,
+  new global motion reset, GPU/high-level dependency, CMake/vendor/bake/FSR edits.
+Source checks passed:
+- git diff --check. Exact comparison to /tmp/bg2e-p23-before proves v1/v2 shared
+  shader helpers, raw sample/coverage math, blend/confidence/count/freeze suffix,
+  accumulator beginFrame/authored setters/rolling countdown and renderer reset/
+  fingerprint/camera setter unchanged. Checked v3 profile wrappers, shader resource
+  map, uniform offsets, stage/device formats, includes/GPL/delimiters and no added
+  ordinary synchronization/submission/readback. Reviewed cleanup and failure fallback.
+- Independent Python standard-library arithmetic passed expected previous point vs
+  changed current point, prior jittered UV-to-odd receiver/reduced signal mapping,
+  simultaneous view/object translation, average .25/.75=.5 and previous-camera
+  tolerance .02+.01*1.5=.035. This is source/math review, not execution of new code.
+Source fixture coverage (all unrun):
+- New v3 fixture uses 3x3 receiver / 2x2 signal, camera translation .12 plus current
+  depth/normal changes, expected .5 transport, token/normal/invalid-w/out-of-bounds/
+  depth rejection, retained output, v2/v3 switch, cut/projection reset. Existing v2
+  fixture adds six malformed previous-image-pair cases, validated without v3 opt-in.
+- Surface fixture explicitly keeps its synthetic stationary v2 consumer; full v3
+  raster/jitter/normal-map, HDR and queued two/three-slot acceptance await P2.5.
+Build authorization/commands: none. C++/shader compilation not_run.
+Vulkan/Metal native formats, kernels, pixels, visual quality and performance: not_run.
+Limitations: no native pass claimed, affine mapped-normal approximation/reflection
+limitations from P2.2 remain, release replay still off, FSR still camera-only.
+Next: P2.4 in phase_2_object_reprojection.md; inspect SDK bridge motion scaling and
+add retained opaque object-aware motion selection with full camera/depth fallback.
+
+P2.4 started 2026-10-22 (in_progress): Upscaler.hpp/FsrUpscaler.hpp/.cpp, RendererDeferred.cpp, optional paired opaque-motion selection shaders, upscaling source probes and API/plan docs. Preserve existing P2.1–P2.3 dirty/untracked files. Root instructions and draw architecture fallback reviewed; skills.md still absent. Inspected unchanged local FidelityFXBridge and vendored SDK motion scaling/jitter/depth/reprojection code. No compilation/CMake/native/benchmark authorization.
+
+
+Step ID and date: P2.4, 2026-10-22
+State: implemented_unverified
+Files/symbols:
+- Upscaler.hpp/.cpp: trailing UpscalerOpaqueMotion borrowed motion/token + matching
+  optional owners, strict pair/device/type/extent/usage/mip/layer/format validation.
+  Original six UpscalerInput fields and aggregate callers preserved.
+- FsrUpscaler.hpp/.cpp: optional motion_opaque fullscreen pipeline and read-only
+  availability/status, per-retired-slot invocation owners, recorded completion/
+  projection admission and jitter recovered from the captured projection. Retains
+  original camera pass/SDK target, independent initialization failure fallback.
+- RendererDeferred.cpp: only opaqueTemporalSurface.motion/token + owners forwarded
+  to final UpscalerInput, after composition but captured before transparent work.
+- Two new motion_opaque.frag GLSL/Metal shaders and native upscaling source fixture;
+  API/renderer/probe/phase/summary/progress docs updated. Prior dirty work preserved.
+Behavior/ABI decisions:
+- Fullscreen sampled binding 0/1/2 = opaque depth/uint token/RG16F object motion;
+  samplers 3/4/5, Metal textures/samplers 0/1/2. Original two-matrix push remains
+  128 bytes, offsets 0/64. Same existing per-slot RG16F complete motion target.
+- Valid nonzero token + finite half-range vector selects object pixels unchanged,
+  including valid zero motion; other pixels run unchanged camera/depth shader math,
+  including sky. Reset frames use the camera pass. Optional shader/format failure
+  latches camera-only without disabling FSR or ordinary retries. Replay stays off
+  unless explicitly requested; no new default or transparent vector substitution.
+- Local unchanged bridge/SDK sources confirm previous-current internal pixels:
+  bridge motionVectorScale=(1,1), SDK divides by renderSize, callback multiplies
+  vectors by reciprocal size and history UV adds them. HDR/auto-exposure flags only,
+  no jitter-cancellation/display-motion/reversed-depth flags. No bridge/vendor edits.
+- Provided owners retained before optional draw, across exceptions/submission and
+  until acquired slot retirement. No sampled raw metadata alone reaches the SDK;
+  only the generated complete motion image is dispatched. Unowned borrowed inputs
+  remain caller-owned through completion. Consistent extent/type/device/sample
+  validation occurs even on optional unavailability; malformed pairs throw.
+- FSR retains previous recording owner and last recorded projection. Different
+  unsubmitted/abandoned history, gaps/projection changes reset without GPU waits;
+  submitted incomplete or same-recording ordered work needs no CPU completion.
+  Record-time reset preserves rasterized jitter; dispatch jitter derives from input
+  jitteredProjection*inverse(projection), avoiding mutable later prepare state.
+  Transform-only movement and metadata presence do not reset SDK history. Explicit
+  cuts/lifecycle/settings/projection/gap reset behavior remains. No FSR transparency/
+  refraction/reactive-mask/reflected-motion correctness claim is introduced.
+Source checks passed:
+- git diff --check. /tmp/bg2e-p24-before comparisons prove old paired camera shaders
+  and exact camera fallback math, FidelityFXBridge and TemporalAccumulator unchanged.
+  Renderer reset/fingerprint/camera-setter policies unchanged. Checked paired selector
+  bindings, push assertions, integer token sampling, finite vector selection,
+  validation, owner retention before reads, retired-slot release, cleanup/failure
+  paths and absence of ordinary waits/immediate submits/readback/completion polling.
+- Inspected local SDK host scaling, shader callbacks, reproject sign and context
+  flags. Independent standard-library matrix arithmetic verified jitter recovery
+  and stationary jitter-free camera motion at 101x73 and 5x3, plus internal pixel
+  vector to SDK UV conversion exactly once. Checked source includes/GPL/delimiters
+  and preserved six-field aggregate prefix. No CMake/GPU/vendor/bake edits.
+Source fixture (not executed): runOpaqueMotionProbe uses direct fullscreen passes
+without requiring the SDK/RT; odd 5x3 mixed vectors, UINT32_MAX token, valid zero,
+NaN/Inf/token-zero fallback, ordinary/sky depth, camera sign/units and eight malformed
+pair/owner/format/extent/usage cases. Actual SDK queued-slot retention, abandoned
+recordings, interleaved preparation, resize and visual trails remain native work.
+Build authorization/commands: none. C++/shader compilation not_run.
+Vulkan/Metal shader/pixel probes, actual SDK dispatch and visual/performance: not_run.
+No native support/quality pass claimed. Metal FSR remains unsupported; paired selector
+shader source/native fixture support is separate. Transparent motion stays approximate.
+Next: P2.5 in phase_2_object_reprojection.md; finish Phase 2 regression sources and
+source acceptance, keeping native checks not_run unless explicitly authorized.
+
+P2.5 started 2026-10-22 (in_progress): expand rigid/correspondence/consumer source fixtures, add missing motion/previous-position/normal diagnostic views using a separate optional display kernel, audit Phase 2 interfaces/ownership/defaults and write the source acceptance/native matrix. Intended files: temporal_surface/rigid_probe.hpp, correspondence_probe.hpp, temporal/reprojection_probe.hpp and queued fixture, TemporalAccumulator/RendererDeferred diagnostics and settings, paired display shaders and API/plan/probe docs. Preserve all existing P2.1–P2.4 dirty/untracked paths. skills.md still absent; root instructions and draw architecture fallback reviewed. No compilation, shader compilation, native execution, benchmarks or CMake changes authorized.
+
+
+Step ID and date: P2.5, 2026-10-22
+State: implemented_unverified; Phase 2 source work complete, Phase 3 not_started.
+Files/symbols:
+- temporal_surface/rigid_probe.hpp: finite/affine/singular/mirror-aware independent
+  current-world-point oracle; RH zero-to-one perspective, stationary jitter,
+  production camera parity, uniform/nonuniform rotated normals, simultaneous motion,
+  previous depth, post-interpolation divides and odd/reduced texel-center references.
+- correspondence_probe.hpp: runTemporalCorrespondenceChronologyProbe models two/
+  three slot rings, submitted incomplete predecessors, prepared-only updates,
+  new/revised instances, retained snapshots, cuts, projection/extent gaps, abandonment.
+- New temporal/queued_reprojection_probe.hpp: native source fixture for two/three
+  ordered submission batches, synthetic 3x3 receiver/2x2 scalar/GI/reflection guides,
+  means/confidence/valid-black, motion-window rolling with authored freeze, retained
+  outputs, aborted/update-only history and local token/display rejection scenarios.
+- TemporalAccumulator/RendererDeferred headers/sources, RenderSettingsPreferences:
+  append Motion/PreviousPosition/PreviousNormal enum views and optional motion owner;
+  separate surface display availability/kernel with unchanged old display ABI,
+  exact-domain latched selection and strict selected input validation. Histories
+  drop unused motion ownership; actual display invocations retain it through completion.
+- Two new temporal_diagnostic/surface paired compute shaders: signed bounded motion,
+  previous-world-position/normal displays; zero/invalid/nonfinite data black. No core
+  accumulation/raster/FSR shader changes or permanent confidence textures.
+- Existing surface probe abandonment corrected: shared_ptr<const RecordingCompletion>
+  cannot call abandon; release the unsubmitted command wrapper that owns that transition.
+  No build failure/success observed. Camera-only MotionVectorGenerator comment corrected
+  to require separate correspondence/local rejection rather than global motion reset.
+- New phase2_source_checks.py; API/probe/summary/progress/phase docs and final native matrix.
+Contract/ABI:
+- Existing enum 0/1/2 and all aggregate prefixes retained; views append 3/4/5, metadata
+  motion owner appends after legacyCompatible. Separate optional surface display uses
+  old 16-byte uint4, uint token/selected float texture and RGBA16 output bindings.
+  New display initialization failure leaves token/acceptance/core v1/v2/v3 unchanged.
+- Motion maps xy=clamp(.5+xy/64), B=.5; world position .5+.5*xyz/(1+abs(xyz));
+  previous normal .5+.5*xyz. Invalid/token-zero black; geometry requires w>.5.
+  Missing input unavailable, wrong selected format/device/extent/usage rejected.
+  Replay/effects remain explicit, default replay off. Off adds no GPU display work.
+- Exact previous slots/snapshots, capability/versioned shader fallback, per-key mode
+  checks, finite geometry, Phase 0 rolling/freeze, reflection confidence and all full
+  scene identity/invalidation/reset rules remain as in P2.1–P2.4. No CMake/GPU/vendor/
+  bake/legacy-render work or ordinary synchronization/readback introduced.
+Checks actually run and passed:
+- python3 tests/draw/temporal_surface/phase2_source_checks.py (standard library only):
+  shader/CPU binding/profile/uniform source contracts, integer IDs, paired coordinate/
+  normal/coverage rules, preserved blend/count/freeze suffix, FSR conventions, default-
+  off/source includes/GPL/delimiters/direct sync absence; independent matrix/jitter,
+  rotated uniform/nonuniform normals, odd sign/UV, previous-camera tolerance,
+  perspective interpolation and FP16-quantized HDR/visibility arithmetic.
+- git diff --check.
+- Exact /tmp/bg2e-p25-before source comparisons: raster, core v1/v2/v3, FSR and old
+  diagnostic shaders plus FSR/correspondence implementations unchanged. Accumulator
+  record differs only by dropping unused diagnostic motion owner; beginFrame/reset/
+  setters/count/freeze intact. Renderer recordLinear/full and policy signatures/
+  sceneFingerprint/camera/reset methods unchanged. Reviewed optional kernel failure,
+  owner retention/retired-slot cleanup, original diagnostic selection and strict input
+  formats. Checked existing pool discards unsubmitted image allocations, and fixed
+  the old const-ticket abandonment source API misuse.
+- Independent perspective fixture motion differs from incorrectly interpolated endpoint
+  motion by ~2.032 pixels, so the oracle discriminates the intended math. Queued
+  analytic means remain >.003 away from raw restart and FP16 rounding stays <.003.
+Build/native authorization and results:
+- No C++ compilation, shader compilation, C++ CPU probe execution, native probe/SDK
+  dispatch, visual acceptance or benchmark requested/run. Vulkan/Metal all not_run.
+- P2.5 phase file contains the complete scenario/support table and exact future host
+  entry points. Source checks are not compiler/static_assert/GPU results. CPU ticket
+  rings do not measure real GPU overlap; queued batches may finish naturally.
+Remaining acceptance/limits:
+- Real raster v3 normal-map/perspective/alpha/transparent scenarios, actual AO/GI/
+  reflection/FSR trails, interleaved prepared FSR slots, two/three native queue slots,
+  device format/deployment checks, editor/gizmo callbacks and memory/timing are pending.
+- Nonuniform mapped normals remain approximate/unverified, mirrors/deformation
+  unsupported; transparent/refraction/reflected-content FSR motion approximate.
+  Stationary receivers can still see stale changing indirect illumination. No quality
+  or speed claim; default replay stays off. Prior phases remain implemented_unverified.
+Next: P3.1 in phase_3_disocclusion.md, exact bilinear candidate footprint and oracle;
+no P3.2–P3.5/adaptive integration work in this request.

@@ -29,7 +29,8 @@ struct MotionVectorTransforms {
     glm::mat4 currentFromJittered{1}, previousFromJittered{1};
 };
 // Camera-only motion reference, shared coordinate convention with the GPU
-// temporal projection and FSR. Moving geometry requires history invalidation.
+// temporal projection and FSR. Moving receivers require separate object
+// correspondence or local rejection; this camera-only reference cannot transport them.
 class BG2E_API MotionVectorGenerator {
   public:
     static void validate(const TemporalView& view);

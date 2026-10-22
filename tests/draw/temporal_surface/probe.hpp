@@ -180,8 +180,11 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
             SurfaceInputs surface{SurfaceProfile::CameraDepth,normal.get(),snapshot.metadata.depth.get(),nullptr,glm::mat4(1)};
             TemporalView view;
             view.reproject = false;
+            // Isolate the legacy v2 token fixture with synthetic stationary surfaces.
+            // Rigid transport with the full previous-surface pair has a separate probe.
+            const TemporalSurfaceMetadata tokenOnly{snapshot.metadata.token,snapshot.metadata.depth};
             consumer.record({*command,slot,frameSerial,scene,renderer.historyGeneration(),{},*signal,surface,view,nullptr,1,
-                snapshot.metadata,true});
+                tokenOnly,true});
             snapshot.acceptance = consumer.recordDiagnostic(*command,slot,frameSerial,{},snapshot.metadata,TemporalDiagnosticView::LocalHistory);
         }
         snapshot.diagnostic = renderer.temporal()->recordDiagnostic(*command,slot,frameSerial,{},snapshot.metadata,TemporalDiagnosticView::Tokens);
@@ -200,9 +203,12 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
         }
         else
         {
-            command->recordingCompletion()->abandon();
+            command.reset(); // Wrapper destruction abandons its immutable completion ticket.
         }
-        commands.push_back(command);
+        if (command)
+        {
+            commands.push_back(command);
+        }
         return snapshot;
     };
     using Pixel = std::array<uint16_t,4>;
@@ -255,8 +261,8 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
     const auto translatedAcceptance = read(translated.acceptance);
     require(translatedAcceptance[0] == green && translatedAcceptance[center] == red,
         "Unchanged wall must keep history while newly exposed wall rejects the previous foreground");
-    require(std::count(translatedPixels.begin(),translatedPixels.end(),black) > 0,
-        "Moved foreground must emit invalid zero tokens locally");
+    require(std::count(translatedPixels.begin(),translatedPixels.end(),black) == 0,
+        "Moved foreground must retain a nonzero canonical token with rigid correspondence");
     record(); // Recover stationary foreground after motion.
     engine.device()->waitIdle();
     require(read(stable.diagnostic) == stablePixels && stable.metadata.token != translated.metadata.token,

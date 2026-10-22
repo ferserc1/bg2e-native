@@ -22,6 +22,7 @@
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <algorithm>
 #include <cstddef>
+#include <cmath>
 #include <stdexcept>
 #include <utility>
 #include <map>
@@ -30,12 +31,42 @@
 namespace bg2e::draw::pipeline {
 namespace {
 struct alignas(16) SurfaceUniforms {
-    glm::uvec4 identity{0}; // canonical uint32 token, valid static correspondence, reserved.
+    glm::uvec4 identity{0}; // canonical uint32 token, valid correspondence, reserved.
+    glm::mat4 previousModel{1}, currentViewProjection{1}, previousViewProjection{1}, previousNormalFromCurrent{1};
+    glm::vec4 extent{0};
 };
-static_assert(sizeof(SurfaceUniforms) == 16 && offsetof(SurfaceUniforms, identity) == 0);
-constexpr gpu::ShaderBinding SurfaceBinding{0,8}; // Vulkan set 2/binding 0, Metal fragment buffer 8.
+static_assert(sizeof(SurfaceUniforms) == 288 && offsetof(SurfaceUniforms, identity) == 0);
+static_assert(offsetof(SurfaceUniforms, previousModel) == 16);
+static_assert(offsetof(SurfaceUniforms, currentViewProjection) == 80);
+static_assert(offsetof(SurfaceUniforms, previousViewProjection) == 144);
+static_assert(offsetof(SurfaceUniforms, previousNormalFromCurrent) == 208);
+static_assert(offsetof(SurfaceUniforms, extent) == 272);
+constexpr gpu::ShaderBinding SurfaceBinding{1,8}; // Vulkan set 2/binding 1, Metal fragment buffer 8.
+constexpr gpu::ShaderBinding SurfaceVertexBinding{0,9};
 const auto TokenUsage = gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled;
 const auto DepthUsage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+
+// Public pass callers receive the same conservative validation as renderer snapshots.
+bool validSurfaceMatrix(const glm::mat4& matrix, bool affine)
+{
+    const float determinant = glm::determinant(matrix);
+    if (!std::isfinite(determinant) || determinant == 0)
+    {
+        return false;
+    }
+    const auto inverse = glm::inverse(matrix);
+    for (int c = 0; c < 4; ++c)
+    {
+        for (int r = 0; r < 4; ++r)
+        {
+            if (!std::isfinite(matrix[c][r]) || !std::isfinite(inverse[c][r]))
+            {
+                return false;
+            }
+        }
+    }
+    return !affine || (matrix[0][3] == 0 && matrix[1][3] == 0 && matrix[2][3] == 0 && matrix[3][3] == 1);
+}
 }
 
 TemporalSurfacePass::TemporalSurfacePass(std::filesystem::path shaderRoot, TemporaryPoolLimits limits)
@@ -77,9 +108,18 @@ void TemporalSurfacePass::initialize(Engine& engine, const RenderLayer& receiver
     const auto limits = engine.device()->renderingCapabilities();
     const auto token = engine.device()->formatCapabilities(gpu::PixelFormat::R32_UINT);
     const auto depth = engine.device()->formatCapabilities(_depthFormat);
-    if (!limits.maxColorAttachments || !limits.maxImageDimension2D || !token.supports(TokenUsage) ||
+    uint32_t colorBytes = 0;
+    bool formats = true;
+    for (const auto format : {gpu::PixelFormat::R32_UINT,gpu::PixelFormat::R16G16_SFLOAT,
+        gpu::PixelFormat::R32G32B32A32_SFLOAT,gpu::PixelFormat::R16G16B16A16_SFLOAT})
+    {
+        const auto capability = engine.device()->formatCapabilities(format);
+        formats &= capability.supports(TokenUsage) && capability.colorAttachmentBytesPerSample != 0;
+        colorBytes += capability.colorAttachmentBytesPerSample;
+    }
+    if (limits.maxColorAttachments < 4 || !limits.maxImageDimension2D || !formats || !token.supports(TokenUsage) ||
         !depth.supports(DepthUsage) || (limits.maxColorAttachmentBytesPerSample &&
-        (!token.colorAttachmentBytesPerSample || token.colorAttachmentBytesPerSample > limits.maxColorAttachmentBytesPerSample)))
+        colorBytes > limits.maxColorAttachmentBytesPerSample))
     {
         _status = "Temporal surface unavailable: integer color/private sampled depth usages or combined attachment limits";
         return;
@@ -93,12 +133,13 @@ void TemporalSurfacePass::initialize(Engine& engine, const RenderLayer& receiver
         {
             return binding.set >= 2;
         });
+        layout.resourceBindings.push_back({2,SurfaceVertexBinding,gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Vertex,1});
         layout.resourceBindings.push_back({2,SurfaceBinding,gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Fragment,1});
-        layout.debugName = "draw.temporal_surface.v1";
+        layout.debugName = "draw.temporal_surface.v2";
         _layout = engine.device()->createPipelineLayout(layout);
         gpu::ShaderLib library(_shaderRoot,engine.backendType());
-        _vertex = library.vertex("draw/temporal_surface/surface",engine.device());
-        _fragment = library.fragment("draw/temporal_surface/surface",engine.device());
+        _vertex = library.vertex("draw/temporal_surface/surface_v2",engine.device());
+        _fragment = library.fragment("draw/temporal_surface/surface_v2",engine.device());
         gpu::GraphicsPipelineDescription description;
         description.vertexShader = _vertex.get();
         description.fragmentShader = _fragment.get();
@@ -106,13 +147,17 @@ void TemporalSurfacePass::initialize(Engine& engine, const RenderLayer& receiver
         description.depthFormat = _depthFormat;
         description.cullMode = gpu::CullMode::Back;
         description.depthState = gpu::DepthState{true,true,gpu::CompareOperation::LessOrEqual};
-        description.colorAttachments.push_back({gpu::PixelFormat::R32_UINT,{}}); // Blending disabled.
+        for (const auto format : {gpu::PixelFormat::R32_UINT,gpu::PixelFormat::R16G16_SFLOAT,
+            gpu::PixelFormat::R32G32B32A32_SFLOAT,gpu::PixelFormat::R16G16B16A16_SFLOAT})
+        {
+            description.colorAttachments.push_back({format,{}}); // Blending disabled.
+        }
         description.addVertexBufferDescription(Drawable::DrawMesh::vertexBufferDescription());
         description.debugName = "draw temporal surface tokens";
         _pipeline = engine.device()->createGraphicsPipeline(description);
         _pool = std::make_shared<TemporaryResourcePool>(*engine.device(),_limits);
         _slots.resize(count);
-        _status = "Available: built-in receiver replay, uint32 tokens and private depth";
+        _status = "Available: built-in receiver replay, uint32 tokens, rigid motion, previous geometry and private depth";
     }
     catch (const std::exception& error)
     {
@@ -145,7 +190,7 @@ void TemporalSurfacePass::beginFrame(uint32_t index, uint64_t serial)
 
 TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, const RasterFrame& raster,
     gpu::Size2D extent, std::span<const TemporalSurfaceInstance> instances,
-    gpu::Image* opaqueDepth, uint64_t view, uint64_t layer)
+    gpu::Image* opaqueDepth, uint64_t view, uint64_t layer, const TemporalSurfaceCamera& camera)
 {
     if (!available())
     {
@@ -237,8 +282,31 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
             data.identity.x = found->second.token;
             data.identity.y = found->second.correspondenceValid ? 1u : 0u;
         }
+        const auto previous = found != metadata.end() && found->second.hasPreviousWorld ?
+            found->second.previousWorld : item.worldMatrix;
+        data.previousModel = previous;
+        data.currentViewProjection = camera.currentViewProjection;
+        data.previousViewProjection = camera.previousViewProjection;
+        data.extent = glm::vec4(float(extent.width),float(extent.height),0,0);
+        if (!validSurfaceMatrix(previous,true) || !validSurfaceMatrix(item.worldMatrix,true) ||
+            glm::determinant(previous) < 0 || glm::determinant(item.worldMatrix) < 0 ||
+            !validSurfaceMatrix(data.currentViewProjection,false) || !validSurfaceMatrix(data.previousViewProjection,false))
+        {
+            data.identity.y = 0;
+            data.previousModel = item.worldMatrix;
+            data.previousNormalFromCurrent = glm::mat4(1);
+        }
+        else
+        {
+            data.previousNormalFromCurrent = glm::transpose(glm::inverse(previous))*glm::transpose(item.worldMatrix);
+        }
+        if (data.identity.y && previous != item.worldMatrix)
+        {
+            invocation->result.legacyCompatible = false;
+        }
         auto bindings = _pool->bindings(frame.commandBuffer,_layout,2,sizeof(data),{frame.frameSlot,view,layer,item.objectId});
         bindings->writeUniforms(&data,sizeof(data));
+        bindings->setUniformBuffer(SurfaceVertexBinding,bindings->uniforms().get());
         bindings->setUniformBuffer(SurfaceBinding,bindings->uniforms().get());
         bindings->update();
         invocation->bindings.push_back(std::move(bindings));
@@ -249,6 +317,14 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
     description.usage = TokenUsage;
     description.debugName = "draw temporal receiver token";
     invocation->result.token = _pool->image(frame.commandBuffer,description);
+    for (auto [format, target] : {std::pair{gpu::PixelFormat::R16G16_SFLOAT,&invocation->result.motion},
+        std::pair{gpu::PixelFormat::R32G32B32A32_SFLOAT,&invocation->result.previousPosition},
+        std::pair{gpu::PixelFormat::R16G16B16A16_SFLOAT,&invocation->result.previousNormal}})
+    {
+        description.format = format;
+        description.debugName = "draw temporal motion/previous geometry";
+        *target = _pool->image(frame.commandBuffer,description);
+    }
     description.format = _depthFormat;
     description.usage = DepthUsage;
     description.debugName = "draw temporal private receiver depth";
@@ -267,6 +343,15 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
     color.load = gpu::AttachmentLoadOperation::Clear;
     color.clear.unsignedInteger = {0,0,0,0};
     rendering.colors.push_back(color);
+    for (const auto& image : {invocation->result.motion,invocation->result.previousPosition,invocation->result.previousNormal})
+    {
+        command.transition(image.get(),gpu::ImageLayout::ColorAttachment);
+        gpu::ColorAttachmentDescription attachment;
+        attachment.image = image.get();
+        attachment.load = gpu::AttachmentLoadOperation::Clear;
+        attachment.clear.floatingPoint = {0,0,0,0};
+        rendering.colors.push_back(attachment);
+    }
     rendering.depth = gpu::DepthAttachmentDescription{.image = invocation->result.depth.get(),
         .load = opaqueDepth ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::Clear,
         .store = gpu::AttachmentStoreOperation::Store,.clearDepth = 1.0f};
@@ -285,6 +370,10 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
     command.endRendering();
     command.transition(invocation->result.token.get(),gpu::ImageLayout::ShaderReadOnly);
     command.transition(invocation->result.depth.get(),gpu::ImageLayout::ShaderReadOnly);
+    for (const auto& image : {invocation->result.motion,invocation->result.previousPosition,invocation->result.previousNormal})
+    {
+        command.transition(image.get(),gpu::ImageLayout::ShaderReadOnly);
+    }
     return invocation->result;
 }
 

@@ -32,3 +32,43 @@ P1.5 extends the metadata fixture with actual acceptance-mask colors (including
 maxFrames=1) and malformed-pair rejection. Broader raster/chronology probes and
 manual acceptance instructions are in [temporal_surface/README.md](../temporal_surface/README.md).
 All additions remain source-only, with no native run performed.
+
+## P2.3 rigid consumer source fixture
+
+Include `reprojection_probe.hpp` and call `runTemporalReprojectionProbe(engine, shaderRoot)`
+only in an authorized stopped initialized host. False means v3 support unavailable,
+not success. It provisions v2+v3 and checks transport on odd 3x3 receivers / 2x2
+signals while camera translation exceeds the legacy threshold, receiver depth changes
+and current normal differs from expected previous normal. It also checks local token,
+previous-validity, expected normal, previous-UV and current-depth rejection, retained
+output owners, v2/v3 mode switches, explicit cuts and projection changes.
+
+`runTemporalMetadataProbe` retains its v2 behavior and adds partial/no-token, wrong
+format and wrong extent previous-surface pair rejection, even without v3 opt-in.
+C++/shader compilation and all fixtures remain not_run on Vulkan/Metal. These are
+source assertions, not native results. Run the existing scalar/GI/reflection/freeze
+fixtures as well; real-raster queued slots, jittered camera motion and visual/HDR
+acceptance remain pending. No new build-system entry or automatic runner is provided.
+
+## P2.5 queued v3 source fixture
+
+`queued_reprojection_probe.hpp` provides runQueuedTemporalReprojectionProbe(engine,
+shaderRoot). Run only in an explicitly authorized stopped initialized host. All
+source inputs are uploaded before recording; the first two/three scene commands
+are submitted in order before any fixture wait/readback. Later reuse waits only at
+fixture acquisition boundaries. No assertion claims the GPU remained incomplete or
+that real overlap was measured. Unsupported v3/display/formats return false.
+
+It checks scalar/GI/reflection transport with simultaneous receiver/camera motion,
+analytic means and separately accumulated reflection confidence, valid-black GI,
+rolling past maxFrames=4 while freeze remains authored true, retained outputs,
+abandoned command rejection, an update-only gap, new/zero tokens and motion/previous-
+position/normal displays. Missing selected input and wrong format are checked; invalid
+token displays must remain black. Its half-float tolerance is verified independently
+by the Python source/math checker. Receiver and signal extents are 3x3 and 2x2.
+All waits, immediate submissions, uploads and readbacks are fixture-only.
+
+This fixture and all C++/shader sources remain uncompiled/unexecuted. It uses synthetic
+receiver guides and is not visual acceptance of a rasterized moving cube, mapped
+normals, actual AO/GI/reflection, transparency or FSR. The Phase 2 plan P2.5 table
+records the remaining native acceptance scenarios. No CMake target/runner is added.

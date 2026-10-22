@@ -33,6 +33,8 @@ class BG2E_API FsrUpscaler : public Upscaler {
     std::string status() const override;
     bool sdkAvailable() const;
     bool backendSupported() const;
+    bool opaqueMotionAvailable() const;
+    const std::string& opaqueMotionStatus() const;
     std::string hardwareStatus() const;
     bool enabled() const;
     void setEnabled(bool);
@@ -48,9 +50,18 @@ class BG2E_API FsrUpscaler : public Upscaler {
     Engine* _engine = nullptr;
     UpscalerConfiguration _configuration;
     gpu::vk::FidelityFXBridge _bridge;
-    pipeline::FullscreenPass _motion;
+    struct MotionSlot {
+        uint64_t serial = 0;
+        bool prepared = false;
+        std::vector<UpscalerOpaqueMotion> inputs;
+    };
+    pipeline::FullscreenPass _motion, _opaqueMotion;
+    std::vector<MotionSlot> _motionSlots;
+    bool _opaqueMotionReady = false;
+    std::string _opaqueMotionStatus = "Not initialized";
     std::vector<std::shared_ptr<gpu::Image>> _motionImages;
-    glm::mat4 _previousViewProjection{1}, _previousProjection{1};
+    std::shared_ptr<const gpu::detail::RecordingCompletion> _previousRecording;
+    glm::mat4 _previousViewProjection{1}, _previousProjection{1}, _recordedProjection{1};
     float _jitterX = 0, _jitterY = 0;
     float _sharpness = 0.5f;
     bool _enabled = true, _builtEnabled = true, _reset = true, _failed = false, _cameraSupported = true;

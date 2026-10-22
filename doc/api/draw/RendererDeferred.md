@@ -170,3 +170,136 @@ setTemporalSignatureReuseEnabled(false) for full-serialization decisions. Both a
 synchronized diagnostic controls. Out-of-band sceneFingerprint calls preserve the
 old byte format and do not consume edits before update. No narrower effect reset
 or additional dynamic-object history retention is enabled by this optimization.
+
+## Recorded camera coordinates (P2.1)
+
+Views are right handed and engine clip depth is zero to one. Normalized framebuffer
+coordinates are `(0.5 * clip.x / clip.w + 0.5, 0.5 - 0.5 * clip.y / clip.w)`;
+framebuffer Y opposes clip Y (negative-height Vulkan viewport, matching Metal).
+Motion is **previous minus current**, in pixels at the internal receiver extent,
+using unjittered projections: `(previousNdc.xy - currentNdc.xy) * (0.5, -0.5) * extent`.
+Raster coverage uses the current jittered projection. Previous history lookup will
+use the previous jittered projection; jitter must not become object motion.
+
+The private immutable correspondence snapshot stores view, unjittered projection,
+jittered projection and internal extent for current and previous scene recordings,
+as well as captured current/previous instance world matrices. Previous state must
+belong to the consecutive scene sequence in the same history generation and an
+already submitted recording in the renderer's ordered graphics stream. It need not
+be CPU-complete. The snapshot retains both recording completion owners without
+retaining a recursive chain of frames. Updates, presentation-only work, reused
+slots and fingerprint queries do not supply previous camera state.
+
+First use, gaps, history invalidation/cuts, changed projection/extent, invalid camera
+matrices and unsubmitted/abandoned predecessors invalidate previous camera state.
+Nonfinite, singular or non-affine instance transforms invalidate only that receiver;
+geometry/material/token compatibility remains required. Reflected and nonuniform
+scale matrices are captured when invertible, but previous-normal raster support and
+native acceptance remain pending. Explicit camera cuts/teleports must call
+`invalidateHistories()` (and reset upscaler history as required by its API).
+
+P2.1 only captures and validates state. Moving receivers still reject under the
+Phase 1 policy; motion attachments, enhanced reprojection and FSR integration are
+P2.2–P2.4 work. Existing camera rejection/reset behavior remains unchanged.
+
+## Rigid metadata generation (P2.2)
+
+`TemporalSurfacePass` now uses the explicitly versioned `surface_v2` shader family
+and `draw.temporal_surface.v2` layout. The original `surface` shaders remain
+unchanged; a custom shader root must supply the v2 family or initialization reports
+unavailable. The GBuffer and its six colors/depth index are unchanged.
+
+The dedicated 288-byte std140/Metal uniform contains uint4 identity at byte 0,
+previous model at 16, current unjittered view-projection at 80, previous unjittered
+view-projection at 144, current-to-previous normal transform at 208 and float4
+internal extent at 272. C++ and Metal assert size/offsets; GLSL specifies offsets.
+The same allocation is bound at Vulkan set 2 bindings 0 (vertex) and 1 (fragment),
+Metal vertex buffer 9 and fragment buffer 8. Distinct Metal indices are required
+because ResourceSet identifies uniform entries by buffer index, across stages.
+Frame/object bindings are unchanged. Normal texture/sampler reuse the GBuffer
+set 1 bindings 5/11, Metal texture/sampler 3, with the exact material UV/decode path.
+
+Outputs are token R32_UINT, motion RG16F, previousPosition RGBA32F and previousNormal
+RGBA16F plus private depth. All colors require sampled/color-attachment support,
+four simultaneous attachments and the backend-reported aggregate attachment bytes.
+A zero aggregate limit means no additional limit in the existing GPU contract.
+No new GPU capability API or implicit hardware-support claim is introduced.
+All outputs clear over the full receiver extent and retain independent pooled owners
+for opaque and each transparent invocation. Transparent private depth seeding and
+coverage remain unchanged. Retain all consumed image owners through completion.
+
+`TemporalSurfaceInstance` adds optional trailing previousWorld/hasPreviousWorld;
+legacy aggregate callers without them mean a static current model. `record` adds
+an optional trailing `TemporalSurfaceCamera` containing the two unjittered
+view-projections (identity defaults require an identity camera). RendererDeferred
+supplies the immutable P2.1 submitted camera/model snapshots explicitly.
+Raster position still uses the current jittered frame binding. Perspective-correct
+varyings carry both unjittered clips and previous world position; fragment code
+performs the divides and scales previous-current NDC by `(0.5,-0.5)*internalExtent`.
+Normals reproduce GBuffer mapping before applying
+`transpose(inverse(previousModel)) * transpose(currentModel)` to the current world
+normal, equivalent in xyz to `normalMatrix_prev * inverse(normalMatrix_now)`.
+This preserves the same-local-shading-normal approximation under affine scale;
+nonuniform-scale mapped-normal visual acceptance remains unverified.
+
+Missing chronology, incompatible resources and invalid current/previous matrices
+reject locally. Singular/non-affine/nonfinite models and reflected (negative
+determinant) models are conservatively unsupported. Invalid clip w, nonfinite
+fragment values, degenerate normals and motion exceeding RG16F finite range
+emit token zero and position/normal w=0 while retaining receiver depth coverage.
+Valid moving receivers keep their canonical nonzero token.
+
+P2.2 generates metadata only. It does not transport accumulator/FSR history.
+Until P2.3, `TemporalSurfaceResult::legacyCompatible` is false for a domain containing
+valid moving receivers; RendererDeferred supplies that domain to the unchanged v1
+accumulator path instead of letting the P1 token-only consumer misinterpret motion.
+Static domains retain P1 metadata consumption. No global motion reset is added;
+continuous fallback uses Phase 0 rolling history. Returning to enhanced P1 input
+requires its existing missing-predecessor-metadata rejection. Token diagnostics
+remain available; actual acceptance diagnostics show unavailable when v1 is used.
+This temporary compatibility gate must be removed/replaced by P2.3 correspondence
+validation. Public token/depth metadata access remains a P1 pair; callers must not
+interpret it as a complete object-reprojection contract.
+
+Static verification passed; compilation, shader compilation, Vulkan/Metal execution,
+format support, visual quality and performance remain not_run. Native follow-up:
+run the surface fixture and `runRigidSurfaceReferenceProbe`, compare the new images
+against `rigidSurfaceReference` for translations/rotations/scales and perspective
+triangles, inspect motion sign/jitter independence and normal maps, then exercise
+invalid transforms and transparent/opaque retained owners across queued slots.
+
+## P2.3 consumer integration
+
+The P2.2 transitional consumer gate is now replaced by optional v3 reprojection.
+The renderer-owned accumulator provisions draw.temporal.v3 and consumes the full
+retained previous-position/normal pair returned by temporalSurfaceMetadata for the
+exact opaque/transparent domain. Replay still defaults off. Injected legacy
+components keep static/capability fallback. Slot-captured camera matrices now feed
+recordLinear's reconstruction/effect/denoise and transparent view calculations.
+See [TemporalAccumulator](TemporalAccumulator.md#expected-previous-surface-consumption-p23)
+for the 352-byte ABI, previous-camera tolerance, local compatibility switches,
+explicit camera-cut requirement and unrun native validation. FSR remains P2.4 work.
+
+## P2.4 opaque upscaler input
+
+The final UpscalerInput now borrows the retained opaque motion/token pair captured
+before transparent passes, with matching strong owners. FsrUpscaler produces a
+complete motion field by selecting finite object vectors at nonzero tokens and the
+unchanged camera/depth result elsewhere. Replay remains default off and FSR does
+not enable it automatically. Transparent/refraction motion remains approximate.
+See [Upscaler](Upscaler.md#opaque-object-motion-for-fsr-p24) for ownership, validation,
+SDK units/jitter conventions and the unrun native acceptance scenarios. Phase 2's
+next source step is P2.5; no build/native/performance validation is claimed.
+
+## Phase 2 diagnostic views (P2.5)
+
+The frame-latched temporalDiagnosticView selector now also exposes Motion, Expected
+previous position and Expected previous normal. temporalSurfaceDiagnosticsAvailable
+reports their separate optional display kernel; original token/local acceptance
+availability remains unchanged. temporalSurfaceMetadata snapshots additionally
+retain motion. Motion is visualized around neutral gray (xy/64), position by signed
+bounded world axes and previous normal by signed-to-color mapping. Invalid token/
+metadata is black. Use Raw HDR for unprocessed diagnostic color. Replay and effect
+selection remain explicit, with default replay off and no ordinary readback/wait.
+See TemporalAccumulator.md and the Phase 2 P2.5 acceptance matrix. Phase 2 source
+work is implemented_unverified; compile/native/visual/performance checks have not run.

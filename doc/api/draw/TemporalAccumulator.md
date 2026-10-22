@@ -22,7 +22,7 @@ Visibility averages scalar [0,1] and returns one for uncovered pixels. GI averag
 
 maxFrames is 1..1024. Before the bound, accepted per-pixel samples use an incremental arithmetic mean. At the bound, freezeAtLimit=false uses rolling weight 1/maxFrames; true retains a converged accepted pixel until rejection/reset, except during the temporary motion window. A motion record permits rolling immediately and opens exactly 3*maxFrames subsequent consecutive static records for that signal/view/layer. Repeated motion renews the window. The last tail record still rolls; the following record can freeze. The countdown belongs to recorded history, so presentation-only work and beginFrame without record cannot decrement it. Invalid, skipped, reset or abandoned predecessors contribute no countdown. Authored freezeAtLimit and maxFrames remain unchanged. frameCount(key) and TemporalResult::frameCount report a bounded nominal consecutive-view count, not proof that every pixel converged: reprojection rejection restarts individual pixel counts. Later headless jobs must select actual rendered samples explicitly. setEnabled, frame bound/freeze and rejection controls invalidate histories.
 
-Renderer::invalidateHistories() is the generic application hook; RendererDeferred resets effect history generation and the active upscaler. resetUpscaler() remains compatible and now invokes that full hook. Scene attachment, resize, explicit camera changes, inspector changes and environment replacement reset it. An exact extraction/settings signature also detects mesh/material/resource identity, transforms, lights, camera identity/projection, effect quality/mode/noise and temporal/shadow settings. Node/submesh identity must be unique when temporal correspondence is active. Transform-only movement preserves global histories and FSR and supplies sceneMotion to the accumulator; full fingerprints remain transform-sensitive. Previous-object motion vectors remain future work. Moving surfaces and changing indirect lighting/reflections on static surfaces can trail, as can FSR's camera-only reconstruction. The finite update window is approximate and does not guarantee convergence. Notify invalidateHistories for camera teleports on the same scene camera, in-place image uploads and custom shader/resource edits that retain identity. Applications remain responsible for safe mutation boundaries and requested redraws, including partial editing failures. Generic material utilities acquire no renderer ownership.
+Renderer::invalidateHistories() is the generic application hook; RendererDeferred resets effect history generation and the active upscaler. resetUpscaler() remains compatible and now invokes that full hook. Scene attachment, resize, explicit camera changes, inspector changes and environment replacement reset it. An exact extraction/settings signature also detects mesh/material/resource identity, transforms, lights, camera identity/projection, effect quality/mode/noise and temporal/shadow settings. Node/submesh identity must be unique when temporal correspondence is active. Transform-only movement preserves global histories and FSR and supplies sceneMotion to the accumulator; full fingerprints remain transform-sensitive. Optional rigid metadata generation and v3 history transport are described below; native validation remains pending. Moving surfaces and changing indirect lighting/reflections on static surfaces can trail, as can FSR's camera-only reconstruction. The finite update window is approximate and does not guarantee convergence. Notify invalidateHistories for camera teleports on the same scene camera, in-place image uploads and custom shader/resource edits that retain identity. Applications remain responsible for safe mutation boundaries and requested redraws, including partial editing failures. Generic material utilities acquire no renderer ownership.
 
 See [ABI and implementation handoff](../../../docs/render_to_draw/plan/milestone_03_ray_tracing/temporal.md) and [manual fixture](../../../tests/draw/temporal/README.md). Compilation/runtime validation remains with the project lead. [Spatial filtering](DenoiseFilter.md) is available after temporal accumulation.
 
@@ -59,7 +59,7 @@ RendererDeferred now reuses [revision-keyed scene signatures](TemporalInvalidati
 The reset policy excludes only instance transforms; exact cached snapshot equality
 and scene fingerprints retain them. Camera thresholds, previous surfaces, transparent
 correspondence, disocclusion and explicit generation checks remain conservative.
-No object-motion reprojection or effect-local material/light reset is enabled.
+Object reprojection requires the explicit optional v3/receiver metadata path below; effect-local material/light reset is not enabled.
 Custom beginFrame overrides must adopt the trailing bool motion parameter and
 forward it when using base record; existing three-argument callers default to false.
 Rebuild binary consumers against this changed C++ interface. Application-level
@@ -151,9 +151,121 @@ See that directory's README for exact coverage, fallback reporting and unrun man
 scenarios. These sources and all new shaders are uncompiled/unexecuted. Vulkan/Metal
 formats, pixels, visual acceptance and performance remain not_run. Phase 1 is
 implemented_unverified; native acceptance remains pending. Tokens do not validate
-indirect-light changes on stationary receivers. Next source step: P2.1.
+indirect-light changes on stationary receivers. Phase 1 source handoff originally advanced to P2.1; current Phase 2 state is recorded below.
 
 The reflected `temporalDiagnosticLayer` setting uses unsigned decimal text because
 the reflection scalar catalog does not support uint64. The C++ getter/setter retain
 the uint64 API. Parsing rejects empty, signed, overflowing or trailing text before
 mutating renderer state; the complete 64-bit transparent key is preserved.
+
+## Expected previous-surface consumption (P2.3)
+
+`TemporalSurfaceMetadata` appends retained `previousPosition` (RGBA32F) and
+`previousNormal` (RGBA16F), plus `legacyCompatible=true`. The two new images must be
+supplied together with token/depth, as same-device sampled 2D images at receiver
+extent. Malformed/partial/wrong-format/wrong-extent inputs throw even when optional
+v3 is unavailable. Both metadata w components encode validity. Existing token/depth
+aggregate initializers remain valid and explicitly retain the static v2 contract.
+A metadata producer that emits moving canonical tokens must set legacyCompatible
+false for such a domain; stripping that flag/pair is not an object-motion contract.
+
+Standalone opt-in requires `metadataShaderInterface="draw.temporal.v2"` and
+`reprojectionShaderInterface="draw.temporal.v3"`. The latter has its own optional
+`reprojectionShaderPrefix` (default `draw/temporal_accumulation_v3`), availability
+and status (`surfaceReprojectionAvailable/Status`). Initialization failure latches
+fallback without retries or disabling v1/v2. Only camera_scalar/camera_hdr profiles
+are defined for v3. Custom families use their requested prefix and never silently
+receive canonical acceptance kernels. Built-in acceptance diagnostics use
+`draw/temporal_accumulation_v3_diagnostic` independently of core v3 initialization;
+missing capture displays the existing unavailable/amber result.
+
+V3 uses a 352-byte uniform: the exact v2 288-byte prefix plus previousView at byte
+288. C++ and Metal assert sizes/offsets; GLSL fixes previousView's offset explicitly.
+Bindings 0–15 preserve v2; sampled bindings 17/18 map to Metal textures 15/16 for
+expected previous world position/normal. Diagnostic storage remains binding 16 /
+Metal texture 14. V1 uniforms (208), v2 uniforms (288), kernels and binding sets
+remain unchanged. No new textures are bound to v1/v2/custom legacy kernels.
+
+Selection requires v3 availability, the full previous-surface pair, CameraDepth,
+view.reproject=true and an affine view matrix. World-explicit and stationary-explicit
+profiles retain their v2/static or v1 fallback; this step adds no implicit explicit-
+world correspondence contract. An incompatible moving domain uses Phase 0/v1.
+Each history records its actual metadata mode (v1, v2 or v3). Mode changes restart
+that key's history locally; a history recorded without metadata cannot become a
+valid v3 predecessor. Existing sequence, recording owner, generation, reset,
+projection, surface profile/extent, signal extent and roughness checks remain.
+The legacy 0.001 camera-matrix rejection is bypassed only for supported v3 input.
+Projection changes still restart; same-camera cuts/teleports require explicit
+invalidateHistories/resetUpscaler (or standalone accumulator invalidation).
+
+The current signal texel center selects the current receiver pixel as before.
+V3 reads expected previous world position/normal there and projects the expected
+point through the matching history's previous **jittered** view-projection. This
+implements the world-point route, including jitter delta, without consuming or
+rescaling the unjittered motion attachment. Finite/valid expected geometry,
+positive clip w, zero-to-one previous clip depth and strict in-bounds UV are
+required before integer previous-pixel conversion. Nearest previous token must
+match the current nonzero token, and current metadata depth must agree with the
+actual current receiver depth (existing D16/D32 tolerances).
+
+Previous history position is compared to expected previous position, and previous
+history normal to normalized expected previous normal. The exact position tolerance
+in both shaders and the CPU oracle is:
+`absolute + relative * length((previousView * vec4(expectedPreviousPosition,1)).xyz)`.
+Expected and previous geometry, sample/count and tolerance must be finite. Previous
+position coverage and normal/count validity remain required. Current coverage is
+independent of correspondence validity: rejected correspondence restarts the raw
+sample and stores current world guides for the next scene. Scalar/HDR averaging,
+GI validity, reflection confidence, nominal bounded counts and Phase 0 rolling/
+freeze countdown are unchanged. No reflected/deformed surface support is added.
+
+RendererDeferred provisions v3 for its own accumulator, but replay still defaults
+off. It passes the exact opaque or exact transparent domain's full retained pair
+through temporalSurfaceMetadata, never borrowing opaque metadata for a missing
+layer. The P2.2 blanket moving-domain gate is replaced by supported v3 selection;
+injected v1/v2 components retain their capability/static admission fallback.
+recordLinear uses the captured slot camera consistently for reconstructed surfaces,
+TemporalView, denoise/effect camera inputs and transparent projection/order, so a
+later live camera update cannot disagree with the recorded metadata matrices.
+Histories and invocations retain the consumed token/depth/previous-geometry owners
+with their matching submitted predecessor; no ordinary wait, immediate submission,
+CPU image/counter readback or motion-driven global reset is introduced. The motion
+attachment remains unconsumed here; FSR integration is P2.4.
+
+Source review and independent arithmetic checks passed. C++/shader compilation,
+Vulkan/Metal execution, actual format support, pixels, visual acceptance and
+performance remain not_run. The new stopped-host runTemporalReprojectionProbe
+covers reduced 2x2 signal / 3x3 receiver transport with simultaneous camera/position/
+normal changes, local token/geometry/normal/out-of-bounds/depth rejection, retained
+owners, profile transitions, cuts and projection changes. The existing metadata
+fixture adds six malformed previous-pair cases. The surface fixture explicitly
+isolates its old v2 token-only synthetic consumer; it does not claim v3 transport.
+The rigid CPU oracle now includes the previous-camera-space tolerance formula.
+All C++ fixtures remain uncompiled/unexecuted; queued multi-slot real-raster/HDR/
+normal-map/visual scenarios remain P2.5/native acceptance work.
+
+## Phase 2 inspection and handoff (P2.5)
+
+TemporalDiagnosticView appends Motion=3, PreviousPosition=4 and PreviousNormal=5,
+preserving existing values. A separate optional temporal_diagnostic/surface shader
+uses the unchanged 16-byte display ABI and uint-token/selected-float texture pair;
+surfaceDiagnosticsAvailable reports its readiness independently. Missing per-view
+source returns no display; malformed selected format/extent/device/usage throws.
+Original token/actual-acceptance kernels and accumulation v1/v2/v3 are unchanged.
+The renderer exposes matching read-only temporalSurfaceDiagnosticsAvailable.
+
+TemporalSurfaceMetadata appends an optional retained motion image after
+legacyCompatible. Accumulation does not consume/retain this unused motion field;
+display invocations retain it only when read. Motion colors map xy as 0.5+xy/64,
+clamped to [0,1], with B=0.5. Previous position maps signed world axes using
+0.5+0.5*xyz/(1+abs(xyz)); normals map 0.5+0.5*xyz. Invalid/zero-token/nonfinite
+values are black, and position/normal require valid w. Use Raw HDR to inspect.
+These colors are bounded diagnostic encodings, not lossless numeric exports.
+
+All views are opt-in, exact-domain, receiver-sized RGBA16 outputs using existing
+GPU timing; they add no ordinary readback/wait or permanent confidence images.
+Replay stays default off. Phase 2 source implementation and regression sources
+are complete (implemented_unverified); C++/shader compilation, all native/pixel/
+visual/performance acceptance remain not_run. See the Phase 2 plan's P2.5 native
+matrix and tests/draw/temporal_surface/phase2_source_checks.py for reproducible
+source/math checks; next implementation step is P3.1, not native acceptance.

@@ -18,12 +18,56 @@
 
 #include "TemporalCorrespondence.hpp"
 #include <cstring>
+#include <cmath>
 #include <limits>
 #include <stdexcept>
 #include <utility>
 
 namespace bg2e::draw {
 namespace {
+bool finiteInvertible(const glm::mat4& matrix)
+{
+    for (int column = 0; column < 4; ++column)
+    {
+        for (int row = 0; row < 4; ++row)
+        {
+            if (!std::isfinite(matrix[column][row]))
+            {
+                return false;
+            }
+        }
+    }
+    const auto determinant = glm::determinant(matrix);
+    if (!std::isfinite(determinant) || determinant == 0)
+    {
+        return false;
+    }
+    const auto inverse = glm::inverse(matrix);
+    for (int column = 0; column < 4; ++column)
+    {
+        for (int row = 0; row < 4; ++row)
+        {
+            if (!std::isfinite(inverse[column][row]))
+            {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+bool affine(const glm::mat4& matrix)
+{
+    return finiteInvertible(matrix) && matrix[0][3] == 0 && matrix[1][3] == 0 &&
+        matrix[2][3] == 0 && matrix[3][3] == 1;
+}
+
+bool validCamera(const TemporalCameraRecord& camera)
+{
+    return camera.extent.width && camera.extent.height && affine(camera.transforms.view) &&
+        finiteInvertible(camera.transforms.projection) && finiteInvertible(camera.transforms.jitteredProjection);
+}
+
 bool sameGeometry(const SignatureGeometry& a, const SignatureGeometry& b)
 {
     // Extraction objectId/order is deliberately not persistent surface identity.
@@ -98,7 +142,8 @@ std::shared_ptr<const TemporalCorrespondenceFrame> TemporalCorrespondence::prepa
 
 std::shared_ptr<const TemporalCorrespondenceFrame> TemporalCorrespondence::record(
     const TemporalCorrespondenceFrame& prepared, uint64_t sequence, uint64_t generation,
-    std::shared_ptr<const gpu::detail::RecordingCompletion> recording) const
+    std::shared_ptr<const gpu::detail::RecordingCompletion> recording,
+    const TemporalCameraRecord& camera) const
 {
     if (prepared.sequence != sequence || !recording)
     {
@@ -107,9 +152,23 @@ std::shared_ptr<const TemporalCorrespondenceFrame> TemporalCorrespondence::recor
     auto next = std::make_shared<TemporalCorrespondenceFrame>(prepared);
     next->generation = generation;
     next->recording = std::move(recording);
+    next->camera = camera;
+    next->previousCamera = camera;
+    next->previousCameraValid = false;
+    next->previousRecording.reset();
     const bool consecutive = prepared.generation == generation && _recorded &&
         _recorded->generation == generation && _recorded->recording && _recorded->recording->wasSubmitted() &&
-        _recorded->sequence < sequence && sequence-_recorded->sequence == 1;
+        _recorded->sequence < sequence && sequence-_recorded->sequence == 1 &&
+        validCamera(camera) && validCamera(_recorded->camera) &&
+        camera.extent.width == _recorded->camera.extent.width &&
+        camera.extent.height == _recorded->camera.extent.height &&
+        camera.transforms.projection == _recorded->camera.transforms.projection;
+    if (consecutive)
+    {
+        next->previousCamera = _recorded->camera;
+        next->previousCameraValid = true;
+        next->previousRecording = _recorded->recording;
+    }
     for (auto& [key, instance] : next->instances)
     {
         // Never use the slot's last occupant or the latest prepared update as
@@ -129,7 +188,8 @@ std::shared_ptr<const TemporalCorrespondenceFrame> TemporalCorrespondence::recor
         instance.geometryChanged |= !sameGeometry(*instance.geometry,*previous.geometry);
         instance.materialChanged |= !sameMaterial(*instance.material,*previous.material);
         instance.previousValid = instance.token == previous.token &&
-            !instance.geometryChanged && !instance.materialChanged;
+            !instance.geometryChanged && !instance.materialChanged &&
+            affine(instance.world) && affine(previous.world);
         if (instance.previousValid)
         {
             instance.previousWorld = previous.world;

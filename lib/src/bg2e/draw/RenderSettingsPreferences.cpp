@@ -183,7 +183,8 @@ void registerTypes()
         renderer.property("inspectOpaqueLayer", &RendererDeferred::inspectOpaqueLayer, &RendererDeferred::setInspectOpaqueLayer).category("Diagnostics");
         renderer.property("temporalSurfaceEnabled", &RendererDeferred::temporalSurfaceEnabled, &RendererDeferred::setTemporalSurfaceEnabled).category("Diagnostics");
         renderer.property("temporalDiagnosticView", &RendererDeferred::temporalDiagnosticView, &RendererDeferred::setTemporalDiagnosticView)
-            .category("Diagnostics").enumValue("Off",0).enumValue("Surface tokens",1).enumValue("Local history (red restart, green accepted)",2);
+            .category("Diagnostics").enumValue("Off",0).enumValue("Surface tokens",1).enumValue("Local history (red restart, green accepted)",2)
+            .enumValue("Motion (32 pixels per half-range)",3).enumValue("Expected previous position",4).enumValue("Expected previous normal",5);
         renderer.property("temporalDiagnosticSignal", &RendererDeferred::temporalDiagnosticSignal, &RendererDeferred::setTemporalDiagnosticSignal)
             .category("Diagnostics").enumValue("Visibility",0).enumValue("Diffuse radiance",1).enumValue("Reflected radiance",2);
         // Reflection has no uint64 scalar; decimal text preserves the complete layer key.
@@ -201,6 +202,7 @@ void registerTypes()
             o.setTemporalDiagnosticLayer(layer);
         }).category("Diagnostics");
         renderer.property("temporalDiagnosticsAvailable", &RendererDeferred::temporalDiagnosticsAvailable).category("Capabilities");
+        renderer.property("temporalSurfaceDiagnosticsAvailable", &RendererDeferred::temporalSurfaceDiagnosticsAvailable).category("Capabilities");
         renderer.property("temporalSurfaceAvailable", &RendererDeferred::temporalSurfaceAvailable).category("Capabilities");
         renderer.property("temporalSurfaceStatus", &RendererDeferred::temporalSurfaceStatus).category("Capabilities");
         renderer.property("queryGraphSelected", &RendererDeferred::usesQueryShadows).category("Capabilities");

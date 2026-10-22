@@ -25,6 +25,33 @@
 #include <algorithm>
 
 namespace bg2e::draw {
+void UpscalerOpaqueMotion::validate(const gpu::Device& device, gpu::Size2D internalExtent) const
+{
+    if (bool(motion) != bool(token) || (motionOwner && motionOwner.get() != motion) ||
+        (tokenOwner && tokenOwner.get() != token))
+    {
+        throw std::invalid_argument("Opaque motion requires a token/motion pair and matching optional retained owners");
+    }
+    if (!motion)
+    {
+        return;
+    }
+    for (auto* image : {motion,token})
+    {
+        if (!image->isValid() || image->device() != &device || image->imageType() != gpu::ImageType::Image2D ||
+            image->size() != internalExtent || internalExtent.isZero() || image->arrayLayers() != 1 || image->mipLevels() != 1 ||
+            !gpu::hasFlag(image->usage(),gpu::ImageUsage::Sampled))
+        {
+            throw std::invalid_argument("Opaque motion images require matching same-device sampled single-level 2D receiver images");
+        }
+    }
+    if (motion->pixelFormat() != gpu::PixelFormat::R16G16_SFLOAT || token->pixelFormat() != gpu::PixelFormat::R32_UINT)
+    {
+        throw std::invalid_argument("Opaque motion requires RG16F motion and R32_UINT tokens");
+    }
+}
+
+
 float ResolutionSettings::scale() const
 {
     return _scale;

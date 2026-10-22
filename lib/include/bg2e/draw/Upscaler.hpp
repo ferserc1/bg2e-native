@@ -22,6 +22,7 @@
 #include <bg2e/draw/SettingsCatalog.hpp>
 #include <bg2e/draw/pipeline/FullscreenPass.hpp>
 #include <bg2e/math/base.hpp>
+#include <memory>
 
 namespace bg2e::draw {
 // All calls run on the render thread. Initialize/resize/cleanup require a drained
@@ -36,6 +37,17 @@ struct UpscalerCamera {
     glm::mat4 view{1}, projection{1}; // Unjittered, Vulkan/Metal zero-to-one depth.
     float nearPlane = 0.1f, farPlane = 1000.0f, verticalFov = 1.04719755f;
 };
+// Full-extent opaque receiver metadata, never the last transparent layer.
+// Borrowed pointers must survive GPU completion; supplied matching owners are
+// retained by consumers per acquired slot. Motion is previous-current unjittered
+// framebuffer pixels at internal extent. Token zero selects camera/depth fallback.
+struct UpscalerOpaqueMotion {
+    gpu::Image* motion = nullptr;
+    gpu::Image* token = nullptr;
+    std::shared_ptr<gpu::Image> motionOwner, tokenOwner;
+
+    void validate(const gpu::Device& device, gpu::Size2D internalExtent) const;
+};
 struct UpscalerInput {
     const FrameContext& frame;
     gpu::Image& color;
@@ -43,6 +55,7 @@ struct UpscalerInput {
     gpu::Image& output;
     UpscalerCamera camera;
     glm::mat4 jitteredProjection{1};
+    UpscalerOpaqueMotion opaqueMotion; // Optional trailing pair; existing aggregate callers remain valid.
 };
 struct UpscalerRequirements {
     bool opaqueDepth = false;

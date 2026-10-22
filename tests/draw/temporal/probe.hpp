@@ -632,12 +632,21 @@ inline bool runTemporalMetadataProbe(Engine& engine, const std::filesystem::path
     auto validToken = upload({3,3},gpu::PixelFormat::R32_UINT,tokens.data(),sizeof(tokens),12);
     const uint32_t oneToken = 7;
     auto wrongExtent = upload({1,1},gpu::PixelFormat::R32_UINT,&oneToken,sizeof(oneToken),4);
+    const std::array<glm::vec4,9> previousPositions{};
+    auto validPreviousPosition = upload({3,3},gpu::PixelFormat::R32G32B32A32_SFLOAT,
+        previousPositions.data(),sizeof(previousPositions),48);
+    auto smallPreviousPosition = upload({1,1},gpu::PixelFormat::R32G32B32A32_SFLOAT,
+        previousPositions.data(),sizeof(glm::vec4),16);
     const uint32_t slot = uint32_t(sequence%2);
     temporal.beginFrame(slot,sequence+1,sequence);
     device.immediateSubmit([&](gpu::CommandBuffer* command)
     {
-        const std::array<TemporalSurfaceMetadata,4> invalidPairs{{
-            {validToken,{}},{normal,receiver},{wrongExtent,receiver},{validToken,normal}}};
+        const std::array<TemporalSurfaceMetadata,10> invalidPairs{{
+            {validToken,{}},{normal,receiver},{wrongExtent,receiver},{validToken,normal},
+            {validToken,receiver,validPreviousPosition,{}},{validToken,receiver,{},normal},
+            {{},{},validPreviousPosition,normal},{validToken,receiver,normal,normal},
+            {validToken,receiver,validPreviousPosition,validPreviousPosition},
+            {validToken,receiver,smallPreviousPosition,normal}}};
         for (const auto& metadata : invalidPairs)
         {
             bool rejected = false;

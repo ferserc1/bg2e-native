@@ -43,6 +43,12 @@ struct alignas(16) TemporalMetadataUniforms {
     glm::mat4 currentViewProjection{1};
     glm::vec4 metadataRejection{0};
 };
+struct alignas(16) TemporalReprojectionUniforms {
+    TemporalMetadataUniforms metadata;
+    glm::mat4 previousView{1};
+};
+static_assert(offsetof(TemporalReprojectionUniforms, metadata) == 0);
+static_assert(sizeof(TemporalReprojectionUniforms) == 352 && offsetof(TemporalReprojectionUniforms, previousView) == 288);
 static_assert(sizeof(TemporalMetadataUniforms) == 288 && offsetof(TemporalMetadataUniforms, currentViewProjection) == 208);
 static_assert(sizeof(TemporalUniforms) == 208 && offsetof(TemporalUniforms, flags) == 192);
 }
@@ -160,6 +166,18 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                     _diagnosticLayout = device.createPipelineLayout(diagnosticLayout);
                     _diagnosticShader = library.compute("draw/temporal_diagnostic/view",&device);
                     _diagnosticPipeline = device.createComputePipeline({_diagnosticShader.get(),_diagnosticLayout.get()});
+                    try
+                    {
+                        // Same display ABI, separately versioned shader: old diagnostic kernels remain unchanged.
+                        _surfaceDiagnosticShader = library.compute("draw/temporal_diagnostic/surface",&device);
+                        _surfaceDiagnosticPipeline = device.createComputePipeline({_surfaceDiagnosticShader.get(),_diagnosticLayout.get()});
+                    }
+                    catch (const std::exception& error)
+                    {
+                        _surfaceDiagnosticPipeline.reset();
+                        _surfaceDiagnosticShader.reset();
+                        _metadataStatus += std::string("; surface diagnostics unavailable: ")+error.what();
+                    }
                 }
                 catch (const std::exception& error)
                 {
@@ -178,6 +196,59 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                 _metadataShaders = {};
                 _metadataLayout.reset();
                 _metadataStatus = std::string("Metadata unavailable; v1 fallback: ")+error.what();
+            }
+        }
+        if (!_configuration.reprojectionShaderInterface.empty())
+        {
+            try
+            {
+                if (_configuration.reprojectionShaderInterface != "draw.temporal.v3" || !surfaceMetadataAvailable())
+                {
+                    throw std::runtime_error("Rigid reprojection requires draw.temporal.v3 and optional v2 metadata support");
+                }
+                auto reprojectionLayout = layout;
+                for (uint32_t i = 17; i <= 18; ++i)
+                {
+                    reprojectionLayout.resourceBindings.push_back({0,{i,i-2},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
+                }
+                _reprojectionLayout = device.createPipelineLayout(reprojectionLayout);
+                for (uint32_t i = 0; i < 2; ++i)
+                {
+                    const auto name = _configuration.reprojectionShaderPrefix+(i ? "/camera_hdr" : "/camera_scalar");
+                    _reprojectionShaders[i] = library.compute(name,&device);
+                    _reprojectionPipelines[i] = device.createComputePipeline({_reprojectionShaders[i].get(),_reprojectionLayout.get()});
+                }
+                _reprojectionStatus = "Optional draw.temporal.v3 camera-depth reprojection ready";
+                try
+                {
+                    if (_configuration.reprojectionShaderPrefix != "draw/temporal_accumulation_v3" || !diagnosticsAvailable())
+                    {
+                        throw std::runtime_error("Rigid acceptance diagnostics require the built-in v3 family and display support");
+                    }
+                    reprojectionLayout.resourceBindings.push_back({0,{16,14},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+                    _reprojectionAcceptanceLayout = device.createPipelineLayout(reprojectionLayout);
+                    for (uint32_t i = 0; i < 2; ++i)
+                    {
+                        const auto name = std::string("draw/temporal_accumulation_v3_diagnostic")+(i ? "/camera_hdr" : "/camera_scalar");
+                        _reprojectionAcceptanceShaders[i] = library.compute(name,&device);
+                        _reprojectionAcceptancePipelines[i] = device.createComputePipeline(
+                            {_reprojectionAcceptanceShaders[i].get(),_reprojectionAcceptanceLayout.get()});
+                    }
+                }
+                catch (const std::exception& error)
+                {
+                    _reprojectionAcceptancePipelines = {};
+                    _reprojectionAcceptanceShaders = {};
+                    _reprojectionAcceptanceLayout.reset();
+                    _reprojectionStatus += std::string("; diagnostics unavailable: ")+error.what();
+                }
+            }
+            catch (const std::exception& error)
+            {
+                _reprojectionPipelines = {};
+                _reprojectionShaders = {};
+                _reprojectionLayout.reset();
+                _reprojectionStatus = std::string("Rigid reprojection unavailable; static v2/v1 fallback: ")+error.what();
             }
         }
     }
@@ -272,8 +343,35 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
             throw std::invalid_argument("Temporal metadata requires R32_UINT token and matching receiver depth format");
         }
     }
-    const bool enhanced = input.metadata.token && surfaceMetadataAvailable();
-    const bool diagnose = enhanced && input.diagnoseAcceptance && diagnosticsAvailable();
+    if (bool(input.metadata.previousPosition) != bool(input.metadata.previousNormal) ||
+        (input.metadata.previousPosition && !input.metadata.token))
+    {
+        throw std::invalid_argument("Previous surface metadata requires a retained position/normal pair plus token/depth");
+    }
+    if (input.metadata.previousPosition)
+    {
+        for (const auto& image : {input.metadata.previousPosition,input.metadata.previousNormal})
+        {
+            if (!image->isValid() || image->device() != _device || image->imageType() != gpu::ImageType::Image2D ||
+                image->size() != input.surface.extent() || !gpu::hasFlag(image->usage(),gpu::ImageUsage::Sampled))
+            {
+                throw std::invalid_argument("Previous surface images require matching same-device sampled receiver images");
+            }
+        }
+        if (input.metadata.previousPosition->pixelFormat() != gpu::PixelFormat::R32G32B32A32_SFLOAT ||
+            input.metadata.previousNormal->pixelFormat() != gpu::PixelFormat::R16G16B16A16_SFLOAT)
+        {
+            throw std::invalid_argument("Previous surface images require RGBA32F position and RGBA16F normal");
+        }
+    }
+    const bool affineView = input.view.view[0][3] == 0 && input.view.view[1][3] == 0 &&
+        input.view.view[2][3] == 0 && input.view.view[3][3] == 1;
+    const bool rigid = input.metadata.previousPosition && surfaceReprojectionAvailable() && affineView &&
+        input.surface.profile == SurfaceProfile::CameraDepth && input.view.reproject;
+    const bool enhanced = input.metadata.token && surfaceMetadataAvailable() && (rigid || input.metadata.legacyCompatible);
+    const uint32_t metadataMode = rigid ? 2u : (enhanced ? 1u : 0u);
+    const bool diagnose = enhanced && input.diagnoseAcceptance && diagnosticsAvailable() &&
+        (!rigid || bool(_reprojectionAcceptancePipelines[0]));
     if (!available() || !_settings.enabled)
     {
         _histories.erase(input.key);
@@ -307,8 +405,8 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     }
     const bool consecutive = previous && previous->sequence < input.sceneFrameNumber &&
         input.sceneFrameNumber-previous->sequence == 1;
-    // Match the production accumulator: compare unjittered camera matrices,
-    // not input events or the sampling jitter used by the current frame.
+    // Legacy paths retain the unjittered camera rejection. Supported v3 uses
+    // geometric reprojection; projection changes and explicit cuts still reset.
     bool cameraChanged = false;
     if (previous)
     {
@@ -322,7 +420,8 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
             }
         }
     }
-    if (!consecutive || cameraChanged || previous->generation != input.generation || previous->reset != _generation ||
+    if (!consecutive || (cameraChanged && !rigid) || previous->metadataMode != metadataMode ||
+        previous->generation != input.generation || previous->reset != _generation ||
         previous->signal->size() != input.signal.size() || previous->surfaceExtent != input.surface.extent() ||
         previous->profile != input.surface.profile || previous->view.reproject != input.view.reproject ||
         previous->view.projection != input.view.projection || previous->maxRoughness != input.maxRoughness)
@@ -344,9 +443,11 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     next->generation = input.generation;
     next->reset = _generation;
     next->view = input.view;
+    next->metadataMode = metadataMode;
     if (enhanced)
     {
         next->metadata = input.metadata;
+        next->metadata.motion.reset(); // Display invocations retain motion only when they actually read it.
     }
     next->profile = input.surface.profile;
     next->surfaceExtent = input.surface.extent();
@@ -374,7 +475,8 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     Invocation invocation;
     invocation.previous = previous;
     invocation.next = next;
-    TemporalMetadataUniforms enhancedData;
+    TemporalReprojectionUniforms reprojectionData;
+    auto& enhancedData = reprojectionData.metadata;
     auto& data = enhancedData.temporal;
     data.inverseViewProjection = input.surface.inverseViewProjection;
     data.previousViewProjection = previous ? previous->view.jitteredProjection*previous->view.view : glm::mat4(1);
@@ -389,10 +491,13 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     enhancedData.currentViewProjection = input.view.jitteredProjection*input.view.view;
     enhancedData.metadataRejection.x = enhanced && input.metadata.depth->pixelFormat() == gpu::PixelFormat::D16_UNORM ?
         2.0f/65535.0f : 2e-6f;
-    const auto uniformBytes = enhanced ? sizeof(enhancedData) : sizeof(data);
-    invocation.pooled = _pool->bindings(input.command, diagnose ? _acceptanceLayout : (enhanced ? _metadataLayout : _layout), 0, uniformBytes,
+    reprojectionData.previousView = previous ? previous->view.view : glm::mat4(1);
+    const auto uniformBytes = rigid ? sizeof(reprojectionData) : (enhanced ? sizeof(enhancedData) : sizeof(data));
+    const auto selectedLayout = rigid ? (diagnose ? _reprojectionAcceptanceLayout : _reprojectionLayout) :
+        (diagnose ? _acceptanceLayout : (enhanced ? _metadataLayout : _layout));
+    invocation.pooled = _pool->bindings(input.command, selectedLayout, 0, uniformBytes,
         {input.slot, uint64_t(input.key.signal), input.key.view, input.key.layer});
-    invocation.pooled->writeUniforms(&enhancedData, uniformBytes);
+    invocation.pooled->writeUniforms(&reprojectionData, uniformBytes);
     invocation.uniforms = invocation.pooled->uniforms();
     invocation.resources = invocation.pooled->resources();
     invocation.pooled->setUniformBuffer({0,1},invocation.uniforms.get());
@@ -416,6 +521,15 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
             invocation.pooled->setSampledImage({i+13,i+11},metadataSources[i]);
         }
     }
+    if (rigid)
+    {
+        const std::array<gpu::Image*,2> expectedSources{input.metadata.previousPosition.get(),input.metadata.previousNormal.get()};
+        for (uint32_t i = 0; i < expectedSources.size(); ++i)
+        {
+            input.command.transition(expectedSources[i],gpu::ImageLayout::ShaderReadOnly);
+            invocation.pooled->setSampledImage({i+17,i+15},expectedSources[i]);
+        }
+    }
     invocation.pooled->setSampler({9,0},_nearest.get());
     const std::array<gpu::Image*,3> outputs{next->signal.get(),next->position.get(),next->normal.get()};
     for (uint32_t i = 0; i < outputs.size(); ++i)
@@ -432,8 +546,8 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     slot.invocations.push_back(std::move(invocation));
     const uint32_t index = (input.surface.profile == SurfaceProfile::WorldPositionCoverage ? 2u : 0u)+(scalar ? 0u : 1u);
     input.command.beginCompute();
-    auto* pipeline = diagnose ? _acceptancePipelines[index].get() :
-        (enhanced ? _metadataPipelines[index].get() : _pipelines[index].get());
+    auto* pipeline = rigid ? (diagnose ? _reprojectionAcceptancePipelines[index].get() : _reprojectionPipelines[index].get()) :
+        (diagnose ? _acceptancePipelines[index].get() : (enhanced ? _metadataPipelines[index].get() : _pipelines[index].get()));
     input.command.bindPipeline(pipeline);
     input.command.bindResourceSet(pipeline,0,slot.invocations.back().resources.get());
     input.command.dispatch((input.signal.width()+15)/16,(input.signal.height()+15)/16,1);
@@ -455,15 +569,22 @@ bool TemporalAccumulator::diagnosticsAvailable() const
     return surfaceMetadataAvailable() && bool(_diagnosticPipeline) && bool(_acceptancePipelines[0]);
 }
 
+bool TemporalAccumulator::surfaceDiagnosticsAvailable() const
+{
+    return surfaceMetadataAvailable() && bool(_surfaceDiagnosticPipeline);
+}
+
 std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBuffer& command,
     uint32_t slotIndex, uint64_t serial, const TemporalKey& key,
     const TemporalSurfaceMetadata& metadata, TemporalDiagnosticView view)
 {
-    if (uint32_t(view) > uint32_t(TemporalDiagnosticView::LocalHistory))
+    if (uint32_t(view) > uint32_t(TemporalDiagnosticView::PreviousNormal))
     {
         throw std::invalid_argument("Unknown temporal diagnostic view");
     }
-    if (view == TemporalDiagnosticView::Off || !diagnosticsAvailable() || !metadata.token || !metadata.depth)
+    const bool surfaceView = uint32_t(view) >= uint32_t(TemporalDiagnosticView::Motion);
+    if (view == TemporalDiagnosticView::Off ||
+        !(surfaceView ? surfaceDiagnosticsAvailable() : diagnosticsAvailable()) || !metadata.token || !metadata.depth)
     {
         return {};
     }
@@ -479,6 +600,24 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
     {
         throw std::invalid_argument("Temporal diagnostic token must be a same-device sampled R32_UINT 2D image");
     }
+    std::shared_ptr<gpu::Image> surfaceData;
+    if (surfaceView)
+    {
+        surfaceData = view == TemporalDiagnosticView::Motion ? metadata.motion :
+            (view == TemporalDiagnosticView::PreviousPosition ? metadata.previousPosition : metadata.previousNormal);
+        if (!surfaceData)
+        {
+            return {}; // Missing required data is unavailable, never a valid zero-vector display.
+        }
+        const auto format = view == TemporalDiagnosticView::Motion ? gpu::PixelFormat::R16G16_SFLOAT :
+            (view == TemporalDiagnosticView::PreviousPosition ? gpu::PixelFormat::R32G32B32A32_SFLOAT : gpu::PixelFormat::R16G16B16A16_SFLOAT);
+        if (!surfaceData->isValid() || surfaceData->device() != _device || surfaceData->size() != metadata.token->size() ||
+            surfaceData->imageType() != gpu::ImageType::Image2D || surfaceData->mipLevels() != 1 || surfaceData->arrayLayers() != 1 ||
+            surfaceData->pixelFormat() != format || !gpu::hasFlag(surfaceData->usage(),gpu::ImageUsage::Sampled))
+        {
+            throw std::invalid_argument("Temporal surface display requires matching sampled receiver metadata of the selected format");
+        }
+    }
     if (!_pool)
     {
         _pool = std::make_shared<TemporaryResourcePool>(*_device,_configuration.poolLimits);
@@ -492,18 +631,22 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
         invocation.next = found->second;
     }
     invocation.diagnosticMetadata = metadata;
+    if (view != TemporalDiagnosticView::Motion)
+    {
+        invocation.diagnosticMetadata.motion.reset();
+    }
     gpu::ImageDescription description;
     description.size = metadata.token->size();
     description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;
     invocation.diagnostic = _pool->image(command,description);
     // 16-byte uniform: receiver width/height, mode, current acceptance image present.
-    const glm::uvec4 data(description.size.width,description.size.height,uint32_t(view),invocation.next ? 1u : 0u);
+    const glm::uvec4 data(description.size.width,description.size.height,uint32_t(view),(surfaceView || invocation.next) ? 1u : 0u);
     invocation.pooled = _pool->bindings(command,_diagnosticLayout,0,sizeof(data),
         {slotIndex,uint64_t(key.signal),key.view,key.layer});
     invocation.pooled->writeUniforms(&data,sizeof(data));
     invocation.pooled->setUniformBuffer({0,1},invocation.pooled->uniforms().get());
-    auto* acceptance = invocation.next ? invocation.next->acceptance.get() : _zeroNormal.get();
+    auto* acceptance = surfaceView ? surfaceData.get() : (invocation.next ? invocation.next->acceptance.get() : _zeroNormal.get());
     command.transition(metadata.token.get(),gpu::ImageLayout::ShaderReadOnly);
     command.transition(acceptance,gpu::ImageLayout::ShaderReadOnly);
     command.transition(invocation.diagnostic.get(),gpu::ImageLayout::General);
@@ -515,8 +658,9 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
     const auto result = invocation.diagnostic;
     slot.invocations.push_back(std::move(invocation));
     command.beginCompute();
-    command.bindPipeline(_diagnosticPipeline.get());
-    command.bindResourceSet(_diagnosticPipeline.get(),0,slot.invocations.back().pooled->resources().get());
+    auto* pipeline = surfaceView ? _surfaceDiagnosticPipeline.get() : _diagnosticPipeline.get();
+    command.bindPipeline(pipeline);
+    command.bindResourceSet(pipeline,0,slot.invocations.back().pooled->resources().get());
     command.dispatch((description.size.width+15)/16,(description.size.height+15)/16,1);
     command.endCompute();
     command.transition(result.get(),gpu::ImageLayout::ShaderReadOnly);
@@ -542,9 +686,18 @@ void TemporalAccumulator::cleanup()
     _histories.clear();
     _slots.clear();
     _pool.reset();
+    _reprojectionPipelines = {};
+    _reprojectionShaders = {};
+    _reprojectionLayout.reset();
+    _reprojectionAcceptancePipelines = {};
+    _reprojectionAcceptanceShaders = {};
+    _reprojectionAcceptanceLayout.reset();
+    _reprojectionStatus = "Optional reprojection interface not requested";
     _acceptancePipelines = {};
     _acceptanceShaders = {};
     _acceptanceLayout.reset();
+    _surfaceDiagnosticPipeline.reset();
+    _surfaceDiagnosticShader.reset();
     _diagnosticPipeline.reset();
     _diagnosticShader.reset();
     _diagnosticLayout.reset();
@@ -629,6 +782,16 @@ bool TemporalAccumulator::available() const
 bool TemporalAccumulator::surfaceMetadataAvailable() const
 {
     return available() && bool(_metadataPipelines[0]);
+}
+
+bool TemporalAccumulator::surfaceReprojectionAvailable() const
+{
+    return surfaceMetadataAvailable() && bool(_reprojectionPipelines[0]);
+}
+
+const std::string& TemporalAccumulator::surfaceReprojectionStatus() const
+{
+    return _reprojectionStatus;
 }
 
 const std::string& TemporalAccumulator::surfaceMetadataStatus() const

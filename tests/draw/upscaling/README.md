@@ -49,8 +49,41 @@ These probes have not been compiled or executed by the implementing agent.
    color is output-sized HDR; seven debug inputs remain internal-sized. Direct
    standalone FinalLayer users can retain the default internal-color contract.
 
-Known intermediate limits: conventional finite RH perspective, zero-to-one
-clip depth; camera-only motion, no previous object transforms/reactive mask,
-no general engine temporal accumulator or denoise. Animated objects and glass
-can ghost under FSR; M03 extends motion/reset information. Native Metal
-upscaling and DLSS remain external extension cases, not advertised as available.
+Historical M01-13 limits above have evolved: the optional Phase 2 receiver path
+now supplies rigid opaque object motion, while absent/unsupported metadata keeps
+camera-only motion. Conventional RH zero-to-one perspective, no reactive mask,
+deformation/transparent/reflected-content motion limitations still apply. Native
+Metal FSR and DLSS remain unsupported extension cases. Current source status follows.
+
+
+## P2.4 source fixture and native acceptance still pending
+
+Include `opaque_motion_probe.hpp` and call `runOpaqueMotionProbe(engine, shaderRoot)`
+only in a stopped initialized host after build authorization. It needs no FidelityFX
+SDK or RT hardware: it renders the legacy and optional selection shaders directly.
+False is unavailable shader/format support, never success. It checks odd 5x3 output,
+integer tokens including UINT32_MAX, unchanged (-3,4)/(.5,-.5) vectors, valid zero
+motion overriding nonzero camera motion, token-zero and NaN/Inf fallback, camera
+pixel units/Y sign, ordinary/sky depth and eight malformed optional input cases.
+It uses actual raster/readback only within the native fixture; it has not run.
+
+Optional UpscalerOpaqueMotion contains borrowed RG16F motion/R32_UINT token pointers
+plus optional matching owners. FsrUpscaler validates and retains supplied owners per
+invocation in retired-slot rings. Renderer input must come from the opaque pair,
+never the final glass layer; enable receiver replay explicitly to generate it.
+The new pass reuses the existing motion image and 128-byte camera push. SDK scale
+is (1,1), internally divided by render size, with unjittered previous-current pixels.
+The bridge/vendor sources and old camera shader are unchanged.
+
+When an SDK-supported native session is authorized, additionally test two/three
+queued slots, object/camera translations and rotations, valid zero vectors despite
+jitter, metadata disabled/unavailable and shader-missing fallback, stationary sky,
+opaque metadata after multiple transparent layers, retained image owners after slot
+reuse, abandoned recordings/scene gaps/cuts/projection changes and resize. Prepare
+another slot before recording the first and verify SDK jitter still matches that
+first scene's captured projection. Check no extra resets on transform-only movement
+or metadata presence changes. Compare FSR trails against camera-only fallback;
+transparent/refraction/reflection correspondence remains approximate. There must be
+no ordinary waits/submissions/readbacks. SDK unsupported and Metal FSR are fallback,
+not passes. C++/shader compilation and all native/pixel/performance checks remain
+not_run; P2.5 will consolidate regression/source acceptance without implying runtime.
