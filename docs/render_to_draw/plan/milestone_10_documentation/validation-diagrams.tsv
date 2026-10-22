@@ -1,7 +1,0 @@
-page	review	limits
-doc/api/gpu/Submission_tracking_and_waitIdle.md	source-order/lifetime review	static only; not rendered
-doc/architecture/draw_integrated_lightmaps.md	source-order/lifetime review	static only; not rendered
-doc/architecture/draw_standalone_lightmaps.md	source-order/lifetime review	static only; not rendered
-doc/architecture/env_generator.md	source-order/lifetime review	static only; not rendered
-doc/architecture/lightmaps/index.md	source-order/lifetime review	static only; not rendered
-doc/deferred_render_model.md	source-order/lifetime review	static only; not rendered
