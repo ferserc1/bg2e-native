@@ -56,6 +56,9 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     {
         return _selection && _selection->sceneInputBlocked();
     }
+    void keyDown(const bg2e::app::KeyEvent& keyEvent) override;
+    void keyUp(const bg2e::app::KeyEvent& keyEvent) override;
+
     void mouseMove(int x, int y) override;
     void mouseButtonDown(int button, int x, int y) override;
     void mouseButtonUp(int button, int x, int y) override;

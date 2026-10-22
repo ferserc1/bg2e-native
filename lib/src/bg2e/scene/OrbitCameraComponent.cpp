@@ -216,7 +216,7 @@ void OrbitCameraComponent::update(float /* delta */)
         }
         _distance = _distance < _maxDistance ? _distance : _maxDistance;
 
-        if (_mouseButtonPressed)
+        if (_mouseButtonPressed || _keys.space)
         {
             math::BasisVectors basis(transform->matrix(), true);
 

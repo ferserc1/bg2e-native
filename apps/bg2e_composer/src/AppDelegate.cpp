@@ -151,6 +151,31 @@ void AppDelegate::queueInput(std::function<void()> event)
     });
 }
 
+void AppDelegate::keyDown(const bg2e::app::KeyEvent& keyEvent)
+{
+    queueInput([this, keyEvent]
+    {
+        if (!_selection->sceneInputBlocked())
+        {
+            if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
+            {
+                controller->keyDown(keyEvent);
+            }
+        }
+    });
+}
+
+void AppDelegate::keyUp(const bg2e::app::KeyEvent& keyEvent)
+{
+    queueInput([this, keyEvent]
+    {
+        if (auto controller = _stage->orbitCamera())
+        {
+            controller->keyUp(keyEvent);
+        }
+    });
+}
+
 void AppDelegate::mouseMove(int x, int y)
 {
     queueInput([this, x, y]
