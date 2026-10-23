@@ -110,6 +110,15 @@ class BG2E_API RendererDeferred : public Renderer {
     const std::string& noiseStatus() const;
     std::shared_ptr<Upscaler> upscaler() const;
     std::shared_ptr<ResolutionSettings> resolution() const;
+
+    enum class UpscaleMethod { None = 0, FSR = 1 };
+    enum class UpscaleMode { Native = 0, Quality, Balanced, Performance, UltraPerformance };
+    UpscaleMethod upscaleMethod() const;
+    void setUpscaleMethod(UpscaleMethod value);
+    UpscaleMode upscaleMode() const;
+    void setUpscaleMode(UpscaleMode value);
+
+
     void setCameraParameters(float nearPlane, float farPlane, float verticalFovRadians);
 
     pipeline::FinalSettings& finalSettings();
@@ -161,6 +170,7 @@ class BG2E_API RendererDeferred : public Renderer {
     struct Targets {
         std::vector<std::shared_ptr<gpu::Image>> gbuffer;
         std::shared_ptr<gpu::Image> opaqueDepth, colorA, colorB, reconstructed;
+        bool temporalUpscaleApplied = false;
         UpscalerCamera camera;
         glm::mat4 jitteredProjection{1};
         std::vector<std::shared_ptr<gpu::Image>> shadows;
@@ -241,6 +251,7 @@ class BG2E_API RendererDeferred : public Renderer {
     std::string _initializationWarnings;
     std::shared_ptr<utils::BlueNoise> _sharedNoise;
     std::string _noiseStatus = "No shared atlas allocated; effects use injected noise or hash";
+    UpscaleMode _upscaleMode = UpscaleMode::Native;
     std::shared_ptr<ResamplingUpscaler> _fallback;
     UpscalerCamera _upscaleCamera;
 };

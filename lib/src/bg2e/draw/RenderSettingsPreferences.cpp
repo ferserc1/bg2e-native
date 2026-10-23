@@ -19,6 +19,7 @@
 #include <bg2e/draw/RenderSettingsPreferences.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
+#include <bg2e/draw/FsrUpscaler.hpp>
 #include <bg2e/reflection/Builder.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/scene/Node.hpp>
@@ -426,13 +427,29 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
         {
             _catalog.reset(RendererIdentity);
             _catalog.add(target("renderer", "bg2e.draw.renderer.deferred.v1", deferred));
-            if (auto resolution = deferred->resolution())
+            TypeInfoBuilder<RendererDeferred> upscale("bg2e.draw.upscaling.v1");
+            auto method = upscale.property("method", &RendererDeferred::upscaleMethod, &RendererDeferred::setUpscaleMethod)
+                .displayName("Upscale").enumValue("None", RendererDeferred::UpscaleMethod::None);
+            if (std::dynamic_pointer_cast<FsrUpscaler>(deferred->upscaler()))
             {
-                _catalog.add({"resolution", resolution->settingsType(), resolution.get(), resolution, {}, {}, {}});
+                method.enumValue("FSR", RendererDeferred::UpscaleMethod::FSR);
             }
-            if (auto upscaler = deferred->upscaler())
+            upscale.property("mode", &RendererDeferred::upscaleMode, &RendererDeferred::setUpscaleMode)
+                .displayName("Mode").enumValue("Native (AA)", RendererDeferred::UpscaleMode::Native)
+                .enumValue("Quality (60%)", RendererDeferred::UpscaleMode::Quality)
+                .enumValue("Balanced (55%)", RendererDeferred::UpscaleMode::Balanced)
+                .enumValue("Performance (50%)", RendererDeferred::UpscaleMode::Performance)
+                .enumValue("Ultra Performance (35%)", RendererDeferred::UpscaleMode::UltraPerformance);
+            _catalog.add({"upscaling", upscale.build(), deferred, {}, {}, {}, {}});
+            if (auto implementation = deferred->upscaler())
             {
-                _catalog.add({"upscaler/" + upscaler->identifier(), upscaler->settingsType(), dynamic_cast<void*>(upscaler.get()), upscaler, {}, {}, {}});
+                auto capabilities = implementation->settingsType();
+                std::erase_if(capabilities.properties, [](const auto& property)
+                {
+                    return property.metadata.category != "Capabilities";
+                });
+                _catalog.add({"upscaler/" + implementation->identifier(), capabilities,
+                    dynamic_cast<void*>(implementation.get()), implementation, {}, {}, {}});
             }
             for (const auto& selection : renderer.configuration().layers)
             {
@@ -515,7 +532,7 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
             addEffect("reflections",deferred->reflections(),"maxDistance");
             addEffect("temporal",deferred->temporal());
             addEffect("denoise",deferred->denoise());
-            addEffect("finalProcessor",deferred->finalProcessor());
+
             if (auto generator = deferred->environmentGenerator())
             {
                 bindGeneration(_catalog, *generator);

@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/RendererDeferred.hpp>
+#include <bg2e/draw/FsrUpscaler.hpp>
 #include "TemporalSignatureCache.hpp"
 #include "TemporalCorrespondence.hpp"
 #include <bg2e/base/CpuProfile.hpp>
@@ -284,6 +285,14 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     {
         configuration.resolution = std::make_shared<ResolutionSettings>();
     }
+    if (engine.backendType() == gpu::BackendType::Vulkan)
+    {
+        // The unified settings own the scene extent, including native AA at 100%.
+        const auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(configuration.upscaler);
+        constexpr float scales[] = {1.0f, 0.60f, 0.55f, 0.50f, 0.35f};
+        configuration.resolution->setEnabled(true);
+        configuration.resolution->setScale(fsr && fsr->enabled() ? scales[static_cast<unsigned>(_upscaleMode)] : 1.0f);
+    }
     configuration.internalExtent = configuration.resolution->resolve(configuration.outputExtent, configuration.internalExtent);
     for (auto& layer : configuration.layers)
     {
@@ -309,7 +318,16 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     _targets.resize(count);
     if (!_configuration.upscaler)
     {
-        _configuration.upscaler = std::make_shared<ResamplingUpscaler>();
+        if (engine.backendType() == gpu::BackendType::Vulkan)
+        {
+            auto fsr = std::make_shared<FsrUpscaler>();
+            fsr->setEnabled(false);
+            _configuration.upscaler = fsr;
+        }
+        else
+        {
+            _configuration.upscaler = std::make_shared<ResamplingUpscaler>();
+        }
     }
     if (_configuration.upscaler->identifier().empty() || _configuration.upscaler->label().empty())
     {
@@ -1566,7 +1584,10 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     // Transparent motion is not motion of the composited/refraction color.
     upscale.opaqueMotion = {slot.opaqueTemporalSurface.motion.get(),slot.opaqueTemporalSurface.token.get(),
         slot.opaqueTemporalSurface.motion,slot.opaqueTemporalSurface.token};
-    if (slot.diagnostic || !_configuration.upscaler->available() || !_configuration.upscaler->record(upscale))
+    const bool reconstructed = !slot.diagnostic && _configuration.upscaler->available() &&
+        _configuration.upscaler->record(upscale);
+    slot.temporalUpscaleApplied = reconstructed && _configuration.upscaler->requirements().jitter;
+    if (!reconstructed)
     {
         _fallback->record(upscale);
     }
@@ -1596,7 +1617,7 @@ void RendererDeferred::recordFinal(const FrameContext& frame, gpu::Image& linear
     std::vector<pipeline::ImageBinding> finalInputs{{"color", &linearColor}};
     finalInputs.insert(finalInputs.end(), gbuffer.begin(), gbuffer.end());
     dispatch(2, frame, finalInputs, {{"output", &frame.colorTarget}}, &raster);
-    if (_configuration.finalProcessor)
+    if (_configuration.finalProcessor && !slot.temporalUpscaleApplied)
     {
         _configuration.finalProcessor->record(frame);
         if (frame.commandBuffer.hasActiveScope())
@@ -1748,6 +1769,53 @@ std::shared_ptr<Upscaler> RendererDeferred::upscaler() const
 std::shared_ptr<ResolutionSettings> RendererDeferred::resolution() const
 {
     return _configuration.resolution;
+}
+
+RendererDeferred::UpscaleMethod RendererDeferred::upscaleMethod() const
+{
+    const auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(_configuration.upscaler);
+    return fsr && fsr->enabled() ? UpscaleMethod::FSR : UpscaleMethod::None;
+}
+
+void RendererDeferred::setUpscaleMethod(UpscaleMethod value)
+{
+    auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(_configuration.upscaler);
+    if (value != UpscaleMethod::None && value != UpscaleMethod::FSR)
+    {
+        throw std::invalid_argument("Unknown upscale method");
+    }
+    if (value == UpscaleMethod::FSR && (!fsr || !_engine || _engine->backendType() != gpu::BackendType::Vulkan))
+    {
+        throw std::invalid_argument("FSR requires the Vulkan FSR upscaler");
+    }
+    if (fsr)
+    {
+        fsr->setEnabled(value == UpscaleMethod::FSR);
+    }
+    setUpscaleMode(_upscaleMode);
+}
+
+RendererDeferred::UpscaleMode RendererDeferred::upscaleMode() const
+{
+    return _upscaleMode;
+}
+
+void RendererDeferred::setUpscaleMode(UpscaleMode value)
+{
+    float scale = 1.0f;
+    switch (value)
+    {
+    case UpscaleMode::Native: break;
+    case UpscaleMode::Quality: scale = 0.60f; break;
+    case UpscaleMode::Balanced: scale = 0.55f; break;
+    case UpscaleMode::Performance: scale = 0.50f; break;
+    case UpscaleMode::UltraPerformance: scale = 0.35f; break;
+    default: throw std::invalid_argument("Unknown upscale mode");
+    }
+    _upscaleMode = value;
+    _configuration.resolution->setEnabled(true);
+    _configuration.resolution->setScale(upscaleMethod() == UpscaleMethod::None ? 1.0f : scale);
+    invalidateHistories();
 }
 
 void RendererDeferred::resetUpscaler()
