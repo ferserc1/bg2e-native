@@ -1247,7 +1247,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     dispatch(3, frame, {}, {{"color", slot.colorA.get()}, {"depth", slot.opaqueDepth.get()}});
     auto recordEffects = [&](uint64_t layer)
     {
-        auto* surfaceDepth = layer ? slot.opaqueDepth.get() : slot.gbuffer[6].get();
+        auto* surfaceDepth = slot.gbuffer[6].get();
         auto resolveSignal = [&](pipeline::TemporalSignal kind, gpu::Image& signal, gpu::Image* material = nullptr,
             float maxRoughness = 1.0f, std::shared_ptr<gpu::Image>* selectedOwner = nullptr)
         {
@@ -1260,6 +1260,12 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             {
                 gpu::GpuTimingScope timing(frame.commandBuffer, "effect.temporal.record", layer, layer != 0);
                 auto metadata = temporalSurfaceMetadata(frame.frameSlot,layer);
+                if (layer && metadata.token)
+                {
+                    // Consume the complete receiver depth before per-item replay
+                    // reuses scratch. Preserved opaque depth is visibility only.
+                    metadata.depth = slot.gbuffer[6];
+                }
                 // Injected legacy components retain the previous admission contract.
                 if (!_configuration.temporal->surfaceMetadataAvailable() ||
                     (!_configuration.temporal->surfaceReprojectionAvailable() && !metadata.legacyCompatible))
@@ -1354,10 +1360,10 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                     selectedOwner && selectedOwner.get() == signal && signal->size() == slot.gi->size() &&
                     signal->size() != _configuration.internalExtent)
                 {
-                    // Transparent GI deliberately keeps the producer's opaque-depth guide;
-                    // temporal metadata depth does not describe that producer's receiver.
+                    // Use the actual receiver depth captured with these normals,
+                    // including transparent surfaces in front of empty sky.
                     signal = recordGIUpsampling(frame.commandBuffer,selectedOwner,slot.gbuffer[1],
-                        layer ? slot.opaqueDepth : slot.gbuffer[6],
+                        slot.gbuffer[6],
                         glm::inverse(slot.jitteredProjection*slot.camera.view),slot.camera.view,
                         slot.giUpsampled,frame.frameSlot,frame.frameNumber,layer).get();
                 }
@@ -1391,7 +1397,9 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         base::CpuProfileScope compositeCpu("renderer.composite");
         gpu::GpuTimingScope compositeProfile(frame.commandBuffer, "renderer.composite", layer, layer != 0);
         auto inputs = gbuffer;
-        inputs[6].image = layer ? slot.opaqueDepth.get() : slot.gbuffer[6].get();
+        // G-buffer depth describes this receiver; opaqueDepth is only an
+        // immutable visibility seed, never a transparent world-position guide.
+        inputs[6].image = slot.gbuffer[6].get();
         inputs.push_back({"background",background});
         inputs.insert(inputs.end(),effects.begin(),effects.end());
         dispatch(1, frame, inputs, {{"color", output}}, &raster);
@@ -1441,7 +1449,9 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         final && final->debugView() == pipeline::FinalDebugView::Final;
     const auto extent = slot.gbuffer[0]->size();
     auto transparentGbuffer = gbuffer;
-    transparentGbuffer[6].image = slot.opaqueDepth.get();
+    // Reuse the original G-buffer depth as receiver scratch. The separately
+    // preserved opaque depth remains unchanged throughout transparent recording.
+    transparentGbuffer[6].image = slot.gbuffer[6].get();
     const uint64_t fullArea = uint64_t(extent.width)*extent.height;
     struct TransparentDraw {
         const RenderQueue::Item* item;
@@ -1485,11 +1495,13 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         }
         if (!transparentReceivers.empty())
         {
-            // Build the topmost transparent receiver once. Far-to-near color
-            // overwrites select the last covered surface without writing depth.
+            // Capture the topmost receiver and its true depth once for shared
+            // effects. This reuses existing depth storage, independent of count.
             raster.item = nullptr;
             raster.region.reset();
             raster.transparentItems = {transparentReceivers.data(),transparentReceivers.size()};
+            raster.captureReceiverDepth = true;
+            pipeline::RenderTarget::copy(frame.commandBuffer,*slot.opaqueDepth,*slot.gbuffer[6]);
             base::CpuProfileScope::count("transparent.receiverDomainPixels",fullArea,"pixels");
             base::CpuProfileScope::count("transparent.effectLayers",1);
             dispatch(0,frame,{},transparentGbuffer,&raster);
@@ -1500,6 +1512,18 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                     slot.opaqueDepth.get(),0,TransparentTemporalLayer,surfaceCamera);
             }
             const auto transparentEffects = recordEffects(TransparentTemporalLayer);
+            if (slot.diagnosticView != pipeline::TemporalDiagnosticView::Off &&
+                slot.diagnosticLayer == TransparentTemporalLayer)
+            {
+                auto metadata = temporalSurfaceMetadata(frame.frameSlot,TransparentTemporalLayer);
+                if (metadata.token)
+                {
+                    metadata.depth = slot.gbuffer[6];
+                }
+                // Read the complete batch guide before scratch is reused below.
+                slot.diagnostic = _configuration.temporal->recordDiagnostic(frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                    {slot.diagnosticSignal,0,TransparentTemporalLayer},metadata,slot.diagnosticView);
+            }
             raster.transparentItems = {};
             for (const auto& draw : transparentDraws)
             {
@@ -1512,6 +1536,9 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                     pipeline::RenderTarget::copy(frame.commandBuffer,*current,*next);
                     base::CpuProfileScope::count("transparent.backgroundCopyPixels",fullArea,"pixels");
                 }
+                // Reset only scratch depth, so a previous transparent surface
+                // cannot occlude this object or replace its lighting position.
+                pipeline::RenderTarget::copy(frame.commandBuffer,*slot.opaqueDepth,*slot.gbuffer[6]);
                 dispatch(0,frame,{},transparentGbuffer,&raster);
                 composite(current,next,TransparentTemporalLayer,transparentEffects);
                 std::swap(current,next);
@@ -1522,8 +1549,11 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     if (slot.diagnosticView != pipeline::TemporalDiagnosticView::Off)
     {
         gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalDiagnostic",slot.diagnosticLayer,slot.diagnosticLayer != 0);
-        slot.diagnostic = _configuration.temporal->recordDiagnostic(frame.commandBuffer,frame.frameSlot,frame.frameNumber,
-            {slot.diagnosticSignal,0,slot.diagnosticLayer},temporalSurfaceMetadata(frame.frameSlot,slot.diagnosticLayer),slot.diagnosticView);
+        if (slot.diagnosticLayer == 0 || transparentReceivers.empty())
+        {
+            slot.diagnostic = _configuration.temporal->recordDiagnostic(frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                {slot.diagnosticSignal,0,slot.diagnosticLayer},temporalSurfaceMetadata(frame.frameSlot,slot.diagnosticLayer),slot.diagnosticView);
+        }
         if (slot.diagnostic)
         {
             current = slot.diagnostic.get();

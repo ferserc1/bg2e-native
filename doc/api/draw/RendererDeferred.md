@@ -245,9 +245,17 @@ Color outputs clear over the full receiver extent and retain independent pooled
 owners for the opaque domain and one complete transparent receiver layer. Opaque replay uses private
 writable depth. Transparent replay shares the acquired slot's preserved opaque
 depth, loads it without clearing, and disables depth writes. It neither allocates
-nor seeds a private depth image per transparent item. The GBuffer transparent
-pipeline follows the same read-only depth policy. Shared depth follows the slot's
-reuse lifetime; color metadata remains independently retained. Retain all consumed
+nor seeds a private depth image per transparent item. Ordinary GBuffer transparent
+calls keep depth writes disabled. RendererDeferred instead sets
+`RasterFrame::captureReceiverDepth` and reuses the existing original G-buffer depth
+image as writable scratch, seeded from preserved opaque depth before the receiver
+batch and before each composition item. Effects use the batch's actual receiver
+depth; lighting uses the individual item's actual receiver depth. No additional
+depth image or effect domain is allocated. These copies add bandwidth, not VRAM.
+The preserved opaque image is never modified by transparent recording. Temporal
+consumers and transparent diagnostics read the batch scratch depth before per-item
+replay reuses it. Public metadata replay depth remains the shared opaque visibility
+attachment. Shared depth follows the slot's reuse lifetime; color metadata remains independently retained. Retain all consumed
 image owners through GPU completion. Signal histories and color metadata are
 independent between the opaque and transparent domains, never between individual
 transparent objects. Diagnostics use layer 0 for opaque and layer 1 for transparent;

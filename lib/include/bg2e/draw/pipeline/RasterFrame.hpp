@@ -39,5 +39,8 @@ struct RasterFrame {
     EnvironmentDataBinding* environment = nullptr;
     std::optional<gpu::ScissorRegion> region;
     std::span<const RenderQueue::Item* const> transparentItems;
+    // Capture actual receiver depth in a reusable scratch attachment seeded from
+    // opaque depth. The preserved opaque image itself must never be the output.
+    bool captureReceiverDepth = false;
 };
 }

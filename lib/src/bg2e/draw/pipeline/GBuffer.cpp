@@ -112,7 +112,9 @@ void GBuffer::record(const PassContext& context)
         }
     }
     const bool transparent = raster->item || !raster->transparentItems.empty();
-    auto* pipeline = transparent ? _transparentPipeline.get() : _pipeline.get();
+    // Receiver capture writes only the renderer's reusable scratch depth.
+    // Ordinary transparent callers retain the read-only attachment path.
+    auto* pipeline = transparent && !raster->captureReceiverDepth ? _transparentPipeline.get() : _pipeline.get();
     auto& command = context.frame.commandBuffer;
     gpu::RenderingDescription rendering;
     for (size_t i = 0; i < 6; ++i)

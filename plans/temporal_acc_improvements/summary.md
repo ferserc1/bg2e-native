@@ -273,3 +273,28 @@ GBuffer replacements must support the trailing RasterFrame::transparentItems bat
 Depth continues to follow the opaque read-only contract from the preceding fix.
 Source implementation is complete; no build, source-test suite, native probe or
 VRAM/performance measurement was run. Updated fixtures remain unverified.
+
+
+### Transparent receiver lighting depth correction — user-confirmed visibility fix
+
+User runtime evidence: 19 transparent items were submitted, batching did not
+restore visibility, and the unlit probe displayed the missing surfaces. The
+composition shader's normal-coverage early return is shared by lit and unlit
+paths. Source inspection identified preserved opaque depth being incorrectly used
+as the transparent world-position/effect guide.
+
+RendererDeferred now reuses the existing original G-buffer depth as receiver
+scratch, seeded from the unchanged preserved opaque depth before the shared
+receiver batch and before each color-composition item. Receiver capture enables
+writes only to scratch. Lighting, shared GI/reflections/shadows/AO, temporal
+consumption and denoising use actual receiver depth. Transparent diagnostics read
+the batch guide before per-item replay reuses scratch. Metadata replay retains its
+read-only opaque visibility attachment. No additional GPU images, per-object
+effect domains, reduced precision formats, or CMake changes are introduced.
+The tradeoff is an additional depth-image copy per transparent item.
+
+A native D32 receiver-depth assertion and overlapping/nonoverlapping color fixture
+were added. No C++/shader compilation or native execution was performed; only
+source inspection and `git diff --check` were completed. The user confirmed that transparent visibility is restored in the normal lit
+path. Temporary console traces and runtime isolation modes have been removed.
+Additional lighting-quality, VRAM and copy-bandwidth measurements remain pending.

@@ -25,3 +25,14 @@ The full working Application example and reflected controls are M01-15/M01-12; F
    Then explicitly choose IBL and disable each effect, and verify those settings
    remain authoritative. Confirm `draw_model_edit` inherits the same default and
    the explicit IBL/off configuration in `draw_lightmaps` remains unchanged.
+
+16. Call `deferredProbeScene(engine, true)` and `checkDeferredCenter(readback, extent, true)`. Both glass squares are in front of the red opaque square, with the last blue draw narrower than the green one. The center must retain both transparent contributions (linear RGB 0.25, 0.25, 0.5), and the left sample must retain green over red (0.5, 0.5, 0). Repeat with transparent regions enabled/disabled and GI/reflections enabled/disabled. This regression fixture has not been compiled or executed.
+
+17. With `CountingGBuffer` installed as the compatible receiver subclass and D32
+    depth, call `checkDeferredReceiverDepth(pass)` after submission completion.
+    It requires the visible glass's actual depth 0.2 in scratch, rather than the
+    red opaque depth 0.5. Repeat the lit scene against empty sky (opaque depth 1):
+    point-light shading must use the glass position and remain visible. Keep
+    transparent regions enabled/disabled, both overlapping glass classes, and
+    the existing shared-opaque-depth readback assertions in the temporal-surface
+    fixture. These native checks have not been compiled or run by the agent.
