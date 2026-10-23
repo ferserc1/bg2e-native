@@ -1,0 +1,3 @@
+Selected GPU (Metal): Apple M4 Max
+GPU=Apple M4 Max backend=metal
+runTemporalProbe=PASS

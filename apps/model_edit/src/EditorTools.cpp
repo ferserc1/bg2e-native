@@ -134,10 +134,7 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
             auto matrix = transform->matrix();
             if (ui::Vector::mat4("Node transform", matrix))
             {
-                delegate->queueNodeEdit(target->shared_from_this(), [matrix](auto& node)
-                {
-                    node.transform()->setMatrix(matrix);
-                });
+                delegate->queueTransformEdit(target->shared_from_this(), matrix);
             }
         }
         if (ui::Button::button("Duplicate node"))

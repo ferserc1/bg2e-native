@@ -183,8 +183,9 @@ void registerTypes()
         renderer.property("inspectOpaqueLayer", &RendererDeferred::inspectOpaqueLayer, &RendererDeferred::setInspectOpaqueLayer).category("Diagnostics");
         renderer.property("temporalSurfaceEnabled", &RendererDeferred::temporalSurfaceEnabled, &RendererDeferred::setTemporalSurfaceEnabled).category("Diagnostics");
         renderer.property("temporalDiagnosticView", &RendererDeferred::temporalDiagnosticView, &RendererDeferred::setTemporalDiagnosticView)
-            .category("Diagnostics").enumValue("Off",0).enumValue("Surface tokens",1).enumValue("Local history (red restart, green accepted)",2)
-            .enumValue("Motion (32 pixels per half-range)",3).enumValue("Expected previous position",4).enumValue("Expected previous normal",5);
+            .category("Diagnostics").enumValue("Off",0).enumValue("Surface tokens",1).enumValue("Local history / rejection",2)
+            .enumValue("Motion (32 pixels per half-range)",3).enumValue("Expected previous position",4).enumValue("Expected previous normal",5)
+            .enumValue("Current sample weight",6).enumValue("Signal reactivity",7).enumValue("Variance",8).enumValue("Effective history count / limit",9);
         renderer.property("temporalDiagnosticSignal", &RendererDeferred::temporalDiagnosticSignal, &RendererDeferred::setTemporalDiagnosticSignal)
             .category("Diagnostics").enumValue("Visibility",0).enumValue("Diffuse radiance",1).enumValue("Reflected radiance",2);
         // Reflection has no uint64 scalar; decimal text preserves the complete layer key.
@@ -202,6 +203,7 @@ void registerTypes()
             o.setTemporalDiagnosticLayer(layer);
         }).category("Diagnostics");
         renderer.property("temporalDiagnosticsAvailable", &RendererDeferred::temporalDiagnosticsAvailable).category("Capabilities");
+        renderer.property("temporalAdaptiveDiagnosticsAvailable", &RendererDeferred::temporalAdaptiveDiagnosticsAvailable).category("Capabilities");
         renderer.property("temporalSurfaceDiagnosticsAvailable", &RendererDeferred::temporalSurfaceDiagnosticsAvailable).category("Capabilities");
         renderer.property("temporalSurfaceAvailable", &RendererDeferred::temporalSurfaceAvailable).category("Capabilities");
         renderer.property("temporalSurfaceStatus", &RendererDeferred::temporalSurfaceStatus).category("Capabilities");
@@ -489,6 +491,20 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
                             std::any_cast<float>(values.at(distance)) <= 2*std::any_cast<float>(values.at("bias")))
                         {
                             throw std::invalid_argument("Effect distance must exceed twice its ray bias");
+                        }
+                    };
+                }
+                if (id == "temporal")
+                {
+                    entry.validate = [](const std::map<std::string,std::any>& values)
+                    {
+                        // Injected metadata can expose a smaller or different contract.
+                        if (values.contains("adaptiveEnabled") && values.contains("minCurrentWeight") &&
+                            values.contains("reactiveCurrentWeight") && values.contains("historyClipSigma"))
+                        {
+                            pipeline::TemporalAccumulator::validateAdaptiveSettings(
+                                std::any_cast<bool>(values.at("adaptiveEnabled")),std::any_cast<float>(values.at("minCurrentWeight")),
+                                std::any_cast<float>(values.at("reactiveCurrentWeight")),std::any_cast<float>(values.at("historyClipSigma")));
                         }
                     };
                 }

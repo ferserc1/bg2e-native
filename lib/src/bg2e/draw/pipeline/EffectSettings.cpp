@@ -22,6 +22,7 @@
 #include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
 #include <bg2e/reflection/Builder.hpp>
 #include <limits>
+#include <algorithm>
 
 namespace bg2e::draw::pipeline {
 
@@ -156,6 +157,46 @@ reflection::TypeInfo TemporalAccumulator::settingsType() const
     {
         o.setNormalThreshold(v);
     }).category("Temporal").range(-1,1);
+    type.accessor<bool>("adaptiveEnabled", [](const Effect& o)
+    {
+        return o.settings().adaptiveEnabled;
+    }, [](Effect& o, bool v)
+    {
+        const auto s = o.settings();
+        o.setAdaptiveSettings(v,s.minCurrentWeight,s.reactiveCurrentWeight,s.historyClipSigma);
+    }).category("Adaptive temporal");
+    type.accessor<float>("minCurrentWeight", [](const Effect& o)
+    {
+        return o.settings().minCurrentWeight;
+    }, [](Effect& o, float v)
+    {
+        const auto s = o.settings();
+        // The catalog validates the complete proposed tuple before writes. These
+        // paired staging bounds allow either property order for valid batch imports.
+        o.setAdaptiveSettings(s.adaptiveEnabled,v,std::max(v,s.reactiveCurrentWeight),s.historyClipSigma);
+    }).category("Adaptive temporal").range(0,1);
+    type.accessor<float>("reactiveCurrentWeight", [](const Effect& o)
+    {
+        return o.settings().reactiveCurrentWeight;
+    }, [](Effect& o, float v)
+    {
+        const auto s = o.settings();
+        o.setAdaptiveSettings(s.adaptiveEnabled,std::min(v,s.minCurrentWeight),v,s.historyClipSigma);
+    }).category("Adaptive temporal").range(0,1);
+    type.accessor<float>("historyClipSigma", [](const Effect& o)
+    {
+        return o.settings().historyClipSigma;
+    }, [](Effect& o, float v)
+    {
+        const auto s = o.settings();
+        o.setAdaptiveSettings(s.adaptiveEnabled,s.minCurrentWeight,s.reactiveCurrentWeight,v);
+    }).category("Adaptive temporal").range(0,10);
+    type.property("adaptiveDiagnosticsAvailable", &Effect::adaptiveDiagnosticsAvailable).category("Capabilities");
+    type.property("adaptiveDiagnosticsStatus", &Effect::adaptiveDiagnosticsStatus).category("Capabilities");
+    type.property("momentsAvailable", &Effect::momentsAvailable).category("Capabilities");
+    type.property("momentsStatus", &Effect::momentsStatus).category("Capabilities");
+    type.property("adaptiveAvailable", &Effect::adaptiveAvailable).category("Capabilities");
+    type.property("adaptiveStatus", &Effect::adaptiveStatus).category("Capabilities");
     type.property("available", &Effect::available).category("Capabilities");
     type.property("status", &Effect::status).category("Capabilities");
     return type.build();

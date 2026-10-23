@@ -1,0 +1,64 @@
+{
+  "base_revision": "be1dd4558d946b91a8687a9d9c51418d6a240867",
+  "checkout": "dirty temporal implementation; not a clean-release artifact",
+  "os": "macOS 27.0.1 (26A434)",
+  "architecture": "arm64",
+  "gpu": "Apple M4 Max",
+  "compiler": "Apple clang 21.0.0 (clang-2100.3.34.2)",
+  "xcode": "27.0 (27A266a)",
+  "vulkan_sdk": "1.4.328.1/macOS",
+  "vulkan_api_reported": "1.3.323",
+  "metal_driver": "OS bundled; independent driver version not queried",
+  "validation_layer": "VK_LAYER_KHRONOS_validation not present in Vulkan run",
+  "build": "Debug Xcode target bg2e, paired draw/bake SPIR-V and Metal shader trees; succeeded",
+  "probe": {
+    "metal": {
+      "exit": 0,
+      "status": "passed"
+    },
+    "vulkan_moltenvk": {
+      "exit": 0,
+      "status": "passed"
+    }
+  },
+  "S10_F0": {
+    "metal": {
+      "exit": 0,
+      "status": "passed scoped raster/AO temporal assertions",
+      "global_generation": 5,
+      "transparent_layers": 2
+    },
+    "vulkan_moltenvk": {
+      "exit": 3,
+      "status": "partial: raster/generation/layers passed; AO capability unavailable",
+      "global_generation": 5,
+      "transparent_layers": 2
+    }
+  },
+  "scope": {
+    "output": [
+      128,
+      64
+    ],
+    "internal": [
+      128,
+      64
+    ],
+    "slots": 2,
+    "camera": "identity orthographic",
+    "maxFrames": 32,
+    "freeze": true,
+    "adaptive": false,
+    "metadataReplay": false,
+    "sceneFrames": 145,
+    "warmup": 32,
+    "motionFrames": 16,
+    "tailFrames": 96,
+    "postTailFrames": 1,
+    "upscaler": "default spatial resampling",
+    "fsr_sdk": "not_run",
+    "gi_reflections": "not_run in S10",
+    "timestamps_benchmarks": "not_run"
+  },
+  "native_host_sha256": "9ccabb0e5f0dc435f84d83f2371aa16f731b39dac60b5ae60c036f42e2b94cd4"
+}

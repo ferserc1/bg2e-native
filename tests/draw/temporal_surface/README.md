@@ -254,3 +254,10 @@ its invalid abandonment call through a const completion owner is corrected to
 release the unsubmitted command wrapper. Full raster v3, deployed normal maps and
 actual AO/GI/reflection/FSR visual comparisons remain pending. See the Phase 2 plan
 P2.5 table for exact remaining native cases. Replay stays default off. Next: P3.1.
+
+P4.6 adds optional canonical v4/v5 CurrentWeight, Reactivity, Variance and
+EffectiveCount views (IDs 6–9), with a separate availability query and capture
+family. This file's v2 token/acceptance fixture keeps its original red/green scope;
+v3+ LocalHistory has ordered reason colors. See the TemporalAccumulator API and
+../temporal/README.md for adaptive numeric encoding, missing-capture amber and
+unverified native status. Selecting these views does not enable replay/adaptation.

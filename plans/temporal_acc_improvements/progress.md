@@ -3,19 +3,21 @@
 ## Resume pointer
 
 - Plan: [summary.md](summary.md)
-- Current phase: Phase 2 source complete (P2.1–P2.5 implemented_unverified); Phase 3 not_started; previous phases implemented_unverified
-- Next step: **P3.1** in [phase_3_disocclusion.md](phase_3_disocclusion.md)
+- Current phase: Source implementation finished; remaining validation is user-owned manual work.
+- Next step: **Wait for the user's manual validation report. No agent tests scheduled.**
 - State: `implemented_unverified`
-- Last completed plan step: P2.5 (implemented_unverified)
-- Next exact action: mark P3.1 in_progress; read phase_3_disocclusion.md and version the enhanced footprint contract/oracle for q=previousUV*historyExtent-0.5, individually validated taps with candidate-center metadata mapping and renormalized valid weights. Do not implement P3.2–P3.5 in that step.
+- Last completed plan step: authorized runTemporalProbe and scoped S10/F0; see validation_2026_10_23/README.md
+- Next exact action: review the user's reported manual results when supplied. Do not run builds, shader compilation, source checkers, native probes, scenarios or benchmarks unless the user explicitly requests them again. Preserve prior evidence without treating Vulkan/MoltenVK on this Mac as validation of the user's intended Vulkan environment.
 
 ## Authorization and workspace
 
-- Authorized now: P2.5 source implementation requested 2026-10-22; completed without compilation. Previous P1.5 work: Added optional renderer/accumulator diagnostics, paired diagnostic kernels and native/internal probe sources; updated API/architecture/plan docs. No compilation/shader compilation/runtime authorization; no CMake changes.
-- Compilation/shader compilation: not authorized by the plan-writing request; do not run.
-- Native runtime validation/benchmarks: not run.
+- Current user instruction: all remaining agent tests cancelled; the user will validate manually and report results. Previous run authorization is revoked for further executions.
+- Historical authorization: runTemporalProbe and S10/F0 explicitly authorized by user; necessary native host/library/shader compilation included, no CMake source edits or benchmarks. Earlier no-authorization records below are historical.
+- Prior authorization history: P5.6 final source/default/limitation handoff requested 2026-10-23; no compilation/native/benchmark authorization. P5.5 measured-bottleneck evidence review requested 2026-10-23; no compilation/native/benchmark authorization. P5.4 measurement protocol/status review requested 2026-10-23; no benchmark/build/native authorization. P5.3 authorization/status review requested 2026-10-23; native compilation/execution still not authorized. P5.2 documentation/scenario preparation requested 2026-10-23; no build/runtime authorization. P5.1 integration audit and scoped model editor transform-path fixes requested 2026-10-23; no compilation/native execution. P4.6 adaptive diagnostic/cost/source review requested 2026-10-23; completed without compilation. P3.1 specification/oracle completed previously. P2.5 source implementation completed previously. Previous P1.5 work: Added optional renderer/accumulator diagnostics, paired diagnostic kernels and native/internal probe sources; updated API/architecture/plan docs. No compilation/shader compilation/runtime authorization; no CMake changes.
+- Compilation/shader compilation: authorized as necessary for the named native checks; Xcode Debug bg2e and paired shaders built successfully on 2026-10-23. No blanket future build/matrix authorization inferred.
+- Native runtime: named subset executed; exact scope/results in validation_2026_10_23/README.md. Benchmarks: not_run.
 - CMake changes: prohibited unless explicitly requested.
-- skills.md: repository search repeated on 2026-10-22; still absent. Only root AGENTS.md was found; no nested instructions were found. Fallback architecture documents read: doc/architecture/MainLoop_render_draw_gpu.md, draw_advanced_lighting.md, and draw_offscreen_rendering.md. Current source is authoritative where those documents describe older behavior.
+- skills.md: repository search repeated on 2026-10-23; still absent. Only root AGENTS.md was found; no nested instructions were found. Fallback architecture documents read: doc/architecture/MainLoop_render_draw_gpu.md, draw_advanced_lighting.md, and draw_offscreen_rendering.md. Current source is authoritative where those documents describe older behavior.
 - P2.5 implementation-start `git status --short`: existing modified/untracked P2.1–P2.4 source/shader/probe/documentation paths; preserved. Earlier clean-checkout records refer to their original steps.
 
 ## Fixed decisions
@@ -34,18 +36,22 @@
 
 | Phase | Implementation | Source checks | Vulkan runtime | Metal runtime |
 |---|---|---|---|---|
-| 0 | implemented_unverified (P0.1–P0.5 source work finished) | P0.5 final review passed | not_run | not_run |
+| 0 | implemented_unverified (P0.1–P0.5 source work finished) | P0.5 source review; native probe compiled | runTemporalProbe passed (scoped) | runTemporalProbe passed (scoped) |
 | 1 | implemented_unverified (P1.1–P1.5 source complete) | P1.5 static ABI/source review passed | not_run | not_run |
 | 2 | implemented_unverified (P2.1–P2.5 source complete) | P2.5 static review/source-math checks passed | not_run | not_run |
-| 3 | not_started | not_run | not_run | not_run |
-| 4 | not_started | not_run | not_run | not_run |
-| 5 | not_started | not_run | not_run | not_run |
+| 3 | implemented_unverified (P3.1 specification; P3.2–P3.5 source complete) | P3.5 source/math/cost audit passed | not_run | not_run |
+| 4 | implemented_unverified (P4.1–P4.6 source complete) | P4.6 source/reference/diagnostic/cost audit passed | not_run | not_run |
+| 5 | P5.1 implemented_unverified; P5.2 protocol prepared; P5.3/P5.4 execution not_run; P5.5 deferred; P5.6 source handoff finished | Phase 2/3/4 + integration source/reference checks passed; native host built | S10/F0 raster pass, AO unsupported; rest pending | S10/F0 scoped raster/AO temporal pass; rest pending |
 
 ## Current step work record
 
-- Step: P2.5 (implemented_unverified). See the final P2.5 record and Phase 2 native acceptance matrix.
-- Source implementation and static review complete; compilation and native validation not_run.
-- Next: P3.1 validated footprint specification/sampling only. Phase 2 native acceptance remains pending.
+- User cancelled all remaining agent testing and will perform manual validation.
+- No further builds, shader compilation, source checks, native probes or benchmarks
+  are scheduled or authorized by prior permission. Await the user's result report.
+- Source implementation and existing native evidence are preserved. Overall status
+  remains implemented_unverified; no unexecuted scenario is marked passed.
+- Prior Vulkan results were Vulkan/MoltenVK on Apple M4 Max, not acceptance on the
+  user's intended Vulkan target. Actual target-environment validation is user-owned.
 
 ## P0.5 final verification and handoff (2026-10-22)
 
@@ -67,7 +73,8 @@ invalidation, object reprojection, trail removal or measured performance.
 | Probe integrity | Existing GPL headers and runtime_error messages preserved, obsolete motion-reset assertion replaced. New include targets, source delimiters and plan-entry links checked. Largest-bound final pixel tolerance distinguishes an extra rolling update. Passed static checks only. |
 | Native and visual acceptance | Compilation, shaders, native probes, wall/cube visual scenario and timing not_run on both Vulkan and Metal. No host/device/format support was established. |
 
-Application integration review:
+Application integration review (P0.5 historical findings; model editor input/numeric
+transform paths are superseded by the P5.1 fixes above and its phase-file audit):
 
 - `apps/model_edit/src/AppDelegate.cpp::queueInput` still explicitly invalidates
   after every accepted input callback, including gizmo work and caught failures.
@@ -715,3 +722,412 @@ Remaining acceptance/limits:
   or speed claim; default replay stays off. Prior phases remain implemented_unverified.
 Next: P3.1 in phase_3_disocclusion.md, exact bilinear candidate footprint and oracle;
 no P3.2–P3.5/adaptive integration work in this request.
+
+P3.1 started 2026-10-23 (in_progress): specify the versioned validated-footprint contract in phase_3_disocclusion.md and add tests/draw/temporal/footprint_reference.py, a standard-library executable oracle. Intended changes are specification/oracle only, as required by the resume pointer; production sampling integration follows P3.2/P3.3. Clean initial git status. skills.md remains absent; root instructions and current draw architecture fallback read. No compilation, native execution or CMake changes.
+
+P3.1 completed 2026-10-23 — specified_unverified.
+- Files: phase_3_disocclusion.md, tests/draw/temporal/footprint_reference.py,
+  summary.md and progress.md. Versioned algorithm contract only; no public shader
+  interface/ABI registration or production sampling change.
+- Checked current paired v3 nearest implementation and accumulator interface;
+  specified exact candidate-center metadata mapping, strict UV/clip gate,
+  per-candidate validity, raw support and normalized positive weights.
+- Executed Python standard-library oracle: passed all 16 survivor masks, corner/
+  fractional/center/odd/1x1/mismatched-resolution cases, invalid/nonfinite guides,
+  token/coverage/count/position/normal rejects, black and tiny-support cases.
+- git diff --check passed. No compilation, shader compilation, C++ execution,
+  GPU/native pixels, visual acceptance or benchmarks run. Replay stays default off.
+- P3.2 positive-depth predicate, P3.3 signal/count/confidence integration and
+  P3.4/P3.5 diagnostics/native/cost work remain pending. No behavior/performance
+  improvement is claimed from the reference oracle. Next exact step: P3.2.
+
+P3.2 started 2026-10-23 (in_progress): paired temporal_reprojection.glsl/.metal geometric candidate predicate, footprint_reference.py depth oracle, source checks and plan records. Preserve prior P3.1 modifications. skills.md search still absent; root instructions and draw architecture fallback reviewed. Implement conservative positive previous-view depth baseline without optional footprint tolerance or incomplete signal reduction. No compilation/native/CMake changes.
+
+P3.2 completed 2026-10-23 — implemented_unverified.
+- Changed paired temporal_reprojection GLSL/Metal helpers: reusable geometry
+  predicate requires finite previous-camera positions and positive depths, same
+  existing world tolerance for depth, full world distance and normal cosine.
+  Current nearest path invokes it; production/diagnostic scalar/HDR share it.
+- No optional footprint tolerance added: zero addition baseline; optional item 4
+  deferred with explicit contract requirements in phase_3_disocclusion.md.
+- Expanded footprint_reference.py depth/math and paired source parity checks;
+  adjusted Phase 2 source assertion for helper parameter extraction. Corrected
+  synthetic reprojection/queued source fixture RH cameras using compensating
+  projection translation and full inverse VP, preserving world/clip expectations.
+- Checks passed: Python footprint oracle, phase2_source_checks.py, git diff --check.
+  Blend/count/freeze/output suffix equality checked against unchanged legacy core.
+- No C++/shader compilation, C++/native execution, visual/performance or backend
+  support pass. All native checks not_run. No CMake, GPU, bake, ownership, renderer
+  reset policy, v1/v2/custom ABI, settings/default or resource allocation changes.
+- Boundary clarification: per-candidate predicate is integrated with nearest now;
+  four-tap reads/token mapping activate with correct P3.3 signal reduction, avoiding
+  incomplete reflection/count behavior. Full native depth scenarios in phase file.
+- Next: P3.3 only; P3.4/P3.5 diagnostics and acceptance remain pending.
+
+P3.3 started 2026-10-23 (in_progress): paired temporal_reprojection.glsl/.metal footprint sampling/reduction, footprint_reference.py signal/count/freeze oracle and source checks, API/plan documentation. Preserve prior P3.1/P3.2 changes. Root instructions reviewed; skills.md still absent, draw architecture fallback read. No compilation, shader/native execution, CMake edits or P3.4 diagnostics authorized.
+
+P3.3 completed 2026-10-23 — implemented_unverified.
+- Paired temporal_reprojection.glsl/.metal: four positive-weight unclamped taps,
+  per-tap retained-token-center lookup using actual texture size, P3.2 geometry,
+  finite signal/coverage/count rejection before sums, W threshold/renormalization.
+- Scalar weighted visibility; GI coverage with valid black; reflections spatially
+  premultiplied by clamped confidence with separate confidence recovery. Minimum
+  valid count capped by maxFrames increments exactly once through original blend.
+  Internal geometricConfidence records valid support independently from radiance
+  confidence and remains reserved for Phase 4, with no image or adaptive multiplier.
+- Extended footprint_reference.py reduction/freeze/count/math fixtures and full
+  normalized paired sampling-block parity. Updated Phase 2 source suffix assertions
+  for intentional minimum-count and token-loop changes; temporal blend/output
+  suffix unchanged from oldWeight onward. API and phase/summary records updated.
+- Checks passed: Python footprint_reference.py, phase2_source_checks.py,
+  git diff --check; source comparison of P3.3 against saved pre-step shaders shows
+  unchanged geometric helper, initial coverage/raw handling and blend/output math.
+- Compilation/shader compilation, C++ native fixtures, GPU/backend support,
+  visual acceptance and cost measurements: not_run. No CMake/CPU/GPU API/renderer/
+  FSR/bake/vendor/reset/ownership changes. V1/v2 shaders untouched; replay default off.
+- Remaining: P3.4 full diagnostic reasons and synthetic/native footprints; P3.5
+  cost/handoff. Existing Phase 2 fixture pixel expectations need native review with
+  four taps (strict geometric rejection can reduce support); no native pass claimed.
+  Next exact step: P3.4 only.
+
+P3.4 started 2026-10-23 (in_progress): paired v3 diagnostic reasons/colors, footprint reference rejection oracle, native footprint_probe.hpp source fixture, API/probe/plan records. Preserve prior P3.1–P3.3 edits. Root instructions and fallback architecture read; skills.md absent. No compilation/native execution/CMake changes.
+
+P3.4 completed 2026-10-23 — implemented_unverified.
+- Paired v3 shaders: diagnostic-only ordered reasons and cyan/green partial/full
+  support in existing LocalHistory capture. Accepted support overrides neighbor
+  rejects; otherwise fixed minimum reason across evaluated failures. Coverage
+  precedes token mismatch at token-rejected diagnostic taps. Existing capture/
+  display ABI, default-off replay, production output and v1/v2/custom remain.
+- New footprint_probe.hpp: optional stopped native scalar source fixture, 16
+  masks and distinguishable means at 3x3 receiver/2x2 signal midpoint, all ten
+  reason/acceptance colors plus NaN/Inf and missing-capture unsupported result.
+- Extended footprint reference: combined failure priority, rotated normals,
+  transparent-edge-like uncovered guides, diagnostic color parity. API/header
+  comments, probe README, phase/summary/progress updated; no new public API.
+- Executed/passed: footprint_reference.py, phase2_source_checks.py (including new
+  fixture GPL/includes/delimiters), git diff --check; paired footprint/color source
+  checks; stripped non-diagnostic shader token comparison versus saved P3.3.
+- Build/native: no compilation, shader compilation or C++/GPU execution. Vulkan/
+  Metal formats/pixels, actual raster alpha/transparent coverage, native 1x1/odd/
+  rotated/HDR/queued and all visual/performance acceptance remain not_run. CPU
+  oracles and uncompiled fixtures are separate evidence, not native acceptance.
+- No new images/formats/bindings, ordinary synchronization/readback/counters,
+  CMake, GPU/backend, bake/vendor, reset, ownership or renderer-default changes.
+  P3.5 timing/image-cost audit remains. Next exact step: P3.5 only.
+
+P3.5 started 2026-10-23 (in_progress): audit paired shaders and accumulator/pool ownership; add opt-in diagnostic CPU/GPU timing in TemporalAccumulator.cpp, reproducible Phase 3 source/cost checker, API/probe/phase acceptance and P4.1 handoff. Preserve all P3.1–P3.4 edits. Root instructions and draw architecture fallback read; skills.md absent. No compilation/native execution/benchmark/CMake changes.
+
+P3.5 completed 2026-10-23 — implemented_unverified; Phase 3 source complete.
+- TemporalAccumulator.cpp adds optional stack CPU/GPU diagnosticCapture scopes only
+  for admitted acceptance work and diagnosticDisplay scopes after Off/unavailable/
+  missing-data gates. Existing effect.temporal.record and renderer timing remain.
+  These scopes use the existing profiler/ordered timestamp API, no CPU/GPU waits,
+  extra readbacks, counters or new telemetry settings. Layer detail filtering stays.
+- New tests/draw/temporal/phase3_source_checks.py runs the independent footprint
+  oracle, source invariants and analytical image accounting. API/probe/phase docs
+  record timing interpretation, review matrix, unique-image byte formulas, retained
+  ownership caveats, controlled nearest/four-tap comparison and native scenarios.
+- Reviewed strict UV/clip preconversion and per-tap bounds, actual retained token
+  extent, finite signal/geometry, full world/positive-depth/normal predicates,
+  GI valid black, confidence-premultiplied reflection/misses, min count, freeze/
+  rolling gates, mode/extent/chronology rejection, invocation/metadata retention,
+  acquired-slot reuse and pool completed/unique-owner checks. No algorithm edit.
+- Executed/passed: phase3_source_checks.py, phase2_source_checks.py, git diff --check.
+  Exact comparison to saved pre-step accumulator after removing added scopes/include
+  proves no recording/lifecycle/owner/reset/selection changes beyond instrumentation.
+- Analytical only: scalar history 26 bytes/signal pixel, HDR 32; one full metadata
+  domain 32+D bytes/receiver pixel, History subset already included there; optional
+  capture/display 8 bytes per signal/receiver pixel. Unique sets, not resident totals.
+  Up to four candidate fetch groups; no assumed 4x runtime or measured cost saving.
+- C++/shader compilation, native probe/format/deployment/timestamp support, actual
+  peak memory, visual quality, nearest comparison and benchmarks: not_run on both
+  Vulkan/Metal. Full future acceptance matrix and controlled comparison are in
+  phase_3_disocclusion.md P3.5. No native validation/default-release claim.
+- Replay remains default off. No CMake, GPU/backend, bake/vendor, FSR, shader ABI,
+  persistent image or renderer reset changes. Optional tolerance widening remains
+  deferred. Thin/grazing/reduced-resolution support, mapped normals, deformation,
+  reflected/transparent FSR motion and stationary indirect-light staleness remain
+  documented limitations. Prior phase native acceptance is also still pending.
+- Next exact step: P4.1 in phase_4_adaptive_accumulation.md; define default-off
+  settings/serialization/validated weights and preserve the Phase 3 nonadaptive
+  baseline/freeze. Do not implement later statistics/clipping/moments yet.
+
+P4.1 started 2026-10-23 (in_progress): TemporalSettings/setAdaptiveSettings/reflection/catalog cross-validation, cached/reference signature fields, optional versioned v4 368-byte weighting kernels and renderer provisioning, settings/native source fixtures and source/math checks. Preserve prior Phase 3 edits. No compilation/shader/native/benchmark/CMake work; no P4.2–P4.6 statistics/clipping/moments. skills.md absent, root and fallback architecture reviewed.
+
+P4.1 completed 2026-10-23 — implemented_unverified.
+- TemporalAccumulator.hpp/.cpp: four trailing defaulted settings and strict atomic
+  setter (finite ordered weights/range, one invalidation on change, no-op preserved),
+  optional trailing v4 config, independent init/failure/cleanup and read-only
+  availability/status. Per-key v4 mode=3. Existing v1/v2/v3 remain 208/288/352 bytes;
+  v4 appends vec4 at 352 (368 total), new same-binding pipelines/diagnostics.
+- Eight paired v4 scalar/HDR production/diagnostic wrappers; shared reprojection
+  helper adds only v4 compile-time uniform/weight blocks. Accepted rolling alpha
+  follows the plan with reactivity=0; saturated authored freeze skips override.
+  Rejection raw restart/count one and confidence-premultiplied temporal math remain.
+  Sigma is reserved; trust-count cap, neighborhood, clipping and moments deferred.
+- Owned renderer provisions optional v4; replay/adaptation remain off by default.
+  Missing v4 retains nonadaptive v3, without per-frame retries or new image formats.
+  Legacy/custom layouts receive only their declared bytes. Pool leases distinguish
+  layout/size; retained owner/chronology/rolling paths stay intact.
+- EffectSettings reflection plus RenderSettingsPreferences complete proposed-tuple
+  validation. Reflected weight accessors stage companion bounds so valid batch
+  imports work in either order; strict atomic API rejects invalid pairs. Existing
+  catalog setters/post-commit resets remain. Missing old payload fields retain
+  current values/defaults. Four settings appended in identical order to cached
+  equality/payload and full reference serialization after normalThreshold.
+- Settings codec source fixture adds real temporal defaults, no-op/atomic generation,
+  valid import orders/round-trip/legacy payload and invalid-pair/nonfinite rejection.
+  Invalidation fixture adds every field in cached/full modes. Footprint native
+  fixture's optional true argument requests v4 and discriminates one-tap alpha .75
+  from nonadaptive .5. All C++ fixtures remain uncompiled/unexecuted.
+- Executed/passed: phase4_source_checks.py independent range/staging/alpha/freeze
+  math, paired weight ABI/wrappers and signature order checks, source GPL/includes/
+  delimiters; phase3_source_checks.py; phase2_source_checks.py; git diff --check.
+  Exact saved pre-step shared shader comparison after removing v4-only blocks is
+  byte-identical. Older checkers explicitly strip v4-only blocks for v3 parity.
+- No C++/shader compilation, codec CPU execution, native pixels/deployment/fallback,
+  queued adaptive HDR/freeze/visual/performance checks run on Vulkan/Metal. No
+  native quality or speed claim. No CMake, GPU/backend/vendor/bake/FSR changes,
+  no extra image, rays, ordinary waits/readback or new global transform reset.
+- Known boundary: P4.1 weights use support/minimum floor only, not signal-change
+  detection. Geometrically valid stationary lighting can still trail. Count trust
+  adjustment waits for P4.3. Defaults remain off. P4.1 acceptance/interface matrix
+  is in phase_4_adaptive_accumulation.md; API and probe READMEs updated.
+- Next exact step: P4.2 only, robust current-neighborhood statistics; do not add
+  clipping/reactivity/moments or later-phase defaults in that step.
+
+P4.2 started 2026-10-23 (in_progress): paired temporal_current_statistics helpers and v4 rolling-only call sites, independent neighborhood reference/source checks, API/probe/plan records. Preserve Phase 3/P4.1 dirty paths. Root instructions and draw architecture fallback read; skills.md absent. No compilation/native/benchmark/CMake changes; no P4.3 clipping/reactivity or P4.4 moments.
+
+P4.2 completed 2026-10-23 — implemented_unverified.
+- New paired temporal_current_statistics.glsl/.metal helpers plus v4-only include/
+  call in temporal_reprojection. Row-major 3x3 raw-current samples at signal extent,
+  individual bounds (no duplicate clamp), per-texel-center receiver mapping, same
+  nonzero token and finite coverage/signal/current normal/depth agreement.
+- Geometry contract: current receiver/metadata depth in [0,1) and D16/D32 agreement,
+  finite inverse-VP reconstruction with positive w, world distance from center <=
+  existing absolute + relative*current-camera-distance threshold, normal cosine.
+  Conservative metric depth/lateral consistency, no new current-view ABI or widened
+  tolerances. Tight support may intentionally fall below two neighbors.
+- Uniform accepted weights calculate statistic mean/secondMoment/variance, statistic
+  min/max, componentwise color bounds and sampleCount/varianceValid. Scalar clamp;
+  nonnegative radiance luminance with RGB retained; valid-black GI included;
+  reflection only confidence>1e-6/roughness-eligible radiance enters bounds. Current
+  alpha/confidence stays unchanged; zero-confidence misses remain valid temporal
+  samples in the main kernel. Epsilon 1e-6 and float32 arithmetic in both helpers.
+- Zero/one samples cannot enable variance clipping/reactivity. Calls are only in
+  accepted adaptive/nonfrozen v4 branch. Local statistics are reserved for P4.3;
+  unused work may be optimized out. Reactivity is still zero and existing alpha,
+  count, freeze, confidence blend, diagnostics and disabled v3 behavior are unchanged.
+- New neighborhood_reference.py plus phase4_source_checks.py integration: exact
+  scalar moments/clamp, 1x1/edge/odd/mismatched mappings, rejected bright/foreign/
+  depth/normal/nonfinite neighbors, orthographic five/one-neighbor support, rotated
+  normal, valid-black/invalid GI, reflection miss/low confidence/roughness, finite
+  HDR maximum/outlier, low support and normalized GLSL/Metal helper parity.
+- Executed/passed: Phase 4/neighborhood, Phase 3 and Phase 2 source/reference checks;
+  git diff --check. Saved pre-step comparison proves unchanged disabled v3 tokens
+  and exact previous P4.1 source after removing helper include/call. These do not
+  execute shader reconstruction, C++ or native floating-point behavior.
+- C++/shader compilation, nested-include native deployment, Vulkan/Metal statistics/
+  projection/transparent/normal-map/HDR pixels, freeze/output parity and measured
+  runtime/visual/performance acceptance: not_run. Native statistics inspection
+  needs a temporary exporter test wrapper or P4.3 consumer; unchanged P4.1 outputs
+  alone cannot verify unused statistics. No native wrapper execution/pass claimed.
+- No settings/uniform/binding/ABI, persistent image, CPU/ownership, CMake, GPU/backend,
+  renderer reset, bake/vendor/FSR changes. Replay/adaptation stay default off. API,
+  probe README and Phase 4 geometry/acceptance contract updated in English.
+- Next exact step: P4.3 only; use varianceValid before clipping/reactivity and add
+  the specified adaptive trust-count cap. Moments remain P4.4.
+
+P4.3 started 2026-10-23 (in_progress): paired variance-gated history response helpers and v4 integration, bounded alpha/trust count, independent clipping/reactivity references and adaptive native source expectations, API/probe/plan records. Preserve prior dirty files. Root/fallback architecture reviewed; skills.md absent. No compilation/native/benchmark/CMake work or P4.4 moments.
+
+P4.3 completed 2026-10-23 — implemented_unverified.
+- New paired temporal_history_response helpers, included only by v4, consume
+  varianceValid current statistics for intersected scalar/luminance clipping and
+  specified unclipped-history reactivity. Insufficient support or invalid/empty
+  interval returns original history/r=0. Near-zero HDR uses componentwise bounds;
+  other HDR scales RGB by luminance ratio. Original alpha/confidence is preserved.
+- Explicit storage safety: scaled RGB bounded to finite FP16 +/-65504 to avoid
+  new channel overflow from valid luminance scaling. This can limit target luminance;
+  equal-luminance chromatic/hue artifacts remain documented, not solved.
+- Accepted adaptive/nonfrozen path applies P4.1 bounded alpha then caps previous
+  count to min(N,max(1,1/max(alpha,1e-6)-1)) only above alpha0. Increment occurs once.
+  Per-pixel count is now fractional effective trust in existing half storage;
+  CPU TemporalResult.frameCount stays nominal chronology. Rejection=1/uncovered=0;
+  accepted alpha=1 can store count 2 per the specified minimum-old-trust rule.
+- Literal saturated freeze skips gathering/response/count cap; motion window and
+  authored settings unchanged. Persistent reaction/support/minimum floor can keep
+  trust below saturation, so nominal frame count does not imply freezing. Default
+  adaptation/replay remain off and disabled v3 tokens are unchanged.
+- Native footprint source updated: test-only protected-guide accessor retains count
+  texture; constant-current v4 masks now expect clipped .75, eight stable frames
+  then GPU trust 2 vs CPU frame 9, saturated freeze and motion thaw. V3/default
+  pixel expectations remain. This fixture is uncompiled/unexecuted.
+- New history_response_reference.py + Phase 4 integration cover scalar/noise/step,
+  sigma-zero/empty/low support, frozen/disabled/rejected bypass, maxFrames1,
+  fractional trust/half range, valid-black GI, near-zero/HDR storage bound,
+  same-luminance chromatic limit and reflection hit/miss/alpha preservation.
+  Executed/passed: Phase 4 response/neighborhood/source references, Phase 3 and
+  Phase 2 source checks, git diff --check. Saved pre-step shader comparison confirms
+  unchanged disabled v3 source tokens after removing only adaptive blocks.
+- C++/shader compilation, actual statistics/projection/native HDR/half trust,
+  queued/freeze/transparent/raster pixels, stable-noise/lag/chromatic quality and
+  cost measurements: not_run on Vulkan/Metal. No native quality/speed/support pass.
+- No new ABI/settings/bindings/images/moments, C++ production/ownership, CMake,
+  GPU/backend, renderer/FSR, bake/vendor or ordinary synchronization/readback edits.
+  P4.2 current-neighborhood work is now used and may have runtime cost; unmeasured.
+  API/probe README and Phase 4 acceptance/storage/count contracts updated.
+- Next exact step: P4.4 optional per-key moments, bounded log-HDR statistics and
+  versioned transport; preserve neighborhood-only v4 fallback and freeze/owners.
+  P4.5/P4.6 acceptance/tuning remain separate and native work still unauthorized.
+
+P4.4 started 2026-10-23 (in_progress): optional v5 moment bindings/pipelines and RG16F capability/dummy/history ownership, paired bounded moment transport/log-domain confidence and spatial fallback, moment source/math/native fixtures and documentation. Preserve prior dirty files. Root/fallback architecture reviewed; skills.md absent. No compilation, native execution, benchmark, CMake or P4.5/P4.6 work.
+
+P4.4 completed 2026-10-23 — implemented_unverified.
+- TemporalAccumulator config appends optional moment interface/prefix for v5,
+  independent capability/status, init/failure/cleanup and typed RG16F zero dummy.
+  V5 requires v4 and RG16F sampled/storage/transfer support; failure retains
+  neighborhood-only v4, with no ordinary retries. Owned renderer provisions v5;
+  replay/adaptation stay default off. External empty interface preserves v4.
+- Same 368-byte uniform; new sampled 19/Metal17 and storage 20/Metal18 only in v5.
+  Eight new scalar/HDR production/diagnostic wrappers and paired bounded-statistic/
+  moment-reactivity helpers. Canonical diagnostics fail independently of core.
+- Optional History.moments at signal extent, metadataMode=4 and missing-predecessor
+  guard; binding leases key the distinct v5 layout. Existing previous/next and slot
+  owners retain moments before dispatch through submitted chronology/retirement.
+  Per signal/view/layer allocation, maxHistories/pruning and cleanup drain remain.
+  No cross-key sharing or new public moment output is introduced.
+- Finite visibility statistic [0,1], HDR log2(1+L) clamped [0,16], squares <=1/256.
+  Reflection miss statistic zero avoids arbitrary zero-confidence RGB; moments
+  describe raw input statistics, not clipped color. Current neighbors transform
+  individually before averaging. Pair validation finite/in-range; negative
+  half-quantized variance floors to zero, not a mismatched-domain heuristic.
+- Joint moment/color candidate validity ensures same taps/support/weights; invalid
+  pair rejects locally. Rejected color restarts moments; uncovered clears them.
+  Same effective alpha blends both; frozen transport keeps prior moments without
+  current blending. Moment-domain reactivity compares prior mean/current spatial
+  mean, uses spatial variance below 4 prior effective samples and max(spatial,
+  temporal) afterwards. Linear clipping bounds stay independent. Trust/freeze and
+  alpha/confidence behavior otherwise unchanged.
+- New moments_reference.py covers finite bounds, half precision, mean(log) vs
+  log(mean), all masks/joint invalidity/same-alpha/reset/freeze and early/mature
+  variance, ABI/capability/dummy/owner selection and full paired moment regions.
+  Balanced feature_source.py handles nested version branches; old checkers retain
+  exact v3/v4 baseline comparisons. Native footprint source optional fourth true
+  argument requests v5 and asserts pairs/retained owners/frozen .25/.0625 state.
+- Executed/passed: Phase 4 moment/response/neighborhood/source references, Phase 3
+  and Phase 2 source checks, git diff --check. Saved pre-step shader comparisons
+  after stripping moment branches show unchanged v4 reprojection/statistics tokens.
+  Existing pool pixelFormatBytes accounts RG16F as 4 bytes; no pool code edits.
+- Analytical cost: extra 4*S bytes per unique per-key image, 8.2944 MB at 1080p or
+  33.1776 MB at 4K before retained/queued/external/pool/driver overhead. Idle pool
+  limits are not live allocation caps. Optional typed 1x1 dummy is per lifecycle.
+- No C++/shader compilation, native scalar/HDR/invalid moment/format-fallback,
+  queued/isolation/resize/freeze/half precision, real lighting/visual/performance
+  checks run on Vulkan/Metal. No native support, quality or speed pass claimed.
+  No CMake, GPU/backend/vendor/bake/FSR, new authored settings/signature fields,
+  ordinary waits/readbacks or global transform resets. API/probe/phase contracts
+  updated. Native acceptance matrix remains open.
+- Next exact step: P4.5 source regressions and native scenario/visual acceptance
+  specification only, without compiling/running natively unless explicitly asked.
+  P4.6 cost/tuning/default handoff remains separate.
+
+P4.5 started 2026-10-23 (in_progress): adaptive scalar/HDR native regression source, queued v4/v5 extension with moment/key retention and dropped-history assertions, temporal-sequence reference and final acceptance/visual matrix. Preserve all prior changes. Root/fallback architecture read; skills.md absent. No compilation/native/benchmarks/CMake or P4.6 tuning/defaults work.
+
+P4.5 completed 2026-10-23 — implemented_unverified.
+- New adaptive_probe.hpp: stopped synthetic 3x3 scalar/GI/reflection source fixture
+  compares matched adaptive/nonadaptive streams, noisy/step input with unchanged
+  accumulator generation, one-neighbor fallback, valid-black GI, HDR/outlier finite
+  storage, hit/miss/confidence, known red/blue luminance limit and maxFrames=1.
+  Optional v5 path and deliberately missing moment family cover explicit unsupported
+  selection/v4 recording. Missing-module failure is not a fake RG16F format test.
+- Queued fixture adds trailing adaptive/moments flags while preserving v3 default
+  baseline. V4/v5 narrow-geometry one-neighbor inputs retain analytic old weights.
+  Two/three submitted slots, scalar/log-HDR moment pairs, distinct signal/view/layer
+  images/statistics, retained old owners, abandoned/gapped restart are source-covered.
+  Inputs uploaded before batches; no actual overlap claim or abandoned output read.
+- New adaptive_sequence_reference.py integrates half storage, response and moments
+  in temporal streams, covering every required signal/support/freeze/dropped/
+  unavailable/disabled/maxFrames1 scenario. Immutable reference states are not GPU
+  lifetime proof. Phase 4 source checker now runs the sequence suite and audits
+  new/expanded C++ source GPL/includes/delimiters.
+- Executed/passed: Phase 4 reference/source suite, Phase 3 and Phase 2 checks,
+  git diff --check; SHA256 comparison of entry production .cpp/.hpp/.glsl/.metal
+  inventory shows no production source additions/edits in P4.5. No tuning/default,
+  shader, API, CMake, synchronization, ray-count, renderer/backend/bake/FSR changes.
+- Controlled reference-only experiment: 32 initial .25 frames then .75, maxFrames32,
+  freeze off, first frame of a three-sample error<=.01 window =123/1/1 new samples
+  for v3/v4/v5. Balanced deterministic checker noise tail RMSE ~.005524 for all.
+  These are half-quantized model numbers, not native pixel/quality/timing evidence;
+  flat noiseless steps favor clipping and do not establish general performance.
+- Phase file contains complete per-case source/native ledger, exact stopped host
+  entries and a reproducible AO-outside-footprint/reflected-only/GI/pan/edge/HDR/
+  chromatic/freeze visual protocol. Equal settings/work, capability/format status,
+  common ROI/reference/tolerance, scene-frame convergence and stable noise/bias/
+  ghosting measurements are required. Global generation/frameCount alone is not
+  pixel correctness. Current adaptive numeric debug views still belong to P4.6.
+- All C++/shader compilation, CPU codec fixtures, native scalar/HDR/moment format/
+  invalid/gap/queue/half/freeze checks, actual lighting/visual acceptance and cost
+  benchmarks remain not_run on Vulkan/Metal. Actual unavailable-format observation
+  is distinct from forced missing-module fallback and remains pending. False or
+  unsupported paths never count as a pass. No support/quality/speed claim.
+- Next exact step: P4.6 only: cost/source review, opt-in adaptive diagnostic views,
+  defaults/limits documentation and P5.1 handoff. Keep release/default choices off
+  and all native checks not_run until explicitly authorized.
+
+P4.6 started 2026-10-23 (in_progress): independently optional v4/v5 metric-capture families/display, appended diagnostic views and exact-key renderer integration, numeric native/reference sources, Phase 4 final source/cost/default/limitations handoff to P5.1. Preserve prior dirty files. Root/fallback architecture reviewed; skills.md absent. No compilation/native/benchmarks/CMake/Phase 5 implementation.
+
+P4.6 completed 2026-10-23 — implemented_unverified; Phase 4 source complete.
+- TemporalDiagnosticView appends CurrentWeight/Reactivity/Variance/EffectiveCount
+  IDs 6–9. New trailing diagnoseAdaptive=false is exclusive with diagnoseAcceptance;
+  both true reject before recording. Separate canonical v4_metrics/v5_metrics
+  layouts add storage 21/Metal19 with unchanged 368-byte uniform; old/core/custom
+  kernels receive their existing bindings only. Independent optional init/failure/
+  cleanup/status, no ordinary retries, no core disable on missing metric shader.
+- New metrics display uses independent pipeline/layout and existing 16-byte display
+  ABI. Accumulator/renderer/reflection expose availability/status; renderer capability
+  includes metadata availability. Exact latched signal/layer requests capture;
+  current sequence/recording/token-owner matching prevents stale data display.
+  Missing capture is amber, zero-token/nonfinite selected value black. No implicit
+  replay/adaptive enable or capture-induced mode/signature/reset change.
+- Encoded RGBA = actual current alpha, actual reactivity, variance/(1+variance),
+  post-response trust/maxFrames. V4 variance is linear spatial; v5 bounded moment
+  domain spatial/max temporal estimate. Frozen/rejected/unsupported statistics
+  report zero (not evaluated). Uncovered is zero, cold alpha one/count one, frozen
+  alpha zero/saturated count. View shader selects one grayscale channel, alpha one.
+- Optional signal-sized RGBA16F History.metrics and receiver-sized display retain
+  existing frame-slot invocation/metadata owners before dispatch. Off/unselected
+  paths allocate no new capture/display, though retired/pool/external images may
+  persist. Existing capture/display CPU/GPU profiler scopes include the new work;
+  no readback, counter, wait, immediate submission or synchronization added to
+  ordinary frames. Resource leases distinguish new layouts and uniform sizes.
+- Expanded adaptive native source optional fifth metrics bool: ordinary adaptive
+  control checks color/guide/moment parity within FP16 tolerance, four display
+  channels/missing capture, finite bounds/count, cold/frozen/thaw, mutually exclusive
+  request rejection and capture toggles without chronology reset. C++ unrun.
+- New diagnostic_reference.py + existing Phase 4/3/2 suites executed/passed:
+  enum values, source bindings/guards, paired metric blocks, finite channel encoding,
+  count/variance semantics, analytical costs, GPL/includes/delimiters. Saved P4.5
+  source comparison with TEMPORAL_METRICS removed is token-identical. git diff
+  --check passed. These do not compile C++ or GLSL/Metal or prove native parity.
+- Analytical cost reviewed: v4 scalar/HDR history 26/32*S, v5 moments +4*S per key,
+  optional selected capture +8*S and display +8*R, metadata shared per domain
+  (32+D)*R. A full-1080p three-signal v5/D32 one-generation example is 286.1568 MB,
+  or 319.3344 MB with one capture/display. Not resident/peak measurements; count
+  all retained/in-flight/external/pool/driver resources. No extra rays or measured
+  speedup. Up to nine current neighbors plus guide reads and v5 moment taps remain.
+- Final Phase 4 review covers paired shaders, settings/codec/signature source parity,
+  disabled paths, literal freeze/trust/confidence, optional capability/custom/kernel
+  fallback and retained ownership. Full audit/cost/default/limitations/native matrix
+  and exact host calls are in phase_4_adaptive_accumulation.md P4.6; API and relevant
+  probe docs updated. Phase 5 source has not started.
+- All C++/shader compilation, actual combined descriptor/format support, numeric
+  capture and output parity, native queue/half/freeze, lighting/visual/noise/bias,
+  timestamp availability and cost/high-water measurements remain not_run on both
+  Vulkan/Metal. No release or quality/performance/support pass is claimed.
+- Replay/adaptive remain false by default; weights .03125/.25 and sigma3 unchanged,
+  diagnostic Off. Existing limits remain: thin/grazing support, same-luminance hue
+  lag, FP16/saturation, trust-dependent freeze, mapped-normal/deformation/reflected
+  transforms, transparent/reflection motion and stationary lighting after freeze.
+  No CMake, GPU/backend/vendor, bake, FSR, ray count or Phase 5 tuning changes.
+- Next exact step: P5.1 only, current producer/consumer/invalidation/ownership audit;
+  do not automatically execute P5.2–P5.6 or request/run native work on this handoff.

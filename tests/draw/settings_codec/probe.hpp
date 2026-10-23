@@ -1,6 +1,25 @@
+/*
+ *    business grade graphic engine (bg2e engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <bg2e/draw/SettingsCodec.hpp>
+#include <bg2e/draw/pipeline/TemporalAccumulator.hpp>
 #include <bg2e/reflection/Builder.hpp>
 #include <cmath>
 #include <limits>
@@ -115,9 +134,80 @@ inline std::shared_ptr<json::JsonNode> single(const std::string& key, const std:
             {"properties", JSON(JsonObject{{key, JSON(JsonObject{{"type", JSON(type)}, {"value", value}})}})}})})}});
 }
 }
+// No GPU initialization: validates real temporal setters/reflection/codec contracts.
+inline void runTemporalAdaptiveSettingsCodecProbe()
+{
+    using settings_probe::require;
+    pipeline::TemporalAccumulator temporal;
+    require(!temporal.settings().adaptiveEnabled && temporal.settings().minCurrentWeight == 0.03125f &&
+        temporal.settings().reactiveCurrentWeight == 0.25f && temporal.settings().historyClipSigma == 3);
+    const auto initial = temporal.generation();
+    temporal.setAdaptiveSettings(false,0.03125f,0.25f,3);
+    require(temporal.generation() == initial);
+    temporal.setAdaptiveSettings(true,0.1f,0.2f,4);
+    require(temporal.generation() == initial+1);
+    SettingsCatalog catalog;
+    catalog.reset("test.temporal");
+    SettingsTarget target;
+    target.id = "temporal";
+    target.type = temporal.settingsType();
+    target.instance = temporal.settingsInstance();
+    target.validate = [](const std::map<std::string,std::any>& values)
+    {
+        pipeline::TemporalAccumulator::validateAdaptiveSettings(std::any_cast<bool>(values.at("adaptiveEnabled")),
+            std::any_cast<float>(values.at("minCurrentWeight")),std::any_cast<float>(values.at("reactiveCurrentWeight")),
+            std::any_cast<float>(values.at("historyClipSigma")));
+    };
+    catalog.add(std::move(target));
+    const auto minimum = catalog.handle("temporal","minCurrentWeight");
+    const auto reactive = catalog.handle("temporal","reactiveCurrentWeight");
+    const auto sigma = catalog.handle("temporal","historyClipSigma");
+    // Both property orders must support the entire valid range, including rollback staging.
+    require(SettingsCodec::prepare(catalog,{{minimum,0.8f},{reactive,0.9f}}).apply(catalog).applied);
+    require(temporal.settings().minCurrentWeight == 0.8f && temporal.settings().reactiveCurrentWeight == 0.9f);
+    require(SettingsCodec::prepare(catalog,{{reactive,0.2f},{minimum,0.1f}}).apply(catalog).applied);
+    const auto saved = SettingsCodec::stringify(*SettingsCodec::serialize(catalog));
+    temporal.setAdaptiveSettings(false,0,1,0);
+    require(SettingsCodec::validate(*SettingsCodec::parse(saved),catalog).apply(catalog).applied);
+    require(temporal.settings().adaptiveEnabled && temporal.settings().minCurrentWeight == 0.1f &&
+        temporal.settings().reactiveCurrentWeight == 0.2f && temporal.settings().historyClipSigma == 4);
+    const auto before = temporal.generation();
+    for (const auto& changes : std::vector<std::vector<SettingChange>>{
+        {{minimum,0.8f},{reactive,0.2f}}, {{minimum,-0.1f}}, {{reactive,1.1f}}, {{sigma,10.1f}},
+        {{sigma,std::numeric_limits<float>::infinity()}}, {{minimum,std::numeric_limits<float>::quiet_NaN()}}})
+    {
+        const auto plan = SettingsCodec::prepare(catalog,changes);
+        require(!plan.result().valid() && !plan.apply(catalog).applied && temporal.generation() == before);
+    }
+    bool rejected = false;
+    try
+    {
+        temporal.setAdaptiveSettings(true,0.8f,0.2f,3);
+    }
+    catch (const std::invalid_argument&)
+    {
+        rejected = true;
+    }
+    require(rejected && temporal.generation() == before);
+    // Legacy payload omits all new fields. A fresh target retains their defaults.
+    pipeline::TemporalAccumulator legacy;
+    SettingsCatalog legacyCatalog;
+    legacyCatalog.reset("test.temporal");
+    SettingsTarget legacyTarget;
+    legacyTarget.id = "temporal";
+    legacyTarget.type = legacy.settingsType();
+    legacyTarget.instance = &legacy;
+    legacyCatalog.add(std::move(legacyTarget));
+    const auto oldPayload = SettingsCodec::parse(R"({"schema":"bg2e.draw.settings","version":"1","renderer":"test.temporal","components":[{"id":"temporal","type":"bg2e.draw.temporal.v1","properties":{"enabled":{"type":"bool","value":true}}}]})");
+    require(SettingsCodec::validate(*oldPayload,legacyCatalog).apply(legacyCatalog).applied);
+    require(!legacy.settings().adaptiveEnabled && legacy.settings().minCurrentWeight == 0.03125f &&
+        legacy.settings().reactiveCurrentWeight == 0.25f && legacy.settings().historyClipSigma == 3);
+}
+
 // CPU-only manual fixture. Does not initialize Engine, window, UI, preferences or GPU.
 inline void runSettingsCodecProbe()
 {
+    runTemporalAdaptiveSettingsCodecProbe();
     using namespace settings_probe;
     // Type-only validation must accept false/empty values and reject other
     // stored types (including an empty any) without implicit conversions.

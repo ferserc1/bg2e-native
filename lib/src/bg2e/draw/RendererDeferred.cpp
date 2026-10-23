@@ -168,6 +168,8 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
         configuration.shaderRoot = _shaderRoot;
         configuration.metadataShaderInterface = "draw.temporal.v2";
         configuration.reprojectionShaderInterface = "draw.temporal.v3";
+        configuration.adaptiveShaderInterface = "draw.temporal.v4";
+        configuration.momentShaderInterface = "draw.temporal.v5";
         _configuration.temporal = std::make_shared<pipeline::TemporalAccumulator>(configuration);
     }
     _configuration.temporal->initialize(*engine.device(),engine.backendType(),count);
@@ -404,7 +406,7 @@ pipeline::TemporalDiagnosticView RendererDeferred::temporalDiagnosticView() cons
 
 void RendererDeferred::setTemporalDiagnosticView(pipeline::TemporalDiagnosticView value)
 {
-    if (uint32_t(value) > uint32_t(pipeline::TemporalDiagnosticView::PreviousNormal))
+    if (uint32_t(value) > uint32_t(pipeline::TemporalDiagnosticView::EffectiveCount))
     {
         throw std::invalid_argument("Unknown temporal diagnostic view");
     }
@@ -438,6 +440,11 @@ void RendererDeferred::setTemporalDiagnosticLayer(uint64_t value)
 bool RendererDeferred::temporalDiagnosticsAvailable() const
 {
     return temporalSurfaceAvailable() && _configuration.temporal && _configuration.temporal->diagnosticsAvailable();
+}
+
+bool RendererDeferred::temporalAdaptiveDiagnosticsAvailable() const
+{
+    return temporalSurfaceAvailable() && _configuration.temporal && _configuration.temporal->adaptiveDiagnosticsAvailable();
 }
 
 bool RendererDeferred::temporalSurfaceDiagnosticsAvailable() const
@@ -1046,6 +1053,8 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                 return _configuration.temporal->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                     frame.sceneFrameNumber,_historyGeneration,{kind,0,layer},signal,surface,view,material,maxRoughness,metadata,
                     slot.diagnosticView == pipeline::TemporalDiagnosticView::LocalHistory &&
+                        slot.diagnosticSignal == kind && slot.diagnosticLayer == layer,
+                    uint32_t(slot.diagnosticView) >= uint32_t(pipeline::TemporalDiagnosticView::CurrentWeight) &&
                         slot.diagnosticSignal == kind && slot.diagnosticLayer == layer});
             }();
             pipeline::DenoiseSignal filteredKind = pipeline::DenoiseSignal::Visibility;
@@ -1770,6 +1779,10 @@ std::vector<uint8_t> RendererDeferred::serializeTemporalSignature(const RenderQu
     append(temporal.absolutePositionThreshold);
     append(temporal.relativePositionThreshold);
     append(temporal.normalThreshold);
+    append(temporal.adaptiveEnabled);
+    append(temporal.minCurrentWeight);
+    append(temporal.reactiveCurrentWeight);
+    append(temporal.historyClipSigma);
     // Use virtual getters so injected filter controls report their effective values.
     append(_configuration.denoise->enabled());
     append(_configuration.denoise->kernelRadius());

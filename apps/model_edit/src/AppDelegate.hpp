@@ -85,6 +85,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t submesh, bool additive);
     void queueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
         std::function<void(bg2e::scene::Node&)> operation, bool rebuild = false);
+    void queueTransformEdit(std::weak_ptr<bg2e::scene::Node> node, const glm::mat4& matrix);
     void editGeometry(unsigned operation);
     void duplicateSelection();
     void copyMaterial();

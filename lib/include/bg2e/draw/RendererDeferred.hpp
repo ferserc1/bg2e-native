@@ -100,6 +100,7 @@ class BG2E_API RendererDeferred : public Renderer {
     void setTemporalDiagnosticLayer(uint64_t value); // 0 opaque; exact transparent TemporalKey layer otherwise.
     bool temporalDiagnosticsAvailable() const;
     bool temporalSurfaceDiagnosticsAvailable() const;
+    bool temporalAdaptiveDiagnosticsAvailable() const;
     // Snapshot only at a synchronized frame boundary. Owners remain valid across slot reuse.
     pipeline::TemporalSurfaceMetadata temporalSurfaceMetadata(uint32_t slot, uint64_t layer = 0) const;
 

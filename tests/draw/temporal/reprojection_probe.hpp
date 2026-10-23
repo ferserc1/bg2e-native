@@ -93,6 +93,10 @@ inline bool runTemporalReprojectionProbe(Engine& engine, const std::filesystem::
     expectedNormals.fill({0,0,0x3c00,0x3c00}); // Signed previous +Z, valid.
     currentNormals.fill({0x3800,0x3800,0x3c00,0}); // Encoded current +Z.
     TemporalView view;
+    // RH camera at world Z=1; preserve the synthetic identity view-projection.
+    view.view[3].z = -1.0f;
+    view.projection[3].z = 1.0f;
+    view.jitteredProjection = view.projection;
     uint64_t sequence = 0;
     bool includePreviousSurface = true;
     auto render = [&](uint16_t value, const std::shared_ptr<gpu::Image>& receiver,

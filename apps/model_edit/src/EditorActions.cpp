@@ -84,6 +84,43 @@ void AppDelegate::queueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
     });
 }
 
+void AppDelegate::queueTransformEdit(std::weak_ptr<bg2e::scene::Node> target,
+    const glm::mat4& matrix)
+{
+    if (!document() || !document()->root)
+    {
+        return;
+    }
+    for (unsigned column = 0; column < 4; ++column)
+    {
+        for (unsigned row = 0; row < 4; ++row)
+        {
+            if (!std::isfinite(matrix[column][row]))
+            {
+                _status = "Node transform must contain finite values";
+                return;
+            }
+        }
+    }
+    _status.clear();
+    const auto generation = document()->generation;
+    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), target, generation, matrix](auto&)
+    {
+        auto owner = weak.lock();
+        auto node = target.lock();
+        if (!owner || !node || !document() || document()->generation != generation ||
+            (!_stage->contains(node.get()) && node != _stage->fillLightNode()) || !node->transform())
+        {
+            return;
+        }
+        node->transform()->setMatrix(matrix);
+        invalidateLightmapSources();
+        _stage->markModified();
+        // Keep attachment and history: signatures distinguish rigid motion from light edits.
+        requestSceneFrame();
+    });
+}
+
 void AppDelegate::selectNode(std::weak_ptr<bg2e::scene::Node> target, uint32_t submesh, bool additive)
 {
     const auto generation = document() ? document()->generation : 0;

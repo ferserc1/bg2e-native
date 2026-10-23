@@ -14,3 +14,11 @@ Additional lead checks:
 6. Extend a custom renderer/layer catalog using actual live accessors, stable renderer/component/type/property identities, retained owners and instance metadata. Confirm no global TypeRegistry edits or stored shadow values are required. M01-13 adds concrete upscaler registration; M01-14 consumes descriptors for widgets.
 
 No production render API migration, backend runtime results or compilation success is claimed here.
+
+P4.1 adds runTemporalAdaptiveSettingsCodecProbe, also invoked by the existing
+runSettingsCodecProbe. It constructs a real uninitialized TemporalAccumulator
+without Engine/GPU, checks defaults/no-op/one atomic invalidation, finite/range/
+ordered-pair rejection before writes, both batch property orders, round-trip and
+legacy payloads omitting new fields. This is uncompiled/unexecuted C++ source.
+The standard-library phase4_source_checks.py independently checks settings ranges,
+staging order and shader weight math; it does not execute this fixture or the codec.

@@ -109,7 +109,7 @@ glm::ivec2 AppDelegate::inputPosition(int x, int y) const
 void AppDelegate::queueInput(std::function<void()> event)
 {
     const auto generation = document() ? document()->generation : 0;
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), generation, event = std::move(event)](auto& renderer)
+    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), generation, event = std::move(event)](auto&)
     {
         auto owner = weak.lock();
         if (!owner)
@@ -134,7 +134,7 @@ void AppDelegate::queueInput(std::function<void()> event)
         {
             _stage->markModified();
         }
-        renderer.invalidateHistories();
+        // Renderer signatures classify camera, transform and light changes.
     });
 }
 

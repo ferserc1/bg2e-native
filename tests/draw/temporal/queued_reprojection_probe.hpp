@@ -52,7 +52,8 @@ inline float temporalProbeHalf(uint16_t value)
 // Stopped initialized host. Native source fixture only; no SDK/RT required.
 // First two/three submissions occur before a fixture wait/readback, but GPU overlap
 // is not guaranteed. All inputs are uploaded before those submission batches.
-inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesystem::path& shaderRoot)
+inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesystem::path& shaderRoot,
+    bool adaptive = false, bool moments = false)
 {
     using namespace pipeline;
     auto& device = *engine.device();
@@ -63,6 +64,7 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
             throw std::runtime_error(message);
         }
     };
+    require(!moments || adaptive,"Queued moment fixture requires adaptive kernels");
     const auto uploadUsage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
     for (const auto format : {gpu::PixelFormat::R16_SFLOAT,gpu::PixelFormat::R16G16_SFLOAT,
         gpu::PixelFormat::R16G16B16A16_SFLOAT,gpu::PixelFormat::R32G32B32A32_SFLOAT,gpu::PixelFormat::R32_UINT})
@@ -88,14 +90,33 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
         configuration.shaderRoot = shaderRoot;
         configuration.metadataShaderInterface = "draw.temporal.v2";
         configuration.reprojectionShaderInterface = "draw.temporal.v3";
-        TemporalAccumulator temporal(configuration);
+        if (adaptive)
+        {
+            configuration.adaptiveShaderInterface = "draw.temporal.v4";
+        }
+        if (moments)
+        {
+            configuration.momentShaderInterface = "draw.temporal.v5";
+        }
+        class QueuedTemporalProbe : public TemporalAccumulator {
+          public:
+            using TemporalAccumulator::TemporalAccumulator;
+
+            std::shared_ptr<gpu::Image> momentHistory(const TemporalKey& key) const
+            {
+                return _histories.at(key)->moments;
+            }
+        };
+        QueuedTemporalProbe temporal(configuration);
         temporal.initialize(device,engine.backendType(),slots);
-        if (!temporal.surfaceReprojectionAvailable() || !temporal.surfaceDiagnosticsAvailable())
+        if (!temporal.surfaceReprojectionAvailable() || !temporal.surfaceDiagnosticsAvailable() ||
+            (adaptive && !temporal.adaptiveAvailable()) || (moments && !temporal.momentsAvailable()))
         {
             temporal.cleanup();
             return false;
         }
         temporal.setPositionThresholds(0.001f,0);
+        temporal.setAdaptiveSettings(adaptive,0.03125f,0.25f,3);
         temporal.setMaxFrames(4);
         temporal.setFreezeAtLimit(true);
         gpu::ImageDescription depthDescription;
@@ -128,12 +149,17 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
             TemporalView view;
             TemporalSurfaceMetadata metadata;
             std::array<std::shared_ptr<gpu::Image>,3> signals;
+            std::array<std::shared_ptr<gpu::Image>,2> extraSignals;
         };
         const uint64_t baselineCount = 2*slots;
         std::vector<Inputs> inputs;
         for (uint64_t scene = 0; scene < baselineCount+6; ++scene)
         {
             Inputs input;
+            // RH camera depth is positive while synthetic world/clip coordinates stay unchanged.
+            input.view.view[3].z = -1.0f;
+            input.view.projection[3].z = 1.0f;
+            input.view.jitteredProjection = input.view.projection;
             input.view.view[3].x = -0.02f*float(scene);
             std::array<uint32_t,9> tokens;
             tokens.fill(scene == baselineCount+4 ? 9u : (scene == baselineCount+5 ? 0u : 7u));
@@ -164,11 +190,20 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
                 std::array<uint16_t,4>{0x3400,0x3400,0x3400,0x3400});
             input.signals[1] = upload({2,2},gpu::PixelFormat::R16G16B16A16_SFLOAT,diffuse.data(),sizeof(diffuse),16);
             input.signals[2] = upload({2,2},gpu::PixelFormat::R16G16B16A16_SFLOAT,reflected.data(),sizeof(reflected),16);
+            if (moments)
+            {
+                std::array<uint16_t,4> extra;
+                extra.fill(0x3800); // A separate view keeps .5 visibility.
+                input.extraSignals[0] = upload({2,2},gpu::PixelFormat::R16_SFLOAT,extra.data(),sizeof(extra),4);
+                extra.fill(0x3c00); // A separate transparent-layer key keeps 1.
+                input.extraSignals[1] = upload({2,2},gpu::PixelFormat::R16_SFLOAT,extra.data(),sizeof(extra),4);
+            }
             inputs.push_back(std::move(input));
         }
         struct Recorded {
             std::array<TemporalResult,3> signals;
-            std::array<std::shared_ptr<gpu::Image>,3> displays;
+            std::array<std::shared_ptr<gpu::Image>,3> displays, moments;
+            std::array<std::shared_ptr<gpu::Image>,2> extraMoments;
         };
         std::vector<std::shared_ptr<gpu::CommandBuffer>> commands;
         auto record = [&](uint64_t scene, bool submit)
@@ -176,14 +211,34 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
             const uint32_t slot = uint32_t(scene%slots);
             auto& input = inputs.at(size_t(scene));
             temporal.beginFrame(slot,scene+1,scene,scene == 1);
-            auto command = device.graphicsQueue().createCommandBuffer("queued v3 source fixture");
+            auto command = device.graphicsQueue().createCommandBuffer("queued temporal source fixture");
             command->begin();
             Recorded result;
             for (uint32_t signal = 0; signal < 3; ++signal)
             {
-                SurfaceInputs surface{SurfaceProfile::CameraDepth,normal.get(),depth.get(),nullptr,glm::inverse(input.view.view)};
+                SurfaceInputs surface{SurfaceProfile::CameraDepth,normal.get(),depth.get(),nullptr,glm::inverse(input.view.jitteredProjection*input.view.view)};
                 result.signals[signal] = temporal.record({*command,slot,scene+1,scene,1,{TemporalSignal(signal),0,0},
                     *input.signals[signal],surface,input.view,signal == 2 ? material.get() : nullptr,1,input.metadata});
+            }
+            if (moments)
+            {
+                for (uint32_t signal = 0; signal < 3; ++signal)
+                {
+                    result.moments[signal] = temporal.momentHistory({TemporalSignal(signal),0,0});
+                }
+                for (uint32_t index = 0; index < 2; ++index)
+                {
+                    const TemporalKey key{TemporalSignal::Visibility,index == 0 ? 1u : 0u,index == 1 ? 1u : 0u};
+                    SurfaceInputs surface{SurfaceProfile::CameraDepth,normal.get(),depth.get(),nullptr,
+                        glm::inverse(input.view.jitteredProjection*input.view.view)};
+                    temporal.record({*command,slot,scene+1,scene,1,key,*input.extraSignals[index],surface,input.view,
+                        nullptr,1,input.metadata});
+                    result.extraMoments[index] = temporal.momentHistory(key);
+                    require(result.extraMoments[index] != result.moments[0],"Views/layers cannot share live moment images");
+                }
+                require(result.extraMoments[0] != result.extraMoments[1] && result.moments[0] != result.moments[1] &&
+                    result.moments[1] != result.moments[2] && result.moments[0] != result.moments[2],
+                    "Independent signal/view/layer histories must own distinct moment images");
             }
             if (scene == 1 || scene == baselineCount+5)
             {
@@ -265,17 +320,54 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
                     "Queued moving cameras must preserve bounded per-key chronology");
                 const auto values = read(baseline[scene].signals[signal].owner);
                 const uint32_t components = signal ? 4u : 1u;
-                require(values.size() == 4*components,"Queued v3 output must retain reduced 2x2 signal size");
+                require(values.size() == 4*components,"Queued temporal output must retain reduced 2x2 signal size");
                 const float expected = signal == 0 ? visibility : (signal == 1 ? diffuse : reflected);
                 for (size_t pixel = 0; pixel < 4; ++pixel)
                 {
                     require(std::isfinite(values[pixel*components]) && std::abs(values[pixel*components]-expected) < 0.003f,
-                        "Queued v3 must transport scalar/GI/confidence-weighted reflection history across camera/object movement");
+                        "Queued temporal kernels must transport scalar/GI/confidence-weighted reflection history across camera/object movement");
                     if (signal)
                     {
                         require(std::abs(values[pixel*4+3]-(signal == 1 ? 1.0f : confidence)) < 0.003f,
-                            "V3 must preserve valid-black GI and separately accumulated reflection confidence");
+                            "Temporal kernels must preserve valid-black GI and separately accumulated reflection confidence");
                     }
+                }
+            }
+        }
+        if (moments)
+        {
+            std::array<float,3> means{0.25f,0,std::log2(1.25f)};
+            // Visibility uses linear moments; GI/reflection use their own log statistic.
+            std::array<float,3> seconds{0.0625f,0,means[2]*means[2]};
+            for (size_t scene = 0; scene < baseline.size(); ++scene)
+            {
+                if (scene)
+                {
+                    const float alpha = 1.0f/float(std::min(size_t(4),scene+1));
+                    for (uint32_t signal = 0; signal < 3; ++signal)
+                    {
+                        const float current = signal == 0 ? 0.75f : std::log2(1.75f);
+                        means[signal] = means[signal]*(1-alpha)+current*alpha;
+                        seconds[signal] = seconds[signal]*(1-alpha)+current*current*alpha;
+                    }
+                }
+                for (uint32_t signal = 0; signal < 3; ++signal)
+                {
+                    const auto values = read(baseline[scene].moments[signal]);
+                    require(values.size() == 8,"Queued moments must remain RG16F at reduced signal extent");
+                    for (size_t pixel = 0; pixel < 4; ++pixel)
+                    {
+                        require(std::abs(values[pixel*2]-means[signal]) < 0.003f &&
+                            std::abs(values[pixel*2+1]-seconds[signal]) < 0.003f,
+                            "Queued moment owners must retain each signal's analytic first/second moment");
+                    }
+                }
+                for (uint32_t index = 0; index < 2; ++index)
+                {
+                    const auto values = read(baseline[scene].extraMoments[index]);
+                    const float value = index == 0 ? 0.5f : 1.0f;
+                    require(values.size() == 8 && values[0] == value && values[1] == value*value,
+                        "A separate view/layer must preserve independent moment statistics");
                 }
             }
         }
@@ -297,6 +389,17 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
         {
             require(signal.frameCount == 1,"Abandoned predecessor must not supply queued temporal history");
             require(std::abs(read(signal.owner)[0]-0.75f) < 0.001f,"Abandoned history must restart from the raw signal");
+        }
+        if (moments)
+        {
+            for (uint32_t signal = 0; signal < 3; ++signal)
+            {
+                const auto values = read(afterAbandon.moments[signal]);
+                const float value = signal == 0 ? 0.75f : std::log2(1.75f);
+                require(values.size() == 8 && std::abs(values[0]-value) < 0.002f &&
+                    std::abs(values[1]-value*value) < 0.002f,
+                    "An abandoned moment predecessor must restart from current statistics");
+            }
         }
         temporal.beginFrame(uint32_t((baselineCount+2)%slots),baselineCount+3,baselineCount+2); // Update-only gap.
         const auto afterUpdateOnly = record(baselineCount+3,true);

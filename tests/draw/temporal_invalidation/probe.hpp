@@ -207,6 +207,39 @@ inline bool runTemporalInvalidationProbe(Engine& engine, const std::filesystem::
     renderer.setTemporalSignatureReuseEnabled(false);
     // The update helper restores reuse for fingerprint comparison only after update.
     require(update() == generation, "Switching to the full baseline must preserve accepted history decisions");
+    // New settings participate in both cached and full-reference signature paths,
+    // including requested adaptation on a host whose injected kernels are legacy.
+    for (bool reuse : {false,true})
+    {
+        renderer.setTemporalSignatureReuseEnabled(reuse);
+        update();
+        for (uint32_t field = 0; field < 4; ++field)
+        {
+            generation = renderer.historyGeneration();
+            auto settings = temporal->settings();
+            if (field == 0)
+            {
+                settings.adaptiveEnabled = !settings.adaptiveEnabled;
+            }
+            else if (field == 1)
+            {
+                settings.minCurrentWeight = settings.minCurrentWeight == 0.0625f ? 0.125f : 0.0625f;
+            }
+            else if (field == 2)
+            {
+                settings.reactiveCurrentWeight = settings.reactiveCurrentWeight == 0.5f ? 0.75f : 0.5f;
+            }
+            else
+            {
+                settings.historyClipSigma = settings.historyClipSigma == 4 ? 5 : 4;
+            }
+            temporal->setAdaptiveSettings(settings.adaptiveEnabled,settings.minCurrentWeight,
+                settings.reactiveCurrentWeight,settings.historyClipSigma);
+            renderer.setTemporalSignatureReuseEnabled(reuse);
+            require(update() > generation,"Adaptive authored settings must match cached/reference invalidation and fingerprints");
+        }
+    }
+    generation = renderer.historyGeneration();
     renderer.invalidateHistories();
     const auto explicitReset = renderer.historyGeneration();
     require(explicitReset > generation && update() == explicitReset, "Explicit global resets must keep their original semantics");

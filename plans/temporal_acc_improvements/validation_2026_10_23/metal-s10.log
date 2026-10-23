@@ -1,0 +1,4 @@
+Selected GPU (Metal): Apple M4 Max
+GPU=Apple M4 Max backend=metal
+S10/F0 generation=5 layers=2 AO=1 status=AO compute queries ready temporal=1 upscaler=Available
+S10/F0=PASS scoped raster/temporal assertions

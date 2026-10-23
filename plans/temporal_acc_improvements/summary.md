@@ -1,6 +1,6 @@
 # Incremental temporal accumulation improvements
 
-Status: Phase 0 source implementation, regression fixtures and final review are finished (`implemented_unverified`); see progress.md for evidence and limitations. P1.1–P1.5 correspondence, token raster pass and renderer domain integration are also implemented_unverified; Phase 2 source implementation, diagnostic views and regression/source acceptance (P2.1–P2.5) are implemented_unverified; next source step: P3.1 (validated bilinear footprint sampling). Metadata replay requires explicit experimental opt-in and defaults off; the optional v2 consumer is provisioned independently and consumes metadata only on explicit replay opt-in. Compilation, shader compilation, native runtime validation, visual acceptance and performance measurements have not been performed. General application/editor callbacks may still explicitly reset or reattach scenes; end-to-end interactive acceptance is pending.
+Status: `implemented_unverified`. Source implementation is finished. The user cancelled all further agent tests and owns the remaining manual validation; await their report. Do not run builds, shader compilation, source checkers, native probes, scenarios or benchmarks without a new explicit request. Preserve [prior native evidence](validation_2026_10_23/README.md): Vulkan results there are MoltenVK on this Mac, not validation of the user's intended Vulkan target. No additional implementation is scheduled; address reported defects if requested.
 
 ## Product decision
 
@@ -103,4 +103,141 @@ P2.3 adds a separately versioned 352-byte v3 camera-depth consumer and diagnosti
 
 P2.4 adds optional borrowed/retained opaque motion/token input to UpscalerInput and a separately gated fullscreen FSR selector. Nonzero finite object vectors keep internal pixel units; all other pixels retain camera/depth motion. FSR records completion/projection chronology and derives dispatch jitter from the recorded projection. Bridge/SDK unchanged, replay default off, transparent/refraction motion approximate; compilation/native acceptance remains pending.
 
-P2.5 completes source regression/oracle coverage, separate opt-in motion/previous-geometry display views, a two/three queued-slot scalar/HDR source fixture and a reproducible standard-library source/math checker. The Phase 2 plan contains the final acceptance matrix; all C++/shader compilation and native formats/pixels/SDK/visual/performance checks remain not_run. Phase 3 is not started; next numbered step P3.1 only.
+P2.5 completes source regression/oracle coverage, separate opt-in motion/previous-geometry display views, a two/three queued-slot scalar/HDR source fixture and a reproducible standard-library source/math checker. The Phase 2 plan contains the final acceptance matrix; all C++/shader compilation and native formats/pixels/SDK/visual/performance checks remain not_run. At the P2.5 handoff, Phase 3 was not started; subsequent source completion is recorded below.
+
+P3.1 defines `draw.temporal.footprint.v1` as an algorithm contract with an executable
+standard-library reference, not a registered shader ABI. Candidate-center token
+mapping, individual rejection and normalized support are specified and oracle
+checks pass. Production v3 sampling remains nearest until subsequent integration;
+P3.2 is next. P3.3 signal/count/confidence reduction and all native acceptance
+remain pending; replay remains default off.
+
+P3.2 adds paired v3 positive previous-camera depth validation with unchanged world
+and normal tolerances. The nearest candidate uses a reusable predicate; P3.3 will
+apply it to the full footprint with correct signal/count/confidence reduction.
+No optional tolerance widening or ABI/default change. Source/math checks pass;
+compilation and native/visual/performance checks remain not_run. Next: P3.3.
+
+P3.3 integrates the validated bilinear footprint in paired built-in v3 kernels:
+individual retained-token/geometry/signal checks, normalized valid weights,
+confidence-premultiplied reflection spatial reduction, valid-black GI, minimum
+history count and internal geometric support. Temporal blend/freeze/rolling rules,
+v1/v2/custom ABI and default-off replay remain. Source/math checks pass; compilation,
+native/visual/performance acceptance remain not_run. Next: P3.4 only.
+
+P3.4 adds ordered rejection colors and partial/full footprint support to optional
+built-in v3 LocalHistory captures; legacy/custom behavior and display ABI remain.
+A native scalar footprint fixture and expanded reference oracle cover masks,
+rejection priorities, invalid inputs and edge cases. Source/math checks pass;
+C++/shader/native/visual/performance checks remain not_run. No new persistent image,
+default or ordinary synchronization/readback. Next: P3.5 only.
+
+P3.5 completes Phase 3 source review and analytical cost accounting. Existing
+CPU/GPU temporal timing remains; explicit available diagnostics gain separate
+capture/display scopes through the existing profiler. The phase file contains
+per-unique-image memory formulas, ownership/high-water caveats, source acceptance
+and a controlled future nearest/four-tap comparison. Reference/source/cost checks
+pass; all native/visual/measured-cost acceptance remains not_run. Replay stays off.
+Next: P4.1 only in phase_4_adaptive_accumulation.md; preserve the validated
+nonadaptive footprint, default-off adaptation and literal freeze outside the
+motion window. P4.2–P4.6/statistics/clipping/moments are not part of that next step.
+
+P4.1 adds default-off adaptive settings with strict atomic validation, reflected
+catalog/legacy-payload support and cached/full serialization parity. Optional
+separately versioned v4 (368-byte uniform, same bindings) adds support-based
+bounded rolling weights while preserving literal freeze and exact disabled v3
+behavior. V1/v2/v3/custom compatibility, fallback/ownership and default-off replay
+remain. Reactivity is zero and sigma reserved; there are no neighborhood/clipping/
+moment images or trust-count changes yet. Source/reference checks pass; compilation
+and all C++/shader/native/visual/performance acceptance remain not_run.
+Next exact step: P4.2 only in phase_4_adaptive_accumulation.md.
+
+P4.2 adds paired v4-only 3x3 raw-current neighborhood statistics with same-token,
+finite coverage/current-depth/normal validation, conservative reconstructed-world
+consistency, uniform moments/bounds/count and explicit insufficient-support flag.
+GI black and reflection confidence/miss semantics stay separate. Internal results
+are not consumed until P4.3 and may be optimized away; no output, alpha/count,
+ABI/image/default or ownership change is claimed. Reference/source checks pass;
+all compilation/native/visual/performance acceptance remains not_run.
+Next: P4.3 only; variance-gated clipping/reactivity and trust count, no P4.4 moments.
+
+P4.3 consumes current statistics for variance-gated history clipping and unclipped
+reactivity in v4. HDR confidence stays separate; scaled RGB is bounded to finite
+FP16 range, with chromatic/target-luminance limitations documented. Adaptive count
+now represents fractional effective trust, distinct from nominal CPU frame count;
+saturated freeze and exact disabled v3 behavior remain. Source/reference checks
+pass; native/visual/performance acceptance remains not_run. No ABI or image added.
+Next: P4.4 only, optional moments with bounded log-HDR statistic and same validated
+footprint/alpha/freeze, preserving neighborhood-only fallback and custom contracts.
+
+P4.4 adds optional separately versioned v5 RG16F moment transport with format/status
+fallback to neighborhood-only v4. Visibility and log-HDR statistics are bounded;
+color/moments share accepted taps and alpha, while moment-domain confidence stays
+separate from linear clipping. Per-key owners/pruning/freeze and custom resource
+contracts remain. Extra image cost is 4 bytes per signal pixel per unique retained
+moment image, not total feature memory. Source/reference checks pass; compilation
+and native/visual/performance checks remain not_run. Defaults stay off.
+Next exact step: P4.5 source regressions and acceptance scenarios only.
+
+P4.5 completes adaptive regression/reference sources and native visual acceptance
+specification. New matched scalar/HDR and v4/v5 queued fixtures cover signal,
+confidence, moment/key retention, drops, support and fallback; half-quantized
+sequence references pass. Controlled convergence/noise figures are model-only.
+Production sources/defaults are unchanged in this step. Native/visual/performance
+acceptance remains not_run, with explicit per-case/scene matrix and host entries.
+Next exact step: P4.6 only, opt-in adaptive diagnostics/cost review and P5.1 handoff.
+
+P4.6 completes Phase 4 source work with optional canonical v4/v5 metric-capture
+families and CurrentWeight/Reactivity/Variance/EffectiveCount views (IDs 6–9).
+Captures preserve core/custom layouts and history mode, select the exact current
+signal/layer and expose bounded visual encodings; missing capture is amber.
+Analytical image/fetch cost, ownership/settings/defaults/limits and native matrix
+are documented. Reference/source checks pass; all compilation/native/visual/cost
+validation remains not_run. Replay/adaptive defaults stay off. Phase 4 is
+implemented_unverified, not native-accepted. Next exact source step: P5.1 only.
+
+P5.1 integration audit (2026-10-23): reviewed v1–v5 compatibility, world-profile
+fallback, exact opaque/transparent/FSR ownership, recorded-scene chronology and reset
+callers. Model editor mouse input and numeric transforms now preserve rigid-motion
+history; general edits remain conservative. Integration and Phase 2–4 source checks
+passed. Native/editor/queued-failure/performance acceptance remains not_run. See the
+Phase 5 audit ledger for same-recording correspondence and deformation limitations.
+Next exact source step: P5.2 only; no implicit build/runtime authorization.
+
+P5.2 validation protocol (2026-10-23): tests/draw/temporal/README.md now records
+18 scenarios, expected global/local behavior and acceptable limitations, per-backend
+not_run states, matched fallback/v2/v3/v4/v5/SDK modes, deterministic scene schedules,
+resolution/quality/maxFrames/freeze axes, existing probe calls and an evidence template.
+Probe names, local links and matrix coverage were checked without compilation or native
+execution. Next: P5.3 authorization/status gate only; measured tuning remains pending.
+
+P5.3 status review (2026-10-23): applied the explicit no-authorization branch.
+The Phase 5 ledger records eight native categories as not_run independently for
+Vulkan and Metal; no device, driver, SDK capability, native commands or results were
+established. First future authorized baseline: runTemporalProbe(engine, shaderRoot)
+and S01/F0 after an authorized platform build, followed by the full P5.2 protocol.
+Next: P5.4 measurement authorization/evidence gate only. Native acceptance, actual
+measurements and release validation remain pending; the plan is implemented_unverified.
+
+P5.4 measurement preparation (2026-10-23): recorded matched modes/workloads,
+warm-up and 300-scene sampling, median/p95 and missing-timestamp rules, profiler
+scope limits and unique-image/pool accounting. All six measurement categories remain
+not_run for Vulkan and Metal. No benchmark or bottleneck evidence exists; no speedup
+or memory improvement is claimed. Next: P5.5 evidence gate only, preserving source
+and defaults in the absence of a demonstrated bottleneck. Native acceptance and
+actual measurements remain outstanding.
+
+P5.5 evidence review (2026-10-23): all five optimization candidates are deferred;
+no measured baseline/bottleneck or native pixel/ownership acceptance exists. The
+Phase 5 ledger records evidence needed to reopen each candidate and the required
+one-change matched retest. No implementation/default changes or performance claims.
+Next: P5.6 source/default/limitation handoff; native validation and actual measurements
+remain pending, with implemented_unverified preserved.
+
+P5.6 final handoff (2026-10-23): defaults and exact transform/settling policy were
+checked against source; API documentation consolidates rigid/deformation, indirect/
+reflected/glass, frozen-lighting, unreported-edit and fallback limitations. Detected
+scene motion includes animation/programmatic transforms, not UI gestures. Phase 2–4
+and integration Python source/reference checks passed again; no compilation/native
+execution occurred. Final state implemented_unverified; resume at the first explicitly
+authorized P5.3 legacy baseline and S01/F0, then the full matrix and measurements.

@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <optional>
 
 namespace bg2e::draw::pipeline {
 namespace {
@@ -47,6 +48,12 @@ struct alignas(16) TemporalReprojectionUniforms {
     TemporalMetadataUniforms metadata;
     glm::mat4 previousView{1};
 };
+struct alignas(16) TemporalAdaptiveUniforms {
+    TemporalReprojectionUniforms reprojection;
+    glm::vec4 adaptive{0}; // minimum weight, reactive weight, clipping sigma (reserved), enabled.
+};
+static_assert(sizeof(TemporalAdaptiveUniforms) == 368 && offsetof(TemporalAdaptiveUniforms, adaptive) == 352);
+static_assert(offsetof(TemporalAdaptiveUniforms, reprojection) == 0);
 static_assert(offsetof(TemporalReprojectionUniforms, metadata) == 0);
 static_assert(sizeof(TemporalReprojectionUniforms) == 352 && offsetof(TemporalReprojectionUniforms, previousView) == 288);
 static_assert(sizeof(TemporalMetadataUniforms) == 288 && offsetof(TemporalMetadataUniforms, currentViewProjection) == 208);
@@ -251,6 +258,198 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                 _reprojectionStatus = std::string("Rigid reprojection unavailable; static v2/v1 fallback: ")+error.what();
             }
         }
+        if (!_configuration.adaptiveShaderInterface.empty())
+        {
+            try
+            {
+                if (_configuration.adaptiveShaderInterface != "draw.temporal.v4" || !surfaceReprojectionAvailable())
+                {
+                    throw std::runtime_error("Adaptive accumulation requires draw.temporal.v4 and optional v3 reprojection support");
+                }
+                auto adaptiveLayout = layout;
+                for (uint32_t i = 17; i <= 18; ++i)
+                {
+                    adaptiveLayout.resourceBindings.push_back({0,{i,i-2},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
+                }
+                _adaptiveLayout = device.createPipelineLayout(adaptiveLayout);
+                for (uint32_t i = 0; i < 2; ++i)
+                {
+                    const auto name = _configuration.adaptiveShaderPrefix+(i ? "/camera_hdr" : "/camera_scalar");
+                    _adaptiveShaders[i] = library.compute(name,&device);
+                    _adaptivePipelines[i] = device.createComputePipeline({_adaptiveShaders[i].get(),_adaptiveLayout.get()});
+                }
+                _adaptiveStatus = "Optional draw.temporal.v4 bounded camera-depth weighting ready";
+                try
+                {
+                    if (_configuration.adaptiveShaderPrefix != "draw/temporal_accumulation_v4" || !diagnosticsAvailable())
+                    {
+                        throw std::runtime_error("Adaptive acceptance diagnostics require the built-in v4 family and display support");
+                    }
+                    adaptiveLayout.resourceBindings.push_back({0,{16,14},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+                    _adaptiveAcceptanceLayout = device.createPipelineLayout(adaptiveLayout);
+                    for (uint32_t i = 0; i < 2; ++i)
+                    {
+                        const auto name = std::string("draw/temporal_accumulation_v4_diagnostic")+(i ? "/camera_hdr" : "/camera_scalar");
+                        _adaptiveAcceptanceShaders[i] = library.compute(name,&device);
+                        _adaptiveAcceptancePipelines[i] = device.createComputePipeline(
+                            {_adaptiveAcceptanceShaders[i].get(),_adaptiveAcceptanceLayout.get()});
+                    }
+                }
+                catch (const std::exception& error)
+                {
+                    _adaptiveAcceptancePipelines = {};
+                    _adaptiveAcceptanceShaders = {};
+                    _adaptiveAcceptanceLayout.reset();
+                    _adaptiveStatus += std::string("; diagnostics unavailable: ")+error.what();
+                }
+            }
+            catch (const std::exception& error)
+            {
+                _adaptivePipelines = {};
+                _adaptiveShaders = {};
+                _adaptiveLayout.reset();
+                _adaptiveStatus = std::string("Adaptive accumulation unavailable; nonadaptive v3 fallback: ")+error.what();
+            }
+        }
+        if (!_configuration.momentShaderInterface.empty())
+        {
+            try
+            {
+                if (_configuration.momentShaderInterface != "draw.temporal.v5" || !adaptiveAvailable())
+                {
+                    throw std::runtime_error("Temporal moments require draw.temporal.v5 and optional v4 adaptive support");
+                }
+                const auto momentUsage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage |
+                    gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
+                if (!device.formatCapabilities(gpu::PixelFormat::R16G16_SFLOAT).supports(momentUsage))
+                {
+                    throw std::runtime_error("RG16F sampled/storage/transfer moments unsupported");
+                }
+                gpu::ImageDescription dummy;
+                dummy.size = {1,1};
+                dummy.format = gpu::PixelFormat::R16G16_SFLOAT;
+                dummy.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+                _zeroMoments = device.createImage(dummy);
+                _zeroMoments->upload({halfZero,2*sizeof(uint16_t),2*sizeof(uint16_t),0,0});
+                auto momentLayout = layout;
+                for (uint32_t i = 17; i <= 18; ++i)
+                {
+                    momentLayout.resourceBindings.push_back({0,{i,i-2},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
+                }
+                momentLayout.resourceBindings.push_back({0,{19,17},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
+                momentLayout.resourceBindings.push_back({0,{20,18},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+                _momentLayout = device.createPipelineLayout(momentLayout);
+                for (uint32_t i = 0; i < 2; ++i)
+                {
+                    const auto name = _configuration.momentShaderPrefix+(i ? "/camera_hdr" : "/camera_scalar");
+                    _momentShaders[i] = library.compute(name,&device);
+                    _momentPipelines[i] = device.createComputePipeline({_momentShaders[i].get(),_momentLayout.get()});
+                }
+                _momentStatus = "Optional draw.temporal.v5 RG16F bounded-statistic moments ready";
+                try
+                {
+                    if (_configuration.momentShaderPrefix != "draw/temporal_accumulation_v5" || !diagnosticsAvailable())
+                    {
+                        throw std::runtime_error("Moment acceptance diagnostics require the built-in v5 family and display support");
+                    }
+                    momentLayout.resourceBindings.push_back({0,{16,14},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+                    _momentAcceptanceLayout = device.createPipelineLayout(momentLayout);
+                    for (uint32_t i = 0; i < 2; ++i)
+                    {
+                        const auto name = std::string("draw/temporal_accumulation_v5_diagnostic")+(i ? "/camera_hdr" : "/camera_scalar");
+                        _momentAcceptanceShaders[i] = library.compute(name,&device);
+                        _momentAcceptancePipelines[i] = device.createComputePipeline(
+                            {_momentAcceptanceShaders[i].get(),_momentAcceptanceLayout.get()});
+                    }
+                }
+                catch (const std::exception& error)
+                {
+                    _momentAcceptancePipelines = {};
+                    _momentAcceptanceShaders = {};
+                    _momentAcceptanceLayout.reset();
+                    _momentStatus += std::string("; diagnostics unavailable: ")+error.what();
+                }
+            }
+            catch (const std::exception& error)
+            {
+                _momentPipelines = {};
+                _momentShaders = {};
+                _momentLayout.reset();
+                _zeroMoments.reset();
+                _momentStatus = std::string("Temporal moments unavailable; neighborhood-only v4 fallback: ")+error.what();
+            }
+        }
+        // Metric capture is a separate optional family; existing interfaces never receive binding 21.
+        if (adaptiveAvailable())
+        {
+            try
+            {
+                gpu::PipelineLayoutDescription displayLayout;
+                displayLayout.resourceBindings = {
+                    {0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute},
+                    {0,{1,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
+                    {0,{2,1},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
+                    {0,{3,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute},
+                    {0,{4,2},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute}};
+                _metricDisplayLayout = device.createPipelineLayout(displayLayout);
+                _metricDisplayShader = library.compute("draw/temporal_diagnostic/metrics",&device);
+                _metricDisplayPipeline = device.createComputePipeline({_metricDisplayShader.get(),_metricDisplayLayout.get()});
+                _adaptiveDiagnosticStatus = "Adaptive metric display ready";
+                for (uint32_t version = 0; version < 2; ++version)
+                {
+                    try
+                    {
+                        if (version == 0 ? _configuration.adaptiveShaderPrefix != "draw/temporal_accumulation_v4" :
+                            (!momentsAvailable() || _configuration.momentShaderPrefix != "draw/temporal_accumulation_v5"))
+                        {
+                            throw std::runtime_error("Metric capture requires the corresponding canonical available family");
+                        }
+                        auto metricLayout = layout;
+                        for (uint32_t binding = 17; binding <= 18; ++binding)
+                        {
+                            metricLayout.resourceBindings.push_back({0,{binding,binding-2},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
+                        }
+                        if (version == 1)
+                        {
+                            metricLayout.resourceBindings.push_back({0,{19,17},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
+                            metricLayout.resourceBindings.push_back({0,{20,18},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+                        }
+                        metricLayout.resourceBindings.push_back({0,{21,19},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+                        _metricLayouts[version] = device.createPipelineLayout(metricLayout);
+                        for (uint32_t profile = 0; profile < 2; ++profile)
+                        {
+                            const auto name = std::string(version ? "draw/temporal_accumulation_v5_metrics" :
+                                "draw/temporal_accumulation_v4_metrics")+(profile ? "/camera_hdr" : "/camera_scalar");
+                            const auto index = 2*version+profile;
+                            _metricShaders[index] = library.compute(name,&device);
+                            _metricPipelines[index] = device.createComputePipeline({_metricShaders[index].get(),_metricLayouts[version].get()});
+                        }
+                        _adaptiveDiagnosticStatus += version ? "; v5 capture ready" : "; v4 capture ready";
+                    }
+                    catch (const std::exception& error)
+                    {
+                        _metricLayouts[version].reset();
+                        for (uint32_t profile = 0; profile < 2; ++profile)
+                        {
+                            _metricPipelines[2*version+profile].reset();
+                            _metricShaders[2*version+profile].reset();
+                        }
+                        _adaptiveDiagnosticStatus += std::string(version ? "; v5 capture unavailable: " : "; v4 capture unavailable: ")+error.what();
+                    }
+                }
+            }
+            catch (const std::exception& error)
+            {
+                _metricDisplayPipeline.reset();
+                _metricDisplayShader.reset();
+                _metricDisplayLayout.reset();
+                _metricPipelines = {};
+                _metricShaders = {};
+                _metricLayouts = {};
+                _adaptiveDiagnosticStatus = std::string("Adaptive metric diagnostics unavailable: ")+error.what();
+            }
+        }
+
     }
     catch (const std::exception& error)
     {
@@ -308,6 +507,10 @@ void TemporalAccumulator::beginFrame(uint32_t slotIndex, uint64_t serial, uint64
 TemporalResult TemporalAccumulator::record(const TemporalInput& input)
 {
     base::CpuProfileScope profile("effect.temporal.record");
+    if (input.diagnoseAcceptance && input.diagnoseAdaptive)
+    {
+        throw std::invalid_argument("Select only one temporal capture kind per invocation");
+    }
     if (!_device || input.command.hasActiveScope() || input.signal.device() != _device || !input.signal.isValid() ||
         input.signal.size().isZero() || input.signal.imageType() != gpu::ImageType::Image2D ||
         !gpu::hasFlag(input.signal.usage(),gpu::ImageUsage::Sampled) ||
@@ -369,9 +572,13 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     const bool rigid = input.metadata.previousPosition && surfaceReprojectionAvailable() && affineView &&
         input.surface.profile == SurfaceProfile::CameraDepth && input.view.reproject;
     const bool enhanced = input.metadata.token && surfaceMetadataAvailable() && (rigid || input.metadata.legacyCompatible);
-    const uint32_t metadataMode = rigid ? 2u : (enhanced ? 1u : 0u);
+    const bool adaptive = rigid && _settings.adaptiveEnabled && adaptiveAvailable();
+    const bool moments = adaptive && momentsAvailable();
+    const uint32_t metadataMode = moments ? 4u : (adaptive ? 3u : (rigid ? 2u : (enhanced ? 1u : 0u)));
     const bool diagnose = enhanced && input.diagnoseAcceptance && diagnosticsAvailable() &&
-        (!rigid || bool(_reprojectionAcceptancePipelines[0]));
+        (moments ? bool(_momentAcceptancePipelines[0]) : (adaptive ? bool(_adaptiveAcceptancePipelines[0]) : (!rigid || bool(_reprojectionAcceptancePipelines[0]))));
+    const uint32_t metricIndex = (moments ? 2u : 0u)+(scalar ? 0u : 1u);
+    const bool metrics = adaptive && input.diagnoseAdaptive && _metricDisplayPipeline && bool(_metricPipelines[metricIndex]);
     if (!available() || !_settings.enabled)
     {
         _histories.erase(input.key);
@@ -428,9 +635,21 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     {
         previous.reset();
     }
+    if (moments && previous && !previous->moments)
+    {
+        previous.reset();
+    }
     if (found == _histories.end() && _histories.size() >= _configuration.maxHistories)
     {
         throw std::length_error("Temporal effect/view/layer history capacity exceeded");
+    }
+    // Only explicit, available acceptance captures receive these extra timing labels.
+    std::optional<base::CpuProfileScope> diagnosticCpu;
+    std::optional<gpu::GpuTimingScope> diagnosticGpu;
+    if (diagnose || metrics)
+    {
+        diagnosticCpu.emplace("effect.temporal.diagnosticCapture");
+        diagnosticGpu.emplace(input.command,"effect.temporal.diagnosticCapture",input.key.layer,input.key.layer != 0);
     }
     if (!_pool)
     {
@@ -472,10 +691,21 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     {
         next->acceptance = _pool->image(input.command,description);
     }
+    if (metrics)
+    {
+        next->metrics = _pool->image(input.command,description); // Existing RGBA16F guide format.
+    }
+    if (moments)
+    {
+        description.format = gpu::PixelFormat::R16G16_SFLOAT;
+        next->moments = _pool->image(input.command,description);
+    }
     Invocation invocation;
     invocation.previous = previous;
     invocation.next = next;
-    TemporalReprojectionUniforms reprojectionData;
+    TemporalAdaptiveUniforms adaptiveData;
+    auto& reprojectionData = adaptiveData.reprojection;
+    adaptiveData.adaptive = {_settings.minCurrentWeight,_settings.reactiveCurrentWeight,_settings.historyClipSigma,adaptive ? 1.0f : 0.0f};
     auto& enhancedData = reprojectionData.metadata;
     auto& data = enhancedData.temporal;
     data.inverseViewProjection = input.surface.inverseViewProjection;
@@ -492,12 +722,12 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     enhancedData.metadataRejection.x = enhanced && input.metadata.depth->pixelFormat() == gpu::PixelFormat::D16_UNORM ?
         2.0f/65535.0f : 2e-6f;
     reprojectionData.previousView = previous ? previous->view.view : glm::mat4(1);
-    const auto uniformBytes = rigid ? sizeof(reprojectionData) : (enhanced ? sizeof(enhancedData) : sizeof(data));
-    const auto selectedLayout = rigid ? (diagnose ? _reprojectionAcceptanceLayout : _reprojectionLayout) :
-        (diagnose ? _acceptanceLayout : (enhanced ? _metadataLayout : _layout));
+    const auto uniformBytes = adaptive ? sizeof(adaptiveData) : (rigid ? sizeof(reprojectionData) : (enhanced ? sizeof(enhancedData) : sizeof(data)));
+    const auto selectedLayout = metrics ? _metricLayouts[moments ? 1u : 0u] : moments ? (diagnose ? _momentAcceptanceLayout : _momentLayout) : (adaptive ? (diagnose ? _adaptiveAcceptanceLayout : _adaptiveLayout) : (rigid ? (diagnose ? _reprojectionAcceptanceLayout : _reprojectionLayout) :
+        (diagnose ? _acceptanceLayout : (enhanced ? _metadataLayout : _layout))));
     invocation.pooled = _pool->bindings(input.command, selectedLayout, 0, uniformBytes,
         {input.slot, uint64_t(input.key.signal), input.key.view, input.key.layer});
-    invocation.pooled->writeUniforms(&reprojectionData, uniformBytes);
+    invocation.pooled->writeUniforms(&adaptiveData, uniformBytes);
     invocation.uniforms = invocation.pooled->uniforms();
     invocation.resources = invocation.pooled->resources();
     invocation.pooled->setUniformBuffer({0,1},invocation.uniforms.get());
@@ -530,6 +760,14 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
             invocation.pooled->setSampledImage({i+17,i+15},expectedSources[i]);
         }
     }
+    if (moments)
+    {
+        auto* previousMoments = previous ? previous->moments.get() : _zeroMoments.get();
+        input.command.transition(previousMoments,gpu::ImageLayout::ShaderReadOnly);
+        invocation.pooled->setSampledImage({19,17},previousMoments);
+        input.command.transition(next->moments.get(),gpu::ImageLayout::General);
+        invocation.pooled->setStorageImage({20,18},next->moments.get());
+    }
     invocation.pooled->setSampler({9,0},_nearest.get());
     const std::array<gpu::Image*,3> outputs{next->signal.get(),next->position.get(),next->normal.get()};
     for (uint32_t i = 0; i < outputs.size(); ++i)
@@ -542,12 +780,17 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
         input.command.transition(next->acceptance.get(),gpu::ImageLayout::General);
         invocation.pooled->setStorageImage({16,14},next->acceptance.get());
     }
+    if (metrics)
+    {
+        input.command.transition(next->metrics.get(),gpu::ImageLayout::General);
+        invocation.pooled->setStorageImage({21,19},next->metrics.get());
+    }
     invocation.pooled->update();
     slot.invocations.push_back(std::move(invocation));
     const uint32_t index = (input.surface.profile == SurfaceProfile::WorldPositionCoverage ? 2u : 0u)+(scalar ? 0u : 1u);
     input.command.beginCompute();
-    auto* pipeline = rigid ? (diagnose ? _reprojectionAcceptancePipelines[index].get() : _reprojectionPipelines[index].get()) :
-        (diagnose ? _acceptancePipelines[index].get() : (enhanced ? _metadataPipelines[index].get() : _pipelines[index].get()));
+    auto* pipeline = metrics ? _metricPipelines[metricIndex].get() : moments ? (diagnose ? _momentAcceptancePipelines[index].get() : _momentPipelines[index].get()) : (adaptive ? (diagnose ? _adaptiveAcceptancePipelines[index].get() : _adaptivePipelines[index].get()) : (rigid ? (diagnose ? _reprojectionAcceptancePipelines[index].get() : _reprojectionPipelines[index].get()) :
+        (diagnose ? _acceptancePipelines[index].get() : (enhanced ? _metadataPipelines[index].get() : _pipelines[index].get()))));
     input.command.bindPipeline(pipeline);
     input.command.bindResourceSet(pipeline,0,slot.invocations.back().resources.get());
     input.command.dispatch((input.signal.width()+15)/16,(input.signal.height()+15)/16,1);
@@ -559,6 +802,14 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     if (next->acceptance)
     {
         input.command.transition(next->acceptance.get(),gpu::ImageLayout::ShaderReadOnly);
+    }
+    if (next->moments)
+    {
+        input.command.transition(next->moments.get(),gpu::ImageLayout::ShaderReadOnly);
+    }
+    if (next->metrics)
+    {
+        input.command.transition(next->metrics.get(),gpu::ImageLayout::ShaderReadOnly);
     }
     _histories[input.key] = next;
     return {next->signal.get(),next->signal,next->count};
@@ -574,17 +825,29 @@ bool TemporalAccumulator::surfaceDiagnosticsAvailable() const
     return surfaceMetadataAvailable() && bool(_surfaceDiagnosticPipeline);
 }
 
+bool TemporalAccumulator::adaptiveDiagnosticsAvailable() const
+{
+    return bool(_metricDisplayPipeline) && (bool(_metricPipelines[0]) || bool(_metricPipelines[2]));
+}
+
+const std::string& TemporalAccumulator::adaptiveDiagnosticsStatus() const
+{
+    return _adaptiveDiagnosticStatus;
+}
+
 std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBuffer& command,
     uint32_t slotIndex, uint64_t serial, const TemporalKey& key,
     const TemporalSurfaceMetadata& metadata, TemporalDiagnosticView view)
 {
-    if (uint32_t(view) > uint32_t(TemporalDiagnosticView::PreviousNormal))
+    if (uint32_t(view) > uint32_t(TemporalDiagnosticView::EffectiveCount))
     {
         throw std::invalid_argument("Unknown temporal diagnostic view");
     }
-    const bool surfaceView = uint32_t(view) >= uint32_t(TemporalDiagnosticView::Motion);
+    const bool metricView = uint32_t(view) >= uint32_t(TemporalDiagnosticView::CurrentWeight);
+    const bool surfaceView = uint32_t(view) >= uint32_t(TemporalDiagnosticView::Motion) &&
+        uint32_t(view) <= uint32_t(TemporalDiagnosticView::PreviousNormal);
     if (view == TemporalDiagnosticView::Off ||
-        !(surfaceView ? surfaceDiagnosticsAvailable() : diagnosticsAvailable()) || !metadata.token || !metadata.depth)
+        !(metricView ? adaptiveDiagnosticsAvailable() : (surfaceView ? surfaceDiagnosticsAvailable() : diagnosticsAvailable())) || !metadata.token || !metadata.depth)
     {
         return {};
     }
@@ -618,6 +881,9 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
             throw std::invalid_argument("Temporal surface display requires matching sampled receiver metadata of the selected format");
         }
     }
+    // Off, missing data and unavailable diagnostic paths return before this scope.
+    base::CpuProfileScope diagnosticCpu("effect.temporal.diagnosticDisplay");
+    gpu::GpuTimingScope diagnosticGpu(command,"effect.temporal.diagnosticDisplay",key.layer,key.layer != 0);
     if (!_pool)
     {
         _pool = std::make_shared<TemporaryResourcePool>(*_device,_configuration.poolLimits);
@@ -626,7 +892,8 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
     Invocation invocation;
     const auto found = _histories.find(key);
     if (found != _histories.end() && found->second->sequence == slot.sequence &&
-        found->second->recording == command.recordingCompletion() && found->second->metadata.token == metadata.token && found->second->acceptance)
+        found->second->recording == command.recordingCompletion() && found->second->metadata.token == metadata.token &&
+        (metricView ? bool(found->second->metrics) : bool(found->second->acceptance)))
     {
         invocation.next = found->second;
     }
@@ -642,11 +909,13 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
     invocation.diagnostic = _pool->image(command,description);
     // 16-byte uniform: receiver width/height, mode, current acceptance image present.
     const glm::uvec4 data(description.size.width,description.size.height,uint32_t(view),(surfaceView || invocation.next) ? 1u : 0u);
-    invocation.pooled = _pool->bindings(command,_diagnosticLayout,0,sizeof(data),
+    const auto displayLayout = metricView ? _metricDisplayLayout : _diagnosticLayout;
+    invocation.pooled = _pool->bindings(command,displayLayout,0,sizeof(data),
         {slotIndex,uint64_t(key.signal),key.view,key.layer});
     invocation.pooled->writeUniforms(&data,sizeof(data));
     invocation.pooled->setUniformBuffer({0,1},invocation.pooled->uniforms().get());
-    auto* acceptance = surfaceView ? surfaceData.get() : (invocation.next ? invocation.next->acceptance.get() : _zeroNormal.get());
+    auto* acceptance = surfaceView ? surfaceData.get() : (invocation.next ?
+        (metricView ? invocation.next->metrics.get() : invocation.next->acceptance.get()) : _zeroNormal.get());
     command.transition(metadata.token.get(),gpu::ImageLayout::ShaderReadOnly);
     command.transition(acceptance,gpu::ImageLayout::ShaderReadOnly);
     command.transition(invocation.diagnostic.get(),gpu::ImageLayout::General);
@@ -658,7 +927,7 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
     const auto result = invocation.diagnostic;
     slot.invocations.push_back(std::move(invocation));
     command.beginCompute();
-    auto* pipeline = surfaceView ? _surfaceDiagnosticPipeline.get() : _diagnosticPipeline.get();
+    auto* pipeline = metricView ? _metricDisplayPipeline.get() : (surfaceView ? _surfaceDiagnosticPipeline.get() : _diagnosticPipeline.get());
     command.bindPipeline(pipeline);
     command.bindResourceSet(pipeline,0,slot.invocations.back().pooled->resources().get());
     command.dispatch((description.size.width+15)/16,(description.size.height+15)/16,1);
@@ -686,6 +955,28 @@ void TemporalAccumulator::cleanup()
     _histories.clear();
     _slots.clear();
     _pool.reset();
+    _metricPipelines = {};
+    _metricShaders = {};
+    _metricLayouts = {};
+    _metricDisplayPipeline.reset();
+    _metricDisplayShader.reset();
+    _metricDisplayLayout.reset();
+    _adaptiveDiagnosticStatus = "Optional adaptive metrics unavailable";
+    _momentPipelines = {};
+    _momentShaders = {};
+    _momentLayout.reset();
+    _momentAcceptancePipelines = {};
+    _momentAcceptanceShaders = {};
+    _momentAcceptanceLayout.reset();
+    _zeroMoments.reset();
+    _momentStatus = "Optional moment interface not requested";
+    _adaptivePipelines = {};
+    _adaptiveShaders = {};
+    _adaptiveLayout.reset();
+    _adaptiveAcceptancePipelines = {};
+    _adaptiveAcceptanceShaders = {};
+    _adaptiveAcceptanceLayout.reset();
+    _adaptiveStatus = "Optional adaptive interface not requested";
     _reprojectionPipelines = {};
     _reprojectionShaders = {};
     _reprojectionLayout.reset();
@@ -772,6 +1063,49 @@ void TemporalAccumulator::setNormalThreshold(float value)
     }
     _settings.normalThreshold = value;
     invalidate();
+}
+
+void TemporalAccumulator::validateAdaptiveSettings(bool, float minimum, float reactive, float sigma)
+{
+    if (!std::isfinite(minimum) || !std::isfinite(reactive) || !std::isfinite(sigma) ||
+        minimum < 0 || minimum > 1 || reactive < minimum || reactive > 1 || sigma < 0 || sigma > 10)
+    {
+        throw std::invalid_argument("Adaptive weights require 0 <= minimum <= reactive <= 1 and sigma in [0,10]");
+    }
+}
+
+void TemporalAccumulator::setAdaptiveSettings(bool enabled, float minimum, float reactive, float sigma)
+{
+    validateAdaptiveSettings(enabled,minimum,reactive,sigma);
+    if (_settings.adaptiveEnabled != enabled || _settings.minCurrentWeight != minimum ||
+        _settings.reactiveCurrentWeight != reactive || _settings.historyClipSigma != sigma)
+    {
+        invalidate();
+        _settings.adaptiveEnabled = enabled;
+        _settings.minCurrentWeight = minimum;
+        _settings.reactiveCurrentWeight = reactive;
+        _settings.historyClipSigma = sigma;
+    }
+}
+
+bool TemporalAccumulator::momentsAvailable() const
+{
+    return adaptiveAvailable() && bool(_momentPipelines[0]) && bool(_zeroMoments);
+}
+
+const std::string& TemporalAccumulator::momentsStatus() const
+{
+    return _momentStatus;
+}
+
+bool TemporalAccumulator::adaptiveAvailable() const
+{
+    return surfaceReprojectionAvailable() && bool(_adaptivePipelines[0]);
+}
+
+const std::string& TemporalAccumulator::adaptiveStatus() const
+{
+    return _adaptiveStatus;
 }
 
 bool TemporalAccumulator::available() const

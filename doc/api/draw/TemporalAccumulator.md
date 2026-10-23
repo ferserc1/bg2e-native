@@ -22,7 +22,7 @@ Visibility averages scalar [0,1] and returns one for uncovered pixels. GI averag
 
 maxFrames is 1..1024. Before the bound, accepted per-pixel samples use an incremental arithmetic mean. At the bound, freezeAtLimit=false uses rolling weight 1/maxFrames; true retains a converged accepted pixel until rejection/reset, except during the temporary motion window. A motion record permits rolling immediately and opens exactly 3*maxFrames subsequent consecutive static records for that signal/view/layer. Repeated motion renews the window. The last tail record still rolls; the following record can freeze. The countdown belongs to recorded history, so presentation-only work and beginFrame without record cannot decrement it. Invalid, skipped, reset or abandoned predecessors contribute no countdown. Authored freezeAtLimit and maxFrames remain unchanged. frameCount(key) and TemporalResult::frameCount report a bounded nominal consecutive-view count, not proof that every pixel converged: reprojection rejection restarts individual pixel counts. Later headless jobs must select actual rendered samples explicitly. setEnabled, frame bound/freeze and rejection controls invalidate histories.
 
-Renderer::invalidateHistories() is the generic application hook; RendererDeferred resets effect history generation and the active upscaler. resetUpscaler() remains compatible and now invokes that full hook. Scene attachment, resize, explicit camera changes, inspector changes and environment replacement reset it. An exact extraction/settings signature also detects mesh/material/resource identity, transforms, lights, camera identity/projection, effect quality/mode/noise and temporal/shadow settings. Node/submesh identity must be unique when temporal correspondence is active. Transform-only movement preserves global histories and FSR and supplies sceneMotion to the accumulator; full fingerprints remain transform-sensitive. Optional rigid metadata generation and v3 history transport are described below; native validation remains pending. Moving surfaces and changing indirect lighting/reflections on static surfaces can trail, as can FSR's camera-only reconstruction. The finite update window is approximate and does not guarantee convergence. Notify invalidateHistories for camera teleports on the same scene camera, in-place image uploads and custom shader/resource edits that retain identity. Applications remain responsible for safe mutation boundaries and requested redraws, including partial editing failures. Generic material utilities acquire no renderer ownership.
+Renderer::invalidateHistories() is the generic application hook; RendererDeferred resets effect history generation and the active upscaler. resetUpscaler() remains compatible and now invokes that full hook. Scene attachment, resize, explicit camera cuts/switches, general inspector edits and environment replacement reset it; typed transform-only edits follow the transform policy. An exact extraction/settings signature also detects mesh/material/resource identity, transforms, lights, camera identity/projection, effect quality/mode/noise and temporal/shadow settings. Node/submesh identity must be unique when temporal correspondence is active. Transform-only movement preserves global histories and FSR and supplies sceneMotion to the accumulator; full fingerprints remain transform-sensitive. Optional rigid metadata generation and v3 history transport are described below; native validation remains pending. Moving surfaces and changing indirect lighting/reflections on static surfaces can trail, as can FSR's camera-only reconstruction. The finite update window is approximate and does not guarantee convergence. Notify invalidateHistories for camera teleports on the same scene camera, in-place image uploads and custom shader/resource edits that retain identity. Applications remain responsible for safe mutation boundaries and requested redraws, including partial editing failures. Generic material utilities acquire no renderer ownership.
 
 See [ABI and implementation handoff](../../../docs/render_to_draw/plan/milestone_03_ray_tracing/temporal.md) and [manual fixture](../../../tests/draw/temporal/README.md). Compilation/runtime validation remains with the project lead. [Spatial filtering](DenoiseFilter.md) is available after temporal accumulation.
 
@@ -204,20 +204,41 @@ point through the matching history's previous **jittered** view-projection. This
 implements the world-point route, including jitter delta, without consuming or
 rescaling the unjittered motion attachment. Finite/valid expected geometry,
 positive clip w, zero-to-one previous clip depth and strict in-bounds UV are
-required before integer previous-pixel conversion. Nearest previous token must
-match the current nonzero token, and current metadata depth must agree with the
-actual current receiver depth (existing D16/D32 tolerances).
+required before integer previous-pixel conversion. Current metadata depth must
+agree with the actual current receiver depth (existing D16/D32 tolerances).
+V3 uses q=previousUV*historyExtent-0.5, floor(q) and the four standard bilinear
+weights. Each positive-weight in-bounds tap maps its signal texel-center UV into
+the actual retained token image extent and requires that integer token to match
+the current nonzero token. Out-of-bounds taps are skipped without edge clamping.
 
 Previous history position is compared to expected previous position, and previous
 history normal to normalized expected previous normal. The exact position tolerance
 in both shaders and the CPU oracle is:
 `absolute + relative * length((previousView * vec4(expectedPreviousPosition,1)).xyz)`.
 Expected and previous geometry, sample/count and tolerance must be finite. Previous
-position coverage and normal/count validity remain required. Current coverage is
+position coverage and normal/count validity remain required. Both expected and
+candidate previous-view depths (-cameraPosition.z) must be positive and differ
+by no more than that same tolerance; full world distance and normal cosine tests
+also apply. No motion/footprint-dependent tolerance widening is enabled.
+
+Each tap validates finite signal/guides/count before contributing. GI requires
+coverage alpha > .5 and retains valid black. Reflection accumulates spatially
+confidence-premultiplied RGB and confidence, then recovers unpremultiplied RGB;
+zero-confidence misses contribute support/count but no radiance. Valid weights
+are renormalized only when their sum W > 1e-6. Effective previous count is the
+minimum positive-weight valid count, bounded by maxFrames, and the current sample
+increments it once. Internal geometricConfidence=clamp(W,0,1) is footprint support,
+independent of reflection confidence, reserved for future adaptive weighting;
+there is no permanent confidence image or new dispatch/binding/ABI.
+
+Current coverage is
 independent of correspondence validity: rejected correspondence restarts the raw
-sample and stores current world guides for the next scene. Scalar/HDR averaging,
-GI validity, reflection confidence, nominal bounded counts and Phase 0 rolling/
-freeze countdown are unchanged. No reflected/deformed surface support is added.
+sample and stores current world guides for the next scene. Temporal averaging
+keeps the existing per-signal confidence rules. Freeze applies only to accepted
+correspondence with saturated minimum count; rejection restarts even when freeze
+is authored. Phase 0 rolling/freeze countdown is unchanged. V1/v2/custom families
+keep their existing sampling behavior. Source/math checks passed; C++/shader
+compilation, native pixels, visual acceptance and performance remain not_run. No reflected/deformed surface support is added.
 
 RendererDeferred provisions v3 for its own accumulator, but replay still defaults
 off. It passes the exact opaque or exact transparent domain's full retained pair
@@ -268,4 +289,410 @@ Replay stays default off. Phase 2 source implementation and regression sources
 are complete (implemented_unverified); C++/shader compilation, all native/pixel/
 visual/performance acceptance remain not_run. See the Phase 2 plan's P2.5 native
 matrix and tests/draw/temporal_surface/phase2_source_checks.py for reproducible
-source/math checks; next implementation step is P3.1, not native acceptance.
+source/math checks; Phase 3 progression and native acceptance are tracked separately in the plan.
+
+## P3.4 built-in v3 footprint reasons
+
+LocalHistory keeps the existing opt-in acceptance image/display allocation. Built-in
+v3 diagnostics now encode the following reason colors in RGB (alpha remains one).
+V1/v2/custom kernel behavior and the display ABI are unchanged. Amber (1,.5,0)
+continues to mean no capture for the selected key, not a pixel rejection reason.
+
+| Order | Meaning | RGB |
+|---|---|---|
+| 0 | No admitted predecessor (first frame, reset or chronology rejection) | (.25,.25,.25) gray |
+| 1 | Unsupported/invalid expected correspondence or missing metadata flags | (.5,0,1) violet |
+| 2 | Off-screen/behind-camera/invalid projected domain | (0,.25,1) blue |
+| 3 | Uncovered current receiver or previous position/count coverage | (0,0,0) black |
+| 4 | Zero/different surface token | (1,0,1) magenta |
+| 5 | Position/positive previous-view depth/current metadata-depth mismatch | (1,0,0) red |
+| 6 | Invalid/mismatched previous normal | (1,1,0) yellow |
+| 7 | Invalid signal/absent GI coverage/insufficient finite support | (1,1,1) white |
+| 8 | Accepted partial footprint | (0,1,1) cyan |
+| 9 | Accepted full footprint | (0,1,0) green |
+
+A surviving footprint takes precedence over failures in rejected neighbors. Full
+means W >= 1-1e-6; partial means 1e-6 < W < 1-1e-6, not a count of four taps.
+An exact texel center can have full support from one tap. When no footprint
+survives, the earliest evaluated failure in the ordered rejection list wins,
+independent of tap order. Stages whose prerequisites fail are not sampled merely
+to discover hypothetical downstream errors. At the candidate identity gate,
+coverage is inspected in diagnostic kernels so uncovered beats token mismatch
+when both fail. Invalid count is uncovered; nonfinite position/depth is geometry,
+nonfinite normal is normal, and nonfinite radiance is signal. A first frame remains
+gray even if other inputs also fail. Zero-confidence reflection misses remain
+valid, so they can display cyan/green while radiance is black.
+
+All new bookkeeping and any extra coverage reads at token-rejected taps are under
+TEMPORAL_DIAGNOSTIC. With it disabled the production shader tokens are unchanged
+from P3.3. No counters, new bindings/formats, permanent images, synchronization,
+CPU telemetry or ordinary-frame readback are added. The capture remains an
+optional RGBA16F image at signal extent plus the existing optional RGBA16F display
+at receiver extent; retained/in-flight owners and pool high-water allocations
+still matter when measuring total cost.
+
+## Phase 3 profiling and cost status
+
+The existing effect.temporal.record CPU/renderer-GPU labels remain. Admitted
+opt-in captures add effect.temporal.diagnosticCapture CPU/GPU scopes; admitted
+displays add effect.temporal.diagnosticDisplay alongside renderer.temporalDiagnostic.
+The capture label measures the decorated temporal pass, not isolated coloring
+cost. Missing/Off/unavailable diagnostics add no such scope. Existing GPU pass/
+detailed timing switches and timestamp availability still apply; no synchronous
+telemetry is added, and nested scopes must not be summed as separate frame costs.
+
+Phase 3 allocates no mandatory image beyond Phase 2. One scalar history set costs
+26 bytes per signal pixel, one HDR history 32; one metadata domain costs 32+D bytes
+per receiver pixel (D=2/4 for D16/D32). Optional capture/display cost 8 bytes per
+signal/receiver pixel respectively. Deduplicate shared metadata across effects;
+include previous/current/in-flight generations, external output owners and idle
+pool high-water allocations. These content-byte estimates exclude driver overhead
+and are not total resident memory. poolStatistics covers its own temporal pool,
+not every metadata/renderer/external allocation. Full accounting and the pending
+nearest/four-tap timing experiment are recorded in the Phase 3 plan's P3.5 review.
+
+Source/math/cost checks pass via tests/draw/temporal/phase3_source_checks.py.
+C++/shader compilation, native pixels/visuals, timestamp availability, performance
+and measured peak allocation remain not_run. Source completion does not enable
+replay or adaptive settings by default. Next source step is P4.1.
+
+## P4.1 optional bounded adaptive weighting (source implementation)
+
+TemporalSettings appends adaptiveEnabled=false, minCurrentWeight=.03125,
+reactiveCurrentWeight=.25 and historyClipSigma=3. The atomic
+setAdaptiveSettings(enabled, minimum, reactive, sigma) rejects nonfinite values,
+requires 0 <= minimum <= reactive <= 1 and 0 <= sigma <= 10, and invalidates once
+when the tuple changes (no invalidation for an identical tuple). Sigma is reserved
+for later clipping; it does not clip history in P4.1.
+
+All four fields are reflected and appended, in that order, after normalThreshold
+in cached equality/payload and full-reference signatures. Old preference payloads
+remain readable: omitted fields retain live values, which are the defaults on a
+fresh accumulator. The standard temporal catalog validates the complete proposed
+tuple before applying any property. Individual reflected weight accessors stage
+the companion bound to permit either order of a valid multi-property import;
+these accessors are intended for the validated catalog. Direct API callers should
+use the atomic tuple setter, which strictly rejects inconsistent pairs. Existing
+catalog property setters and the post-commit renderer invalidation still operate;
+this does not introduce per-frame setters or a new transaction/reset protocol.
+
+The new trailing TemporalConfiguration fields are adaptiveShaderInterface (empty
+by default) and adaptiveShaderPrefix (draw/temporal_accumulation_v4). Explicit
+interface draw.temporal.v4 requires available v3 camera-depth reprojection. It
+initializes independently; unavailable native kernels leave v3 nonadaptive usable
+and report adaptiveAvailable()/adaptiveStatus(). Failed optional initialization
+is not retried during ordinary recording. The owned RendererDeferred accumulator
+provisions v4, but both replay and adaptiveEnabled still default off. Injected
+v1/v2/v3/custom families receive their original uniforms and bindings. A custom
+family must explicitly declare v4 to receive the new layout.
+
+V4 appends a vec4 at byte 352 to the exact 352-byte v3 prefix (368 bytes total):
+minimum current weight, reactive current weight, reserved sigma, enabled flag.
+The existing previousView offset stays 288. Resource bindings and signal/guide
+formats are unchanged; separate v4 scalar/HDR production and diagnostic pipelines
+keep old uniform sizes 208/288/352 intact. Diagnostics use the existing optional
+acceptance binding/colors and fail independently from core v4. Pool binding leases
+are keyed by selected layout and uniform size. No new image or persistent moment
+storage is allocated. Per-key mode 3 denotes v4; switching modes restarts that key.
+
+For accepted history N=min(minimum contributing count,maxFrames),
+alpha0=1/min(N+1,maxFrames). Permitted adaptive updates use
+alpha=clamp(max(alpha0,minCurrentWeight,(1-geometricConfidence)*reactiveCurrentWeight,
+reactivity*reactiveCurrentWeight),0,1), with reactivity=0 until meaningful current
+statistics are implemented. Scalar/GI and confidence-premultiplied reflection
+mixing retain their existing arithmetic, using oldWeight=1-alpha. Full support
+retains the floor; partial support can increase the current contribution. Rejected
+correspondence restarts at current weight one/count one. Counts still increment
+once and are bounded; trust-count adjustment is deferred to P4.3.
+
+When the authored freeze is effective and minimum valid count is saturated, v4
+skips the adaptive override and preserves the nonadaptive frozen result. The
+existing motion/3*maxFrames rolling window remains the only temporary freeze
+exception. Disabling adaptation selects the exact v3 baseline; missing v4 support
+also selects nonadaptive fallback. No neighborhood gathering, clipping, moments,
+new ray counts or detection of changing indirect illumination is claimed yet.
+
+Source/reference checks pass via tests/draw/temporal/phase4_source_checks.py, with
+Phase 2/3 checks retained. Settings codec, cached/reference native fixtures and
+runTemporalFootprintProbe(engine,shaderRoot,true) have been expanded as source;
+C++/shader compilation and all native pixels/visual/performance checks are not_run.
+Next step: P4.2 current-neighborhood statistics only.
+
+## P4.2 current-neighborhood statistics (source implementation)
+
+Opted-in v4 accepted/nonfrozen updates now have an internal CurrentStatistics
+helper for a bounded 3x3 raw-current-signal neighborhood. Each signal texel center
+maps independently to current receiver resolution. Only same nonzero token,
+finite coverage/signal, matching receiver/metadata depth, reconstructed current
+world distance within the existing absolute/relative tolerance, and compatible
+normalized current normal can contribute. No temporally resolved/output neighbor
+is read. The metric distance test conservatively restricts lateral separation as
+well as depth; strict thresholds may leave insufficient support.
+
+Uniform valid weights produce statistic mean/secondMoment/variance, statistic and
+componentwise RGB min/max and sampleCount. Scalar samples clamp to [0,1]; radiance
+uses nonnegative luminance with coefficients (.2126,.7152,.0722), retaining raw RGB
+for bounds. GI black with valid alpha is included. Reflection bounds include only
+confidence>1e-6 and roughness-eligible samples; zero-confidence misses retain their
+separate valid temporal meaning. Alpha/confidence and the output signal are not
+modified by this helper. Both backends use epsilon=1e-6 and float32 arithmetic.
+
+varianceValid is false below two valid samples, or for nonfinite statistics.
+No samples produce explicit zero fields/count zero, not usable clipping bounds.
+P4.3 must gate variance-driven behavior on varianceValid. In P4.2 the local result
+is reserved: reactivity remains zero and no clipping/count/output change consumes
+these statistics. Compilers may remove unused gathering until that consumer is
+implemented. No new ABI, image, moment storage or runtime cost is claimed.
+
+neighborhood_reference.py and Phase 2/3/4 source/reference checks pass. No shader
+compilation, native statistics/projection/transparent/HDR acceptance, visual test
+or benchmark was run. Next step is P4.3 clipping/reactivity/trust-count integration;
+moments remain P4.4.
+
+## P4.3 clipping, reactivity and effective trust (source implementation)
+
+Accepted, enabled, nonfrozen v4 updates now consume CurrentStatistics. With at least
+two valid samples and finite statistics, intersect statistic min/max with
+mean +/- historyClipSigma*sqrt(variance+1e-6). Scalar history clips to this interval.
+HDR uses historical nonnegative luminance and scales RGB by clipped/original
+luminance when the original exceeds 1e-6; near-zero history uses the componentwise
+current-neighborhood bounds. Empty/nonfinite intervals retain unclipped history
+and zero reactivity. Confidence/alpha is preserved independently.
+
+HDR scaled channels are bounded to [-65504,65504], the finite FP16 history storage
+range. Otherwise a target luminance valid in FP16 could push a saturated RGB
+channel beyond that format. This safety bound can prevent exact target luminance;
+luminance-only scaling can retain hue/chromatic artifacts, including equal-luminance
+color changes. It does not provide perfect specular reconstruction.
+
+Reactivity uses the original, unclipped historical scalar/luminance:
+clamp((abs(Lh-mean)-sigmaStd)/(abs(Lh-mean)+sigmaStd+1e-6),0,1).
+It feeds the P4.1 maximum-current-weight rule together with baseline alpha0,
+minimum weight and geometric support. Insufficient statistics leaves clipping off
+and reactivity zero, while support/minimum-weight adaptation remains available.
+Temporal reflection mixing remains confidence-premultiplied, with separate
+confidence accumulation and unpremultiplication only above its existing epsilon.
+Zero-confidence reflection misses do not contribute arbitrary RGB through alpha.
+
+When chosen alpha exceeds alpha0, cap previous effective count to
+min(N,max(1,1/max(alpha,1e-6)-1)) before incrementing once and bounding by maxFrames.
+The per-pixel guide count now measures trust and can be fractional, quantized by
+existing RGBA16F storage. It remains >=1 for valid prior history and <=maxFrames;
+geometry rejection restarts at one, uncovered pixels at zero. TemporalResult's CPU
+frameCount remains nominal consecutive scene frames and is not this trust value.
+An accepted alpha=1 can store count two (the specified cap has minimum one before
+the increment); geometry rejection still stores one.
+
+Already saturated valid pixels outside the motion window skip statistics/response
+entirely and keep their frozen result. Repeated reactivity, low support or a
+minimum weight above 1/maxFrames can keep effective trust below saturation, so
+nominal elapsed frameCount alone does not guarantee freezing. No motion-window,
+maxFrames, authored freeze preference or reset policy is changed. Disabling
+adaptation still selects the exact v3 baseline. No new uniform/binding, image,
+moment state, settings or synchronization is introduced.
+
+history_response_reference.py covers clipping/ranges, noise and insufficient
+support, unclipped reactivity, near-zero/HDR storage/chromatic limits, reflection
+miss/hit confidence, fractional trust and rejected/frozen/disabled paths. The
+optional adaptive footprint fixture now expects the constant-current clipping
+result and includes eight stable frames followed by a reactive step (GPU trust
+two versus CPU frameCount nine), saturated freeze and motion thaw. These C++
+assertions are source only. All source/reference checks pass; C++/shader compilation,
+native HDR/pixels/queued/freeze/visual quality and cost remain not_run. Next: P4.4
+optional temporal moments, with neighborhood-only v4 retained as the fallback.
+
+## P4.4 optional moments (source implementation)
+
+TemporalConfiguration appends momentShaderInterface (empty by default) and
+momentShaderPrefix (draw/temporal_accumulation_v5). Explicit draw.temporal.v5
+requires available v4 and RG16F sampled/storage/transfer support. It initializes
+its pipelines and one typed 1x1 zero-moment image independently; format/layout/
+shader/dummy initialization failure reports momentsAvailable()/momentsStatus()
+and retains neighborhood-only v4. There is no ordinary-frame retry. Built-in
+RendererDeferred provisions this optional interface while replay and adaptation
+remain default off. An external configuration with empty moment interface selects
+the v4 baseline; v1–v4/custom families retain their declared resource maps.
+
+V5 retains the exact 368-byte v4 uniform and adds sampled binding 19 (Metal texture
+17) for previous RG16F moments and storage binding 20 (Metal texture 18) for current
+RG16F moments. Its diagnostic family independently retains acceptance binding
+16/Metal14. Mode 4 denotes per-key v5; mode switches or missing predecessor moments
+restart that key. A missing predecessor binds the typed zero image, guarded by
+existing history-valid flags. Selected layout/uniform identity remains part of
+pool binding leases. No new settings, preference fields or full-signature payload
+are needed for the immutable optional interface.
+
+Each active v5 signal/view/layer owns a separate moment image at signal extent.
+History and per-slot previous/next invocations retain it until retirement, with
+the existing submitted/abandoned admission, pruning and cleanup drain. Moments
+are never shared between signals, views or transparent layers. Extra content cost
+is 4 bytes per signal pixel: 8.2944 decimal MB at 1080p or 33.1776 MB at 4K for one
+image, before current/previous/in-flight/external/pool retention and driver overhead.
+Scalar/HDR history sets become 30/36 bytes per signal pixel with moments. The
+existing pool byte accounting already handles RG16F; maxHistories/pruning remain,
+but idle-retention limits are not a cap on live images. The optional dummy adds
+one tiny allocation per v5 accumulator lifecycle, not per key/frame.
+
+Visibility moments use clamped visibility in [0,1]. HDR uses
+clamp(log2(1+max(luminance,0)),0,16); first/second moments are bounded by 16/256,
+so squaring cannot overflow half storage. Finite input validation precedes the
+transform. For reflection confidence-zero/epsilon misses the temporal statistic
+is zero, independent of arbitrary miss RGB; eligible confident hits use radiance.
+Moments track the raw incoming statistic, not the clipped resolved RGB or its
+alpha-weighted radiance. Current spatial moment statistics transform each valid
+neighbor before averaging (mean(log), not log(mean)). Alpha/confidence behavior
+in the color path stays separate.
+
+Each color candidate additionally requires a finite, in-range previous moment
+pair. Invalid pairs reject the joint tap locally (invalid-signal diagnostic color),
+so color/moments use exactly the same accepted taps, raw support and normalized
+weights. Moment variance tolerates half quantization by max(m2-m1*m1,0); it does
+not require m2>=m1*m1 before validation. Rejected color correspondence initializes
+current moments; uncovered/invalid signal clears them. Accepted moments mix with
+the same oldWeight/effective alpha as color. Frozen history transports the previous
+pair without blending current statistics; retained image owners are not mutated.
+
+V5 uses moment-domain previous mean versus current moment-domain spatial mean to
+estimate reactivity. Below four previous effective samples it uses only current
+spatial moment variance. From four samples onward it conservatively uses the
+maximum of current spatial and temporal variance, then applies sigma/epsilon in
+that same domain. Insufficient current support still gives zero reactivity.
+Linear neighborhood variance continues to control P4.3 luminance clipping;
+log variance is never fed into its linear bounds. Geometric/minimum floors, trust
+cap and literal saturated freeze remain unchanged.
+
+moments_reference.py and the Phase 2/3/4 source/reference checks pass. The native
+footprint source accepts (engine,shaderRoot,true,true), inspects retained RG16F
+pairs for every mask, same-alpha transport, old owners and frozen moments, but
+is uncompiled/unrun. Actual format/deployment, HDR precision, moment unavailability,
+queued per-key retention, pixels/visuals and costs remain not_run. P4.5 regression
+and visual acceptance sources are next; native execution still requires permission.
+
+## P4.5 regression/acceptance status
+
+Phase 4 regression sources now include a matched adaptive/nonadaptive scalar/HDR
+fixture and optional v4/v5 queued variants with moment/key retention. The combined
+half-quantized sequence reference covers changing and noisy signals, insufficient
+support, freeze/settling, drops/gaps, finite HDR, confidence and fallback. Source
+checks pass. Its convergence/noise numbers are reference-model evidence only.
+Production sources/defaults are unchanged in P4.5; C++/shader compilation and all
+native/visual acceptance remain not_run. The Phase 4 plan's P4.5 matrix records
+exact synthetic host entries, unavailable-module versus unavailable-format cases,
+controlled AO/reflected-only/GI/pan/edge scenes and common ROI/noise criteria.
+Global generation/frameCount alone cannot establish visual correctness.
+Next: P4.6 source cost/diagnostic review and handoff; no implicit native execution.
+
+## P4.6 opt-in adaptive diagnostic views and final source status
+
+TemporalDiagnosticView appends CurrentWeight=6, Reactivity=7, Variance=8 and
+EffectiveCount=9; prior values 0–5 are preserved. Renderer settings reflect these
+views plus temporalAdaptiveDiagnosticsAvailable. The accumulator exposes
+adaptiveDiagnosticsAvailable()/adaptiveDiagnosticsStatus(); availability is generic
+across supported canonical capture families, not a promise that a particular
+signal/layer currently has a capture. Renderer capability also requires metadata
+pass availability. Replay/adaptation are never enabled by selecting a view.
+
+TemporalInput appends diagnoseAdaptive=false. It is mutually exclusive with
+diagnoseAcceptance; requesting both throws before recording/mutating history.
+Only an admitted adaptive camera-depth v4/v5 domain and its available canonical
+metric pipeline allocate a signal-sized RGBA16F capture. Separate internal
+v4_metrics/v5_metrics families add storage binding 21/Metal texture19 to their own
+layouts, with the existing 368-byte uniform. Core/custom/v1–v5 and LocalHistory
+families never receive that binding. Canonical prefix guards and independent
+initialization failures preserve existing kernels; no ordinary retries occur.
+The matching optional metrics display uses its own pipeline/layout and the existing
+16-byte display resource ABI. Capture failure can leave core accumulation usable.
+
+The renderer requests only the latched diagnostic signal and exact opaque/
+transparent layer. recordDiagnostic requires the matching current sequence,
+recording completion owner and metadata token owner to use that capture. Stale,
+skipped or disabled captures are never reused. Missing capture displays amber
+(1,.5,0); unavailable display/metadata returns no diagnostic image. The display
+samples the capture at receiver extent and produces grayscale for the chosen
+channel, with alpha one. Zero tokens/nonfinite selected values are black.
+
+| View | Captured channel / interpretation |
+|---|---|
+| CurrentWeight | R: actual current contribution 1-oldWeight; one for covered restart, zero for accepted saturated freeze |
+| Reactivity | G: actual signal-change reactivity used by the selected v4/v5 path |
+| Variance | B: variance/(1+variance), a bounded visual encoding that can saturate at half precision |
+| EffectiveCount | A: post-response per-pixel trust count/maxFrames, not CPU nominal frameCount |
+
+Variance is the estimate used for response: linear scalar/luminance spatial
+variance in v4; bounded scalar/log-HDR spatial or max(spatial,temporal) variance
+in v5. These domains are not interchangeable physical units. Zero also means no
+statistics evaluated (rejected/frozen/insufficient support); it does not establish
+noise-free lighting. Counts are normalized and half-quantized visual values, not
+lossless numeric exports. Uncovered captures are all zero. The capture never
+modifies color, moments, counts or the acceptance decision, and toggling it keeps
+the same per-key history mode. LocalHistory and metric captures use separate
+families/images; only one kind is requested per invocation.
+
+Off/unselected keys add no per-frame capture or display work. Previous/in-flight
+captures and idle pool entries can remain retained. One selected metric capture
+adds 8*S bytes and a receiver display 8*R bytes per unique image, where S/R are
+signal/receiver pixel counts: 33.1776 decimal MB together when both are 1080p,
+before retained generations/slots/external owners/pool/driver overhead. No permanent
+adaptive telemetry image or CPU/GPU readback is added. Existing diagnosticCapture/
+diagnosticDisplay timing scopes include these optional paths; capture measures
+the decorated temporal pass, not isolated coloring cost. Disable diagnostics and
+signature-reference checks for production timing, and do not sum nested timings.
+
+The native adaptive source fixture's optional fifth metrics bool requests both
+metric and ordinary adaptive streams for FP16-tolerant color/guide/moment parity,
+four-channel displays, missing-capture amber, normalized trust, cold/frozen/thaw
+values, mutual-exclusion rejection and toggled-capture chronology. It deliberately
+requests multiple views/controls, unlike the one-view renderer; it is not a cost
+benchmark. All source/reference checks pass; compilation and native/visual/timing
+acceptance remain not_run. Phase 4 source work is complete as
+implemented_unverified. Replay/adaptive defaults remain off; P5.1 integration audit
+is next, with no release tuning or native quality/performance claim.
+
+## Phase 5 final source handoff
+
+Status: `implemented_unverified`. Source integration and validation protocols are
+prepared; C++/shader compilation, Vulkan/Metal pixels, SDK/editor/visual behavior,
+measured memory and performance remain not_run. No optimization was selected without
+a measured bottleneck. Historical phase handoffs above do not supersede this status.
+
+Defaults remain temporal enabled, maxFrames=32, freezeAtLimit=false;
+adaptiveEnabled=false, minCurrentWeight=.03125, reactiveCurrentWeight=.25 and
+historyClipSigma=3. Renderer metadata replay remains temporalSurfaceEnabled=false.
+Opting in still requires actual interface/format availability; unavailable optional
+families fall back to compatible earlier paths. No native evidence supports enabling
+replay or adaptation by default or claiming these parameters are tuned.
+
+The temporary freeze override reacts to detected scene instance-transform changes,
+including animation and queued programmatic edits, rather than mouse/key activity.
+Unrelated UI gestures must not open the rolling window. The model editor's mouse
+input and typed numeric transform edit no longer explicitly reset/reattach scenes;
+generic scene/material/component edits remain conservative. Light-transform edits
+still change lighting signatures. Authored freeze/maxFrames are never rewritten by
+motion; each valid per-key history owns its exact 3*maxFrames settling countdown.
+
+Rigid history cannot represent skinning, morphs or custom vertex deformation.
+Transparent/refraction composited motion and virtual reflection motion are not
+tracked exactly. Static receiver geometry does not describe indirect illumination
+or a reflected moving object; finite rolling/adaptation cannot guarantee convergence.
+Lighting changes after a saturated freeze without detected motion or a reported
+revision/reset may remain stale. In-place resource/custom shader changes absent from
+existing revisions require explicit invalidation. Unsupported formats/interfaces,
+world-profile v1/v2 and custom v1 kernels retain their documented fallback limits.
+Renderer rigid correspondence requires a submitted predecessor; automatic device-loss
+recovery is not provided. These limits are independent of passing source checks.
+
+First pending native action, after explicit build/run authorization: compile using
+the existing platform setup, record actual backend/device/driver and deployed shaders,
+then run `bg2e::draw::tests::runTemporalProbe(engine, shaderRoot)` in an initialized
+stopped host and S01/F0 static convergence. Follow the full
+[validation protocol](../../../tests/draw/temporal/README.md#p52-reproducible-validation-protocol)
+after that baseline; unsupported is not pass. Actual P5.3 acceptance/P5.4 measurements
+and any evidence-based optimization remain pending. The plan resume pointer is
+[progress.md](../../../plans/temporal_acc_improvements/progress.md).
+
+Native subset update after the Phase 5 source handoff: runTemporalProbe passed on
+Metal and Vulkan/MoltenVK; scoped S10/F0 actual AO-temporal assertions passed on
+Metal. Vulkan S10 raster assertions passed with its AO capability path unavailable.
+Library/paired shaders compiled; broader matrix, SDK and benchmarks remain pending.
+See [native evidence](../../../plans/temporal_acc_improvements/validation_2026_10_23/README.md)
+for exact scope and commands. Defaults and implemented_unverified status are unchanged.

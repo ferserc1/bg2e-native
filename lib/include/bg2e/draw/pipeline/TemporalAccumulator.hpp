@@ -40,12 +40,15 @@ struct TemporalKey {
 };
 enum class TemporalDiagnosticView : uint32_t
 {
-    Off, Tokens, LocalHistory, Motion, PreviousPosition, PreviousNormal
+    Off, Tokens, LocalHistory, Motion, PreviousPosition, PreviousNormal,
+    CurrentWeight, Reactivity, Variance, EffectiveCount
 };
 struct TemporalSettings {
     bool enabled = true, freezeAtLimit = false;
     uint32_t maxFrames = 32;
     float absolutePositionThreshold = 0.02f, relativePositionThreshold = 0.01f, normalThreshold = 0.9f;
+    bool adaptiveEnabled = false;
+    float minCurrentWeight = 0.03125f, reactiveCurrentWeight = 0.25f, historyClipSigma = 3.0f;
 };
 struct TemporalConfiguration {
     std::filesystem::path shaderRoot;
@@ -56,6 +59,10 @@ struct TemporalConfiguration {
     std::string metadataShaderPrefix = "draw/temporal_accumulation_v2";
     std::string reprojectionShaderInterface; // Optional draw.temporal.v3; requires v2 metadata support.
     std::string reprojectionShaderPrefix = "draw/temporal_accumulation_v3";
+    std::string adaptiveShaderInterface; // Optional draw.temporal.v4; requires v3 reprojection.
+    std::string adaptiveShaderPrefix = "draw/temporal_accumulation_v4";
+    std::string momentShaderInterface; // Optional draw.temporal.v5; requires v4 and RG16F.
+    std::string momentShaderPrefix = "draw/temporal_accumulation_v5";
 };
 struct TemporalSurfaceMetadata {
     std::shared_ptr<gpu::Image> token, depth; // Both supplied or both absent.
@@ -77,6 +84,7 @@ struct TemporalInput {
     float maxRoughness = 1;
     TemporalSurfaceMetadata metadata;
     bool diagnoseAcceptance = false; // Optional built-in diagnostic kernel; no change to history samples.
+    bool diagnoseAdaptive = false; // Optional canonical v4/v5 metrics; mutually exclusive with acceptance.
 };
 struct TemporalResult {
     gpu::Image* image = nullptr;
@@ -98,12 +106,15 @@ class BG2E_API TemporalAccumulator {
     virtual void beginFrame(uint32_t slot, uint64_t serial, uint64_t sceneFrameNumber, bool sceneMotion = false);
     virtual TemporalResult record(const TemporalInput& input);
     // GPU-only diagnostic at receiver extent. Empty if optional support/metadata is absent.
-    // LocalHistory: red restart/first sample, green accepted, black uncovered,
-    // amber when this key has no acceptance diagnostic in the current scene.
+    // LocalHistory: v1/v2 retain red restart, green accepted, black uncovered.
+    // Built-in v3 shows ordered rejection reasons and cyan/green partial/full support;
+    // see doc/api/draw/TemporalAccumulator.md. Amber means no current capture.
     std::shared_ptr<gpu::Image> recordDiagnostic(gpu::CommandBuffer& command, uint32_t slot, uint64_t serial,
         const TemporalKey& key, const TemporalSurfaceMetadata& metadata, TemporalDiagnosticView view);
     bool diagnosticsAvailable() const;
     bool surfaceDiagnosticsAvailable() const;
+    bool adaptiveDiagnosticsAvailable() const;
+    const std::string& adaptiveDiagnosticsStatus() const;
 
     virtual void invalidate(); // Logical reset; keeps submitted invocation owners alive.
     virtual void cleanup(); // Drains before releasing all owners.
@@ -114,12 +125,19 @@ class BG2E_API TemporalAccumulator {
     void setFreezeAtLimit(bool value);
     void setPositionThresholds(float absolute, float relative);
     void setNormalThreshold(float value);
+    // Validates the complete tuple; one invalidation on change, none for a no-op.
+    static void validateAdaptiveSettings(bool enabled, float minimum, float reactive, float sigma);
+    void setAdaptiveSettings(bool enabled, float minimum, float reactive, float sigma);
     virtual reflection::TypeInfo settingsType() const;
     virtual void* settingsInstance();
     virtual bool available() const;
     const std::string& status() const;
     virtual bool surfaceMetadataAvailable() const;
     const std::string& surfaceMetadataStatus() const;
+    virtual bool momentsAvailable() const;
+    const std::string& momentsStatus() const;
+    virtual bool adaptiveAvailable() const;
+    const std::string& adaptiveStatus() const;
     virtual bool surfaceReprojectionAvailable() const;
     const std::string& surfaceReprojectionStatus() const;
     uint64_t generation() const;
@@ -136,13 +154,13 @@ class BG2E_API TemporalAccumulator {
   protected:
     struct History {
         std::shared_ptr<const gpu::detail::RecordingCompletion> recording;
-        std::shared_ptr<gpu::Image> signal, position, normal;
+        std::shared_ptr<gpu::Image> signal, position, normal, moments;
         TemporalSurfaceMetadata metadata;
-        std::shared_ptr<gpu::Image> acceptance;
+        std::shared_ptr<gpu::Image> acceptance, metrics;
         TemporalView view;
         uint64_t sequence = 0, generation = 0, reset = 0;
         uint32_t count = 1;
-        uint32_t metadataMode = 0; // 0=v1, 1=token-only v2, 2=rigid camera-depth v3.
+        uint32_t metadataMode = 0; // 0=v1, 1=token-only v2, 2=rigid camera-depth v3, 3=adaptive v4, 4=moments v5.
         uint32_t rollingFramesRemaining = 0; // Subsequent consecutive scene records allowed to roll.
         SurfaceProfile profile{};
         gpu::Size2D surfaceExtent;
@@ -182,6 +200,22 @@ class BG2E_API TemporalAccumulator {
     std::array<std::shared_ptr<gpu::ShaderModule>,2> _reprojectionShaders, _reprojectionAcceptanceShaders;
     std::array<std::shared_ptr<gpu::ComputePipeline>,2> _reprojectionPipelines, _reprojectionAcceptancePipelines;
     std::string _reprojectionStatus = "Optional reprojection interface not requested";
+    std::shared_ptr<gpu::PipelineLayout> _adaptiveLayout, _adaptiveAcceptanceLayout;
+    std::array<std::shared_ptr<gpu::ShaderModule>,2> _adaptiveShaders, _adaptiveAcceptanceShaders;
+    std::array<std::shared_ptr<gpu::ComputePipeline>,2> _adaptivePipelines, _adaptiveAcceptancePipelines;
+    std::string _adaptiveStatus = "Optional adaptive interface not requested";
+    std::shared_ptr<gpu::PipelineLayout> _momentLayout, _momentAcceptanceLayout;
+    std::array<std::shared_ptr<gpu::ShaderModule>,2> _momentShaders, _momentAcceptanceShaders;
+    std::array<std::shared_ptr<gpu::ComputePipeline>,2> _momentPipelines, _momentAcceptancePipelines;
+    std::shared_ptr<gpu::Image> _zeroMoments;
+    std::string _momentStatus = "Optional moment interface not requested";
+    std::array<std::shared_ptr<gpu::PipelineLayout>,2> _metricLayouts;
+    std::array<std::shared_ptr<gpu::ShaderModule>,4> _metricShaders;
+    std::array<std::shared_ptr<gpu::ComputePipeline>,4> _metricPipelines;
+    std::shared_ptr<gpu::PipelineLayout> _metricDisplayLayout;
+    std::shared_ptr<gpu::ShaderModule> _metricDisplayShader;
+    std::shared_ptr<gpu::ComputePipeline> _metricDisplayPipeline;
+    std::string _adaptiveDiagnosticStatus = "Optional adaptive metrics unavailable";
     std::shared_ptr<gpu::PipelineLayout> _diagnosticLayout;
     std::shared_ptr<gpu::ShaderModule> _diagnosticShader, _surfaceDiagnosticShader;
     std::shared_ptr<gpu::ComputePipeline> _diagnosticPipeline, _surfaceDiagnosticPipeline;

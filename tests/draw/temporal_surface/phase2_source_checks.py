@@ -4,6 +4,10 @@ from pathlib import Path
 import math
 import re
 import struct
+import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "temporal"))
+from feature_source import without_features
 
 ROOT = Path(__file__).resolve().parents[3]
 
@@ -95,11 +99,12 @@ def check_sources():
     assert "slot.camera.view,slot.camera.projection,slot.jitteredProjection,true" in renderer
     for lang in ["glsl", "metal"]:
         core = read(f"shaders/src/draw/lib/temporal.{lang}")
-        rigid = read(f"shaders/src/draw/lib/temporal_reprojection.{lang}")
-        # HDR confidence, GI validity, freeze/count and guide writes must remain identical.
-        assert core[core.index("            float oldCount"):] == rigid[rigid.index("            float oldCount"):]
-        for expression in ["previousPosition.xyz-expectedPosition.xyz", "dot(expectedDirection,previousNormal.xyz)",
-                           "length(previousCameraPosition.xyz)", "token != 0u && token == previousToken"]:
+        rigid = without_features(read(f"shaders/src/draw/lib/temporal_reprojection.{lang}"),
+                                 {"TEMPORAL_ADAPTIVE", "TEMPORAL_MOMENTS", "TEMPORAL_METRICS"})
+        # Temporal blend/freeze and guide writes remain identical after footprint reduction.
+        assert core[core.index("            float oldWeight"):].split("\n#if TEMPORAL_DIAGNOSTIC")[0] == rigid[rigid.index("            float oldWeight"):].split("\n#if TEMPORAL_DIAGNOSTIC")[0]
+        for expression in ["previousPosition.xyz-expectedPosition", "dot(expectedDirection,previousNormal.xyz)",
+                           "length(previousCameraPosition.xyz)", "previousToken == 0u || previousToken != token"]:
             assert expression in rigid, expression
         assert rigid.index("accepted = accepted && all(") < rigid.index("metadataPixel =")
         for diagnostic in [False, True]:
@@ -149,7 +154,8 @@ def check_sources():
                     for path in (ROOT / folder).iterdir() if path.is_file()]
     owned_files += ["tests/draw/temporal_surface/rigid_probe.hpp",
                     "tests/draw/temporal_surface/correspondence_probe.hpp",
-                    "tests/draw/temporal/queued_reprojection_probe.hpp"]
+                    "tests/draw/temporal/queued_reprojection_probe.hpp",
+                    "tests/draw/temporal/footprint_probe.hpp"]
     for name in owned_files:
         source = read(name)
         assert source.startswith("/*") and "GNU General Public License" in source, name

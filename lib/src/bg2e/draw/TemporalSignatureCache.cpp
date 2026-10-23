@@ -179,7 +179,11 @@ auto SignatureSettings::fields() const
         s.temporal.freezeAtLimit,
         s.temporal.absolutePositionThreshold,
         s.temporal.relativePositionThreshold,
-        s.temporal.normalThreshold);
+        s.temporal.normalThreshold,
+        s.temporal.adaptiveEnabled,
+        s.temporal.minCurrentWeight,
+        s.temporal.reactiveCurrentWeight,
+        s.temporal.historyClipSigma);
 }
 
 bool SignatureSettings::matches(const SignatureSettings& other) const
@@ -347,6 +351,10 @@ std::shared_ptr<const SignatureSettings> settings(const TemporalSignatureContext
     writer.append(key->temporal.absolutePositionThreshold);
     writer.append(key->temporal.relativePositionThreshold);
     writer.append(key->temporal.normalThreshold);
+    writer.append(key->temporal.adaptiveEnabled);
+    writer.append(key->temporal.minCurrentWeight);
+    writer.append(key->temporal.reactiveCurrentWeight);
+    writer.append(key->temporal.historyClipSigma);
     std::apply([&](const auto&... value)
     {
         (writer.append(value), ...);
