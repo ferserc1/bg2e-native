@@ -430,9 +430,13 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
             TypeInfoBuilder<RendererDeferred> upscale("bg2e.draw.upscaling.v1");
             auto method = upscale.property("method", &RendererDeferred::upscaleMethod, &RendererDeferred::setUpscaleMethod)
                 .displayName("Upscale").enumValue("None", RendererDeferred::UpscaleMethod::None);
-            if (std::dynamic_pointer_cast<FsrUpscaler>(deferred->upscaler()))
+            if (deferred->supportsUpscaleMethod(RendererDeferred::UpscaleMethod::FSR))
             {
                 method.enumValue("FSR", RendererDeferred::UpscaleMethod::FSR);
+            }
+            if (deferred->supportsUpscaleMethod(RendererDeferred::UpscaleMethod::MetalFX))
+            {
+                method.enumValue("MetalFX", RendererDeferred::UpscaleMethod::MetalFX);
             }
             upscale.property("mode", &RendererDeferred::upscaleMode, &RendererDeferred::setUpscaleMode)
                 .displayName("Mode").enumValue("Native (AA)", RendererDeferred::UpscaleMode::Native)

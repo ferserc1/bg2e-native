@@ -23,9 +23,10 @@ Rebind catalog generations on replacement; never keep borrowed instance pointers
 beyond that owner. Change settings at a stopped boundary and reset histories on
 camera/projection/extent discontinuities.
 
-ResamplingUpscaler is the bilinear default. FsrUpscaler is optional Vulkan
-integration; Metal/missing SDK/failure falls back. Native Metal reconstruction
-and DLSS are not implemented. See [settings and limits](Settings.md),
+RendererDeferred retains a disabled backend implementation by default:
+FsrUpscaler on Vulkan and MetalFXUpscaler on Metal. ResamplingUpscaler handles
+None and unavailable/failed reconstruction. DLSS is not implemented.
+See [settings and limits](Settings.md),
 [renderer injection](Renderer.md) and [deferred tutorial](../../tutorials/draw/10_deferred_renderer.md).
 
 ## Opaque object motion for FSR (P2.4)
@@ -107,3 +108,69 @@ the legacy camera pass. It also checks eight malformed pair/owner/format/extent/
 usage cases. Native FSR ownership across queued slots, abandoned recordings,
 interleaved preparation, resize, metadata on/off and real transparent/rigid scenes
 remain acceptance scenarios for an explicitly authorized run (P2.5).
+
+
+## Native MetalFX temporal reconstruction
+
+`<bg2e/draw/MetalFXUpscaler.hpp>` implements `Upscaler` through the low-level
+`gpu::metal::MetalFXBridge`. The bridge contains no draw/scene dependencies and
+keeps Objective-C/MetalFX types private to its macOS Objective-C++ implementation.
+Other platforms build an unavailable stub. The engine weak-links MetalFX and checks
+macOS 13 availability and `supportsDevice` before offering the native selector.
+
+`RendererDeferred::UpscaleMethod` retains None=0 and FSR=1 and adds MetalFX=2.
+`RendererConfiguration::upscaleMethod` and `upscaleMode` carry selection through
+renderer recreation; an unset method derives the initial injected implementation's
+enabled state. Explicit custom upscalers retain their implementation. Graphics
+preferences continue to expose only Upscale and Mode. None uses native extent and
+retains the chosen mode. Native/Quality/Balanced/Performance/Ultra Performance use
+100/60/55/50/35 percent of each output dimension, with exact integer floor and a
+one-pixel minimum for these presets.
+
+On macOS 14+, the bridge checks the device's reported minimum/maximum output/input
+scale independently for each rounded dimension. On macOS 13, it conservatively
+admits 1x through 2x, then requires scaler creation to succeed. Native AA and the
+35% preset are never assumed operational: an unsupported scale or rejected scaler
+configuration retains the selected mode/internal extent and uses **unjittered
+bilinear reconstruction**. Availability/status capability metadata identifies this
+fallback. No automatic SMAA substitute or extra AA/sharpness control remains.
+An explicitly injected final processor retains its existing fallback behavior.
+
+The input and output remain linear HDR RGBA16F before tone mapping. MetalFX uses
+auto exposure and preExposure=1; it does not perform the renderer's final tone map.
+A fullscreen pass converts preserved D16/D32 opaque depth to R32F. Motion is RG16F,
+previous-current unjittered internal framebuffer pixels with Y down, so the native
+motionVectorScale is (1,1). The existing complete camera/depth pass and optional
+opaque-token/object-motion selection pass are reused. Receiver replay remains an
+explicit renderer option; without valid metadata the camera/depth path is used.
+Transparent/refraction motion and reflected content remain approximate.
+
+`prepare` uses a centered Halton(2,3) sequence with at least eight phases, scaled
+by the square of the reconstruction ratio. It applies +2*x/width and -2*y/height
+clip translation. `record` recovers native pixel jitter from the actual captured
+jittered projection, preserving correctness across interleaved slot preparation.
+Only finite conventional perspective cameras with near=0/far=1 depth are admitted;
+other projections use unjittered bilinear reconstruction.
+
+The bridge queries all native texture usage requirements and allocates tracked,
+private per-slot input/output textures at the synchronized initialization/resize
+boundary. GPU blits adapt existing renderer-owned resources to those requirements.
+No per-frame scaler recreation, CPU readback, immediate submit, or explicit wait
+is introduced by MetalFX record/prepare. Borrowed opaque owners, intermediate
+images, descriptors, native textures and recording completion handles remain
+retained until acquired-slot retirement. Cleanup requires the existing drained
+renderer lifecycle boundary.
+
+Explicit camera cuts/history invalidation, projection changes, mode/extent changes,
+scene sequence gaps and abandoned predecessor recordings reset MetalFX history.
+Late predecessor rejection resets native history without changing already recorded
+jitter. Scaler initialization/allocation/encoding failures preserve the bilinear
+fallback. Asynchronous command errors disable the scaler for later frames until a
+synchronized rebuild; the failed GPU submission itself remains an error handled by
+the existing queue. Only a successful reconstruction sets temporalUpscaleApplied,
+which bypasses the final processor for that slot.
+
+Implementation references: [Apple descriptor API](https://developer.apple.com/documentation/metalfx/mtlfxtemporalscalerdescriptor)
+and [Apple temporal scaler API](https://developer.apple.com/documentation/metalfx/mtlfxtemporalscalerbase).
+No compilation, tests, shader compilation, native execution or acceptance validation
+was performed for this implementation. Platform and visual acceptance remain manual.

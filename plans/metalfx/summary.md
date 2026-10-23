@@ -32,34 +32,54 @@ Main integration points:
 - `lib/src/bg2e/draw/RenderSettingsPreferences.cpp`
 - Existing interfaces: `draw/Upscaler.hpp`, `draw/FsrUpscaler.hpp`, `gpu/vk/FidelityFXBridge.hpp`.
 
-## Remaining macOS work
+## Native macOS implementation
 
-### First milestone: reduced resolution plus existing AA
+The final milestone is implemented in source. The temporary resampling-plus-SMAA
+selection path was removed once native MetalFX integration was added.
 
-1. Extend the method enum with a stable MetalFX ID without renumbering None (0) or FSR (1). Offer None / MetalFX on Metal devices; do not advertise an operational MetalFX temporal implementation before it exists.
-2. Generalize `upscaleMethod()` and `setUpscaleMethod()` beyond their current FSR-specific dynamic cast and enabled flag. Preserve a stable settings target while switching methods.
-3. Apply the same mode percentages on Metal, including Native at 100% and None at native output extent. Vulkan initialization currently normalizes resolution policy; add the corresponding Metal policy and preserve the chosen mode across renderer recreation.
-4. Implement a clearly identified temporary MetalFX selection path using the existing `ResamplingUpscaler` and a final AA processor. Merely selecting the current resampler does not create or enable AA: ensure a compatible processor is instantiated and enabled.
-5. Keep this temporary path unjittered. Leave `temporalUpscaleApplied` false so the final AA processor runs after tone mapping and before overlays/UI.
-6. Keep graphics settings limited to Upscale and Mode, without restoring the previous independent resolution, sharpness, or AA toggles.
+- Added stable MetalFX method ID 2, preserving None=0 and FSR=1. Metal devices
+  retain a disabled native implementation and advertise MetalFX when device/OS
+  support is present. The settings target remains the renderer across switches.
+- Moved method/mode state into RendererConfiguration so renderer recreation retains
+  the chosen mode even while None is selected. Applied the same resolution policy
+  on Metal and Vulkan, with exact integer percentage rounding for the five presets.
+- Added draw::MetalFXUpscaler and a gpu::metal::MetalFXBridge with no higher-level
+  engine dependencies. The bridge uses an Objective-C++ implementation on macOS
+  and an unavailable C++ stub elsewhere.
+- Weak-linked the MetalFX framework and configured the native source's Objective-C++
+  ownership/exception/block options. These build-system and implementation sources
+  were authorized by the follow-up request to complete native MetalFX.
+- Checks macOS 13+, device support, and reported scale limits on macOS 14+.
+  macOS 13 conservatively admits 1x..2x before attempting scaler creation. Native
+  AA and 35% are admitted only if limits and scaler creation permit them.
+- Unsupported scales/configurations retain the selected mode and internal extent
+  and use unjittered bilinear reconstruction with explicit diagnostic status.
+- Uses linear HDR RGBA16F, auto exposure, preExposure=1, converted R32F opaque depth,
+  and complete RG16F opaque object/camera motion with input-pixel units and Y down.
+- Reuses the existing camera and opaque receiver motion shaders. Added paired
+  Metal/GLSL depth conversion shaders for D16/D32 input compatibility.
+- Added Halton projection jitter, dispatch jitter recovery from recorded matrices,
+  history resets, recording-admission checks, per-slot resource retention, and
+  asynchronous native command failure detection. Scalers/resources are recreated
+  only at initialization or the existing synchronized resize boundary.
+- Successful temporal reconstruction uses the renderer's per-slot flag to bypass
+  final AA. Failure preserves bilinear output and any injected final processor.
+- No automatic SMAA creation or additional graphics controls remain.
 
-### Final milestone: native MetalFX temporal reconstruction
+Implementation entry points:
 
-1. Implement a `draw::Upscaler` backed by MetalFX temporal scaling and the required low-level Metal bridge. Keep higher-level draw/scene dependencies out of `bg2e::gpu`.
-2. Check OS/device/API support and supported scale limits, including whether 35% and native-resolution temporal AA are supported. Define an explicit fallback when a requested mode cannot run.
-3. Integrate the MetalFX framework and Objective-C++ backend sources into the macOS build as needed. No CMake files were changed in this task; obtain authorization for build-system changes when continuing.
-4. Adapt the linear HDR input/output contract to MetalFX texture format, usage, exposure and color-processing requirements. Reconstruction currently runs before tone mapping.
-5. Supply matching opaque depth and motion vectors, with correct Metal coordinate conventions, jitter conventions, motion direction/units and depth convention. Reuse the opaque receiver metadata and camera/depth fallback where appropriate.
-6. Implement projection jitter through `prepare()`, submit frame inputs through `record()`, and report accurate availability/status and resource requirements.
-7. Maintain temporal history and reset it on camera cuts, projection changes, discontinuous scene frames, resize/mode changes and abandoned command recordings. Retain per-slot resources through GPU completion.
-8. Recreate the MetalFX scaler and extent-dependent resources only at the existing synchronized lifecycle boundary. Handle partial initialization, unsupported devices and runtime failures with a usable fallback.
-9. Return successful temporal reconstruction through the renderer's per-slot `temporalUpscaleApplied` flag so the old final AA pass is bypassed.
-10. Once real MetalFX is complete, remove the temporary reduced-resolution-plus-AA substitution and its automatic AA setup. Keep the user-facing selectors unchanged.
+- lib/include/bg2e/draw/MetalFXUpscaler.hpp
+- lib/src/bg2e/draw/MetalFXUpscaler.cpp
+- lib/include/bg2e/gpu/metal/MetalFXBridge.hpp
+- lib/src/bg2e/gpu/metal/MetalFXBridge.mm
+- lib/src/bg2e/gpu/metal/MetalFXBridge.cpp
+- shaders/src/draw/upscale/metalfx_depth.frag.{metal,glsl}
+- lib/CMakeLists.txt
 
 ## Compatibility and follow-up considerations
 
 - Previously saved `resolution`, writable `upscaler/*`, and `finalProcessor` settings are no longer graphics preference targets. The existing skip-unknown import policy can ignore them; strict imports can reject them. No legacy preference migration was added.
-- macOS currently exposes only None for the built-in resampler. MetalFX is intentionally left for the macOS implementation.
-- None preserves the existing final processor behavior if one was injected. This task does not create or enable a final processor automatically.
+- Unsupported MetalFX modes use bilinear reconstruction at the requested internal extent; the selected mode is not silently changed. No temporal-AA guarantee is made for that fallback.
+- None preserves the existing final processor behavior if one was injected. The native implementation does not create or enable a final processor automatically.
 - Custom injected upscalers are retained, but are not yet represented as extra entries in the new method selector. Generalize the selection registry when adding further implementations.
-- No compilation, tests, runtime execution or validation was performed, as explicitly requested. The Vulkan changes and macOS requirements still need manual feedback on their respective platforms.
+- No compilation, tests, runtime execution or validation was performed, as explicitly requested. The Vulkan changes and native MetalFX implementation still need manual review and acceptance on their respective platforms.

@@ -24,6 +24,7 @@
 #include <bg2e/draw/pipeline/OverlayPass.hpp>
 #include <stdexcept>
 #include <cstddef>
+#include <optional>
 
 namespace bg2e {
 namespace draw {
@@ -40,6 +41,8 @@ class FinalProcessor;
 // Describes a resolved single-sample rendering surface, not a window size.
 // Resolution policy is implemented later; minimized windows skip rendering.
 enum class IndirectLightingMode { IBL, AmbientOcclusion, GlobalIllumination };
+enum class UpscaleMethod { None = 0, FSR = 1, MetalFX = 2 };
+enum class UpscaleMode { Native = 0, Quality, Balanced, Performance, UltraPerformance };
 struct RendererConfiguration {
     gpu::Size2D outputExtent;
     gpu::Size2D internalExtent;
@@ -48,8 +51,8 @@ struct RendererConfiguration {
     std::vector<pipeline::LayerSelection> layers;
     std::shared_ptr<const environment::EnvironmentResources> environment;
     std::shared_ptr<pipeline::SoftShadowPass> softShadows; // Null selects the public default query pass.
-    std::shared_ptr<Upscaler> upscaler; // Null selects public bilinear reconstruction.
-    std::shared_ptr<ResolutionSettings> resolution; // Null preserves fixed/follow-output policy.
+    std::shared_ptr<Upscaler> upscaler; // Deferred: null retains a disabled backend upscaler plus bilinear fallback.
+    std::shared_ptr<ResolutionSettings> resolution; // Deferred normalizes this policy to the unified upscale selection.
     // Optional ordered post-final passes; shared ownership, one renderer lifecycle each.
     std::vector<std::shared_ptr<pipeline::OverlayPass>> overlays;
     std::shared_ptr<pipeline::RTAmbientOcclusion> ambientOcclusion; // Null selects disabled public default.
@@ -60,6 +63,9 @@ struct RendererConfiguration {
     std::shared_ptr<pipeline::TemporalAccumulator> temporal;
     std::shared_ptr<pipeline::DenoiseFilter> denoise;
     std::shared_ptr<pipeline::FinalProcessor> finalProcessor; // Optional post-tone-map AA, before overlays.
+    // Retained across renderer recreation. Unset method derives the injected implementation's initial selection.
+    std::optional<UpscaleMethod> upscaleMethod;
+    UpscaleMode upscaleMode = UpscaleMode::Native;
 };
 
 // Public runtime renderer family. The delegate exclusively owns its renderer

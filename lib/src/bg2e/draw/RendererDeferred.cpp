@@ -18,6 +18,7 @@
 
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/draw/FsrUpscaler.hpp>
+#include <bg2e/draw/MetalFXUpscaler.hpp>
 #include "TemporalSignatureCache.hpp"
 #include "TemporalCorrespondence.hpp"
 #include <bg2e/base/CpuProfile.hpp>
@@ -43,6 +44,19 @@
 
 namespace bg2e::draw {
 namespace {
+float upscaleModeScale(UpscaleMode value)
+{
+    switch (value)
+    {
+    case UpscaleMode::Native: return 1.0f;
+    case UpscaleMode::Quality: return 0.60f;
+    case UpscaleMode::Balanced: return 0.55f;
+    case UpscaleMode::Performance: return 0.50f;
+    case UpscaleMode::UltraPerformance: return 0.35f;
+    default: throw std::invalid_argument("Unknown upscale mode");
+    }
+}
+
 class SceneInputs : public scene::NodeVisitor {
   public:
     explicit SceneInputs(scene::Node* root)
@@ -111,10 +125,15 @@ struct RendererDeferred::GIUpsamplingState {
 bool RendererDeferred::giUpsamplingCompatible() const
 {
     // Format/semantic compatibility alone does not establish a custom receiver mapping.
-    return _globalIllumination && !_configuration.layers.empty() &&
-        _configuration.layers[0].layer && _configuration.globalIllumination &&
-        typeid(*_configuration.layers[0].layer) == typeid(pipeline::GBuffer) &&
-        typeid(*_configuration.globalIllumination) == typeid(pipeline::RTGlobalIllumination);
+    if (!_globalIllumination || _configuration.layers.empty())
+    {
+        return false;
+    }
+    const auto* layer = _configuration.layers[0].layer.get();
+    const auto* illumination = _configuration.globalIllumination.get();
+    return layer && illumination &&
+        typeid(*layer) == typeid(pipeline::GBuffer) &&
+        typeid(*illumination) == typeid(pipeline::RTGlobalIllumination);
 }
 
 void RendererDeferred::initializeGIUpsampling()
@@ -285,13 +304,26 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
     {
         configuration.resolution = std::make_shared<ResolutionSettings>();
     }
-    if (engine.backendType() == gpu::BackendType::Vulkan)
+    const auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(configuration.upscaler);
+    const auto metalFX = std::dynamic_pointer_cast<MetalFXUpscaler>(configuration.upscaler);
+    if (!configuration.upscaleMethod)
+    {
+        configuration.upscaleMethod = fsr && fsr->enabled() ? UpscaleMethod::FSR :
+            metalFX && metalFX->enabled() ? UpscaleMethod::MetalFX : UpscaleMethod::None;
+    }
+    const auto method = *configuration.upscaleMethod;
+    if ((method != UpscaleMethod::None && method != UpscaleMethod::FSR && method != UpscaleMethod::MetalFX) ||
+        (method == UpscaleMethod::FSR && (engine.backendType() != gpu::BackendType::Vulkan || (configuration.upscaler && !fsr))) ||
+        (method == UpscaleMethod::MetalFX && (engine.backendType() != gpu::BackendType::Metal || (configuration.upscaler && !metalFX))))
+    {
+        throw std::invalid_argument("Upscale method is incompatible with the configured backend/upscaler");
+    }
+    const float scale = upscaleModeScale(configuration.upscaleMode);
+    if (engine.backendType() == gpu::BackendType::Vulkan || engine.backendType() == gpu::BackendType::Metal)
     {
         // The unified settings own the scene extent, including native AA at 100%.
-        const auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(configuration.upscaler);
-        constexpr float scales[] = {1.0f, 0.60f, 0.55f, 0.50f, 0.35f};
         configuration.resolution->setEnabled(true);
-        configuration.resolution->setScale(fsr && fsr->enabled() ? scales[static_cast<unsigned>(_upscaleMode)] : 1.0f);
+        configuration.resolution->setScale(method == UpscaleMethod::None ? 1.0f : scale);
     }
     configuration.internalExtent = configuration.resolution->resolve(configuration.outputExtent, configuration.internalExtent);
     for (auto& layer : configuration.layers)
@@ -321,13 +353,23 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
         if (engine.backendType() == gpu::BackendType::Vulkan)
         {
             auto fsr = std::make_shared<FsrUpscaler>();
-            fsr->setEnabled(false);
+            fsr->setEnabled(method == UpscaleMethod::FSR);
             _configuration.upscaler = fsr;
         }
         else
         {
-            _configuration.upscaler = std::make_shared<ResamplingUpscaler>();
+            auto metalFX = std::make_shared<MetalFXUpscaler>();
+            metalFX->setEnabled(method == UpscaleMethod::MetalFX);
+            _configuration.upscaler = metalFX;
         }
+    }
+    if (auto retainedFsr = std::dynamic_pointer_cast<FsrUpscaler>(_configuration.upscaler))
+    {
+        retainedFsr->setEnabled(method == UpscaleMethod::FSR);
+    }
+    if (auto retainedMetalFX = std::dynamic_pointer_cast<MetalFXUpscaler>(_configuration.upscaler))
+    {
+        retainedMetalFX->setEnabled(method == UpscaleMethod::MetalFX);
     }
     if (_configuration.upscaler->identifier().empty() || _configuration.upscaler->label().empty())
     {
@@ -1773,46 +1815,58 @@ std::shared_ptr<ResolutionSettings> RendererDeferred::resolution() const
 
 RendererDeferred::UpscaleMethod RendererDeferred::upscaleMethod() const
 {
-    const auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(_configuration.upscaler);
-    return fsr && fsr->enabled() ? UpscaleMethod::FSR : UpscaleMethod::None;
+    return _configuration.upscaleMethod.value_or(UpscaleMethod::None);
+}
+
+bool RendererDeferred::supportsUpscaleMethod(UpscaleMethod value) const
+{
+    switch (value)
+    {
+    case UpscaleMethod::None: return true;
+    case UpscaleMethod::FSR:
+        return _engine && _engine->backendType() == gpu::BackendType::Vulkan &&
+            bool(std::dynamic_pointer_cast<FsrUpscaler>(_configuration.upscaler));
+    case UpscaleMethod::MetalFX:
+    {
+        const auto metalFX = std::dynamic_pointer_cast<MetalFXUpscaler>(_configuration.upscaler);
+        return _engine && _engine->backendType() == gpu::BackendType::Metal &&
+            metalFX && metalFX->backendSupported();
+    }
+    default: return false;
+    }
 }
 
 void RendererDeferred::setUpscaleMethod(UpscaleMethod value)
 {
-    auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(_configuration.upscaler);
-    if (value != UpscaleMethod::None && value != UpscaleMethod::FSR)
+    if (!supportsUpscaleMethod(value))
     {
-        throw std::invalid_argument("Unknown upscale method");
+        throw std::invalid_argument("Upscale method is incompatible with the configured backend/upscaler");
     }
-    if (value == UpscaleMethod::FSR && (!fsr || !_engine || _engine->backendType() != gpu::BackendType::Vulkan))
-    {
-        throw std::invalid_argument("FSR requires the Vulkan FSR upscaler");
-    }
-    if (fsr)
+    if (auto fsr = std::dynamic_pointer_cast<FsrUpscaler>(_configuration.upscaler))
     {
         fsr->setEnabled(value == UpscaleMethod::FSR);
     }
-    setUpscaleMode(_upscaleMode);
+    if (auto metalFX = std::dynamic_pointer_cast<MetalFXUpscaler>(_configuration.upscaler))
+    {
+        metalFX->setEnabled(value == UpscaleMethod::MetalFX);
+    }
+    _configuration.upscaleMethod = value;
+    setUpscaleMode(_configuration.upscaleMode);
 }
 
 RendererDeferred::UpscaleMode RendererDeferred::upscaleMode() const
 {
-    return _upscaleMode;
+    return _configuration.upscaleMode;
 }
 
 void RendererDeferred::setUpscaleMode(UpscaleMode value)
 {
-    float scale = 1.0f;
-    switch (value)
+    const float scale = upscaleModeScale(value);
+    _configuration.upscaleMode = value;
+    if (!_configuration.resolution)
     {
-    case UpscaleMode::Native: break;
-    case UpscaleMode::Quality: scale = 0.60f; break;
-    case UpscaleMode::Balanced: scale = 0.55f; break;
-    case UpscaleMode::Performance: scale = 0.50f; break;
-    case UpscaleMode::UltraPerformance: scale = 0.35f; break;
-    default: throw std::invalid_argument("Unknown upscale mode");
+        _configuration.resolution = std::make_shared<ResolutionSettings>();
     }
-    _upscaleMode = value;
     _configuration.resolution->setEnabled(true);
     _configuration.resolution->setScale(upscaleMethod() == UpscaleMethod::None ? 1.0f : scale);
     invalidateHistories();

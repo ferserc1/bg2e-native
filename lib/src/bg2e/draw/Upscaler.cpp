@@ -78,6 +78,34 @@ gpu::Size2D ResolutionSettings::resolve(gpu::Size2D output, gpu::Size2D fixed) c
     {
         return fixed;
     }
+    // Integer arithmetic keeps preset percentages exact at pixel boundaries.
+    // float(0.35) would otherwise round an exact 35% boundary down again.
+    uint32_t percent = 0;
+    if (_scale == 1.0f)
+    {
+        percent = 100;
+    }
+    else if (_scale == 0.60f)
+    {
+        percent = 60;
+    }
+    else if (_scale == 0.55f)
+    {
+        percent = 55;
+    }
+    else if (_scale == 0.50f)
+    {
+        percent = 50;
+    }
+    else if (_scale == 0.35f)
+    {
+        percent = 35;
+    }
+    if (percent)
+    {
+        return {std::max(1u,uint32_t(uint64_t(output.width) * percent / 100)),
+            std::max(1u,uint32_t(uint64_t(output.height) * percent / 100))};
+    }
     return {std::max(1u, uint32_t(std::floor(double(output.width) * _scale))),
         std::max(1u, uint32_t(std::floor(double(output.height) * _scale)))};
 }

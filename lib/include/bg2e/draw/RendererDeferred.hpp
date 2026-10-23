@@ -111,9 +111,10 @@ class BG2E_API RendererDeferred : public Renderer {
     std::shared_ptr<Upscaler> upscaler() const;
     std::shared_ptr<ResolutionSettings> resolution() const;
 
-    enum class UpscaleMethod { None = 0, FSR = 1 };
-    enum class UpscaleMode { Native = 0, Quality, Balanced, Performance, UltraPerformance };
+    using UpscaleMethod = bg2e::draw::UpscaleMethod;
+    using UpscaleMode = bg2e::draw::UpscaleMode;
     UpscaleMethod upscaleMethod() const;
+    bool supportsUpscaleMethod(UpscaleMethod value) const;
     void setUpscaleMethod(UpscaleMethod value);
     UpscaleMode upscaleMode() const;
     void setUpscaleMode(UpscaleMode value);
@@ -251,7 +252,6 @@ class BG2E_API RendererDeferred : public Renderer {
     std::string _initializationWarnings;
     std::shared_ptr<utils::BlueNoise> _sharedNoise;
     std::string _noiseStatus = "No shared atlas allocated; effects use injected noise or hash";
-    UpscaleMode _upscaleMode = UpscaleMode::Native;
     std::shared_ptr<ResamplingUpscaler> _fallback;
     UpscalerCamera _upscaleCamera;
 };

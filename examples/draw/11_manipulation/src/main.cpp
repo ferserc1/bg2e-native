@@ -143,8 +143,7 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         configuration.resolution = std::make_shared<draw::ResolutionSettings>();
         configuration.resolution->setEnabled(true);
         configuration.resolution->setScale(RenderScale);
-        configuration.upscaler = std::make_shared<draw::FsrUpscaler>();
-        std::static_pointer_cast<draw::FsrUpscaler>(configuration.upscaler)->setEnabled(false);
+        // Let the renderer retain the native backend upscaler, initially disabled.
         configuration.finalProcessor = std::make_shared<draw::pipeline::SMAAProcessor>();
         configuration.indirectLighting = draw::IndirectLightingMode::GlobalIllumination;
         configuration.globalIllumination = std::make_shared<draw::pipeline::RTGlobalIllumination>();

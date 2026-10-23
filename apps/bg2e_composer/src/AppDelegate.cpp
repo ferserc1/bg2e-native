@@ -22,7 +22,6 @@
 #include <bg2e/app/Keyboard.hpp>
 #include <bg2e/db/scene_save_dialog.hpp>
 #include <bg2e/app/MessageBox.hpp>
-#include <bg2e/draw/FsrUpscaler.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/draw/pipeline/SMAAProcessor.hpp>
 #include <bg2e/utils/ViewpointAnalyzer.hpp>
@@ -51,8 +50,7 @@ bg2e::draw::RendererConfiguration AppDelegate::configuration(
     bg2e::draw::RendererConfiguration result;
     result.overlays.push_back(overlay);
     result.resolution = std::make_shared<bg2e::draw::ResolutionSettings>();
-    result.upscaler = std::make_shared<bg2e::draw::FsrUpscaler>();
-    std::static_pointer_cast<bg2e::draw::FsrUpscaler>(result.upscaler)->setEnabled(false);
+    // Let the renderer retain the native backend upscaler, initially disabled.
     result.finalProcessor = std::make_shared<bg2e::draw::pipeline::SMAAProcessor>();
     return result;
 }

@@ -57,6 +57,11 @@ if(UNIX AND NOT APPLE)
     pkg_check_modules(WAYLAND_CLIENT REQUIRED IMPORTED_TARGET wayland-client)
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE PkgConfig::WAYLAND_CLIENT)
 elseif(APPLE)
+    # Keep the engine loadable on systems predating MetalFX. Runtime checks gate
+    # temporal scaling; the bridge uses manual Objective-C resource ownership.
+    target_link_options(${BG2E_TARGET_NAME} PRIVATE "SHELL:-weak_framework MetalFX")
+    set_source_files_properties("${CMAKE_CURRENT_SOURCE_DIR}/src/bg2e/gpu/metal/MetalFXBridge.mm"
+        PROPERTIES COMPILE_OPTIONS "-fno-objc-arc;-fobjc-exceptions;-fblocks")
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE
         "-framework UniformTypeIdentifiers"
         "-framework Cocoa"
