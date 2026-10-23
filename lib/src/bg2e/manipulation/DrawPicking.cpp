@@ -223,7 +223,7 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
     pipelineDescription.layout = layout.get();
     pipelineDescription.colorFormat = gpu::PixelFormat::R8G8B8A8_UNORM;
     pipelineDescription.depthFormat = gpu::PixelFormat::D32_SFLOAT;
-    pipelineDescription.cullMode = gpu::CullMode::None;
+    pipelineDescription.cullMode = gpu::CullMode::Back;
     pipelineDescription.depthState = gpu::DepthState{true, true, gpu::CompareOperation::LessOrEqual};
     pipelineDescription.addVertexBufferDescription(draw::Drawable::DrawMesh::vertexBufferDescription());
     auto pipeline = device->createGraphicsPipeline(pipelineDescription);
