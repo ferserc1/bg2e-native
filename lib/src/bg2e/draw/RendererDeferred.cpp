@@ -434,7 +434,7 @@ uint64_t RendererDeferred::temporalDiagnosticLayer() const
 
 void RendererDeferred::setTemporalDiagnosticLayer(uint64_t value)
 {
-    _temporalDiagnosticLayer = value;
+    _temporalDiagnosticLayer = value ? TransparentTemporalLayer : 0;
 }
 
 bool RendererDeferred::temporalDiagnosticsAvailable() const
@@ -460,10 +460,9 @@ pipeline::TemporalSurfaceMetadata RendererDeferred::temporalSurfaceMetadata(uint
         return {slot.opaqueTemporalSurface.token,slot.opaqueTemporalSurface.depth,
             slot.opaqueTemporalSurface.previousPosition,slot.opaqueTemporalSurface.previousNormal,slot.opaqueTemporalSurface.legacyCompatible,slot.opaqueTemporalSurface.motion};
     }
-    const auto found = slot.transparentTemporalSurfaces.find(layer);
-    return found == slot.transparentTemporalSurfaces.end() ? pipeline::TemporalSurfaceMetadata{} :
-        pipeline::TemporalSurfaceMetadata{found->second.token,found->second.depth,
-            found->second.previousPosition,found->second.previousNormal,found->second.legacyCompatible,found->second.motion};
+    const auto& metadata = slot.transparentTemporalSurface;
+    return {metadata.token,metadata.depth,metadata.previousPosition,metadata.previousNormal,
+        metadata.legacyCompatible,metadata.motion};
 }
 
 void RendererDeferred::updateTemporalSurfaceStatus()
@@ -797,7 +796,7 @@ void RendererDeferred::update(const FrameContext& frame)
     slot.diagnosticView = _temporalDiagnosticView;
     slot.diagnosticSignal = _temporalDiagnosticSignal;
     slot.diagnosticLayer = _temporalDiagnosticLayer;
-    slot.transparentTemporalSurfaces.clear();
+    slot.transparentTemporalSurface = {};
     updateTemporalSurfaceStatus();
     slot.recordTemporalSurfaces = _temporalSurfaceEnabled && temporalSurfaceAvailable() &&
         slot.preparedCorrespondence->identitiesValid;
@@ -959,8 +958,8 @@ void RendererDeferred::dispatch(size_t stage, const FrameContext& frame,
     gpu::GpuTimingScope gpuProfile(frame.commandBuffer, stage == 0 ? "layer.gbuffer" :
         stage == 1 ? "layer.deferredLighting" : stage == 2 ? "layer.final" :
         stage == 3 ? "layer.skybox" : "layer.other",
-        raster && raster->item ? (uint64_t(raster->item->objectId) << 32) | raster->item->submeshIndex : 0,
-        stage != 2 && raster && raster->item);
+        raster && (raster->item || !raster->transparentItems.empty()) ? TransparentTemporalLayer : 0,
+        stage != 2 && raster && (raster->item || !raster->transparentItems.empty()));
     const auto& selected = _configuration.layers.at(stage);
     Renderer::recordLayer(selected, {frame, selected.configuration, inputs, outputs, _scene.get(), raster});
 }
@@ -1030,14 +1029,15 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     pipeline::RenderTarget::copy(frame.commandBuffer, *slot.gbuffer[6], *slot.opaqueDepth);
     pipeline::RenderTarget::clear(frame.commandBuffer, *slot.colorA);
     dispatch(3, frame, {}, {{"color", slot.colorA.get()}, {"depth", slot.opaqueDepth.get()}});
-    auto composite = [&](gpu::Image* background, gpu::Image* output, uint64_t layer)
+    auto recordEffects = [&](uint64_t layer)
     {
+        auto* surfaceDepth = layer ? slot.opaqueDepth.get() : slot.gbuffer[6].get();
         auto resolveSignal = [&](pipeline::TemporalSignal kind, gpu::Image& signal, gpu::Image* material = nullptr,
             float maxRoughness = 1.0f)
         {
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
-            surface.depthOrPosition = slot.gbuffer[6].get();
+            surface.depthOrPosition = surfaceDepth;
             surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
             const pipeline::TemporalView view{slot.camera.view,slot.camera.projection,slot.jitteredProjection,true};
             const auto accumulated = [&]
@@ -1070,15 +1070,12 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             return _configuration.denoise->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                 {filteredKind,0,layer},*accumulated.image,surface,slot.camera.view,material,maxRoughness}).image;
         };
-        base::CpuProfileScope compositeCpu("renderer.composite");
-        gpu::GpuTimingScope compositeProfile(frame.commandBuffer, "renderer.composite", layer, layer != 0);
-        auto inputs = gbuffer;
-        inputs.push_back({"background", background});
+        std::vector<pipeline::ImageBinding> inputs;
         if (_queryShadows)
         {
             gpu::GpuTimingScope gpuProfile(frame.commandBuffer, "effect.shadows.record", layer, layer != 0);
             std::vector<pipeline::ImageBinding> visibility{{"shadow0", slot.shadows[0].get()}, {"shadow1", slot.shadows[1].get()}};
-            const std::vector<pipeline::ImageBinding> sources{{"normalEmission", slot.gbuffer[1].get()}, {"depth", slot.gbuffer[6].get()}};
+            const std::vector<pipeline::ImageBinding> sources{{"normalEmission", slot.gbuffer[1].get()}, {"depth", surfaceDepth}};
             pipeline::LayerSelection selection{_configuration.softShadows, _shadowConfiguration};
             Renderer::recordLayer(selection, {frame, selection.configuration, sources, visibility, _scene.get(), &raster});
             inputs.insert(inputs.end(), visibility.begin(), visibility.end());
@@ -1088,7 +1085,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             gpu::GpuTimingScope gpuProfile(frame.commandBuffer, "effect.ao.record", layer, layer != 0);
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
-            surface.depthOrPosition = slot.gbuffer[6].get();
+            surface.depthOrPosition = surfaceDepth;
             surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
             _configuration.ambientOcclusion->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                 uint32_t(frame.sceneFrameNumber),surface,*slot.ao});
@@ -1106,7 +1103,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             {
                 pipeline::SurfaceInputs surface;
                 surface.normal = slot.gbuffer[1].get();
-                surface.depthOrPosition = slot.gbuffer[6].get();
+                surface.depthOrPosition = surfaceDepth;
                 surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
                 _configuration.globalIllumination->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                     uint32_t(frame.sceneFrameNumber),surface,*slot.gi,slot.queue.lights(),_environment});
@@ -1127,7 +1124,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             gpu::GpuTimingScope gpuProfile(frame.commandBuffer, "effect.reflections.record", layer, layer != 0);
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
-            surface.depthOrPosition = slot.gbuffer[6].get();
+            surface.depthOrPosition = surfaceDepth;
             surface.inverseViewProjection = glm::inverse(slot.jitteredProjection*slot.camera.view);
             const auto camera = glm::vec3(glm::inverse(slot.camera.view)[3]);
             _configuration.reflections->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
@@ -1141,9 +1138,21 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             }
             inputs.push_back({"reflections",signal});
         }
+        return inputs;
+    };
+    auto composite = [&](gpu::Image* background, gpu::Image* output, uint64_t layer,
+        const std::vector<pipeline::ImageBinding>& effects)
+    {
+        base::CpuProfileScope compositeCpu("renderer.composite");
+        gpu::GpuTimingScope compositeProfile(frame.commandBuffer, "renderer.composite", layer, layer != 0);
+        auto inputs = gbuffer;
+        inputs[6].image = layer ? slot.opaqueDepth.get() : slot.gbuffer[6].get();
+        inputs.push_back({"background",background});
+        inputs.insert(inputs.end(),effects.begin(),effects.end());
         dispatch(1, frame, inputs, {{"color", output}}, &raster);
     };
-    composite(slot.colorA.get(), slot.colorB.get(),0);
+    const auto opaqueEffects = recordEffects(0);
+    composite(slot.colorA.get(),slot.colorB.get(),0,opaqueEffects);
     gpu::Image* current = slot.colorB.get();
     gpu::Image* next = slot.colorA.get();
     // Merge both transparent classes into one stable far-to-near order.
@@ -1155,12 +1164,23 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             transparent.push_back(&item);
         }
     }
-    const glm::vec3 camera(glm::inverse(slot.camera.view)[3]);
+    const auto cameraDepth = [&](const RenderQueue::Item* item)
+    {
+        glm::vec4 center(0,0,0,1);
+        if (const auto bounds = item->drawMesh->uploadedBounds(item->submeshIndex))
+        {
+            center = glm::vec4((bounds->minimum+bounds->maximum)*0.5f,1);
+        }
+        const auto viewPosition = slot.camera.view*item->worldMatrix*center;
+        const auto clipPosition = slot.camera.projection*viewPosition;
+        // Match the depth test for perspective, orthographic and explicit
+        // identity projections; radial distance gives the wrong overlap order.
+        const float depth = std::abs(clipPosition.w) > 1e-8f ? clipPosition.z/clipPosition.w : -viewPosition.z;
+        return std::isfinite(depth) ? depth : 0.0f;
+    };
     std::stable_sort(transparent.begin(), transparent.end(), [&](const auto* a, const auto* b)
     {
-        const auto da = glm::vec3(a->worldMatrix[3]) - camera;
-        const auto db = glm::vec3(b->worldMatrix[3]) - camera;
-        return glm::dot(da, da) > glm::dot(db, db);
+        return cameraDepth(a) > cameraDepth(b);
     });
     // Custom shaders/passes may deform vertices or write outside coverage.
     const auto* gbufferLayer = _configuration.layers[0].layer.get();
@@ -1175,59 +1195,82 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         lighting && lighting->debugView() == pipeline::LightingDebugView::Final &&
         final && final->debugView() == pipeline::FinalDebugView::Final;
     const auto extent = slot.gbuffer[0]->size();
+    auto transparentGbuffer = gbuffer;
+    transparentGbuffer[6].image = slot.opaqueDepth.get();
     const uint64_t fullArea = uint64_t(extent.width)*extent.height;
+    struct TransparentDraw {
+        const RenderQueue::Item* item;
+        std::optional<gpu::ScissorRegion> region;
+    };
+    std::vector<TransparentDraw> transparentDraws;
+    std::vector<const RenderQueue::Item*> transparentReceivers;
+    transparentDraws.reserve(transparent.size());
+    transparentReceivers.reserve(transparent.size());
     {
         base::CpuProfileScope transparentCpu("renderer.transparent");
         gpu::GpuTimingScope transparentTiming(frame.commandBuffer, "renderer.transparent");
-        for (const auto* item : transparent)
+        if (!_inspectOpaqueLayer)
         {
-            if (_inspectOpaqueLayer)
+            for (const auto* item : transparent)
             {
-                break;
-            }
-            raster.region.reset();
-            if (regions)
-            {
-                const auto bounds = item->drawMesh->uploadedBounds(item->submeshIndex);
-                if (bounds && item->worldMatrix[0][3] == 0 && item->worldMatrix[1][3] == 0 &&
-                    item->worldMatrix[2][3] == 0 && item->worldMatrix[3][3] == 1)
+                std::optional<gpu::ScissorRegion> region;
+                if (regions)
                 {
-                    raster.region = pipeline::projectProcessingRegion(bounds->minimum, bounds->maximum,
-                        slot.jitteredProjection*slot.camera.view*item->worldMatrix, extent);
+                    const auto bounds = item->drawMesh->uploadedBounds(item->submeshIndex);
+                    if (bounds && item->worldMatrix[0][3] == 0 && item->worldMatrix[1][3] == 0 &&
+                        item->worldMatrix[2][3] == 0 && item->worldMatrix[3][3] == 1)
+                    {
+                        region = pipeline::projectProcessingRegion(bounds->minimum, bounds->maximum,
+                            slot.jitteredProjection*slot.camera.view*item->worldMatrix, extent);
+                    }
                 }
+                base::CpuProfileScope::count("transparent.fullPixels",fullArea,"pixels");
+                if (region && (!region->width || !region->height))
+                {
+                    base::CpuProfileScope::count("transparent.skippedLayers",1);
+                    continue; // Full-scene tracing snapshots still include offscreen geometry.
+                }
+                const auto area = region ? uint64_t(region->width)*region->height : fullArea;
+                base::CpuProfileScope::count("transparent.rasterPixels",area,"pixels");
+                base::CpuProfileScope::count("transparent.compositionPixels",area,"pixels");
+                base::CpuProfileScope::count("transparent.fullExtentLayers",region ? 0 : 1);
+                transparentDraws.push_back({item,region});
+                transparentReceivers.push_back(item);
             }
-            base::CpuProfileScope::count("transparent.fullPixels", fullArea, "pixels");
-            if (raster.region && (!raster.region->width || !raster.region->height))
-            {
-                base::CpuProfileScope::count("transparent.skippedLayers", 1);
-                continue; // Tracing snapshots were already collected and built in full.
-            }
-            const auto area = raster.region ? uint64_t(raster.region->width)*raster.region->height : fullArea;
-            base::CpuProfileScope::count("transparent.rasterPixels", area, "pixels");
-            base::CpuProfileScope::count("transparent.compositionPixels", area, "pixels");
-            base::CpuProfileScope::count("transparent.receiverDomainPixels", fullArea, "pixels");
-            base::CpuProfileScope::count("transparent.fullExtentLayers", raster.region ? 0 : 1);
-            // Preserve every background texel, including refraction reads outside the
-            // write rectangle. The regional fullscreen pass loads this destination.
-            if (raster.region)
-            {
-                pipeline::RenderTarget::copy(frame.commandBuffer, *current, *next);
-                base::CpuProfileScope::count("transparent.backgroundCopyPixels", fullArea, "pixels");
-            }
-            pipeline::RenderTarget::copy(frame.commandBuffer, *slot.opaqueDepth, *slot.gbuffer[6]);
-            raster.item = item;
-            dispatch(0, frame, {}, gbuffer, &raster);
-            const uint64_t layer = (uint64_t(item->objectId)<<32)|item->submeshIndex;
+        }
+        if (!transparentReceivers.empty())
+        {
+            // Build the topmost transparent receiver once. Far-to-near color
+            // overwrites select the last covered surface without writing depth.
+            raster.item = nullptr;
+            raster.region.reset();
+            raster.transparentItems = {transparentReceivers.data(),transparentReceivers.size()};
+            base::CpuProfileScope::count("transparent.receiverDomainPixels",fullArea,"pixels");
+            base::CpuProfileScope::count("transparent.effectLayers",1);
+            dispatch(0,frame,{},transparentGbuffer,&raster);
             if (slot.recordTemporalSurfaces)
             {
-                gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalSurface",layer,true);
-                auto metadata = _temporalSurface->record(frame,raster,extent,surfaceInstances,slot.opaqueDepth.get(),0,layer,surfaceCamera);
-                // Every transparent receiver has its own retained token/depth
-                // owner. Never replace or borrow the opaque domain's metadata.
-                slot.transparentTemporalSurfaces.emplace(layer,std::move(metadata));
+                gpu::GpuTimingScope timing(frame.commandBuffer,"renderer.temporalSurface",TransparentTemporalLayer,true);
+                slot.transparentTemporalSurface = _temporalSurface->record(frame,raster,extent,surfaceInstances,
+                    slot.opaqueDepth.get(),0,TransparentTemporalLayer,surfaceCamera);
             }
-            composite(current, next,layer);
-            std::swap(current, next);
+            const auto transparentEffects = recordEffects(TransparentTemporalLayer);
+            raster.transparentItems = {};
+            for (const auto& draw : transparentDraws)
+            {
+                raster.item = draw.item;
+                raster.region = draw.region;
+                // Preserve behind-surface color/refraction while sharing the
+                // complete layer's already resolved effects across all items.
+                if (raster.region)
+                {
+                    pipeline::RenderTarget::copy(frame.commandBuffer,*current,*next);
+                    base::CpuProfileScope::count("transparent.backgroundCopyPixels",fullArea,"pixels");
+                }
+                dispatch(0,frame,{},transparentGbuffer,&raster);
+                composite(current,next,TransparentTemporalLayer,transparentEffects);
+                std::swap(current,next);
+            }
         }
     }
     slot.finalItem = raster.item;

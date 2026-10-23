@@ -241,3 +241,35 @@ scene motion includes animation/programmatic transforms, not UI gestures. Phase 
 and integration Python source/reference checks passed again; no compilation/native
 execution occurred. Final state implemented_unverified; resume at the first explicitly
 authorized P5.3 legacy baseline and S01/F0, then the full matrix and measurements.
+
+## User-directed transparent depth correction (2026-10-23)
+
+The user reported multi-GB growth when enabling transparent faces and requested
+restoring read-only use of opaque depth. This supersedes the private transparent
+depth seeding policy above: the transparent GBuffer and temporal metadata replay
+load the acquired slot's preserved opaque depth with depth writes disabled.
+Transparent metadata retains shared ownership of that image rather than allocating
+a depth image per item. Per-layer signal histories and color metadata remain.
+Depth-based transparent consumers use preserved opaque depth; this is a change
+from reconstructing a separately written transparent surface. Visual effects and
+actual memory savings require user validation. No build or native check was run.
+
+## Shared transparent effect domain correction (2026-10-23)
+
+The user's latest rendering contract supersedes per-submesh transparent histories
+and metadata. RendererDeferred now has two effect domains per signal/view: opaque
+0 and shared transparent 1 (TransparentTemporalLayer). All transparent and
+solid-transparent items are stably sorted by projected camera depth of uploaded
+bounds centers. A single ordered GBuffer receiver replay chooses the last covered
+surface per pixel while loading opaque depth without writes. Shadows, AO, GI,
+reflections, temporal accumulation and denoising then run once for the complete
+transparent layer. Temporal metadata also has one shared transparent image set.
+
+Ordered per-item color/refraction composition reuses those effects. This adds a
+receiver raster replay but no per-object screen images or signal histories.
+Standalone TemporalAccumulator clients retain arbitrary view/layer keys. Renderer
+diagnostics use 0/1; legacy nonzero diagnostic values alias transparent 1. Custom
+GBuffer replacements must support the trailing RasterFrame::transparentItems batch.
+Depth continues to follow the opaque read-only contract from the preceding fix.
+Source implementation is complete; no build, source-test suite, native probe or
+VRAM/performance measurement was run. Updated fixtures remain unverified.

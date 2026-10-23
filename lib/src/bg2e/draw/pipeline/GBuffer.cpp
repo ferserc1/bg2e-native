@@ -76,6 +76,8 @@ void GBuffer::initialize(Engine& engine, const LayerConfiguration& configuration
     }
     description.addVertexBufferDescription(Drawable::DrawMesh::vertexBufferDescription());
     _pipeline = engine.device()->createGraphicsPipeline(description);
+    description.depthState->writeEnabled = false;
+    _transparentPipeline = engine.device()->createGraphicsPipeline(description);
 }
 
 void GBuffer::attachScene(std::shared_ptr<scene::Node>)
@@ -93,11 +95,24 @@ void GBuffer::update(const FrameContext&)
 void GBuffer::record(const PassContext& context)
 {
     const auto* raster = context.raster;
-    if (!_pipeline || &context.frame.engine != _engine || !raster || !raster->queue || !raster->frame || !raster->object)
+    if (!_pipeline || !_transparentPipeline || &context.frame.engine != _engine || !raster || !raster->queue || !raster->frame || !raster->object)
     {
         throw std::invalid_argument("GBuffer needs the current draw queue and bindings");
     }
+    if (raster->item && !raster->transparentItems.empty())
+    {
+        throw std::invalid_argument("GBuffer cannot select both a single item and a transparent batch");
+    }
     raster->queue->validate(context.frame.engine);
+    for (const auto* item : raster->transparentItems)
+    {
+        if (!item || (item->materialData.uvSets[1].z & MaterialTransparent) == 0)
+        {
+            throw std::invalid_argument("GBuffer transparent batch requires valid transparent items");
+        }
+    }
+    const bool transparent = raster->item || !raster->transparentItems.empty();
+    auto* pipeline = transparent ? _transparentPipeline.get() : _pipeline.get();
     auto& command = context.frame.commandBuffer;
     gpu::RenderingDescription rendering;
     for (size_t i = 0; i < 6; ++i)
@@ -113,19 +128,26 @@ void GBuffer::record(const PassContext& context)
     auto* depth = context.outputs.at(6).image;
     command.transition(depth, gpu::ImageLayout::DepthAttachment);
     rendering.depth = gpu::DepthAttachmentDescription{.image = depth,
-        .load = raster->item ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::Clear};
+        .load = transparent ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::Clear};
     rendering.scissor = raster->region;
     command.beginRendering(rendering);
-    command.bindPipeline(_pipeline.get());
-    command.bindResourceSet(_pipeline.get(), 0, raster->frame->set(context.frame));
+    command.bindPipeline(pipeline);
+    command.bindResourceSet(pipeline, 0, raster->frame->set(context.frame));
     const auto draw = [&](const RenderQueue::Item& item)
     {
-        command.bindResourceSet(_pipeline.get(), 1, raster->object->set(context.frame, item.objectId));
+        command.bindResourceSet(pipeline, 1, raster->object->set(context.frame, item.objectId));
         command.bindVertexBuffer(0, item.drawMesh->vertexBuffer());
         command.bindIndexBuffer(item.drawMesh->indexBuffer());
         item.drawMesh->drawSubmesh(&command, item.submeshIndex);
     };
-    if (raster->item)
+    if (!raster->transparentItems.empty())
+    {
+        for (const auto* item : raster->transparentItems)
+        {
+            draw(*item);
+        }
+    }
+    else if (raster->item)
     {
         draw(*raster->item);
     }
@@ -149,6 +171,7 @@ void GBuffer::cleanup()
     {
         _engine->device()->waitIdle();
     }
+    _transparentPipeline.reset();
     _pipeline.reset();
     _layout.reset();
     _vertex.reset();

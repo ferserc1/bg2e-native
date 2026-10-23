@@ -13,8 +13,9 @@ The existing renderer settings catalog exposes:
 - `temporalDiagnosticView`: Off, Surface tokens, Local history, Motion, Expected previous position, Expected previous normal.
 - `temporalDiagnosticSignal`: Visibility, Diffuse radiance, Reflected radiance.
 - `temporalDiagnosticLayer`: decimal text in the settings UI (reflection has no
-  uint64 scalar); zero for opaque, otherwise the exact transparent
-  `(uint64_t(objectId)<<32)|submeshIndex` layer from the current queue.
+  uint64 scalar); zero for opaque, one for the complete transparent receiver
+  layer (`RendererDeferred::TransparentTemporalLayer`). Legacy nonzero values
+  select this same shared layer.
 - `temporalDiagnosticsAvailable`: read-only token/acceptance kernel availability.
 - `temporalSurfaceDiagnosticsAvailable`: read-only motion/previous-geometry display availability.
 
@@ -70,7 +71,7 @@ synthetic; receiver depth and tokens are from the actual raster pass.
 A nearest alpha texture creates holes. The fixture compares token coverage against
 the actual GBuffer depth displayed through FinalLayer, pixel by pixel. Transparent
 submeshes get independent pairs, full clears outside coverage, preserved opaque
-metadata and private-depth occlusion behind the opaque wall. A derived/custom GBuffer
+metadata, shared-depth ownership across transparent submeshes, unchanged opaque depth values and read-only depth occlusion behind the opaque wall. A derived/custom GBuffer
 is explicitly unavailable. Disabling metadata leaves the Phase 0 renderer path.
 The native fixture also inserts a culled object before existing extraction items,
 checks changed object IDs and stable wall identity after warmup, and requires the
@@ -151,13 +152,20 @@ Frame/object bindings are unchanged. Normal texture/sampler reuse the GBuffer
 set 1 bindings 5/11, Metal texture/sampler 3, with the exact material UV/decode path.
 
 Outputs are token R32_UINT, motion RG16F, previousPosition RGBA32F and previousNormal
-RGBA16F plus private depth. All colors require sampled/color-attachment support,
+RGBA16F plus depth. All colors require sampled/color-attachment support,
 four simultaneous attachments and the backend-reported aggregate attachment bytes.
 A zero aggregate limit means no additional limit in the existing GPU contract.
 No new GPU capability API or implicit hardware-support claim is introduced.
-All outputs clear over the full receiver extent and retain independent pooled owners
-for opaque and each transparent invocation. Transparent private depth seeding and
-coverage remain unchanged. Retain all consumed image owners through completion.
+Color outputs clear over the full receiver extent and retain independent pooled
+owners for the opaque domain and one complete transparent receiver layer. Opaque replay uses private
+writable depth. Transparent replay shares the acquired slot's preserved opaque
+depth, loads it without clearing, and disables depth writes. It neither allocates
+nor seeds a private depth image per transparent item. The GBuffer transparent
+pipeline follows the same read-only depth policy. Shared depth follows the slot's
+reuse lifetime; color metadata remains independently retained. Retain all consumed
+image owners through GPU completion. Histories, filter outputs and metadata are
+shared across transparent submeshes. The fixture checks shared token/depth image
+identity and covered tokens from both submeshes in the same metadata image.
 
 `TemporalSurfaceInstance` adds optional trailing previousWorld/hasPreviousWorld;
 legacy aggregate callers without them mean a static current model. `record` adds

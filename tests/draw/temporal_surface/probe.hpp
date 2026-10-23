@@ -135,6 +135,8 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
         std::shared_ptr<gpu::Image> acceptance;
         std::shared_ptr<gpu::Image> diagnostic;
         TemporalSurfaceMetadata transparent;
+        std::vector<std::shared_ptr<gpu::Image>> transparentTokens;
+        std::vector<std::shared_ptr<gpu::Image>> transparentDepths;
         uint64_t layer = 0;
     };
     gpu::ImageDescription normalDescription;
@@ -192,8 +194,10 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
         {
             if (item.nodeId == frontNode->identifier() && item.drawMaterial->materialAttributes().isTransparent())
             {
-                snapshot.layer = (uint64_t(item.objectId)<<32)|item.submeshIndex;
+                snapshot.layer = RendererDeferred::TransparentTemporalLayer;
                 snapshot.transparent = renderer.temporalSurfaceMetadata(slot,snapshot.layer);
+                snapshot.transparentTokens.push_back(snapshot.transparent.token);
+                snapshot.transparentDepths.push_back(snapshot.transparent.depth);
             }
         }
         command->end();
@@ -362,7 +366,22 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
     engine.device()->waitIdle();
     require(transparent.transparent.token && transparent.transparent.depth &&
         transparent.transparent.token != transparent.metadata.token && transparent.transparent.depth != transparent.metadata.depth,
-        "Transparent receiver must own a separate full-extent pair seeded from opaque depth");
+        "Transparent tokens must be separate from opaque metadata replay");
+    require(transparent.transparentDepths.size() == front->submeshesCount() &&
+        std::all_of(transparent.transparentDepths.begin(),transparent.transparentDepths.end(),[&](const auto& depth)
+        {
+            return depth == transparent.transparent.depth;
+        }),"Transparent submeshes must share the preserved opaque depth image");
+    require(transparent.transparentTokens.size() == front->submeshesCount() &&
+        std::all_of(transparent.transparentTokens.begin(),transparent.transparentTokens.end(),[&](const auto& token)
+        {
+            return token == transparent.transparent.token;
+        }),"Transparent submeshes must share one layer-wide metadata image");
+    std::vector<uint8_t> opaqueDepthBytes, transparentDepthBytes;
+    transparent.metadata.depth->readPixels(opaqueDepthBytes,{},gpu::ImageLayout::ShaderReadOnly);
+    transparent.transparent.depth->readPixels(transparentDepthBytes,{},gpu::ImageLayout::ShaderReadOnly);
+    require(!opaqueDepthBytes.empty() && transparentDepthBytes == opaqueDepthBytes,
+        "Transparent GBuffer and metadata replay must preserve opaque depth values");
     renderer.setTemporalDiagnosticLayer(transparent.layer);
     const auto transparentView = record();
     engine.device()->waitIdle();
@@ -376,11 +395,16 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
     engine.device()->waitIdle();
     const auto transparentPixels = read(transparentDiagnostic);
     require(transparentPixels[0] == black && std::any_of(transparentPixels.begin(),transparentPixels.end(),[&](const auto& p) { return p != black; }),
-        "Transparent token must clear outside coverage, preserve holes and pass private opaque-depth occlusion");
+        "Transparent tokens must clear outside coverage, preserve holes and pass read-only opaque-depth occlusion");
+    const std::set<Pixel> transparentColors(transparentPixels.begin(),transparentPixels.end());
+    require(size_t(std::count_if(transparentColors.begin(),transparentColors.end(),[&](const auto& p)
+        {
+            return p != black;
+        })) == front->submeshesCount(),"Shared metadata must retain covered receivers from every transparent submesh");
     const auto opaquePixels = read(transparentView.diagnostic);
     require(opaquePixels[0] != black && opaquePixels[center] == opaquePixels[0],
         "Transparent replay must not overwrite the preserved opaque wall domain");
-    moved[3].z = 0.601f; // Transparent receiver behind the opaque wall must fail private depth.
+    moved[3].z = 0.601f; // Transparent receiver behind the opaque wall must fail the read-only depth test.
     frontNode->transform()->setMatrix(moved);
     record();
     const auto occluded = record();
@@ -394,7 +418,7 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
     engine.device()->waitIdle();
     const auto hiddenPixels = read(hiddenDiagnostic);
     require(std::all_of(hiddenPixels.begin(),hiddenPixels.end(),[&](const auto& p) { return p == black; }),
-        "Transparent private depth must reject a receiver behind preserved opaque depth");
+        "Shared read-only opaque depth must reject a transparent receiver behind the wall");
     renderer.setTemporalSurfaceEnabled(false);
     const auto disabled = record();
     engine.device()->waitIdle();

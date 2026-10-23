@@ -386,8 +386,8 @@ The maxFrames=1024 tail is 3072 subsequent scene records; a short run cannot pas
 Diagnostics below abbreviate Surface tokens (T), Local history (H), Motion (M),
 Expected previous position/normal (P/N), CurrentWeight (W), Reactivity (R), Variance
 (V) and EffectiveCount (C). Select each signal (visibility, diffuse, reflected)
-and the exact layer; layer zero is opaque, transparent layer is the current queue's
-`(uint64_t(objectId)<<32)|submeshIndex`. Save a clean ordinary image plus separate
+and the layer; layer zero is opaque, layer one is the complete transparent layer
+(`RendererDeferred::TransparentTemporalLayer`), shared by all transparent objects. Save a clean ordinary image plus separate
 raw-HDR diagnostic captures. Diagnostics bypass temporal upscaling, so FSR image
 acceptance requires a separate diagnostics-off run. H reason colors are profile
 specific; use the [API contract](../../../doc/api/draw/TemporalAccumulator.md).

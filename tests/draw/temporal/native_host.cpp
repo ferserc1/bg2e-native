@@ -45,6 +45,8 @@ class CapturingTemporal : public draw::pipeline::TemporalAccumulator {
 
     draw::pipeline::TemporalResult record(const draw::pipeline::TemporalInput& input) override
     {
+        require(input.key.layer == 0 || input.key.layer == draw::RendererDeferred::TransparentTemporalLayer,
+            "Renderer temporal storage must have only opaque and shared transparent domains");
         auto result = TemporalAccumulator::record(input);
         if (input.sceneFrameNumber == 31 && result.owner)
         {
@@ -135,16 +137,18 @@ static bool runS10(draw::Engine& engine, const std::filesystem::path& shaders,
         renderer.recordFinal(frame,*linear);
         require(!renderer.temporalSurfaceMetadata(frame.frameSlot).token,"F0 opaque metadata must be absent");
         std::set<uint64_t> current;
+        size_t transparentObjects = 0;
         for (const auto& item : renderer.queue().items())
         {
             if (item.drawMaterial->materialAttributes().isTransparent())
             {
-                const auto layer = (uint64_t(item.objectId)<<32)|item.submeshIndex;
+                ++transparentObjects;
+                const auto layer = RendererDeferred::TransparentTemporalLayer;
                 current.insert(layer);
                 require(!renderer.temporalSurfaceMetadata(frame.frameSlot,layer).token,"F0 transparent metadata must be absent");
             }
         }
-        require(current.size() == 2,"S10 requires two distinct transparent layers");
+        require(transparentObjects == 2 && current.size() == 1,"S10 requires two objects sharing one transparent effect layer");
         if (!sequence)
         {
             generation = renderer.historyGeneration();

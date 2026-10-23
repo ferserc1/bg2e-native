@@ -1131,3 +1131,50 @@ P4.6 completed 2026-10-23 — implemented_unverified; Phase 4 source complete.
   No CMake, GPU/backend/vendor, bake, FSR, ray count or Phase 5 tuning changes.
 - Next exact step: P5.1 only, current producer/consumer/invalidation/ownership audit;
   do not automatically execute P5.2–P5.6 or request/run native work on this handoff.
+
+## User-directed transparent depth correction (2026-10-23)
+
+- Status: implemented_unverified. User requested sharing opaque depth read-only
+  across transparent items instead of private per-item depth.
+- GBuffer and TemporalSurfacePass now select transparent pipelines with depth
+  testing enabled and writes disabled. Transparent attachments load existing
+  opaque depth. RendererDeferred no longer copies opaque depth back into the
+  GBuffer per transparent item; transparent effects bind preserved opaque depth.
+- TemporalSurfacePass retains the shared opaque image for transparent results;
+  only opaque replay allocates private depth. Updated API/lifecycle documentation.
+- Extended the existing fixture to assert shared depth across transparent
+  submeshes, unchanged opaque depth contents and rejection behind opaque geometry.
+  Fixture not compiled or executed. git diff --check passed.
+- Per-layer color metadata and signal/denoise histories remain. No measured VRAM
+  reduction or visual parity is claimed. Depth-based transparent reconstruction
+  now follows opaque depth; visual effect behavior remains unverified.
+- No CMake, GPU/backend, shader or texture format changes; no builds/native probes.
+  The prior Phase 5 handoff remains unchanged.
+
+## Shared transparent effect domain correction (2026-10-23)
+
+- Status: implemented_unverified. User requires one effect/history set for the
+  complete transparent layer, receiving effects from its topmost covered surfaces.
+- RendererDeferred separates effect generation from color composition. One sorted
+  transparent receiver batch feeds one shadow/AO/GI/reflection/temporal/denoise
+  invocation per signal; per-item color/refraction composition reuses the results.
+- Replaced the per-item metadata map with one transparent metadata result per slot.
+  Effect TemporalKey layer 0 remains opaque; TransparentTemporalLayer is stable 1.
+  Renderer diagnostic setters normalize legacy nonzero values to 1. Standalone
+  accumulator keys are unchanged.
+- Stable ordering now uses projected camera depth of uploaded submesh bounds
+  centers, with origin fallback, rather than radial distance from object origins.
+  This also preserves explicit identity-projection fixtures. Both transparent
+  classes share this order in receiver, metadata and color passes.
+- RasterFrame has optional trailing transparentItems. Built-in GBuffer and
+  TemporalSurfacePass support the ordered batch; metadata validates current item
+  ownership in linear-time set construction. Depth remains shared/read-only.
+- Updated native fixtures for one transparent temporal domain, shared token/depth
+  images and coverage from both submeshes. Added manual 1/4/22-object memory checks
+  and updated API/source guards. No fixtures or source-test suites were run.
+- git diff --check passed. C++/shader builds, native pixel/VRAM/cost checks remain
+  not_run by user instruction. No shader/GPU/backend/CMake/format changes.
+- Screen-image/history count now depends on receiver domains rather than object
+  count. Object bindings, geometry and raster work may still grow with the scene.
+  No measured reduction or performance/quality pass is claimed. Phase 5 remains
+  at its prior handoff; these are user-directed regression fixes.

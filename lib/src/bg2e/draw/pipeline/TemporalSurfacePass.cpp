@@ -17,7 +17,6 @@
  */
 
 #include <bg2e/draw/pipeline/TemporalSurfacePass.hpp>
-#include <bg2e/draw/pipeline/RenderTarget.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <algorithm>
@@ -26,6 +25,7 @@
 #include <stdexcept>
 #include <utility>
 #include <map>
+#include <unordered_set>
 #include <typeinfo>
 
 namespace bg2e::draw::pipeline {
@@ -155,12 +155,16 @@ void TemporalSurfacePass::initialize(Engine& engine, const RenderLayer& receiver
         description.addVertexBufferDescription(Drawable::DrawMesh::vertexBufferDescription());
         description.debugName = "draw temporal surface tokens";
         _pipeline = engine.device()->createGraphicsPipeline(description);
+        description.depthState->writeEnabled = false;
+        description.debugName = "draw temporal transparent tokens with read-only opaque depth";
+        _transparentPipeline = engine.device()->createGraphicsPipeline(description);
         _pool = std::make_shared<TemporaryResourcePool>(*engine.device(),_limits);
         _slots.resize(count);
-        _status = "Available: built-in receiver replay, uint32 tokens, rigid motion, previous geometry and private depth";
+        _status = "Available: built-in receiver replay, private opaque depth and shared read-only transparent depth";
     }
     catch (const std::exception& error)
     {
+        _transparentPipeline.reset();
         _pipeline.reset();
         _layout.reset();
         _vertex.reset();
@@ -219,15 +223,20 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
         throw std::invalid_argument("Temporal receiver extent exceeds device limits");
     }
     raster.queue->validate(frame.engine);
-    if (bool(raster.item) != bool(opaqueDepth))
+    if (raster.item && !raster.transparentItems.empty())
     {
-        throw std::invalid_argument("Only single transparent receivers require preserved opaque depth");
+        throw std::invalid_argument("Temporal replay cannot select both an item and a transparent batch");
+    }
+    const bool transparent = raster.item || !raster.transparentItems.empty();
+    if (transparent != bool(opaqueDepth))
+    {
+        throw std::invalid_argument("Only transparent receiver layers require preserved opaque depth");
     }
     if (opaqueDepth && (!opaqueDepth->isValid() || opaqueDepth->device() != _engine->device() || opaqueDepth->size() != extent ||
         opaqueDepth->pixelFormat() != _depthFormat || opaqueDepth->imageType() != gpu::ImageType::Image2D ||
-        !gpu::hasFlag(opaqueDepth->usage(),gpu::ImageUsage::Sampled) || !gpu::hasFlag(opaqueDepth->usage(),gpu::ImageUsage::TransferSrc)))
+        !gpu::hasFlag(opaqueDepth->usage(),gpu::ImageUsage::Sampled) || !gpu::hasFlag(opaqueDepth->usage(),gpu::ImageUsage::DepthStencil)))
     {
-        throw std::invalid_argument("Preserved opaque depth must match the sampled/transfer-source receiver depth");
+        throw std::invalid_argument("Preserved opaque depth must match the sampled receiver depth attachment");
     }
     std::map<uint32_t,TemporalSurfaceInstance> metadata;
     for (const auto& instance : instances)
@@ -241,30 +250,49 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
     auto invocation = std::make_shared<Invocation>();
     invocation->view = view;
     invocation->layer = layer;
-    if (raster.item)
+    std::unordered_set<const RenderQueue::Item*> currentItems;
+    if (transparent)
     {
-        const auto found = std::find_if(raster.queue->items().begin(),raster.queue->items().end(), [&](const auto& item)
+        currentItems.reserve(raster.queue->items().size()*2);
+        for (const auto& item : raster.queue->items())
         {
-            return &item == raster.item;
-        });
-        // Sorted queues hold copies, so accept either current queue collection.
-        const auto matches = [&](RenderQueueType type)
+            currentItems.insert(&item);
+        }
+        // Sorted queues hold copies of the extracted items.
+        for (auto type : {RenderQueueType::Transparent,RenderQueueType::SolidTransparent})
         {
-            const auto& items = raster.queue->queue(type);
-            return std::any_of(items.begin(),items.end(), [&](const auto& item)
+            for (const auto& item : raster.queue->queue(type))
             {
-                return &item == raster.item;
-            });
-        };
-        if (found == raster.queue->items().end() && !matches(RenderQueueType::Transparent) && !matches(RenderQueueType::SolidTransparent))
+                currentItems.insert(&item);
+            }
+        }
+    }
+    const auto appendTransparent = [&](const RenderQueue::Item* item)
+    {
+        if (!item)
+        {
+            throw std::invalid_argument("Transparent temporal batch contains an empty item");
+        }
+        if (!currentItems.contains(item))
         {
             throw std::invalid_argument("Transparent temporal receiver must belong to the current extracted queue");
         }
-        if ((raster.item->materialData.uvSets[1].z & MaterialTransparent) == 0)
+        if ((item->materialData.uvSets[1].z & MaterialTransparent) == 0)
         {
-            throw std::invalid_argument("Single temporal receiver must use transparent GBuffer semantics");
+            throw std::invalid_argument("Transparent temporal receivers must use transparent GBuffer semantics");
         }
-        invocation->items.push_back(*raster.item);
+        invocation->items.push_back(*item);
+    };
+    if (!raster.transparentItems.empty())
+    {
+        for (const auto* item : raster.transparentItems)
+        {
+            appendTransparent(item);
+        }
+    }
+    else if (raster.item)
+    {
+        appendTransparent(raster.item);
     }
     else
     {
@@ -325,16 +353,19 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
         description.debugName = "draw temporal motion/previous geometry";
         *target = _pool->image(frame.commandBuffer,description);
     }
-    description.format = _depthFormat;
-    description.usage = DepthUsage;
-    description.debugName = "draw temporal private receiver depth";
-    invocation->result.depth = _pool->image(frame.commandBuffer,description);
-    slot.invocations.push_back(invocation); // Retain resources even if subsequent recording fails.
-    auto& command = frame.commandBuffer;
     if (opaqueDepth)
     {
-        RenderTarget::copy(command,*opaqueDepth,*invocation->result.depth);
+        invocation->result.depth = std::static_pointer_cast<gpu::Image>(opaqueDepth->shared_from_this());
     }
+    else
+    {
+        description.format = _depthFormat;
+        description.usage = DepthUsage;
+        description.debugName = "draw temporal private opaque receiver depth";
+        invocation->result.depth = _pool->image(frame.commandBuffer,description);
+    }
+    slot.invocations.push_back(invocation); // Retain resources even if subsequent recording fails.
+    auto& command = frame.commandBuffer;
     command.transition(invocation->result.token.get(),gpu::ImageLayout::ColorAttachment);
     command.transition(invocation->result.depth.get(),gpu::ImageLayout::DepthAttachment);
     gpu::RenderingDescription rendering;
@@ -356,13 +387,14 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
         .load = opaqueDepth ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::Clear,
         .store = gpu::AttachmentStoreOperation::Store,.clearDepth = 1.0f};
     command.beginRendering(rendering); // Full viewport/clear; deliberately no regional scissor.
-    command.bindPipeline(_pipeline.get());
-    command.bindResourceSet(_pipeline.get(),0,frameSet);
+    auto* pipeline = opaqueDepth ? _transparentPipeline.get() : _pipeline.get();
+    command.bindPipeline(pipeline);
+    command.bindResourceSet(pipeline,0,frameSet);
     for (size_t i = 0; i < invocation->items.size(); ++i)
     {
         const auto& item = invocation->items[i];
-        command.bindResourceSet(_pipeline.get(),1,objectSets[i]);
-        command.bindResourceSet(_pipeline.get(),2,invocation->bindings[i]->resources().get());
+        command.bindResourceSet(pipeline,1,objectSets[i]);
+        command.bindResourceSet(pipeline,2,invocation->bindings[i]->resources().get());
         command.bindVertexBuffer(0,item.drawMesh->vertexBuffer());
         command.bindIndexBuffer(item.drawMesh->indexBuffer());
         item.drawMesh->drawSubmesh(&command,item.submeshIndex);
@@ -379,7 +411,7 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
 
 bool TemporalSurfacePass::available() const
 {
-    return bool(_pipeline) && bool(_pool) && !_slots.empty();
+    return bool(_pipeline) && bool(_transparentPipeline) && bool(_pool) && !_slots.empty();
 }
 
 const std::string& TemporalSurfacePass::status() const
@@ -395,6 +427,7 @@ void TemporalSurfacePass::cleanup()
     }
     _slots.clear();
     _pool.reset();
+    _transparentPipeline.reset();
     _pipeline.reset();
     _layout.reset();
     _vertex.reset();

@@ -40,10 +40,10 @@ def main():
     assert 'invalidateHistories(' not in function(read('apps/bg2e_composer/src/AppDelegate.cpp'), 'void AppDelegate::queueInput(')
 
     renderer = read('lib/src/bg2e/draw/RendererDeferred.cpp')
-    assert 'slot.transparentTemporalSurfaces.emplace(layer,std::move(metadata))' in renderer
+    assert 'slot.transparentTemporalSurface = _temporalSurface->record' in renderer
     assert 'temporalSurfaceMetadata(frame.frameSlot,layer)' in renderer
     assert 'slot.opaqueTemporalSurface.motion,slot.opaqueTemporalSurface.token' in renderer
-    assert 'slot.transparentTemporalSurfaces.clear()' in renderer
+    assert 'slot.transparentTemporalSurface = {}' in renderer
     accumulator = read('lib/src/bg2e/draw/pipeline/TemporalAccumulator.cpp')
     assert 'previous->recording != input.command.recordingCompletion()' in accumulator
     assert 'previous->sequence == input.sceneFrameNumber' in accumulator

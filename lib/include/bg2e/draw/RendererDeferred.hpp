@@ -33,7 +33,6 @@
 #include <bg2e/draw/environment/SkyboxRenderer.hpp>
 #include <bg2e/draw/RenderQueueVisitor.hpp>
 #include <bg2e/scene/Component.hpp>
-#include <map>
 
 namespace bg2e::draw {
 class TemporalSignatureCache;
@@ -45,6 +44,8 @@ struct TemporalCorrespondenceFrame;
 // All lifecycle and prepareFrame calls require stopped background producers.
 class BG2E_API RendererDeferred : public Renderer {
   public:
+    static constexpr uint64_t TransparentTemporalLayer = 1;
+
     explicit RendererDeferred(std::filesystem::path shaderRoot = {}, uint32_t frameSlots = 0);
 
     const RendererConfiguration& configuration() const override;
@@ -97,11 +98,12 @@ class BG2E_API RendererDeferred : public Renderer {
     pipeline::TemporalSignal temporalDiagnosticSignal() const;
     void setTemporalDiagnosticSignal(pipeline::TemporalSignal value);
     uint64_t temporalDiagnosticLayer() const;
-    void setTemporalDiagnosticLayer(uint64_t value); // 0 opaque; exact transparent TemporalKey layer otherwise.
+    void setTemporalDiagnosticLayer(uint64_t value); // 0 opaque; nonzero selects the shared transparent layer (1).
     bool temporalDiagnosticsAvailable() const;
     bool temporalSurfaceDiagnosticsAvailable() const;
     bool temporalAdaptiveDiagnosticsAvailable() const;
-    // Snapshot only at a synchronized frame boundary. Owners remain valid across slot reuse.
+    // Snapshot at a synchronized frame boundary: layer 0 is opaque, any nonzero
+    // layer selects the shared transparent metadata. Shared depth follows slot reuse.
     pipeline::TemporalSurfaceMetadata temporalSurfaceMetadata(uint32_t slot, uint64_t layer = 0) const;
 
     std::shared_ptr<pipeline::FinalProcessor> finalProcessor() const;
@@ -151,8 +153,7 @@ class BG2E_API RendererDeferred : public Renderer {
         RenderQueue queue;
         std::shared_ptr<pipeline::TracingSnapshot> tracing;
         std::shared_ptr<const TemporalCorrespondenceFrame> preparedCorrespondence, recordedCorrespondence;
-        pipeline::TemporalSurfaceResult opaqueTemporalSurface;
-        std::map<uint64_t,pipeline::TemporalSurfaceResult> transparentTemporalSurfaces;
+        pipeline::TemporalSurfaceResult opaqueTemporalSurface, transparentTemporalSurface;
         uint64_t serial = 0;
         bool prepared = false, linearRecorded = false, finalRecorded = false;
         bool sceneMotion = false; // Accepted transform observation; consumed by temporal scheduling.

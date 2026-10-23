@@ -25,7 +25,8 @@
 namespace bg2e::draw::pipeline {
 // objectId selects this extracted queue's bindings; it is not persistent identity.
 // Canonical tokens come from renderer correspondence. Invalid matches still
-// draw/write depth, but emit zero so an occluder cannot expose a token behind it.
+// draw, but emit zero. Only opaque replay writes depth; transparent replay tests
+// against preserved opaque depth without modifying it.
 struct TemporalSurfaceInstance {
     uint32_t objectId = 0, token = 0;
     bool correspondenceValid = false;
@@ -46,7 +47,8 @@ struct TemporalSurfaceCamera {
 // Separate full-extent receiver replay for the exact built-in GBuffer contract.
 // initialize/cleanup require stopped users. Inputs/bindings belong to completed-slot
 // rings and remain alive through GPU completion. Returned images are immutable after
-// recording; retain every consumed image through its readers, and release before Device.
+// recording, except shared opaque depth, which follows the acquired-slot lifecycle.
+// Retain every consumed image through its readers, and release before Device.
 class BG2E_API TemporalSurfacePass {
   public:
     explicit TemporalSurfacePass(std::filesystem::path shaderRoot = {}, TemporaryPoolLimits limits = {});
@@ -57,9 +59,10 @@ class BG2E_API TemporalSurfacePass {
     void beginFrame(uint32_t slot, uint64_t serial);
     void cleanup();
 
-    // Null raster.item replays the opaque queue with freshly cleared private depth.
-    // A single transparent item requires preserved opaque depth (same extent/format,
-    // sampled + transfer-source), copied to a new private depth before rendering.
+    // No item/batch replays the opaque queue with freshly cleared private depth.
+    // A transparent item or ordered batch requires shared-owned preserved opaque depth
+    // (same extent/format, sampled + depth attachment). It is loaded for depth
+    // testing with depth writes disabled; result.depth shares that image.
     // raster.region is deliberately ignored: metadata clears/draws the full extent.
     // Missing instance entries emit zero. Supplied IDs must be unique/current.
     // Unsupported initialization returns empty metadata without recording GPU work.
@@ -88,7 +91,7 @@ class BG2E_API TemporalSurfacePass {
     Engine* _engine = nullptr;
     gpu::PixelFormat _depthFormat = gpu::PixelFormat::Undefined;
     std::shared_ptr<gpu::PipelineLayout> _layout;
-    std::shared_ptr<gpu::GraphicsPipeline> _pipeline;
+    std::shared_ptr<gpu::GraphicsPipeline> _pipeline, _transparentPipeline;
     std::shared_ptr<gpu::ShaderModule> _vertex, _fragment;
     std::shared_ptr<TemporaryResourcePool> _pool;
     std::vector<Slot> _slots;

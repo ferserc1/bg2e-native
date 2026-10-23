@@ -23,10 +23,13 @@
 #include <bg2e/draw/LightDataBinding.hpp>
 #include <bg2e/draw/EnvironmentDataBinding.hpp>
 #include <bg2e/draw/RenderQueue.hpp>
+#include <span>
 
 namespace bg2e::draw::pipeline {
 // All pointers are borrowed for one pass. Null item selects the opaque queue;
-// non-null item selects exactly one sorted transparent submesh.
+// non-null item selects exactly one sorted transparent submesh. A nonempty
+// transparentItems span instead selects a whole layer in caller-supplied
+// far-to-near order. Single-item and batch selections are mutually exclusive.
 struct RasterFrame {
     const RenderQueue* queue = nullptr;
     const RenderQueue::Item* item = nullptr;
@@ -35,5 +38,6 @@ struct RasterFrame {
     LightDataBinding* lights = nullptr;
     EnvironmentDataBinding* environment = nullptr;
     std::optional<gpu::ScissorRegion> region;
+    std::span<const RenderQueue::Item* const> transparentItems;
 };
 }

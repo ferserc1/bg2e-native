@@ -42,6 +42,23 @@ channels and preserved opaque depth support subsequent operations. Debug views
 inspect the last processed layer; `setInspectOpaqueLayer(true)` isolates opaque
 work. Debug output is not a whole-scene transparency composite.
 
+Transparent and solid-transparent submeshes are merged and stably sorted far to
+near using the projected depth of their uploaded bounds center (origin fallback).
+The layer first rasterizes all receivers in that order into the shared G-buffer,
+loading preserved opaque depth with writes disabled. Last covered fragments select
+the topmost transparent material/normal. AO, GI, reflections, shadows, temporal
+accumulation and denoising execute once for this complete receiver layer.
+
+Color composition then replays individual submeshes in the same order with the
+already resolved layer-wide effects. This preserves background alpha/refraction
+composition and regional writes without allocating effect histories per object.
+There is one opaque history domain (0) and at most one transparent history domain
+(`RendererDeferred::TransparentTemporalLayer`, 1) per signal/view. Metadata replay
+also records one shared transparent set, rather than one image set per submesh.
+The receiver raster replay adds draw work; it does not add G-buffer images.
+Custom G-buffer layers must honor the optional `RasterFrame::transparentItems`
+ordered batch in addition to the existing opaque and single-item selections.
+
 Ray-tracing scene resources are renderer-owned: one collected instance list,
 material/instance tables and TLAS per acquired frame, shared by shadows, AO/GI,
 reflections and both composition layers. Shadow-specific query tables are built
@@ -158,7 +175,7 @@ and [accumulation architecture](../../architecture/draw_offscreen_rendering.md).
 
 Temporal/denoise and effect/fullscreen/shadow invocation preparation reuse retired
 [temporary resources](TemporaryResourcePool.md). Histories and returned signal
-owners remain independent across in-flight slots and transparent layers. Controls
+owners remain independent across in-flight slots and the opaque/transparent domains. Controls
 are available on the exposed temporal, denoise and effect components through
 setPoolingEnabled(false) and poolStatistics(); change them at the normal synchronized
 update boundary. Reuse does not change the existing temporal-invalidating signature.
@@ -220,13 +237,21 @@ Frame/object bindings are unchanged. Normal texture/sampler reuse the GBuffer
 set 1 bindings 5/11, Metal texture/sampler 3, with the exact material UV/decode path.
 
 Outputs are token R32_UINT, motion RG16F, previousPosition RGBA32F and previousNormal
-RGBA16F plus private depth. All colors require sampled/color-attachment support,
+RGBA16F plus depth. All colors require sampled/color-attachment support,
 four simultaneous attachments and the backend-reported aggregate attachment bytes.
 A zero aggregate limit means no additional limit in the existing GPU contract.
 No new GPU capability API or implicit hardware-support claim is introduced.
-All outputs clear over the full receiver extent and retain independent pooled owners
-for opaque and each transparent invocation. Transparent private depth seeding and
-coverage remain unchanged. Retain all consumed image owners through completion.
+Color outputs clear over the full receiver extent and retain independent pooled
+owners for the opaque domain and one complete transparent receiver layer. Opaque replay uses private
+writable depth. Transparent replay shares the acquired slot's preserved opaque
+depth, loads it without clearing, and disables depth writes. It neither allocates
+nor seeds a private depth image per transparent item. The GBuffer transparent
+pipeline follows the same read-only depth policy. Shared depth follows the slot's
+reuse lifetime; color metadata remains independently retained. Retain all consumed
+image owners through GPU completion. Signal histories and color metadata are
+independent between the opaque and transparent domains, never between individual
+transparent objects. Diagnostics use layer 0 for opaque and layer 1 for transparent;
+legacy nonzero diagnostic layer values normalize to the shared transparent layer.
 
 `TemporalSurfaceInstance` adds optional trailing previousWorld/hasPreviousWorld;
 legacy aggregate callers without them mean a static current model. `record` adds

@@ -188,7 +188,7 @@ void registerTypes()
             .enumValue("Current sample weight",6).enumValue("Signal reactivity",7).enumValue("Variance",8).enumValue("Effective history count / limit",9);
         renderer.property("temporalDiagnosticSignal", &RendererDeferred::temporalDiagnosticSignal, &RendererDeferred::setTemporalDiagnosticSignal)
             .category("Diagnostics").enumValue("Visibility",0).enumValue("Diffuse radiance",1).enumValue("Reflected radiance",2);
-        // Reflection has no uint64 scalar; decimal text preserves the complete layer key.
+        // Keep the existing text setting: 0 is opaque, any nonzero value selects shared transparent layer 1.
         renderer.accessor<std::string>("temporalDiagnosticLayer", [](const RendererDeferred& o)
         {
             return std::to_string(o.temporalDiagnosticLayer());
