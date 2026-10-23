@@ -91,8 +91,9 @@ bool acceptsCandidate(uint instance, uint primitive, vec2 bary)
 bool visible(vec3 origin, vec3 direction, float distance)
 {
     rayQueryEXT query;
+    // The origin is already offset by the bias; retain nearby blockers.
     rayQueryInitializeEXT(query, topLevel, gl_RayFlagsTerminateOnFirstHitEXT, 0xffu, origin,
-        queryData.data.parameters.x, direction, distance);
+        1e-6, direction, distance);
     while (rayQueryProceedEXT(query))
     {
         if (rayQueryGetIntersectionTypeEXT(query, false) == gl_RayQueryCandidateIntersectionTriangleEXT &&

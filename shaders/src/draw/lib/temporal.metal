@@ -135,6 +135,7 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
 #endif
     if (accepted)
     {
+#if TEMPORAL_WORLD
         int2 previousPixel = int2(previousUV*float2(dataBlock.extent.zw));
         float4 previousPosition = previousPositionImage.read(uint2(previousPixel));
         float4 previousNormal = previousNormalImage.read(uint2(previousPixel));
@@ -142,6 +143,69 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         float threshold = dataBlock.rejection.x+dataBlock.rejection.y*length(position-dataBlock.cameraRoughness.xyz);
         accepted = previousPosition.w > 0.5 && previousNormal.w >= 1.0 &&
             length(previousPosition.xyz-position) <= threshold && dot(normal,previousNormal.xyz) >= dataBlock.rejection.z;
+#else
+        // Receiver guides and signals can have different pixel centers. Reproject
+        // the receiver displacement, retaining the signal's own subpixel offset.
+        float2 historyUV = uv;
+        if (dataBlock.flags.x != 0u)
+        {
+            historyUV += previousUV-sourceUV;
+        }
+        float2 historyPixel = historyUV*float2(dataBlock.extent.zw)-0.5;
+        int2 base = int2(floor(historyPixel));
+        float2 fraction = historyPixel-float2(base);
+        float4 historySum = float4(0.0);
+        float weightSum = 0.0;
+        float minimumCount = float(dataBlock.counts.y);
+        float threshold = dataBlock.rejection.x+dataBlock.rejection.y*length(position-dataBlock.cameraRoughness.xyz);
+        // Preserve fractional jitter motion instead of rounding every frame to a
+        // whole history texel, which can accumulate a directional drift.
+        for (int tap = 0; tap < 4; ++tap)
+        {
+            int2 offset = int2(tap & 1,tap >> 1);
+            int2 previousPixel = base+offset;
+            float weight = (offset.x == 0 ? 1.0-fraction.x : fraction.x)*
+                (offset.y == 0 ? 1.0-fraction.y : fraction.y);
+            if (weight <= 0.0 || any(previousPixel < int2(0)) ||
+                any(previousPixel >= int2(dataBlock.extent.zw)))
+            {
+                continue;
+            }
+            float4 previousPosition = previousPositionImage.read(uint2(previousPixel));
+            float4 previousNormal = previousNormalImage.read(uint2(previousPixel));
+            float4 candidate = previousImage.read(uint2(previousPixel));
+            if (previousPosition.w <= 0.5 || previousNormal.w < 1.0 ||
+                !(length(previousPosition.xyz-position) <= threshold) ||
+                !(dot(normal,previousNormal.xyz) >= dataBlock.rejection.z) ||
+                any((as_type<uint4>(candidate) & uint4(0x7f800000u)) == uint4(0x7f800000u)))
+            {
+                continue;
+            }
+#if !TEMPORAL_SCALAR
+            if (dataBlock.counts.x == 1u && candidate.a <= 0.5)
+            {
+                continue;
+            }
+            if (dataBlock.counts.x == 2u)
+            {
+                candidate.a = clamp(candidate.a,0.0,1.0);
+                candidate.rgb *= candidate.a;
+            }
+#endif
+            historySum += candidate*weight;
+            weightSum += weight;
+            minimumCount = min(minimumCount,previousNormal.w);
+        }
+        accepted = weightSum > 1e-6;
+        float4 previous = accepted ? historySum/weightSum : float4(0.0);
+#if !TEMPORAL_SCALAR
+        if (dataBlock.counts.x == 2u)
+        {
+            previous.rgb = previous.a > 1e-8 ? previous.rgb/previous.a : float3(0.0);
+        }
+#endif
+        float4 previousNormal = float4(0.0,0.0,0.0,minimumCount);
+#endif
         if (accepted)
         {
             float oldCount = min(previousNormal.w,float(dataBlock.counts.y));

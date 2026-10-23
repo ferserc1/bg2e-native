@@ -85,7 +85,8 @@ bool visible(float3 origin, float3 direction, float distance,
     ray shadowRay;
     shadowRay.origin = origin;
     shadowRay.direction = direction;
-    shadowRay.min_distance = dataBlock.parameters.x;
+    // The origin is already offset by the bias; retain nearby blockers.
+    shadowRay.min_distance = 1e-6;
     shadowRay.max_distance = distance;
     intersection_params params;
     params.assume_geometry_type(geometry_type::triangle);

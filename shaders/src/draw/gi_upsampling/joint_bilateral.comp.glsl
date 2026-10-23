@@ -43,7 +43,7 @@ bool finiteVector(vec3 value)
     return finiteValue(value.x) && finiteValue(value.y) && finiteValue(value.z);
 }
 
-bool receiver(ivec2 pixel, out vec3 normal, out float viewDepth)
+bool receiver(ivec2 pixel, out vec3 normal, out vec3 position, out float viewDepth)
 {
     vec3 encoded = texelFetch(sampler2D(normalImage,nearestSampler),pixel,0).rgb;
     float depth = texelFetch(sampler2D(depthImage,nearestSampler),pixel,0).r;
@@ -65,7 +65,7 @@ bool receiver(ivec2 pixel, out vec3 normal, out float viewDepth)
     {
         return false;
     }
-    vec3 position = world.xyz/world.w;
+    position = world.xyz/world.w;
     viewDepth = (dataBlock.worldToView*vec4(position,1.0)).z;
     return finiteVector(normal) && finiteVector(position) && finiteValue(viewDepth);
 }
@@ -78,10 +78,10 @@ void main()
         return;
     }
     ivec2 p = ivec2(pixel);
-    vec3 centerNormal;
+    vec3 centerNormal, centerPosition;
     float centerDepth;
     vec4 result = vec4(0.0);
-    if (!receiver(p,centerNormal,centerDepth))
+    if (!receiver(p,centerNormal,centerPosition,centerDepth))
     {
         imageStore(outputImage,p,result);
         return;
@@ -109,13 +109,15 @@ void main()
             }
             // Preserve the RTGI producer's exact receiver association and operation order.
             ivec2 h = min(ivec2((vec2(q)+0.5)/vec2(dataBlock.extent.zw)*vec2(dataBlock.extent.xy)),ivec2(dataBlock.extent.xy)-1);
-            vec3 normal;
+            vec3 normal, position;
             float depth;
-            if (!receiver(h,normal,depth))
+            if (!receiver(h,normal,position,depth))
             {
                 continue;
             }
-            float dz = abs(depth-centerDepth);
+            // Coplanar receivers remain compatible at grazing camera angles.
+            vec3 separation = position-centerPosition;
+            float dz = max(abs(dot(separation,centerNormal)),abs(dot(separation,normal)));
             float cosine = clamp(dot(normal,centerNormal),-1.0,1.0);
             float tolerance = max(dataBlock.thresholds.x,dataBlock.thresholds.y*max(abs(depth),abs(centerDepth)));
             if (!finiteValue(dz) || !finiteValue(cosine) || dz > tolerance || cosine < dataBlock.thresholds.z)

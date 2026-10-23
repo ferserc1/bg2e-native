@@ -38,7 +38,7 @@ bool finiteVector(float3 value)
     return finiteValue(value.x) && finiteValue(value.y) && finiteValue(value.z);
 }
 
-bool receiver(int2 pixel, constant GIUpsamplingUniforms& dataBlock, texture2d<float> normalImage, depth2d<float> depthImage, thread float3& normal, thread float& viewDepth)
+bool receiver(int2 pixel, constant GIUpsamplingUniforms& dataBlock, texture2d<float> normalImage, depth2d<float> depthImage, thread float3& normal, thread float3& position, thread float& viewDepth)
 {
     float3 encoded = normalImage.read(uint2(pixel)).rgb;
     float depth = depthImage.read(uint2(pixel));
@@ -60,7 +60,7 @@ bool receiver(int2 pixel, constant GIUpsamplingUniforms& dataBlock, texture2d<fl
     {
         return false;
     }
-    float3 position = world.xyz/world.w;
+    position = world.xyz/world.w;
     viewDepth = (dataBlock.worldToView*float4(position,1.0)).z;
     return finiteVector(normal) && finiteVector(position) && finiteValue(viewDepth);
 }
@@ -77,10 +77,10 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         return;
     }
     int2 p = int2(pixel);
-    float3 centerNormal;
+    float3 centerNormal, centerPosition;
     float centerDepth;
     float4 result = float4(0.0);
-    if (!receiver(p,dataBlock,normalImage,depthImage,centerNormal,centerDepth))
+    if (!receiver(p,dataBlock,normalImage,depthImage,centerNormal,centerPosition,centerDepth))
     {
         outputImage.write(result,pixel);
         return;
@@ -108,13 +108,15 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
             }
             // Preserve the RTGI producer's exact receiver association and operation order.
             int2 h = min(int2((float2(q)+0.5)/float2(dataBlock.extent.zw)*float2(dataBlock.extent.xy)),int2(dataBlock.extent.xy)-1);
-            float3 normal;
+            float3 normal, position;
             float depth;
-            if (!receiver(h,dataBlock,normalImage,depthImage,normal,depth))
+            if (!receiver(h,dataBlock,normalImage,depthImage,normal,position,depth))
             {
                 continue;
             }
-            float dz = abs(depth-centerDepth);
+            // Coplanar receivers remain compatible at grazing camera angles.
+            float3 separation = position-centerPosition;
+            float dz = max(abs(dot(separation,centerNormal)),abs(dot(separation,normal)));
             float cosine = clamp(dot(normal,centerNormal),-1.0,1.0);
             float tolerance = max(dataBlock.thresholds.x,dataBlock.thresholds.y*max(abs(depth),abs(centerDepth)));
             if (!finiteValue(dz) || !finiteValue(cosine) || dz > tolerance || cosine < dataBlock.thresholds.z)
