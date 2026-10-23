@@ -38,26 +38,72 @@ camera; `useSceneCamera()` restores it. Frame data is slot-owned; scene time and
 `sceneFrameNumber` advance with rendered scene work, independently of UI frames.
 The graph uses single-sample G-buffer/depth, lighting, ordered transparency,
 linear HDR reconstruction and one final tone/color operation. Six G-buffer
-channels and preserved opaque depth support subsequent operations. Debug views
+color attachments and preserved opaque depth support subsequent operations. Debug views
 inspect the last processed layer; `setInspectOpaqueLayer(true)` isolates opaque
 work. Debug output is not a whole-scene transparency composite.
 
+## Transparent layer
+
 Transparent and solid-transparent submeshes are merged and stably sorted far to
 near using the projected depth of their uploaded bounds center (origin fallback).
-The layer first rasterizes all receivers in that order into the shared G-buffer,
-loading preserved opaque depth with writes disabled. Last covered fragments select
-the topmost transparent material/normal. AO, GI, reflections, shadows, temporal
-accumulation and denoising execute once for this complete receiver layer.
+This is submesh sorting, not per-triangle order-independent transparency;
+intersecting or nonconvex surfaces can still require geometry splitting.
 
-Color composition then replays individual submeshes in the same order with the
-already resolved layer-wide effects. This preserves background alpha/refraction
-composition and regional writes without allocating effect histories per object.
+The renderer uses two existing depth images with different roles:
+
+- Preserved opaque depth contains only opaque geometry. Transparent work never
+  clears or writes it; skybox visibility and HDR reconstruction also use it.
+- Original G-buffer depth is reusable receiver scratch. Before the transparent
+  batch and before each individual composition item, the renderer copies preserved
+  opaque depth into this image. Receiver capture writes the actual transparent
+  surface depth to scratch, rejecting geometry behind opaque surfaces.
+
+Opaque depth alone cannot locate a transparent surface: over empty background it
+contains the far-depth clear value. Using it to reconstruct transparent positions
+produces background positions and incorrect lighting/effect receivers. Scratch
+retains the configured depth precision; no additional depth images are allocated.
+The copies add bandwidth proportional to the number of composition items.
+
+Transparent recording has two stages:
+
+1. Rasterize all visible receivers into the shared G-buffer with
+   `RasterFrame::transparentItems` and `captureReceiverDepth=true`. The depth test
+   selects the nearest surviving transparent receiver at each pixel. Compute
+   shadows, AO/GI as configured, reflections, temporal accumulation and denoising
+   once for this complete receiver layer, using its material/normal and actual
+   scratch depth. Consume transparent temporal metadata/diagnostics at this point,
+   before scratch is reused.
+2. Replay individual submeshes in the same far-to-near order. Restore scratch from
+   preserved opaque depth before each item so earlier transparent objects cannot
+   occlude later items. Lighting reconstructs that item's actual position and
+   samples the already resolved shared effects. Compose alpha and screen-space
+   refraction against the accumulated HDR background, alternating the two existing
+   color targets. A regional draw first copies the full accumulated background
+   into its destination and loads it to preserve pixels outside the write region.
+
+G-buffer material clears prepare receiver inputs; they do not clear the accumulated
+HDR color. There is no independent GI/reflection history for each transparent
+object. Effects represent the topmost receiver and are reused by surfaces behind
+it; this is an intentional approximation, not independent indirect lighting for
+every overlapping surface or recursive transparent light transport.
+
 There is one opaque history domain (0) and at most one transparent history domain
 (`RendererDeferred::TransparentTemporalLayer`, 1) per signal/view. Metadata replay
-also records one shared transparent set, rather than one image set per submesh.
-The receiver raster replay adds draw work; it does not add G-buffer images.
-Custom G-buffer layers must honor the optional `RasterFrame::transparentItems`
-ordered batch in addition to the existing opaque and single-item selections.
+also records one shared transparent set. Raw effect targets are reused in sequence
+within each acquired slot; histories and filtered owners remain separate between
+opaque and transparent domains and across in-flight work as required. At fixed
+resolution and quality, adding transparent submeshes does not allocate screen-sized
+effect histories or depth images per object. Draws, resource bindings and depth
+copies still grow with visible object count; geometry/tracing storage remains
+scene dependent.
+
+Custom G-buffer layers must honor both `RasterFrame::transparentItems` and
+`captureReceiverDepth`, in addition to opaque and single-item selections. Direct
+GBuffer transparent callers that leave `captureReceiverDepth=false` retain the
+read-only depth pipeline; that path does not generate a transparent position guide.
+See [transparent regions](TransparentRegions.md) for coverage and fallback rules.
+
+## Shared tracing resources
 
 Ray-tracing scene resources are renderer-owned: one collected instance list,
 material/instance tables and TLAS per acquired frame, shared by shadows, AO/GI,
@@ -89,8 +135,9 @@ occluders. Alpha cutoff zero preserves coverage; positive cutoff discards texels
 Configure every submesh: the standard cube has six face submeshes.
 
 The delivered example's HDR precision failure has been corrected and confirmed
-by the project lead. A separately reported transparency issue remains explicitly
-deferred; transparency implementation is not a claim of complete runtime acceptance.
+by the project lead. The project lead also confirmed restored transparent
+visibility after the receiver-depth correction. This observation does not establish
+complete Vulkan/Metal parity or acceptance of every transparency scenario.
 Public AO/GI/reflection tracing, effect histories, spatial filtering and manipulation
 are available. [Integrated bake](../bake/index.md) now supplies completed RGB UV2
 maps through [explicit material modes](BakedIndirectMaps.md). [Windowless draw frame execution](../app/OffscreenApplication.md#draw-execution)

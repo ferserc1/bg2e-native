@@ -507,6 +507,13 @@ partially, whereas alpha-tested fragments are either kept or discarded.
 `setRefractionFactor(0.1f)` controls screen-space refraction strength for the
 white variant; it is not a physical index of refraction.
 
+The two transparent classes share one far-to-near submesh sequence and one set of
+layer-wide GI/reflection effects. Each submesh still contributes its own alpha and
+refraction color against the accumulated background. The renderer preserves opaque
+depth and reuses G-buffer depth storage to capture transparent positions; adding
+transparent models does not allocate a depth image or effect history per model.
+See [transparent-layer behavior and limitations](../../api/draw/RendererDeferred.md#transparent-layer).
+
 The green variant explicitly sets `isSolid` to true. That flag is already true
 by default in `MaterialAttributes`, so this example does not establish a
 solid-versus-nonsolid comparison simply by omitting the setter on the first

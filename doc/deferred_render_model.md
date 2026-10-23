@@ -21,7 +21,9 @@ flowchart LR
     G --> R[Raw AO / GI / reflection signals]
     R --> T[Independent temporal histories and denoise]
     T --> L[Lighting and IBL composition]
-    L --> U[HDR reconstruction]
+    L --> TR[Shared transparent receivers and effects]
+    TR --> TC[Ordered per-submesh HDR composition]
+    TC --> U[HDR reconstruction]
     U --> F[Final color and optional SMAA]
     F --> O[Overlays]
     O --> UI[Retained output and UI presentation]
@@ -33,6 +35,23 @@ reconstruction is available without an optional SDK. FSR is optional Vulkan
 integration with explicit availability/fallback. Metal SDK-specific upscalers
 and DLSS are not provided. Tone mapping/color conversion occurs once after HDR
 reconstruction; debug surfaces retain their documented internal resolution.
+
+## Transparent composition
+
+Both transparent material classes form one far-to-near submesh sequence. The
+renderer captures the nearest transparent receivers once and computes one shared
+set of GI/reflection and other active effect signals for that layer. It then
+replays each submesh for alpha/refraction color composition against the accumulated
+HDR background. Behind surfaces reuse the topmost receiver's effects.
+
+Preserved opaque depth stays unchanged. The original G-buffer depth is reused as
+scratch, seeded from opaque depth before the receiver batch and each item, to
+capture actual transparent positions. This allocates no depth images or effect
+histories per object; it adds depth-copy bandwidth and raster work. Temporal
+histories have opaque domain 0 and transparent domain 1 per signal/view, with
+resources retained independently for in-flight frames. See [the complete layer
+contract](api/draw/RendererDeferred.md#transparent-layer) for sorting limitations,
+custom-pass requirements and metadata ownership.
 
 ## Lighting and effects
 

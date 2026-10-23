@@ -98,8 +98,14 @@ signal checks still apply. Metadata rejection restarts the local raw sample; it 
 not change coverage or globally reset histories. Previous metadata owners live with
 History and retained invocations, including submitted work across slots.
 
-Renderer selection uses opaque metadata only for layer zero and an exact map lookup
-for each transparent layer, never substituting opaque metadata for a missing layer.
+Renderer selection uses opaque metadata only for layer zero and the single shared
+transparent metadata set for layer one. It never substitutes opaque tokens or
+previous-surface metadata for a missing transparent receiver. During transparent
+effect recording, the renderer supplies the batch's actual scratch receiver depth
+alongside its tokens; the public metadata replay depth remains the preserved opaque
+visibility attachment. Transparent diagnostics consume the batch guide before
+per-item color composition reuses scratch. See [transparent depth ownership and
+recording order](RendererDeferred.md#transparent-layer).
 P0 motion thawing, reflection confidence, valid-black GI and nominal per-key counts
 are preserved. No ordinary submission, CPU wait or readback was added.
 

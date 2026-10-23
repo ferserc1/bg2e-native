@@ -160,9 +160,15 @@ Color outputs clear over the full receiver extent and retain independent pooled
 owners for the opaque domain and one complete transparent receiver layer. Opaque replay uses private
 writable depth. Transparent replay shares the acquired slot's preserved opaque
 depth, loads it without clearing, and disables depth writes. It neither allocates
-nor seeds a private depth image per transparent item. The GBuffer transparent
-pipeline follows the same read-only depth policy. Shared depth follows the slot's
-reuse lifetime; color metadata remains independently retained. Retain all consumed
+nor seeds a private depth image per transparent item. This read-only attachment
+belongs to metadata replay. RendererDeferred's material G-buffer separately reuses
+its original depth image as writable receiver scratch, seeded from the unchanged
+preserved opaque image before the receiver batch and each composition item.
+Effects and temporal consumers read actual batch receiver depth before per-item
+replay reuses scratch; public metadata depth still aliases preserved opaque depth.
+Check receiver scratch with `checkDeferredReceiverDepth` in the deferred fixture
+and verify that the shared opaque depth remains unchanged here. Shared depth
+follows the slot's reuse lifetime; color metadata remains independently retained. Retain all consumed
 image owners through GPU completion. Histories, filter outputs and metadata are
 shared across transparent submeshes. The fixture checks shared token/depth image
 identity and covered tokens from both submeshes in the same metadata image.

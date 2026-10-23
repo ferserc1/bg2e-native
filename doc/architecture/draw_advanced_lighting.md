@@ -23,6 +23,22 @@ participation is independent. Both blended classes remain excluded as secondary
 geometry/occluders. Hit lighting is an approximation, not arbitrary recursive PBR
 or transparent secondary transport. Native material sampling initially uses LOD0.
 
+## Transparent receivers
+
+Both transparent classes use one shared receiver/effect domain, independently of
+transparent submesh count. The full receiver batch selects the nearest visible
+transparent material, normal and actual depth; GI/reflections, temporal accumulation
+and denoise run once before ordered per-submesh color/refraction composition.
+Behind surfaces reuse these topmost effects. This does not implement recursive
+transparent secondary transport.
+
+Preserved opaque depth is immutable during transparent work. The existing G-buffer
+depth is reused as writable receiver scratch and restored from opaque depth before
+the batch and each item. Effects use batch scratch depth; item lighting uses its
+own captured scratch depth. Opaque depth is a visibility seed, not a transparent
+position guide. These copies add bandwidth without screen-sized allocations per
+object. See [the transparent-layer contract](../api/draw/RendererDeferred.md#transparent-layer).
+
 ## Capability and requested-state separation
 
 | Facility | Requirement / effective report |
