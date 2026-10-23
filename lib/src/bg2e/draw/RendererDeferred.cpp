@@ -26,6 +26,11 @@
 #include <typeinfo>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/Device.hpp>
+#include <bg2e/gpu/ShaderLib.hpp>
+#include <bg2e/gpu/ComputePipeline.hpp>
+#include <bg2e/gpu/ResourceSet.hpp>
+#include <bg2e/gpu/Sampler.hpp>
+#include <cstddef>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/UpdateVisitor.hpp>
@@ -68,6 +73,195 @@ class SceneInputs : public scene::NodeVisitor {
   private:
     bool _explicitEnvironment = false;
 };
+}
+
+struct RendererDeferred::GIUpsamplingState {
+    struct alignas(16) Uniforms {
+        glm::mat4 inverseViewProjection{1}, worldToView{1};
+        glm::uvec4 extent{0};
+        // Initial scene-scale quality choices, independent of tracing/denoise settings.
+        glm::vec4 thresholds{0.01f, 0.01f, 0.9f, 1.0f};
+        glm::vec4 parameters{0.5f, 0.1f, 1e-8f, 0.0f};
+    };
+    static_assert(sizeof(Uniforms) == 176);
+    static_assert(offsetof(Uniforms, extent) == 128);
+    static_assert(offsetof(Uniforms, thresholds) == 144);
+    static_assert(offsetof(Uniforms, parameters) == 160);
+
+    struct Invocation {
+        uint64_t layer = 0;
+        std::shared_ptr<gpu::Image> signal, normal, depth, output;
+        std::shared_ptr<gpu::Buffer> uniforms;
+        std::shared_ptr<gpu::ResourceSet> resources;
+    };
+    struct Slot {
+        uint64_t serial = 0;
+        bool prepared = false;
+        std::vector<Invocation> invocations;
+    };
+
+    std::shared_ptr<gpu::PipelineLayout> layout;
+    std::shared_ptr<gpu::ShaderModule> shader;
+    std::shared_ptr<gpu::Sampler> nearest;
+    std::shared_ptr<gpu::ComputePipeline> pipeline;
+    std::vector<Slot> slots;
+};
+
+bool RendererDeferred::giUpsamplingCompatible() const
+{
+    // Format/semantic compatibility alone does not establish a custom receiver mapping.
+    return _globalIllumination && !_configuration.layers.empty() &&
+        _configuration.layers[0].layer && _configuration.globalIllumination &&
+        typeid(*_configuration.layers[0].layer) == typeid(pipeline::GBuffer) &&
+        typeid(*_configuration.globalIllumination) == typeid(pipeline::RTGlobalIllumination);
+}
+
+void RendererDeferred::initializeGIUpsampling()
+{
+    if (!_engine || _giUpsampling || _targets.empty())
+    {
+        throw std::logic_error("GI upsampling initialization requires a clean renderer lifecycle and slots");
+    }
+    auto& device = *_engine->device();
+    if (!device.formatCapabilities(gpu::PixelFormat::R16G16B16A16_SFLOAT).supports(
+        gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage))
+    {
+        throw std::runtime_error("GI upsampling requires sampled/storage RGBA16F support");
+    }
+    // Publish only a complete state; partial initialization releases local owners.
+    auto state = std::make_shared<GIUpsamplingState>();
+    gpu::PipelineLayoutDescription description;
+    description.resourceBindings = {
+        {0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute},
+        {0,{1,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
+        {0,{2,1},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
+        {0,{3,2},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
+        {0,{4,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute},
+        {0,{5,3},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute}
+    };
+    state->layout = device.createPipelineLayout(description);
+    gpu::SamplerDescription nearest;
+    nearest.minFilter = nearest.magFilter = gpu::Filter::Nearest;
+    nearest.addressModeU = nearest.addressModeV = gpu::AddressMode::ClampToEdge;
+    nearest.maxLod = 0;
+    state->nearest = device.createSampler(nearest);
+    gpu::ShaderLib library(_shaderRoot, _engine->backendType());
+    state->shader = library.compute("draw/gi_upsampling/joint_bilateral", &device);
+    state->pipeline = device.createComputePipeline({state->shader.get(), state->layout.get()});
+    state->slots.resize(_targets.size());
+    _giUpsampling = std::move(state);
+}
+
+void RendererDeferred::resetGIUpsamplingSlots()
+{
+    // Only scene attachment/resize may discard every slot, after their device drain.
+    if (_giUpsampling)
+    {
+        for (auto& slot : _giUpsampling->slots)
+        {
+            slot = {};
+        }
+    }
+}
+
+void RendererDeferred::retireGIUpsamplingSlot(uint32_t index, uint64_t serial)
+{
+    if (!_giUpsampling)
+    {
+        return;
+    }
+    auto& slot = _giUpsampling->slots.at(index);
+    if (slot.prepared && slot.serial == serial)
+    {
+        throw std::logic_error("Retire the acquired GI upsampling slot only once per serial");
+    }
+    slot = {};
+    slot.serial = serial;
+    slot.prepared = true;
+}
+
+void RendererDeferred::cleanupGIUpsampling()
+{
+    // Caller owns the existing renderer lifecycle drain; never wait while recording.
+    _giUpsampling.reset();
+}
+
+std::shared_ptr<gpu::Image> RendererDeferred::recordGIUpsampling(gpu::CommandBuffer& command,
+    const std::shared_ptr<gpu::Image>& signal, const std::shared_ptr<gpu::Image>& normal,
+    const std::shared_ptr<gpu::Image>& depth, const glm::mat4& inverseViewProjection,
+    const glm::mat4& worldToView, const std::shared_ptr<gpu::Image>& output,
+    uint32_t index, uint64_t serial, uint64_t layer)
+{
+    if (!_giUpsampling || !signal || !output || signal->size() == output->size())
+    {
+        return signal;
+    }
+    auto& state = *_giUpsampling;
+    auto& slot = state.slots.at(index);
+    if (command.hasActiveScope() || !slot.prepared || slot.serial != serial ||
+        (layer != 0 && layer != TransparentTemporalLayer) ||
+        std::any_of(slot.invocations.begin(), slot.invocations.end(), [layer](const auto& invocation)
+        {
+            return invocation.layer == layer;
+        }))
+    {
+        throw std::logic_error("GI upsampling requires a retired slot and a unique opaque/transparent invocation outside scopes");
+    }
+    auto* device = _engine->device();
+    auto sampled = [device](const auto& image)
+    {
+        return image && image->isValid() && image->device() == device &&
+            image->imageType() == gpu::ImageType::Image2D && !image->size().isZero() &&
+            gpu::hasFlag(image->usage(), gpu::ImageUsage::Sampled);
+    };
+    if (!sampled(signal) || !sampled(normal) || !sampled(depth) ||
+        !output->isValid() || output->device() != device || output->size().isZero() ||
+        output->imageType() != gpu::ImageType::Image2D ||
+        !gpu::hasFlag(output->usage(), gpu::ImageUsage::Sampled) ||
+        !gpu::hasFlag(output->usage(), gpu::ImageUsage::Storage) ||
+        output == signal || output == normal || output == depth ||
+        signal->pixelFormat() != gpu::PixelFormat::R16G16B16A16_SFLOAT ||
+        output->pixelFormat() != gpu::PixelFormat::R16G16B16A16_SFLOAT ||
+        normal->size() != output->size() || depth->size() != output->size() ||
+        (normal->pixelFormat() != gpu::PixelFormat::R8G8B8A8_UNORM &&
+         normal->pixelFormat() != gpu::PixelFormat::R16G16B16A16_SFLOAT) ||
+        (depth->pixelFormat() != gpu::PixelFormat::D16_UNORM && depth->pixelFormat() != gpu::PixelFormat::D32_SFLOAT))
+    {
+        throw std::invalid_argument("GI upsampling requires sampled camera guides and distinct internal-resolution RGBA16F storage");
+    }
+    GIUpsamplingState::Uniforms data;
+    data.inverseViewProjection = inverseViewProjection;
+    data.worldToView = worldToView;
+    data.extent = {output->width(), output->height(), signal->width(), signal->height()};
+    GIUpsamplingState::Invocation invocation;
+    invocation.layer = layer;
+    invocation.signal = signal;
+    invocation.normal = normal;
+    invocation.depth = depth;
+    invocation.output = output;
+    // Immutable per-invocation objects: no descriptors or uniforms are reused before retirement.
+    invocation.uniforms = device->createBuffer("draw GI upsampling invocation uniforms");
+    invocation.uniforms->createUniformBuffer(data);
+    invocation.resources = device->createResourceSet(state.layout.get(), 0);
+    invocation.resources->setUniformBuffer({0,1}, invocation.uniforms.get());
+    invocation.resources->setSampledImage({1,0}, signal.get());
+    invocation.resources->setSampledImage({2,1}, normal.get());
+    invocation.resources->setSampledImage({3,2}, depth.get());
+    invocation.resources->setSampler({4,0}, state.nearest.get());
+    invocation.resources->setStorageImage({5,3}, output.get());
+    invocation.resources->update();
+    slot.invocations.push_back(std::move(invocation));
+    command.transition(signal.get(), gpu::ImageLayout::ShaderReadOnly);
+    command.transition(normal.get(), gpu::ImageLayout::ShaderReadOnly);
+    command.transition(depth.get(), gpu::ImageLayout::ShaderReadOnly);
+    command.transition(output.get(), gpu::ImageLayout::General);
+    command.beginCompute();
+    command.bindPipeline(state.pipeline.get());
+    command.bindResourceSet(state.pipeline.get(), 0, slot.invocations.back().resources.get());
+    command.dispatch((output->width()+15)/16, (output->height()+15)/16, 1);
+    command.endCompute();
+    command.transition(output.get(), gpu::ImageLayout::ShaderReadOnly);
+    return output;
 }
 
 RendererDeferred::RendererDeferred(std::filesystem::path root, uint32_t slots)
@@ -310,6 +504,18 @@ void RendererDeferred::initialize(Engine& engine, RendererConfiguration configur
         throw std::invalid_argument("Unknown renderer stage or incompatible skybox replacement");
     }
     Renderer::validateConfiguration(_configuration);
+    if (giUpsamplingCompatible())
+    {
+        try
+        {
+            initializeGIUpsampling();
+        }
+        catch (const std::exception& error)
+        {
+            cleanupGIUpsampling();
+            warnInitialization(std::string("GI upsampling unavailable; original scaled GI sampling retained: ") + error.what());
+        }
+    }
     _drawLayout = engine.device()->createPipelineLayout(drawBindingLayout());
     _lightingLayout = engine.device()->createPipelineLayout(pipeline::deferredBindingLayout(queryShadows, _ambientOcclusion, _globalIllumination, _reflections));
     _frame.initialize(engine, _lightingLayout, count);
@@ -554,6 +760,13 @@ void RendererDeferred::buildTargets()
             description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
             description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::ColorAttachment;
             next.gi = _engine->device()->createImage(description);
+            if (_giUpsampling && giUpsamplingCompatible() && description.size != size)
+            {
+                description.size = size;
+                description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage;
+                description.debugName = "draw internal-resolution joint bilateral diffuse GI";
+                next.giUpsampled = _engine->device()->createImage(description);
+            }
         }
         if (_reflections)
         {
@@ -579,6 +792,7 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
         base::CpuProfileScope::count("renderer.attachSceneDrains", 1, "drains");
         _engine->device()->waitIdle();
     }
+    resetGIUpsamplingSlots();
     if (_tracingResources)
     {
         _tracingResources->clear();
@@ -628,6 +842,7 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
         base::CpuProfileScope::count("renderer.resizeDrains", 1, "drains");
         _engine->device()->waitIdle();
     }
+    resetGIUpsamplingSlots();
     _configuration.outputExtent = output;
     _configuration.internalExtent = internal;
     _configuration.upscaler->resize(upscaleConfiguration());
@@ -727,6 +942,7 @@ void RendererDeferred::update(const FrameContext& frame)
     {
         throw std::logic_error("Renderer updates once per acquired presentation");
     }
+    retireGIUpsamplingSlot(frame.frameSlot, frame.frameNumber);
     if (_scene)
     {
         scene::UpdateVisitor update;
@@ -1033,7 +1249,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     {
         auto* surfaceDepth = layer ? slot.opaqueDepth.get() : slot.gbuffer[6].get();
         auto resolveSignal = [&](pipeline::TemporalSignal kind, gpu::Image& signal, gpu::Image* material = nullptr,
-            float maxRoughness = 1.0f)
+            float maxRoughness = 1.0f, std::shared_ptr<gpu::Image>* selectedOwner = nullptr)
         {
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
@@ -1067,8 +1283,21 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                 filteredKind = pipeline::DenoiseSignal::ReflectedRadiance;
             }
             gpu::GpuTimingScope denoiseTiming(frame.commandBuffer, "effect.denoise.record", layer, layer != 0);
-            return _configuration.denoise->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
-                {filteredKind,0,layer},*accumulated.image,surface,slot.camera.view,material,maxRoughness}).image;
+            const auto filtered = _configuration.denoise->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
+                {filteredKind,0,layer},*accumulated.image,surface,slot.camera.view,material,maxRoughness});
+            if (selectedOwner)
+            {
+                *selectedOwner = filtered.owner;
+                if (!*selectedOwner && filtered.image == accumulated.image)
+                {
+                    *selectedOwner = accumulated.owner;
+                }
+                if (!*selectedOwner && filtered.image == &signal)
+                {
+                    *selectedOwner = std::dynamic_pointer_cast<gpu::Image>(signal.weak_from_this().lock());
+                }
+            }
+            return filtered.image;
         };
         std::vector<pipeline::ImageBinding> inputs;
         if (_queryShadows)
@@ -1115,7 +1344,23 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             auto* signal = slot.gi.get();
             if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination && _configuration.globalIllumination->enabled())
             {
-                signal = resolveSignal(pipeline::TemporalSignal::DiffuseRadiance,*signal);
+                std::shared_ptr<gpu::Image> selectedOwner;
+                signal = resolveSignal(pipeline::TemporalSignal::DiffuseRadiance,*signal,nullptr,1.0f,&selectedOwner);
+                if (signal == slot.gi.get())
+                {
+                    selectedOwner = slot.gi;
+                }
+                if (_giUpsampling && giUpsamplingCompatible() && slot.giUpsampled && signal &&
+                    selectedOwner && selectedOwner.get() == signal && signal->size() == slot.gi->size() &&
+                    signal->size() != _configuration.internalExtent)
+                {
+                    // Transparent GI deliberately keeps the producer's opaque-depth guide;
+                    // temporal metadata depth does not describe that producer's receiver.
+                    signal = recordGIUpsampling(frame.commandBuffer,selectedOwner,slot.gbuffer[1],
+                        layer ? slot.opaqueDepth : slot.gbuffer[6],
+                        glm::inverse(slot.jitteredProjection*slot.camera.view),slot.camera.view,
+                        slot.giUpsampled,frame.frameSlot,frame.frameNumber,layer).get();
+                }
             }
             inputs.push_back({"globalIllumination",signal});
         }
@@ -1537,6 +1782,7 @@ void RendererDeferred::cleanup()
         base::CpuProfileScope profile("renderer.waitIdle.cleanup");
         _engine->device()->waitIdle();
     }
+    cleanupGIUpsampling();
     for (size_t i = _initializedOverlays; i > 0; --i)
     {
         _configuration.overlays.at(i - 1)->cleanup();

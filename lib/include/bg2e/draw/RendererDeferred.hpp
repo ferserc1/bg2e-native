@@ -143,13 +143,28 @@ class BG2E_API RendererDeferred : public Renderer {
     }
 
   private:
+    struct GIUpsamplingState;
+
+    // Private stage lifecycle: retire only an acquired slot; teardown requires a drained device.
+    bool giUpsamplingCompatible() const;
+    void initializeGIUpsampling();
+    void resetGIUpsamplingSlots();
+    void retireGIUpsamplingSlot(uint32_t slot, uint64_t serial);
+    void cleanupGIUpsampling();
+
+    std::shared_ptr<gpu::Image> recordGIUpsampling(gpu::CommandBuffer& command,
+        const std::shared_ptr<gpu::Image>& signal, const std::shared_ptr<gpu::Image>& normal,
+        const std::shared_ptr<gpu::Image>& depth, const glm::mat4& inverseViewProjection,
+        const glm::mat4& worldToView, const std::shared_ptr<gpu::Image>& output,
+        uint32_t slot, uint64_t serial, uint64_t layer);
+
     struct Targets {
         std::vector<std::shared_ptr<gpu::Image>> gbuffer;
         std::shared_ptr<gpu::Image> opaqueDepth, colorA, colorB, reconstructed;
         UpscalerCamera camera;
         glm::mat4 jitteredProjection{1};
         std::vector<std::shared_ptr<gpu::Image>> shadows;
-        std::shared_ptr<gpu::Image> ao, gi, reflections;
+        std::shared_ptr<gpu::Image> ao, gi, giUpsampled, reflections;
         RenderQueue queue;
         std::shared_ptr<pipeline::TracingSnapshot> tracing;
         std::shared_ptr<const TemporalCorrespondenceFrame> preparedCorrespondence, recordedCorrespondence;
@@ -214,6 +229,7 @@ class BG2E_API RendererDeferred : public Renderer {
     LightDataBinding _lights;
     EnvironmentDataBinding _environmentBinding;
     std::vector<Targets> _targets;
+    std::shared_ptr<GIUpsamplingState> _giUpsampling;
     size_t _initializedOverlays = 0;
     RenderQueue _queue;
     glm::mat4 _view{1}, _projection{1};
