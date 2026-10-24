@@ -176,7 +176,7 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::generate(std::
     {
         throw std::invalid_argument("Environment replacement tool has an incompatible semantic contract");
     }
-    _engine->device()->waitIdle();
+    _engine->device()->waitIdleForResourceUpdate();
     auto next = std::make_shared<EnvironmentResources>();
     // A wide-range source must not overflow again in an intermediate cubemap.
     // Preserve requested settings; only the realized generation uses promotion.
@@ -232,7 +232,7 @@ void EnvironmentGenerator::requestRebuild()
 std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::buildFallback()
 {
     auto* device = _engine->device();
-    device->waitIdle();
+    device->waitIdleForResourceUpdate();
     auto next = std::make_shared<EnvironmentResources>();
     const auto image = [&](gpu::ImageType type, uint32_t size, uint32_t mips)
     {
@@ -340,7 +340,7 @@ bool EnvironmentGenerator::synchronize(const scene::EnvironmentComponent* compon
 void EnvironmentGenerator::cleanup()
 {
     _rebuildRequested = false;
-    _engine->device()->waitIdle();
+    _engine->device()->waitIdleForResourceUpdate();
     for (const auto& tool : {_configuration.sphere, _configuration.defaultSky, _configuration.irradiance, _configuration.specular, _configuration.brdf})
     {
         if (tool)

@@ -73,6 +73,24 @@ class BG2E_API Device {
     // Direct sends through native handles are outside this contract.
     virtual void waitIdle() = 0;
 
+    // Caller stops frame/background producers for the entire scope. Nested
+    // resource operations reuse its drain until another wrapper submission.
+    // Direct native submissions require an explicit waitIdle() before reuse.
+    class BG2E_API ResourceUpdateScope {
+      public:
+        explicit ResourceUpdateScope(Device& device);
+        ~ResourceUpdateScope();
+        ResourceUpdateScope(const ResourceUpdateScope&) = delete;
+        ResourceUpdateScope& operator=(const ResourceUpdateScope&) = delete;
+
+      private:
+        Device& _device;
+    };
+
+    // Conservative outside a ResourceUpdateScope. Returns true when it calls
+    // waitIdle(); false only when the current scope already established idle.
+    bool waitIdleForResourceUpdate();
+
     virtual bool isValid() const = 0;
     uint64_t timingIdentity() const noexcept
     {

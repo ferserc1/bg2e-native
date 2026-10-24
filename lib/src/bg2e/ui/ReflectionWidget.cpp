@@ -215,7 +215,8 @@ bool drawVec4Editor(const std::string& label, glm::vec4& v, const reflection::Pr
 bool ReflectionWidget::drawProperties(
     void* instance,
     const reflection::TypeInfo& info,
-    uint32_t depth)
+    uint32_t depth,
+    const EditHandler& edit)
 {
     // Group properties by category, preserving first-appearance order
     std::vector<std::string> categories;
@@ -254,7 +255,7 @@ bool ReflectionWidget::drawProperties(
             for (auto* prop : groups[g])
             {
                 Group::pushId(id++);
-                if (drawProperty(instance, *prop, depth))
+                if (drawProperty(instance, *prop, depth, edit))
                 {
                     changed = true;
                 }
@@ -353,7 +354,8 @@ bool ReflectionWidget::editValue(std::any& value, const reflection::PropertyInfo
 
 void ReflectionWidget::drawActions(
     void* instance,
-    const reflection::TypeInfo& info)
+    const reflection::TypeInfo& info,
+    const EditHandler& edit)
 {
     int id = 0;
     for (const auto& action : info.actions)
@@ -362,7 +364,14 @@ void ReflectionWidget::drawActions(
         const auto& label = action.displayName.empty() ? action.name : action.displayName;
         if (Button::button(label + "##" + action.name))
         {
-            action.invoke(instance);
+            if (edit)
+            {
+                edit(action.invoke, true);
+            }
+            else
+            {
+                action.invoke(instance);
+            }
         }
         Text::tooltip(action.tooltip);
         Group::popId();
@@ -372,15 +381,29 @@ void ReflectionWidget::drawActions(
 bool ReflectionWidget::drawProperty(
     void* instance,
     const reflection::PropertyInfo& prop,
-    uint32_t depth)
+    uint32_t depth,
+    const EditHandler& edit)
 {
     if (prop.type == PropertyType::Object)
     {
-        return drawObjectProperty(instance, prop, depth);
+        return drawObjectProperty(instance, prop, depth, edit);
     }
     if (prop.type == PropertyType::PolymorphicObject)
     {
-        return drawPolymorphicObjectProperty(instance, prop, depth);
+        return drawPolymorphicObjectProperty(instance, prop, depth, edit);
+    }
+    if (edit && prop.getter)
+    {
+        auto value = prop.getter(instance);
+        if (!editValue(value, prop))
+        {
+            return false;
+        }
+        edit([setter = prop.setter, value = std::move(value)](void* target)
+        {
+            setter(target, value);
+        }, prop.type == PropertyType::Resource || prop.type == PropertyType::Path);
+        return true;
     }
     return drawScalarProperty(instance, prop);
 }
@@ -606,7 +629,8 @@ bool ReflectionWidget::drawScalarProperty(
 bool ReflectionWidget::drawObjectProperty(
     void* instance,
     const reflection::PropertyInfo& prop,
-    uint32_t depth)
+    uint32_t depth,
+    const EditHandler& edit)
 {
     const auto& displayName = prop.metadata.displayName;
     const auto label = displayName.empty() ? prop.name : displayName;
@@ -641,12 +665,26 @@ bool ReflectionWidget::drawObjectProperty(
         }
 
         void* mutableSubObject = readOnly ? nullptr : prop.objectMutableGetter(instance);
+        EditHandler nestedEdit;
+        if (edit)
+        {
+            nestedEdit = [edit, resolve = prop.objectMutableGetter](auto operation, bool resources)
+            {
+                edit([resolve, operation = std::move(operation)](void* parent)
+                {
+                    if (auto* child = resolve ? resolve(parent) : nullptr)
+                    {
+                        operation(child);
+                    }
+                }, resources);
+            };
+        }
         changed = drawProperties(
                       mutableSubObject ? mutableSubObject : const_cast<void*>(subObject),
                       *objectInfo,
-                      depth + 1) &&
+                      depth + 1, nestedEdit) &&
                   !readOnly;
-        drawActions(mutableSubObject ? mutableSubObject : const_cast<void*>(subObject), *objectInfo);
+        drawActions(mutableSubObject ? mutableSubObject : const_cast<void*>(subObject), *objectInfo, nestedEdit);
 
         if (readOnly)
         {
@@ -661,7 +699,8 @@ bool ReflectionWidget::drawObjectProperty(
 bool ReflectionWidget::drawPolymorphicObjectProperty(
     void* instance,
     const reflection::PropertyInfo& prop,
-    uint32_t depth)
+    uint32_t depth,
+    const EditHandler& edit)
 {
     const auto label = nameFor(prop);
     auto& registry = reflection::TypeRegistry::get();
@@ -756,6 +795,20 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
 
             if (selectionChanged && canReplace && !subtypeKeys[selected].empty())
             {
+                if (edit)
+                {
+                    edit([replace = prop.polymorphicObjectReplacer, key = subtypeKeys[selected]](void* parent)
+                    {
+                        if (!replace(parent, key))
+                        {
+                            throw std::runtime_error("Reflected object replacement failed");
+                        }
+                    }, true);
+                    // Keep child controls on the next frame's actual subtype.
+                    Group::endTree();
+                    Text::tooltip(prop.metadata.tooltip);
+                    return true;
+                }
                 changed = prop.polymorphicObjectReplacer(instance, subtypeKeys[selected]);
 
                 // Replacement invalidates every pointer obtained above.
@@ -807,10 +860,38 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
                 auto* editBaseObject = mutableBaseObject
                                            ? mutableBaseObject
                                            : const_cast<void*>(currentObject);
+                const auto nestedHandler = [&](bool subtype) -> EditHandler
+                {
+                    if (!edit)
+                    {
+                        return {};
+                    }
+                    return [edit, prop, currentKey, subtype](auto operation, bool resources)
+                    {
+                        edit([prop, currentKey, subtype, operation = std::move(operation)](void* parent)
+                        {
+                            if (!prop.polymorphicTypeKey || prop.polymorphicTypeKey(parent) != currentKey)
+                            {
+                                return;
+                            }
+                            auto* child = prop.polymorphicObjectMutableGetter
+                                ? prop.polymorphicObjectMutableGetter(parent) : nullptr;
+                            if (child && subtype)
+                            {
+                                child = reflection::TypeRegistry::get().subtypeObject(
+                                    prop.polymorphicBaseTypeName, currentKey, child);
+                            }
+                            if (child)
+                            {
+                                operation(child);
+                            }
+                        }, resources);
+                    };
+                };
                 if (baseInfo && activeSubtype->typeName != prop.polymorphicBaseTypeName)
                 {
-                    changed = drawProperties(editBaseObject, *baseInfo, depth + 1) || changed;
-                    drawActions(editBaseObject, *baseInfo);
+                    changed = drawProperties(editBaseObject, *baseInfo, depth + 1, nestedHandler(false)) || changed;
+                    drawActions(editBaseObject, *baseInfo, nestedHandler(false));
                 }
 
                 auto* editSubtypeObject = mutableSubtypeObject
@@ -818,8 +899,8 @@ bool ReflectionWidget::drawPolymorphicObjectProperty(
                                               : const_cast<void*>(subtypeObject);
                 if (editSubtypeObject)
                 {
-                    changed = drawProperties(editSubtypeObject, *subtypeInfo, depth + 1) || changed;
-                    drawActions(editSubtypeObject, *subtypeInfo);
+                    changed = drawProperties(editSubtypeObject, *subtypeInfo, depth + 1, nestedHandler(true)) || changed;
+                    drawActions(editSubtypeObject, *subtypeInfo, nestedHandler(true));
                 }
                 else
                 {

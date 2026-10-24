@@ -98,8 +98,10 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
     for (size_t i = 0; i < item.textures.size(); ++i)
     {
         item.textures[i] = material->texture(TextureSlot(i));
-        item.textureImages[i] = item.textures[i]->image();
-        item.textureSamplers[i] = item.textures[i]->sampler();
+        item.textureImageOwners[i] = item.textures[i]->imageResource();
+        item.textureSamplerOwners[i] = item.textures[i]->samplerResource();
+        item.textureImages[i] = item.textureImageOwners[i].get();
+        item.textureSamplers[i] = item.textureSamplerOwners[i].get();
         item.textureRevisions[i] = item.textures[i]->bindingRevision();
         item.imageGenerations[i] = item.textureImages[i]->bindingGeneration();
         if (item.textures[i]->engine() != _engine || !item.textures[i]->image()->isValid() ||

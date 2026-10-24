@@ -44,6 +44,17 @@ void storeTextureSettings(draw::Drawable* drawable, uint32_t submesh, draw::Text
     (drawable->materialDefinition(submesh).*setters.at(size_t(slot)))(draw::cloneTextureSettings(*texture->base()));
 }
 
+std::shared_ptr<draw::Texture> textureWithColorType(const std::shared_ptr<draw::Texture>& source,
+    base::Color::Type colorType)
+{
+    auto settings = draw::cloneTextureSettings(*source->base());
+    settings->setColorType(colorType);
+    auto replacement = std::make_shared<draw::Texture>(source->engine());
+    replacement->load(std::move(settings), source->imageResource());
+    return replacement;
+}
+
+
 void clearTexture(draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh, draw::TextureSlot slot)
 {
     using Setter = void (base::MaterialAttributes::*)(std::shared_ptr<base::Texture>);
@@ -79,6 +90,8 @@ struct DrawMaterialEditor::State {
     std::string error;
     uint64_t binding = 0;
     bool pending = false;
+    bool cpuValueEditsEnabled = false;
+    bool retainedResourceEditsEnabled = false;
 };
 struct DrawMaterialEditor::Impl {
     std::array<DrawTextureWidgets, 6> textures;
@@ -134,6 +147,8 @@ void DrawMaterialEditor::cleanup()
 {
     ++_state->binding;
     _state->pending = false;
+    _state->cpuValueEditsEnabled = false;
+    _state->retainedResourceEditsEnabled = false;
     _state->selection.reset();
     _state->material.reset();
     _state->delegate.reset();
@@ -146,6 +161,18 @@ void DrawMaterialEditor::cleanup()
         widget.cleanup();
     }
 }
+
+void DrawMaterialEditor::setCpuValueEditsEnabled(bool enabled)
+{
+    _state->cpuValueEditsEnabled = enabled;
+}
+
+
+void DrawMaterialEditor::setRetainedResourceEditsEnabled(bool enabled)
+{
+    _state->retainedResourceEditsEnabled = enabled;
+}
+
 
 bool DrawMaterialEditor::pending() const
 {
@@ -182,8 +209,7 @@ bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier, boo
         if (ordinaryAo)
         {
             const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
-            auto texture = material->aoTexture()->clone();
-            texture->setColorType(base::Color::TypeLinear);
+            auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
             material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
             material->materialAttributes().setIndirectTextureMode(mode);
             if (drawable)
@@ -206,8 +232,7 @@ bool DrawMaterialEditor::queueIndirectMode(base::MaterialAttributes::IndirectTex
             {
                 throw std::invalid_argument("Assign an indirect map before choosing a baked interpretation");
             }
-            auto texture = material->aoTexture()->clone();
-            texture->setColorType(base::Color::TypeLinear);
+            auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
             material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
             material->materialAttributes().setAoUVSet(1);
             if (drawable)
@@ -263,7 +288,8 @@ bool DrawMaterialEditor::queueClearTexture(draw::TextureSlot slot)
     });
 }
 
-bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::MaterialBase*, uint32_t)> operation)
+bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::MaterialBase*, uint32_t)> operation,
+    bool cpuValuesOnly)
 {
     auto delegate = _state->delegate.lock();
     if (!_state->engine || !delegate || _state->pending)
@@ -298,7 +324,12 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
             state->error = "Material edit target or renderer changed";
         }
     };
-    delegate->enqueueRendererUpdate(delegate->rendererGeneration(),
+    const auto enqueue = cpuValuesOnly && _state->cpuValueEditsEnabled
+        ? &draw::DefaultRenderLoopDelegate::enqueueCpuValueUpdate
+        : _state->retainedResourceEditsEnabled
+            ? &draw::DefaultRenderLoopDelegate::enqueueRetainedResourceUpdate
+            : &draw::DefaultRenderLoopDelegate::enqueueRendererUpdate;
+    ((*delegate).*enqueue)(delegate->rendererGeneration(),
         [weak, binding, targets = std::move(targets), direct, operation = std::move(operation)](draw::Renderer& renderer)
     {
         auto state = weak.lock();
@@ -477,6 +508,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     int samplingSlot = -1;
     std::function<void(base::Texture&)> samplingEdit;
     bool ordinaryAo = false;
+    bool textureChanged = false;
     bool modeChanged = false;
     uint32_t indirect = static_cast<uint32_t>(attributes.indirectTextureMode());
     if (Value::comboBox("Indirect map interpretation", {"Ambient occlusion", "Baked AO (RGB UV2)", "Baked GI (RGB UV2)"}, indirect))
@@ -492,6 +524,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
             const auto choice = _impl->textures[i].draw(ui, names[i], material->texture(draw::TextureSlot(i)));
             if (choice.selected)
             {
+                textureChanged = true;
                 patch[textureKeys[i]] = std::make_shared<json::JsonNode>(choice.path.string());
                 if (i == 1 || i == 2 || i == 3)
                 {
@@ -615,10 +648,20 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     bool queued = false;
     if (!patch.empty())
     {
+        const bool cpuValuesOnly = !textureChanged && clear < 0;
         const utils::MaterialModifier modifier(std::make_shared<json::JsonNode>(std::move(patch)));
-        queued = queueEdit([modifier, clear, ordinaryAo, linearSelected](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
+        queued = queueEdit([modifier, clear, ordinaryAo, linearSelected, cpuValuesOnly](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
         {
-            if (drawable)
+            if (cpuValuesOnly)
+            {
+                // Do not realize unrelated pending texture changes in a value edit.
+                modifier.apply(material->materialAttributes());
+                if (drawable)
+                {
+                    modifier.apply(drawable->materialDefinition(submesh));
+                }
+            }
+            else if (drawable)
             {
                 modifier.apply(*drawable, submesh);
             }
@@ -629,8 +672,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
             if (linearSelected >= 0)
             {
                 const auto slot = static_cast<draw::TextureSlot>(linearSelected);
-                auto replacement = material->texture(slot)->clone();
-                replacement->setColorType(base::Color::TypeLinear);
+                auto replacement = textureWithColorType(material->texture(slot), base::Color::TypeLinear);
                 material->setTexture(slot, replacement);
                 if (drawable)
                 {
@@ -640,8 +682,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
             if (ordinaryAo)
             {
                 const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
-                auto texture = material->aoTexture()->clone();
-                texture->setColorType(base::Color::TypeLinear);
+                auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
                 material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
                 if (drawable)
                 {
@@ -657,7 +698,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
             {
                 clearTexture(drawable, material, submesh, draw::TextureSlot(clear));
             }
-        });
+        }, cpuValuesOnly);
     }
     else if (samplingSlot >= 0)
     {

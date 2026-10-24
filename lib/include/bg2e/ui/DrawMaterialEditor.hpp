@@ -50,6 +50,15 @@ class BG2E_API DrawMaterialEditor {
     // queued work; rebinding the guard cancels earlier pending edits.
     void setEditGuard(std::function<bool()> guard);
 
+    // Opt in only when onChanged obeys the CPU value update contract. Resource
+    // work in notifications, such as bake cancellation, must synchronize itself.
+    // Texture edits require the separate retained-resource opt-in below.
+    void setCpuValueEditsEnabled(bool enabled);
+
+    // Opt in only when onChanged is also safe without a global drain. Replaced
+    // texture bindings are retired against their outstanding submissions.
+    void setRetainedResourceEditsEnabled(bool enabled);
+
     bool draw(UserInterface& ui);
     bool queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo = false);
     bool queueIndirectMode(base::MaterialAttributes::IndirectTextureMode mode);
@@ -58,8 +67,9 @@ class BG2E_API DrawMaterialEditor {
 
     bool pending() const;
     const std::string& error() const;
-    // Runs after edits at the safe boundary, including partial failure. The
-    // default deferred upscaler reset is automatic; apps reset other histories here.
+    // Runs after edits at prepareFrame, including partial failure. Value edits
+    // may run without a GPU drain when explicitly enabled. The default deferred
+    // upscaler reset is automatic; apps reset other histories here.
     void onChanged(std::function<void(draw::Renderer&)> callback);
 
   private:
@@ -68,7 +78,8 @@ class BG2E_API DrawMaterialEditor {
     std::shared_ptr<State> _state;
     std::unique_ptr<Impl> _impl;
 
-    bool queueEdit(std::function<void(draw::Drawable*, draw::MaterialBase*, uint32_t)> operation);
+    bool queueEdit(std::function<void(draw::Drawable*, draw::MaterialBase*, uint32_t)> operation,
+        bool cpuValuesOnly = false);
 };
 
 }

@@ -37,13 +37,27 @@ void AppDelegate::notifyEdited(bg2e::draw::Renderer& renderer)
     _stage->markModified();
     renderer.invalidateHistories();
     _stage->refreshCamera();
-    renderer.attachScene(scene());
-    setScene(scene()); // Rebind reflected catalogs at the next stopped boundary too.
+    // Property edits keep the current scene attached. Scene replacement belongs
+    // to the document lifecycle, not to the general edit notification.
     requestSceneFrame();
 }
 
 void AppDelegate::queueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
     std::function<void(bg2e::scene::Node&)> operation, bool rebuild)
+{
+    enqueueNodeEdit(target, std::move(operation), rebuild, false);
+}
+
+
+void AppDelegate::queueNodeValueEdit(std::weak_ptr<bg2e::scene::Node> target,
+    std::function<void(bg2e::scene::Node&)> operation)
+{
+    enqueueNodeEdit(target, std::move(operation), false, true);
+}
+
+
+void AppDelegate::enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
+    std::function<void(bg2e::scene::Node&)> operation, bool rebuild, bool cpuValuesOnly)
 {
     if (!document() || !document()->root)
     {
@@ -51,7 +65,10 @@ void AppDelegate::queueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
     }
     _status.clear();
     const auto generation = document()->generation;
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), target, generation, operation = std::move(operation), rebuild](auto& renderer)
+    const auto enqueue = cpuValuesOnly
+        ? &bg2e::draw::DefaultRenderLoopDelegate::enqueueCpuValueUpdate
+        : &bg2e::draw::DefaultRenderLoopDelegate::enqueueRendererUpdate;
+    (this->*enqueue)(rendererGeneration(), [this, weak = weak_from_this(), target, generation, operation = std::move(operation), rebuild](auto& renderer)
     {
         auto owner = weak.lock();
         if (!owner)
@@ -67,7 +84,7 @@ void AppDelegate::queueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
         invalidateLightmapSources();
         try
         {
-            _engine->device()->waitIdle();
+            // The conservative queue owns the resource-update boundary.
             operation(*node);
             if (rebuild)
             {
@@ -81,7 +98,7 @@ void AppDelegate::queueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
         }
         // Edits/texture callbacks can fail after modifying part of the target.
         notifyEdited(renderer);
-    });
+    }, {});
 }
 
 void AppDelegate::selectNode(std::weak_ptr<bg2e::scene::Node> target, uint32_t submesh, bool additive)
@@ -426,7 +443,7 @@ void AppDelegate::environmentPreset(const std::filesystem::path& path, bool save
 
 void AppDelegate::setCameraIntrinsics(float fov, float nearPlane, float farPlane)
 {
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), fov, nearPlane, farPlane](auto& renderer)
+    enqueueCpuValueUpdate(rendererGeneration(), [this, weak = weak_from_this(), fov, nearPlane, farPlane](auto& renderer)
     {
         auto owner = weak.lock();
         if (!owner || !std::isfinite(fov) || !std::isfinite(nearPlane) || !std::isfinite(farPlane) ||
@@ -455,7 +472,7 @@ void AppDelegate::setCameraIntrinsics(float fov, float nearPlane, float farPlane
 
 void AppDelegate::setHighlight(float intensity)
 {
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), intensity](auto&)
+    enqueueCpuValueUpdate(rendererGeneration(), [this, weak = weak_from_this(), intensity](auto&)
     {
         auto owner = weak.lock();
         if (!owner)

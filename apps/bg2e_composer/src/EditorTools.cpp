@@ -50,6 +50,8 @@ void EditorUi::bindDocument(const std::shared_ptr<AppDelegate>& delegate)
             owner->notifyEdited(renderer);
         }
     });
+    _material.setCpuValueEditsEnabled(true);
+    _material.setRetainedResourceEditsEnabled(true);
 }
 
 void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
@@ -104,7 +106,7 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
             for (const auto& current : targets)
             {
                 const auto snapshot = *current;
-                delegate->queueNodeEdit(current->node, [snapshot, operation](auto&)
+                delegate->queueNodeValueEdit(current->node, [snapshot, operation](auto&)
                 {
                     if (auto mesh = snapshot.lockMesh())
                     {

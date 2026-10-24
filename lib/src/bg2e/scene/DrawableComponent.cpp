@@ -50,7 +50,7 @@ void DrawableComponent::setDrawable(std::shared_ptr<bg2e::draw::Drawable> drw)
     }
     if (_drawable && _drawable->engine())
     {
-        _drawable->engine()->device()->waitIdle();
+        _drawable->engine()->device()->waitIdleForResourceUpdate();
     }
     _drawable = std::move(drw);
 }
@@ -59,7 +59,7 @@ void DrawableComponent::clearDrawable()
 {
     if (_drawable && _drawable->engine())
     {
-        _drawable->engine()->device()->waitIdle();
+        _drawable->engine()->device()->waitIdleForResourceUpdate();
     }
     _drawable.reset();
 }

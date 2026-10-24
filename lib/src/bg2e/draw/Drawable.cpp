@@ -66,9 +66,9 @@ void Drawable::setMesh(std::shared_ptr<Mesh> mesh)
     if (_engine)
     {
         {
-            base::CpuProfileScope profile("drawable.waitIdle.setMesh");
-            base::CpuProfileScope::count("drawable.drains.setMesh", 1, "drains");
-            _engine->device()->waitIdle();
+            base::CpuProfileScope profile("drawable.resourceSync.setMesh");
+            base::CpuProfileScope::count("drawable.resourceSyncRequests.setMesh", 1, "requests");
+            _engine->device()->waitIdleForResourceUpdate();
         }
     }
     _mesh = std::move(mesh);
@@ -136,9 +136,9 @@ void Drawable::load(Engine* engine, std::function<void()> onTextureLoaded)
         throw std::invalid_argument("Use setMesh to change Drawable submesh topology");
     }
     {
-        base::CpuProfileScope profile("drawable.waitIdle.load");
-        base::CpuProfileScope::count("drawable.drains.load", 1, "drains");
-        engine->device()->waitIdle();
+        base::CpuProfileScope profile("drawable.resourceSync.load");
+        base::CpuProfileScope::count("drawable.resourceSyncRequests.load", 1, "requests");
+        engine->device()->waitIdleForResourceUpdate();
     }
     _engine = engine;
     buildDrawMesh();
@@ -164,9 +164,9 @@ void Drawable::updateMaterials(std::function<void()> onTextureLoaded)
         throw std::logic_error("Drawable has no engine");
     }
     {
-        base::CpuProfileScope profile("drawable.waitIdle.updateMaterials");
-        base::CpuProfileScope::count("drawable.drains.updateMaterials", 1, "drains");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("drawable.resourceSync.updateMaterials");
+        base::CpuProfileScope::count("drawable.resourceSyncRequests.updateMaterials", 1, "requests");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _loaded = false;
     _materials.resize(_attributes.size());
@@ -220,9 +220,9 @@ void Drawable::reload()
         throw std::invalid_argument("Use setMesh to change Drawable submesh topology");
     }
     {
-        base::CpuProfileScope profile("drawable.waitIdle.reload");
-        base::CpuProfileScope::count("drawable.drains.reload", 1, "drains");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("drawable.resourceSync.reload");
+        base::CpuProfileScope::count("drawable.resourceSyncRequests.reload", 1, "requests");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     buildDrawMesh();
     updateMaterials();
@@ -238,9 +238,9 @@ void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
     if (_engine)
     {
         {
-            base::CpuProfileScope profile("drawable.waitIdle.applyModifier");
-            base::CpuProfileScope::count("drawable.drains.applyModifier", 1, "drains");
-            _engine->device()->waitIdle();
+            base::CpuProfileScope profile("drawable.resourceSync.applyModifier");
+            base::CpuProfileScope::count("drawable.resourceSyncRequests.applyModifier", 1, "requests");
+            _engine->device()->waitIdleForResourceUpdate();
         }
     }
     modifier->setMesh(_mesh.get());
@@ -273,9 +273,9 @@ std::shared_ptr<Drawable> Drawable::clone() const
     if (isLoaded())
     {
         {
-            base::CpuProfileScope profile("drawable.waitIdle.clone");
-            base::CpuProfileScope::count("drawable.drains.clone", 1, "drains");
-            _engine->device()->waitIdle();
+            base::CpuProfileScope profile("drawable.resourceSync.clone");
+            base::CpuProfileScope::count("drawable.resourceSyncRequests.clone", 1, "requests");
+            _engine->device()->waitIdleForResourceUpdate();
         }
         result->_engine = _engine;
         result->_drawMesh = std::make_shared<DrawMesh>();
@@ -302,9 +302,9 @@ void Drawable::cleanup()
     if (_engine)
     {
         {
-            base::CpuProfileScope profile("drawable.waitIdle.cleanup");
-            base::CpuProfileScope::count("drawable.drains.cleanup", 1, "drains");
-            _engine->device()->waitIdle();
+            base::CpuProfileScope profile("drawable.resourceSync.cleanup");
+            base::CpuProfileScope::count("drawable.resourceSyncRequests.cleanup", 1, "requests");
+            _engine->device()->waitIdleForResourceUpdate();
         }
     }
     for (size_t i = 0; i < _materials.size() && i < _attributes.size(); ++i)

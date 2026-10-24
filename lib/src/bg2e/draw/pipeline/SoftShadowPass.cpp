@@ -250,7 +250,7 @@ void SoftShadowPass::attachScene(std::shared_ptr<scene::Node>)
     _capacityWarningActive = false;
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     for (auto& slot : _slots)
     {
@@ -517,7 +517,7 @@ void SoftShadowPass::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _slots.clear();
     _pool.reset();

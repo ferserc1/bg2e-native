@@ -128,7 +128,7 @@ void FullscreenPass::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _sets.clear();
     _pool.reset();

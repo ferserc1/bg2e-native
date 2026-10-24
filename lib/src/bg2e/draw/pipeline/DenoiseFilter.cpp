@@ -256,7 +256,7 @@ void DenoiseFilter::cleanup()
 {
     if (_device)
     {
-        _device->waitIdle();
+        _device->waitIdleForResourceUpdate();
     }
     _slots.clear();
     _pool.reset();

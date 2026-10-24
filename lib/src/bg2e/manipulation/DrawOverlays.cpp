@@ -56,7 +56,7 @@ void GizmoAndSelectionRenderer::attachScene(std::shared_ptr<scene::Node> root)
     {
         throw std::logic_error("Initialize draw overlay before scene attachment");
     }
-    _drawEngine->device()->waitIdle();
+    _drawEngine->device()->waitIdleForResourceUpdate();
     _drawScene = std::move(root);
     _edgeMeshes.clear();
     _drawNodes.clear();

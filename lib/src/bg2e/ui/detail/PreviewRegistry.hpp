@@ -31,6 +31,7 @@ struct PreviewEntry {
     std::shared_ptr<gpu::Sampler> sampler;
     uint64_t identifier = 0;
     uint64_t generation = 0;
+    bool retirementScheduled = false;
 };
 
 class PreviewRegistry : public std::enable_shared_from_this<PreviewRegistry> {

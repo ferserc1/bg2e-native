@@ -43,6 +43,10 @@ class BG2E_API RenderQueue {
         std::shared_ptr<Drawable::DrawMesh> drawMesh;
         std::shared_ptr<MaterialBase> drawMaterial;
         std::array<std::shared_ptr<Texture>, 6> textures;
+        // Exact native owners for this snapshot, independent of later edits to
+        // the Texture wrappers. Retained by the frame's queues and bindings.
+        std::array<std::shared_ptr<gpu::Image>, 6> textureImageOwners;
+        std::array<std::shared_ptr<gpu::Sampler>, 6> textureSamplerOwners;
         std::array<gpu::Image*, 6> textureImages{};
         std::array<gpu::Sampler*, 6> textureSamplers{};
         std::array<uint64_t, 6> textureRevisions{};

@@ -21,6 +21,7 @@
 #include <bg2e/db/image.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
+#include <bg2e/gpu/CleanupManager.hpp>
 
 #include <algorithm>
 #include <cmath>
@@ -164,11 +165,7 @@ void Texture::load(std::shared_ptr<base::Texture> settings)
 
 void Texture::load(const base::Image& pixels, const base::Texture& settings)
 {
-    {
-        base::CpuProfileScope profile("texture.waitIdle.load");
-        base::CpuProfileScope::count("texture.drains.load", 1, "drains");
-        _engine->device()->waitIdle();
-    }
+    // Upload into a new image; publication below retires the previous version.
     gpu::ImageDescription description;
     description.size = {pixels.width(), pixels.height()};
     description.format = pixels.dataf() ? gpu::PixelFormat::R32G32B32A32_SFLOAT : gpu::PixelFormat::R8G8B8A8_UNORM;
@@ -209,10 +206,10 @@ void Texture::load(std::shared_ptr<base::Texture> settings, std::shared_ptr<gpu:
     auto independent = cloneTextureSettings(*settings);
     auto description = samplerDescription(*independent, image->mipLevels());
     auto sampler = _engine->device()->createSampler(description);
+    if (_image || _sampler)
     {
-        base::CpuProfileScope profile("texture.waitIdle.load");
-        base::CpuProfileScope::count("texture.drains.load", 1, "drains");
-        _engine->device()->waitIdle();
+        _engine->cleanupManager().defer([image = _image, sampler = _sampler]() {});
+        base::CpuProfileScope::count("texture.retiredBindings", 1);
     }
     _memorySource.reset();
     _settings = std::move(independent);
@@ -255,10 +252,10 @@ void Texture::updateSampler(const base::Texture& settings)
     auto independent = cloneTextureSettings(*_settings);
     copySamplerSettings(*independent, settings);
     auto sampler = _engine->device()->createSampler(description);
+    if (_sampler)
     {
-        base::CpuProfileScope profile("texture.waitIdle.updateSampler");
-        base::CpuProfileScope::count("texture.drains.updateSampler", 1, "drains");
-        _engine->device()->waitIdle();
+        _engine->cleanupManager().defer([sampler = _sampler]() {});
+        base::CpuProfileScope::count("texture.retiredSamplers", 1);
     }
     _settings = std::move(independent);
     _sampler = std::move(sampler);
@@ -273,9 +270,9 @@ std::shared_ptr<Texture> Texture::clone() const
         throw std::logic_error("Cannot clone an unloaded texture");
     }
     {
-        base::CpuProfileScope profile("texture.waitIdle.clone");
-        base::CpuProfileScope::count("texture.drains.clone", 1, "drains");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("texture.resourceSync.clone");
+        base::CpuProfileScope::count("texture.resourceSyncRequests.clone", 1, "requests");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     if ((_image->usage() & gpu::ImageUsage::TransferSrc) == gpu::ImageUsage::None)
     {

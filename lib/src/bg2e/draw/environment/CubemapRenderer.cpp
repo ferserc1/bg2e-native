@@ -333,7 +333,7 @@ void CubemapRenderer::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _sourceSet.reset();
     _pipeline.reset();

@@ -228,7 +228,7 @@ void SMAAProcessor::cleanup()
 {
     if (_device)
     {
-        _device->waitIdle();
+        _device->waitIdleForResourceUpdate();
     }
     _copy.cleanup();
     _slots.clear();

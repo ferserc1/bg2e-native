@@ -28,8 +28,10 @@ namespace bg2e::draw {
 BG2E_API std::shared_ptr<base::Texture> cloneTextureSettings(const base::Texture& source);
 
 // Engine/device are borrowed and must outlive the texture and its GPU users.
-// Reload/sampler edits/clone are synchronous rare operations: stop producers
-// first. Rebind image views and resource sets after a load/reload operation.
+// Publish edits before frame acquisition, with background producers stopped and
+// no unsubmitted recording borrowing the old bindings. Replaced images/samplers
+// are retained until outstanding submissions finish. Pixel uploads and deep
+// clones remain synchronous. Re-extract queues after changing bindings.
 class BG2E_API Texture {
   public:
     explicit Texture(Engine* engine);

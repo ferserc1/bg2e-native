@@ -950,7 +950,7 @@ void TemporalAccumulator::cleanup()
 {
     if (_device)
     {
-        _device->waitIdle();
+        _device->waitIdleForResourceUpdate();
     }
     _histories.clear();
     _slots.clear();

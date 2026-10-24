@@ -57,7 +57,7 @@ void SkyboxRenderer::setEnvironment(std::shared_ptr<const EnvironmentResources> 
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     if (resources && _engine && _layout && _pipeline)
     {
@@ -232,7 +232,7 @@ void SkyboxRenderer::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _skySet.reset();
     _blurSet.reset();

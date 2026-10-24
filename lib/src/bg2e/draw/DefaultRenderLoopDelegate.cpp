@@ -287,6 +287,40 @@ void DefaultRenderLoopDelegate::enqueueRendererUpdate(uint64_t generation,
     requestSceneFrame();
 }
 
+void DefaultRenderLoopDelegate::enqueueCpuValueUpdate(uint64_t generation,
+    std::function<void(Renderer&)> operation, std::function<void()> stale)
+{
+    if (!operation)
+    {
+        throw std::invalid_argument("CPU value update requires an operation");
+    }
+    PendingUpdate update;
+    update.generation = generation;
+    update.operation = std::move(operation);
+    update.stale = std::move(stale);
+    update.cpuValuesOnly = true;
+    _updates.push_back(std::move(update));
+    requestSceneFrame();
+}
+
+
+void DefaultRenderLoopDelegate::enqueueRetainedResourceUpdate(uint64_t generation,
+    std::function<void(Renderer&)> operation, std::function<void()> stale)
+{
+    if (!operation)
+    {
+        throw std::invalid_argument("Retained resource update requires an operation");
+    }
+    PendingUpdate update;
+    update.generation = generation;
+    update.operation = std::move(operation);
+    update.stale = std::move(stale);
+    update.retainsResources = true;
+    _updates.push_back(std::move(update));
+    requestSceneFrame();
+}
+
+
 bool DefaultRenderLoopDelegate::enqueueFinalColorUpdate(uint64_t generation,
     FinalColorProperty property, float value, std::function<void(ValueUpdateResult)> completion, std::function<bool()> current)
 {
@@ -342,16 +376,21 @@ void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
     base::CpuProfileScope::count("delegate.queuedRendererUpdateBatch", updates.size());
     const bool conservative = !_valueUpdateDrainElisionEnabled || std::any_of(updates.begin(), updates.end(), [](const auto& update)
     {
-        return !update.color;
+        return !update.color && !update.cpuValuesOnly && !update.retainsResources;
     });
+    std::optional<gpu::Device::ResourceUpdateScope> resourceUpdate;
     if (conservative)
     {
-        base::CpuProfileScope profile("delegate.waitIdle.queuedRendererUpdates");
-        base::CpuProfileScope::count("delegate.queuedRendererUpdateDrains", 1, "drains");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("delegate.resourceSync.queuedRendererUpdates");
+        base::CpuProfileScope::count("delegate.queuedRendererUpdateSyncRequests", 1, "requests");
+        resourceUpdate.emplace(*_engine->device());
     }
     base::CpuProfileScope updateProfile("delegate.applyQueuedRendererUpdates");
-    base::CpuProfileScope::count("delegate.valueOnlyUpdateBatches", conservative ? 0 : 1);
+    const bool valueOnly = std::all_of(updates.begin(), updates.end(), [](const auto& update)
+    {
+        return update.color || update.cpuValuesOnly;
+    });
+    base::CpuProfileScope::count("delegate.valueOnlyUpdateBatches", valueOnly && !conservative ? 1 : 0);
     for (auto& update : updates)
     {
         if (update.color)
@@ -399,7 +438,8 @@ void DefaultRenderLoopDelegate::applyUpdates(std::vector<PendingUpdate> updates)
             }
             continue;
         }
-        base::CpuProfileScope::count("delegate.conservativeUpdates", 1);
+        base::CpuProfileScope::count(update.cpuValuesOnly ? "delegate.cpuValueUpdates" :
+            update.retainsResources ? "delegate.retainedResourceUpdates" : "delegate.conservativeUpdates", 1);
         if (!withRenderer(update.generation, update.operation))
         {
             if (update.stale)
@@ -441,12 +481,13 @@ void DefaultRenderLoopDelegate::prepareFrame()
     }
     // This hook runs before acquisition or UI callbacks. Background producers
     // remain the application's responsibility and must not submit concurrently.
+    std::optional<gpu::Device::ResourceUpdateScope> resourceUpdate;
     {
         base::CpuProfileScope profile(_pendingRenderer
-            ? (_scenePending ? "delegate.waitIdle.rendererAndSceneReplacement" : "delegate.waitIdle.rendererReplacement")
-            : "delegate.waitIdle.sceneReplacement");
-        base::CpuProfileScope::count("delegate.replacementDrains", 1, "drains");
-        _engine->device()->waitIdle();
+            ? (_scenePending ? "delegate.resourceSync.rendererAndSceneReplacement" : "delegate.resourceSync.rendererReplacement")
+            : "delegate.resourceSync.sceneReplacement");
+        base::CpuProfileScope::count("delegate.replacementSyncRequests", 1, "requests");
+        resourceUpdate.emplace(*_engine->device());
     }
     base::CpuProfileScope stageProfile("delegate.commitReplacement");
     // Snapshot before callbacks: replacements queued by detach/attach run later.
@@ -527,9 +568,9 @@ void DefaultRenderLoopDelegate::reconfigureRenderer()
     {
         base::CpuProfileScope reconfigureProfile("delegate.reconfigureRenderer");
         {
-            base::CpuProfileScope profile("delegate.waitIdle.rendererReconfiguration");
-            base::CpuProfileScope::count("delegate.reconfigurationDrains", 1, "drains");
-            _engine->device()->waitIdle();
+            base::CpuProfileScope profile("delegate.resourceSync.rendererReconfiguration");
+            base::CpuProfileScope::count("delegate.reconfigurationSyncRequests", 1, "requests");
+            _engine->device()->waitIdleForResourceUpdate();
         }
         detachTargets();
         _renderer->resize(_outputExtent, internal);

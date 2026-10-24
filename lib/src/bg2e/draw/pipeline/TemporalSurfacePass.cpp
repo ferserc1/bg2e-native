@@ -423,7 +423,7 @@ void TemporalSurfacePass::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _slots.clear();
     _pool.reset();

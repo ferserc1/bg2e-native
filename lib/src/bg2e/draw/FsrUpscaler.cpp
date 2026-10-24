@@ -113,8 +113,8 @@ void FsrUpscaler::resize(const UpscalerConfiguration& configuration)
         throw std::logic_error("Initialize FSR before resizing");
     }
     {
-        base::CpuProfileScope profile("upscaler.waitIdle.resize");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("upscaler.resourceSync.resize");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _opaqueMotion.cleanup();
     _opaqueMotionReady = false;
@@ -347,8 +347,8 @@ void FsrUpscaler::cleanup()
 {
     if (_engine)
     {
-        base::CpuProfileScope profile("upscaler.waitIdle.cleanup");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("upscaler.resourceSync.cleanup");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _opaqueMotion.cleanup();
     _opaqueMotionReady = false;

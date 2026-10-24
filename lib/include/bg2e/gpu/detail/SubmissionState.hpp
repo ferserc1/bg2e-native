@@ -26,6 +26,7 @@
 #include <memory>
 #include <mutex>
 #include <stdexcept>
+#include <thread>
 #include <vector>
 #include <utility>
 
@@ -213,6 +214,7 @@ class BG2E_API SubmissionState {
     // Caller holds admit() through registration and native submit.
     void track(const std::shared_ptr<CompletionRecord>& record)
     {
+        _resourceUpdateIdle = false;
         record->id = ++_nextId;
         _pending.push_back(record);
     }
@@ -266,6 +268,41 @@ class BG2E_API SubmissionState {
         }
     }
 
+    // Resource-update scopes are caller-coordinated stopped boundaries. Only
+    // the owning thread may reuse an idle observation, and every send clears it.
+    void beginResourceUpdate()
+    {
+        std::lock_guard lock(_mutex);
+        const auto thread = std::this_thread::get_id();
+        if (_resourceUpdateDepth && _resourceUpdateThread != thread)
+        {
+            throw std::logic_error("Resource updates must be serialized by their owner");
+        }
+        if (!_resourceUpdateDepth)
+        {
+            _resourceUpdateThread = thread;
+            _resourceUpdateIdle = false;
+        }
+        ++_resourceUpdateDepth;
+    }
+
+    void endResourceUpdate() noexcept
+    {
+        std::lock_guard lock(_mutex);
+        if (--_resourceUpdateDepth == 0)
+        {
+            _resourceUpdateIdle = false;
+            _resourceUpdateThread = {};
+        }
+    }
+
+    bool resourceUpdateIdle()
+    {
+        std::lock_guard lock(_mutex);
+        return _resourceUpdateDepth && _resourceUpdateThread == std::this_thread::get_id() &&
+            _resourceUpdateIdle && !_draining && !_closed;
+    }
+
     void drain(std::function<void()> nativeWait = {}, bool close = false)
     {
         std::vector<std::shared_ptr<CompletionRecord>> pending;
@@ -315,6 +352,7 @@ class BG2E_API SubmissionState {
             {
                 _closed = true;
             }
+            _resourceUpdateIdle = !error;
             _draining = false;
         }
         _changed.notify_all();
@@ -343,6 +381,9 @@ class BG2E_API SubmissionState {
     std::condition_variable _changed;
     bool _draining = false;
     bool _closed = false;
+    uint32_t _resourceUpdateDepth = 0;
+    std::thread::id _resourceUpdateThread;
+    bool _resourceUpdateIdle = false;
     uint64_t _nextId = 0;
     std::vector<std::shared_ptr<CompletionRecord>> _pending;
 };

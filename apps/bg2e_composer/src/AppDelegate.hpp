@@ -129,12 +129,18 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t submesh, bool additive);
     void queueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
         std::function<void(bg2e::scene::Node&)> operation, bool rebuild = false);
+    // Only CPU values; never replace components, geometry, or GPU resources.
+    void queueNodeValueEdit(std::weak_ptr<bg2e::scene::Node> node,
+        std::function<void(bg2e::scene::Node&)> operation);
     void selectTreeNode(std::weak_ptr<bg2e::scene::Node> node, bool additive);
     void reparentNode(std::weak_ptr<bg2e::scene::Node> node,
         std::weak_ptr<bg2e::scene::Node> parent);
     void editComponent(std::weak_ptr<bg2e::scene::Node> node,
         std::weak_ptr<bg2e::scene::Component> original,
         std::shared_ptr<bg2e::scene::Component> replacement);
+    void editComponentProperties(std::weak_ptr<bg2e::scene::Node> node,
+        std::weak_ptr<bg2e::scene::Component> component,
+        std::function<void(void*)> operation, bool resourceChange);
     void setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled);
     void addSceneItem(unsigned kind);
     void addPrimitive(unsigned kind);
@@ -197,6 +203,8 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     static bg2e::draw::RendererConfiguration configuration(
         const std::shared_ptr<bg2e::manipulation::GizmoAndSelectionRenderer>& overlay);
     void queueInput(std::function<void()> event);
+    void enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
+        std::function<void(bg2e::scene::Node&)> operation, bool rebuild, bool cpuValuesOnly);
     glm::ivec2 inputPosition(int x, int y) const;
     void retireBakeFrame();
     void stopLightmapBake(bool cancelled);

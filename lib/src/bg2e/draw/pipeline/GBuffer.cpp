@@ -171,7 +171,7 @@ void GBuffer::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _transparentPipeline.reset();
     _pipeline.reset();

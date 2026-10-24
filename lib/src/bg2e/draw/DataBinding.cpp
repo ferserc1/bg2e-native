@@ -158,7 +158,7 @@ void DataBinding::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _slots.clear();
     _layout.reset();
@@ -413,8 +413,8 @@ void ObjectDataBinding::prepare(const FrameContext& frame, const RenderQueue& qu
             record.data = data;
             for (size_t texture = 0; texture < item.textures.size(); ++texture)
             {
-                record.images[texture] = item.textures[texture]->imageResource();
-                record.samplers[texture] = item.textures[texture]->samplerResource();
+                record.images[texture] = item.textureImageOwners[texture];
+                record.samplers[texture] = item.textureSamplerOwners[texture];
             }
             record.valid = true;
         }
@@ -447,7 +447,7 @@ void ObjectDataBinding::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _slots.clear();
     _layout.reset();

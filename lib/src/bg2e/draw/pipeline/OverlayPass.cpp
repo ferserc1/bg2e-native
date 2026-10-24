@@ -107,7 +107,7 @@ void MeshOverlayPass::resize(const OverlayConfiguration& configuration)
     {
         throw std::invalid_argument("Overlay resize requires initialized matching formats/slots");
     }
-    _engine->device()->waitIdle();
+    _engine->device()->waitIdleForResourceUpdate();
     _configuration = configuration;
     buildDepth();
 }
@@ -232,7 +232,7 @@ void MeshOverlayPass::cleanup()
 {
     if (_engine)
     {
-        _engine->device()->waitIdle();
+        _engine->device()->waitIdleForResourceUpdate();
     }
     _slots.clear();
     _transform.reset();

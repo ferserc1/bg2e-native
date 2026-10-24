@@ -358,7 +358,7 @@ void RTReflections::reset()
 {
     if (_device)
     {
-        _device->waitIdle();
+        _device->waitIdleForResourceUpdate();
     }
     for (auto& slot : _slots)
     {

@@ -70,6 +70,22 @@ class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
     void enqueueRendererUpdate(uint64_t generation, std::function<void(Renderer&)> operation,
         std::function<void()> stale = {});
 
+    // Main thread only; runs at prepareFrame without draining GPU work. The
+    // callback may edit CPU values consumed by future frame snapshots. It must
+    // not rely on this queue to protect native resource changes or submissions;
+    // exceptional work such as cancelling a bake must synchronize its own users.
+    // A batch containing conservative updates still drains before execution.
+    void enqueueCpuValueUpdate(uint64_t generation, std::function<void(Renderer&)> operation,
+        std::function<void()> stale = {});
+
+    // Publish new resource versions before acquisition without a global drain.
+    // The callback must retain replaced native owners until their submissions
+    // finish (for example through CleanupManager::defer), and must not rewrite
+    // resources used by submitted or unsubmitted commands. Uploads synchronize
+    // their own dependencies. Conservative operations in the same batch drain.
+    void enqueueRetainedResourceUpdate(uint64_t generation, std::function<void(Renderer&)> operation,
+        std::function<void()> stale = {});
+
     // Main thread only; applied at prepareFrame with background producers stopped.
     // Returns false for unsupported/custom renderers or final passes; enqueue the
     // conservative callback instead. Notification callbacks may update UI or
@@ -107,6 +123,8 @@ class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
         uint64_t generation;
         std::function<void(Renderer&)> operation;
         std::function<void()> stale;
+        bool cpuValuesOnly = false;
+        bool retainsResources = false;
         struct ColorValue {
             FinalColorProperty property;
             float value;

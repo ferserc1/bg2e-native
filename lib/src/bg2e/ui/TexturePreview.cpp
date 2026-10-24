@@ -19,6 +19,8 @@
 #include <bg2e/ui/TexturePreview.hpp>
 #include "detail/PreviewRegistry.hpp"
 #include <bg2e/gpu/Device.hpp>
+#include <bg2e/gpu/CleanupManager.hpp>
+#include <bg2e/base/CpuProfile.hpp>
 #include <imgui.h>
 #include <algorithm>
 #include <stdexcept>
@@ -74,26 +76,31 @@ void PreviewRegistry::beginFrame()
     {
         return;
     }
-    // The registry is the last owner only after all widget handles are gone.
-    // Drain at the following UI frame, never while its draw data is being built.
-    if (std::any_of(_entries.begin(), _entries.end(), [](const auto& entry)
+    // Orphaned previews belong only to already-submitted UI frames. Retain the
+    // descriptor and its exact native owners until those submissions complete.
+    for (const auto& entry : _entries)
     {
-        return entry.use_count() == 1;
-    }))
-    {
-        _engine->device()->waitIdle();
-        std::erase_if(_entries, [&](const auto& entry)
+        if (entry->retirementScheduled)
         {
-            if (entry.use_count() != 1)
+            continue;
+        }
+        if (entry.use_count() != 1)
+        {
+            continue;
+        }
+        _engine->cleanupManager().defer([weak = weak_from_this(), entry]()
+        {
+            if (auto registry = weak.lock(); registry && registry->_backend)
             {
-                return false;
+                if (entry->identifier && entry->generation == registry->_backend->textureGeneration())
+                {
+                    registry->_backend->removeTexture(entry->identifier);
+                }
+                std::erase(registry->_entries, entry);
             }
-            if (entry->identifier && entry->generation == _backend->textureGeneration())
-            {
-                _backend->removeTexture(entry->identifier);
-            }
-            return true;
         });
+        entry->retirementScheduled = true;
+        base::CpuProfileScope::count("ui.retiredTexturePreviews", 1);
     }
 }
 

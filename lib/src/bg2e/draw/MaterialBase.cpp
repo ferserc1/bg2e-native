@@ -19,6 +19,7 @@
 #include <bg2e/draw/MaterialBase.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 #include <bg2e/gpu/Device.hpp>
+#include <bg2e/gpu/CleanupManager.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 
 #include <stdexcept>
@@ -111,11 +112,8 @@ void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
         settingsOwners[i] = settings;
         settingsRevisions[i] = settingsRevision;
     }
-    {
-        base::CpuProfileScope profile("material.waitIdle.updateTextures");
-        base::CpuProfileScope::count("material.drains.updateTextures", 1, "drains");
-        _engine->device()->waitIdle();
-    }
+    _engine->cleanupManager().defer([previous = _textures]() {});
+    base::CpuProfileScope::count("material.retiredTextureSets", 1);
     _textures = std::move(textures);
     _realizedSettings = std::move(settingsOwners);
     _realizedSettingsRevisions = settingsRevisions;
@@ -146,10 +144,10 @@ void MaterialBase::setTexture(TextureSlot slot, std::shared_ptr<Texture> texture
     }
     const auto index = size_t(slot);
     auto settings = cloneTextureSettings(*texture->base());
+    if (const auto previous = _textures.at(index))
     {
-        base::CpuProfileScope profile("material.waitIdle.setTexture");
-        base::CpuProfileScope::count("material.drains.setTexture", 1, "drains");
-        _engine->device()->waitIdle();
+        _engine->cleanupManager().defer([previous]() {});
+        base::CpuProfileScope::count("material.retiredTextures", 1);
     }
     // Keep the supplied realization, including GPU-authored mip levels. The
     // settings value records its sampler/source, not a second realization.
@@ -172,9 +170,9 @@ void MaterialBase::setTexture(TextureSlot slot, std::shared_ptr<Texture> texture
 std::shared_ptr<MaterialBase> MaterialBase::clone() const
 {
     {
-        base::CpuProfileScope profile("material.waitIdle.clone");
-        base::CpuProfileScope::count("material.drains.clone", 1, "drains");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("material.resourceSync.clone");
+        base::CpuProfileScope::count("material.resourceSyncRequests.clone", 1, "requests");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     auto result = std::make_shared<MaterialBase>(_engine);
     result->_attributes = cloneMaterialAttributes(_attributes);

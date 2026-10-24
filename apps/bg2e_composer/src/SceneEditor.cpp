@@ -28,6 +28,10 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <bg2e/draw/RendererDeferred.hpp>
+#include <bg2e/scene/OrbitCameraComponent.hpp>
+#include <bg2e/scene/PolarTransformController.hpp>
+#include <bg2e/scene/FixedScaleTransformController.hpp>
+#include <bg2e/scene/ChainJoint.hpp>
 
 namespace bg2e_composer {
 
@@ -78,7 +82,7 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
     auto name = target->name();
     if (ui::Value::text("Node name", name))
     {
-        delegate->queueNodeEdit(node, [name](auto& current)
+        delegate->queueNodeValueEdit(node, [name](auto& current)
         {
             current.setName(name);
         });
@@ -107,20 +111,11 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
     {
         try
         {
-            // Drawable resources have their own left-hand editor. Never clone
-            // their GPU realization during UI drawing just to stage properties.
+            // Drawable resources have their own left-hand editor.
             if (dynamic_cast<scene::DrawableComponent*>(component.get()))
             {
                 ui::Text::text("Edit drawable and materials in Model Properties.");
                 return;
-            }
-            auto staged = component->clone();
-            const auto* stagedComponent = staged.get();
-            const auto* originalComponent = component.get();
-            if (!stagedComponent || staged == component || staged->ownerNode() ||
-                typeid(*stagedComponent) != typeid(*originalComponent))
-            {
-                throw std::logic_error("Component editor requires an independent, exact-type clone");
             }
             if (const auto* info = reflection::TypeRegistry::get().type(component->typeName()))
             {
@@ -142,13 +137,14 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
                         ui::Text::text("Clear Environment Image to use the procedural sky colors.");
                     }
                 }
-                if (ui::ReflectionWidget::drawProperties(staged.get(), *info))
+                ui::ReflectionWidget::drawProperties(component.get(), *info, 0,
+                    [weak, node, target = std::weak_ptr<scene::Component>(component)](auto operation, bool resourceChange)
                 {
                     if (auto owner = weak.lock())
                     {
-                        owner->editComponent(node, component, staged);
+                        owner->editComponentProperties(node, target, std::move(operation), resourceChange);
                     }
-                }
+                });
             }
         }
         catch (const std::exception& error)
@@ -194,7 +190,7 @@ void AppDelegate::selectTreeNode(std::weak_ptr<bg2e::scene::Node> target, bool a
 
 void AppDelegate::setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled)
 {
-    queueNodeEdit(node, [this, enabled](auto& target)
+    queueNodeValueEdit(node, [this, enabled](auto& target)
     {
         const bool before = target.enabled();
         target.setEnabled(enabled);
@@ -207,7 +203,65 @@ void AppDelegate::setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool ena
             target.setEnabled(before);
             throw;
         }
-    }, true);
+    });
+}
+
+
+void AppDelegate::editComponentProperties(std::weak_ptr<bg2e::scene::Node> node,
+    std::weak_ptr<bg2e::scene::Component> component,
+    std::function<void(void*)> operation, bool resourceChange)
+{
+    auto current = component.lock();
+    if (!current || !operation)
+    {
+        return;
+    }
+    using namespace bg2e::scene;
+    const auto& type = typeid(*current);
+    // Only known CPU representations opt out of the conservative GPU boundary.
+    // A custom component's reflected setters may own native resources.
+    const bool cpuValuesOnly = !resourceChange &&
+        (type == typeid(TransformComponent) || type == typeid(LightComponent) ||
+         type == typeid(CameraComponent) || type == typeid(EnvironmentComponent) ||
+         type == typeid(OrbitCameraComponent) || type == typeid(PolarTransformControllerComponent) ||
+         type == typeid(FixedScaleTransformControllerComponent) ||
+         type == typeid(InputChainJointComponent) || type == typeid(OutputChainJointComponent));
+    auto edit = [this, component, operation = std::move(operation)](auto& target)
+    {
+        auto current = component.lock();
+        if (!current || current->ownerNode() != &target)
+        {
+            return;
+        }
+        // Changing a light's type can exceed the supported enabled-light count.
+        // Keep the original representation for rollback without detaching it.
+        auto* light = dynamic_cast<LightComponent*>(current.get());
+        const auto previousLight = light
+            ? std::optional<bg2e::base::Light>(light->light()) : std::nullopt;
+        try
+        {
+            operation(current.get());
+            _stage->validateEditingGraph();
+        }
+        catch (...)
+        {
+            if (previousLight)
+            {
+                light->light() = *previousLight;
+            }
+            throw;
+        }
+        // Gizmos detect representation changes in their normal update path;
+        // property edits do not require a document-wide tools rebuild.
+    };
+    if (cpuValuesOnly)
+    {
+        queueNodeValueEdit(node, std::move(edit));
+    }
+    else
+    {
+        queueNodeEdit(node, std::move(edit));
+    }
 }
 
 

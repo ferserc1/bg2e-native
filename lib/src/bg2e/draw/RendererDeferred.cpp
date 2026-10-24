@@ -848,9 +848,9 @@ void RendererDeferred::attachScene(std::shared_ptr<scene::Node> sceneRoot)
         throw std::logic_error("Initialize renderer before scene attachment");
     }
     {
-        base::CpuProfileScope profile("renderer.waitIdle.attachScene");
-        base::CpuProfileScope::count("renderer.attachSceneDrains", 1, "drains");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("renderer.resourceSync.attachScene");
+        base::CpuProfileScope::count("renderer.attachSceneSyncRequests", 1, "requests");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     resetGIUpsamplingSlots();
     if (_tracingResources)
@@ -898,9 +898,9 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
         throw std::invalid_argument("Renderer resize requires initialized nonzero extents");
     }
         {
-        base::CpuProfileScope profile("renderer.waitIdle.resize");
-        base::CpuProfileScope::count("renderer.resizeDrains", 1, "drains");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("renderer.resourceSync.resize");
+        base::CpuProfileScope::count("renderer.resizeSyncRequests", 1, "requests");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     resetGIUpsamplingSlots();
     _configuration.outputExtent = output;
@@ -1931,8 +1931,8 @@ void RendererDeferred::cleanup()
 {
     if (_engine)
     {
-        base::CpuProfileScope profile("renderer.waitIdle.cleanup");
-        _engine->device()->waitIdle();
+        base::CpuProfileScope profile("renderer.resourceSync.cleanup");
+        _engine->device()->waitIdleForResourceUpdate();
     }
     cleanupGIUpsampling();
     for (size_t i = _initializedOverlays; i > 0; --i)
