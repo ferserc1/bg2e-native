@@ -127,7 +127,7 @@ class BG2E_API CpuProfileScope {
     void finish() noexcept;
     void begin() noexcept;
 
-    static thread_local CpuProfileScope* _current;
+    static CpuProfileScope*& current() noexcept;
     const char* _label;
     bool _boundary = false, _active = false, _complete = false, _sceneRendered = false;
     CpuProfileScope* _parent = nullptr;

@@ -47,11 +47,20 @@ set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY "")
 set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "")
 set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual")
 
-# Enable multi processor build in Windows
+# Schedule individual translation units, including files with distinct /Fo paths.
+# Traditional /MP only parallelizes files within each MSBuild metadata batch.
+if(MSVC AND CMAKE_GENERATOR MATCHES "^Visual Studio")
+    foreach(PROPERTY IN ITEMS UseMultiToolTask EnforceProcessCountAcrossBuilds)
+        if(NOT CMAKE_VS_GLOBALS MATCHES "(^|;)${PROPERTY}=")
+            list(APPEND CMAKE_VS_GLOBALS "${PROPERTY}=true")
+        endif()
+    endforeach()
+endif()
+
+# Retain /MP as a fallback when MultiToolTask is explicitly disabled. The MTT
+# scheduler disables compiler-level /MP and shares the logical-CPU budget instead.
 if (MSVC)
     add_compile_options(/MP)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MP")
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MP")
 endif()
 
 add_subdirectory(lib)

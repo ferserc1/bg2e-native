@@ -118,7 +118,7 @@ class BG2E_API MaterialBase {
     std::array<uint64_t, 6> _realizedSettingsRevisions{};
     mutable std::shared_ptr<MaterialCache> _cache;
     bool _materialCacheEnabled = true;
-    friend MaterialData packMaterial(const MaterialBase& material);
-    friend MaterialData packMaterial(const MaterialBase& material, MaterialRevisions* revisions);
+    friend BG2E_API MaterialData packMaterial(const MaterialBase& material);
+    friend BG2E_API MaterialData packMaterial(const MaterialBase& material, MaterialRevisions* revisions);
 };
 }

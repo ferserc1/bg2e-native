@@ -16,6 +16,11 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+// MSVC's stable_sort temporary buffer must preserve Item's extended alignment.
+#if defined(_MSC_VER) && !defined(_ENABLE_EXTENDED_ALIGNED_STORAGE)
+#define _ENABLE_EXTENDED_ALIGNED_STORAGE
+#endif
+
 #include <bg2e/draw/RenderQueue.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/scene/Node.hpp>

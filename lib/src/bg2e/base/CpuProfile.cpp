@@ -814,7 +814,7 @@ GpuProfileSample CpuProfiler::beginGpu(uint64_t presentation, uint64_t scene, Gp
                 sample.presentationNumber = presentation;
                 sample.sceneFrame = scene;
                 sample.workload = workload;
-                if (const auto* scope = CpuProfileScope::_current)
+                if (const auto* scope = CpuProfileScope::current())
                 {
                     sample.presentationFrame = scope->_frame;
                 }
@@ -1049,7 +1049,7 @@ void CpuProfiler::count(const char* name, uint64_t value, const char* unit) noex
         sample.label = bounded(name);
         sample.unit = bounded(unit);
         sample.value = sample.maximumValue = value;
-        if (const auto* scope = CpuProfileScope::_current)
+        if (const auto* scope = CpuProfileScope::current())
         {
             sample.parent = scope->_id;
             sample.presentationFrame = scope->_frame;
@@ -1084,15 +1084,19 @@ std::string CpuProfiler::error()
     return data.error;
 }
 
-thread_local CpuProfileScope* CpuProfileScope::_current = nullptr;
+CpuProfileScope*& CpuProfileScope::current() noexcept
+{
+    static thread_local CpuProfileScope* scope = nullptr;
+    return scope;
+}
 
 CpuProfileScope::CpuProfileScope(const char* label, bool reportBoundary) noexcept
     : _label(label), _boundary(reportBoundary), _active(enabled())
 {
     if (_active)
     {
-        _parent = _current;
-        _current = this;
+        _parent = current();
+        current() = this;
         begin();
         _frame = _boundary ? _id : (_parent ? _parent->_frame : 0);
     }
@@ -1103,7 +1107,7 @@ CpuProfileScope::~CpuProfileScope() noexcept
     if (_active)
     {
         finish();
-        _current = _parent;
+        current() = _parent;
         if (_boundary && enabled() && _epoch == CpuProfiler::session())
         {
             try

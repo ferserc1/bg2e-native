@@ -33,4 +33,5 @@ int main(int argc, char** argv)
     auto instance = gpu::Factory::backend()->sharedInstance();
 
     std::cout << "Hello instance" << std::endl;
+    return 0;
 }

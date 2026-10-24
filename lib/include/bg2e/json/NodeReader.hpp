@@ -326,30 +326,9 @@ class BasicReader {
         return get<base::Color>(key);
     }
 
-    std::optional<BasicReader<detail::ObjectSelector>> getObject(const Key& key) const
-    {
-        auto node = find(key);
-        if (!node || !node->isObject())
-        {
-            return std::nullopt;
-        }
-        return BasicReader<detail::ObjectSelector>(std::move(node));
-    }
-
-    std::optional<BasicReader<detail::ArraySelector>> getArray(const Key& key) const
-    {
-        auto node = find(key);
-        if (!node || !node->isList())
-        {
-            return std::nullopt;
-        }
-        return BasicReader<detail::ArraySelector>(std::move(node));
-    }
-
-    std::optional<BasicReader<detail::ArraySelector>> getList(const Key& key) const
-    {
-        return getArray(key);
-    }
+    std::optional<BasicReader<detail::ObjectSelector>> getObject(const Key& key) const;
+    std::optional<BasicReader<detail::ArraySelector>> getArray(const Key& key) const;
+    std::optional<BasicReader<detail::ArraySelector>> getList(const Key& key) const;
 
     std::size_t size() const
     {
@@ -392,5 +371,33 @@ class BasicReader {
 
 using ObjectReader = BasicReader<detail::ObjectSelector>;
 using ArrayReader = BasicReader<detail::ArraySelector>;
+
+template <typename Selector>
+std::optional<BasicReader<detail::ObjectSelector>> BasicReader<Selector>::getObject(const Key& key) const
+{
+    auto node = find(key);
+    if (!node || !node->isObject())
+    {
+        return std::nullopt;
+    }
+    return BasicReader<detail::ObjectSelector>(std::move(node));
+}
+
+template <typename Selector>
+std::optional<BasicReader<detail::ArraySelector>> BasicReader<Selector>::getArray(const Key& key) const
+{
+    auto node = find(key);
+    if (!node || !node->isList())
+    {
+        return std::nullopt;
+    }
+    return BasicReader<detail::ArraySelector>(std::move(node));
+}
+
+template <typename Selector>
+std::optional<BasicReader<detail::ArraySelector>> BasicReader<Selector>::getList(const Key& key) const
+{
+    return getArray(key);
+}
 
 } // namespace bg2e::json

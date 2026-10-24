@@ -292,6 +292,37 @@ function(bundle_resources)
         set(BL_SUBPATH "Resources")
     endif()
 
+    # Windows apps share a configuration-specific runtime directory. Give each
+    # source/destination pair one writer instead of concurrent per-app copies.
+    # TARGET_FILE_DIR does not add an app dependency under CMP0112 (NEW).
+    get_target_property(RESOURCE_RUNTIME_DIR ${BL_TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
+    if(WIN32 AND CMAKE_CONFIGURATION_TYPES AND IS_ABSOLUTE "${RESOURCE_RUNTIME_DIR}")
+        set(RESOURCE_KEY "${BL_SRC_PATH}|${RESOURCE_RUNTIME_DIR}|${BL_SUBPATH}")
+        foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CONFIG}" CONFIG_UPPER)
+            get_target_property(CONFIG_RUNTIME_DIR ${BL_TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER})
+            string(APPEND RESOURCE_KEY "|${CONFIG}=${CONFIG_RUNTIME_DIR}")
+        endforeach()
+        string(SHA256 RESOURCE_HASH "${RESOURCE_KEY}")
+        set(RESOURCE_TARGET "bg2e_runtime_resources_${RESOURCE_HASH}")
+        if(NOT TARGET ${RESOURCE_TARGET})
+            set(RESOURCE_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}")
+            if("${BL_SRC_PATH}" STREQUAL "${BG2E_SHADER_DIR}")
+                add_custom_target(${RESOURCE_TARGET}
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${BL_SRC_PATH}/draw" "${RESOURCE_DST}/draw"
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${BL_SRC_PATH}/bake" "${RESOURCE_DST}/bake"
+                    DEPENDS ${BG2E_LIB_TARGET}_paired_shaders
+                    VERBATIM)
+            else()
+                add_custom_target(${RESOURCE_TARGET}
+                    COMMAND ${CMAKE_COMMAND} -E copy_directory "${BL_SRC_PATH}" "${RESOURCE_DST}"
+                    VERBATIM)
+            endif()
+        endif()
+        add_dependencies(${BL_TARGET_NAME} ${RESOURCE_TARGET})
+        return()
+    endif()
+
     if("${BL_SRC_PATH}" STREQUAL "${BG2E_SHADER_DIR}")
         if(APPLE)
             set(ENGINE_SHADER_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}")

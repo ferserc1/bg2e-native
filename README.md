@@ -106,8 +106,18 @@ For this reason, Visual Studio 17 is the only supported generator on Windows for
 ```sh
 cd bg2e-native
 cmake -S . -B ./build -G "Visual Studio 17 2022"
-cmake --build ./build
+cmake --build ./build --config Debug --parallel
 ```
+
+Visual Studio builds use MultiToolTask to compile individual C/C++ files in
+parallel, including files with the same name in different directories. The
+compiler processes share a limit across projects that defaults to the number
+of logical processors. `--parallel` also enables concurrent project builds;
+linking and dependency steps still run in their required order.
+
+To limit concurrent compiler processes, pass `/p:CL_MPCount=N` after `--` in the
+build command, or adjust **Maximum Concurrent C++ Compilations** in Visual Studio.
+For example: `cmake --build ./build --config Debug --parallel -- /p:CL_MPCount=8`.
 
 > Note: Other versions of Visual Studio may work as long as they fully support C++20, but they have not been tested and are therefore not officially supported.
 
