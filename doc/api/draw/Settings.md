@@ -2,7 +2,7 @@
 
 Headers: `<bg2e/draw/SettingsCatalog.hpp>`, `<bg2e/draw/SettingsCodec.hpp>`,
 `<bg2e/draw/RenderSettingsPreferences.hpp>`, `<bg2e/draw/Upscaler.hpp>`,
-`<bg2e/draw/FsrUpscaler.hpp>`, `<bg2e/ui/GraphicsSettingsWindow.hpp>`.
+`<bg2e/draw/FsrUpscaler.hpp>`, `<bg2e/draw/MetalFXUpscaler.hpp>`, `<bg2e/ui/GraphicsSettingsWindow.hpp>`.
 
 ## Live values and safe changes
 
@@ -50,28 +50,54 @@ Use ResourcePicker for HDR selection and clear preview owners before teardown.
 
 ## Resolution and optional reconstruction
 
-`ResolutionSettings` is authoritative on Vulkan and Metal. Enabled policy uses
-floor(output × scale), with scale in [0.25, 1]; disabling restores the original
-fixed/follow-output extent. Default settings are disabled/1.0; the deferred
-example retains these defaults, while manipulation enables scale 0.7. Reduction remains usable without FSR.
+`RendererDeferred` exposes `UpscaleMethod::{None, FSR, MetalFX}` and
+`UpscaleMode::{Native, Quality, Balanced, Performance, UltraPerformance}`. The
+unified method/mode controls own internal resolution on Vulkan and Metal.
+Initialization enables `ResolutionSettings` and sets scale to 1.0 for None, or to
+the selected mode's 1.0/0.60/0.55/0.50/0.35 ratio. `setUpscaleMethod` also reapplies
+the mode; `setUpscaleMode` updates the policy and invalidates histories. A bare
+`ResolutionSettings` object still defaults disabled/1.0 and accepts [0.25, 1], but
+those standalone defaults do not describe the initialized deferred renderer.
 
-`Upscaler` is a public injectable lifecycle with identifier/label, requirements,
-availability/status, prepare/record/reset and reflected settings metadata.
-`ResamplingUpscaler` supplies bilinear HDR reconstruction. A false record result
-falls back to ordinary resampling. Output is full-resolution linear RGBA16F HDR
-before the single final color operation. Debug sources remain internal-sized.
+Preset dimensions use exact integer percentages, rounded down independently with a
+one-pixel minimum. None retains the selected mode while rendering at scale 1.0.
+Native requests same-size temporal AA if supported. These ratios are engine
+presets, not the SDKs' standard quality labels. See [the resolution example and
+pipeline](../../deferred_render_model.md#three-resolution-domains).
 
-`FsrUpscaler` is optional Vulkan SDK integration; native SDK code is isolated in
-`gpu::vk::FidelityFXBridge`. Metal, missing SDK and initialization failures report
-status and retain bilinear rendering. Primitive device capabilities do not prove
-SDK availability. At most four SDK queued frames are supported. Acquired-slot
-resources and ordered command recording avoid routine per-frame idle/readback.
-Motion is camera-only with preserved opaque depth and conventional finite RH
-perspective/zero-to-one depth. Identity/orthographic cameras use unjittered
-fallback. Moving objects/glass can ghost; no reactive masks or previous-object vectors
-are supplied. Separate engine effect histories are available through TemporalAccumulator. Attach/resize/replacement/projection/discontinuity and
-explicit `RendererDeferred::resetUpscaler()` camera cuts reset history.
-Native Metal upscaling and DLSS are not implemented.
+The live catalog exposes target `upscaling` with properties `method` and `mode`.
+Its method enum includes only selectors compatible with the current renderer.
+The `upscaler/<identifier>` target exposes implementation capability diagnostics;
+the unified graphics controls do not expose every implementation-specific writable
+accessor (for example FSR sharpness).
+
+A null upscaler retains a backend implementation (disabled FSR on Vulkan, disabled
+MetalFX on Metal). An unset method derives from the enabled state of an injected
+built-in implementation; otherwise it selects None. An explicitly incompatible
+backend/method/upscaler combination rejects. `supportsUpscaleMethod` checks selector
+compatibility (and MetalFX device support), not successful reconstruction at every
+extent. Check the component's `available()` and `status()` as well.
+
+`ResamplingUpscaler` supplies output-sized linear HDR RGBA16F bilinear reconstruction
+when the active implementation is unavailable or returns false. The selected mode
+and internal extent remain in effect on fallback. Temporal implementations return
+an unjittered projection when they already know the configuration/camera is
+unsupported. Tone/color conversion runs once afterwards. Successful temporal
+reconstruction bypasses the optional final processor, including SMAA; bilinear
+fallback may run an explicitly injected processor.
+
+FSR uses the optional Vulkan FidelityFX bridge (at most four queued SDK frames).
+MetalFX uses the native Metal temporal scaler on supported macOS 13+ devices and
+checks the requested scale; native AA and UltraPerformance are not guaranteed.
+Both use preserved opaque depth, camera motion and optional valid opaque object
+motion. Conventional finite perspective cameras are supported; unsupported
+projections use unjittered fallback. Receiver replay is opt-in/default off.
+Transparency/refraction and reflected motion remain approximate. No DLSS or frame
+generation is implemented by these paths.
+
+[Upscaler](Upscaler.md) documents SDK diagnostics, input lifetime, motion conventions
+and reset conditions. [GI upsampling](GIUpsampling.md) is a separate guided
+low-resolution-effect stage, controlled by GI quality rather than Upscale Mode.
 
 See [working tutorial](../../tutorials/draw/10_deferred_renderer.md).
 
@@ -83,7 +109,7 @@ See [working tutorial](../../tutorials/draw/10_deferred_renderer.md).
 | ambientOcclusion | enabled, quality, sampleCount, bounceCount, radius, bias, falloff, bounceAttenuation, useBlueNoise |
 | globalIllumination | enabled, quality, sampleCount, bounceCount, bias, maxDistance, shadowSamples, useShadows, useBlueNoise |
 | reflections | enabled, quality, sampleCount, bias, maxDistance, maxRoughness, roughnessSpread, shadowSamples, useShadows, useBlueNoise |
-| temporal | enabled, freezeAtLimit, maxFrames, absolute/relativePositionThreshold, normalThreshold |
+| temporal | enabled, freezeAtLimit, maxFrames, absolute/relativePositionThreshold, normalThreshold, adaptiveEnabled, minCurrentWeight, reactiveCurrentWeight, historyClipSigma |
 | denoise | enabled, kernelRadius, depthThreshold, normalThreshold, depthSigma, normalSigma, spatialSigma |
 | finalProcessor (when injected) | SMAA enabled, threshold, searchSteps; custom processor may provide different metadata |
 | light/<node identifier> | type, color, intensity, spotAngle/cutoff, castShadows, sourceSize, shadowSamples, affectsReflections |

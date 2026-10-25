@@ -24,7 +24,7 @@ Vulkan uses iterative raygen transport with miss/closest-hit/any-hit and recursi
 
 Each prepared slot retains its snapshot and each invocation retains uniforms/descriptors/noise/environment through completion. Caller-owned surface/output images must also survive completion. A shared snapshot must match Device and the exact selected capacity, clamped to 16384 and native budgets after reservations; AO and GI may select different capacities because GI reserves extra environment resources. reset/cleanup drain at stopped boundaries; call cleanup before destroying the Device. [Temporal histories](TemporalAccumulator.md) handle GI independently; [spatial filtering](DenoiseFilter.md) is available after temporal accumulation.
 
-See [native ABI and implementation handoff](../../../docs/render_to_draw/plan/milestone_03_ray_tracing/rtgi.md) and [manual fixture](../../../tests/draw/rtgi/README.md). Compilation and runtime validation belong to the project lead.
+See [shared tracing contracts](TracingSceneResources.md) and the [manual fixture](../../../tests/draw/rtgi/README.md). Compilation and runtime validation belong to the project lead.
 
 RendererDeferred now coordinates effect and SDK resets through invalidateHistories(); resetUpscaler() forwards to it for existing adapters. See [temporal invalidation and ownership](TemporalAccumulator.md).
 
@@ -47,3 +47,15 @@ binding tuples skip descriptor updates, while uniforms are uploaded each call.
 Tracing scene set1 and immutable material arrays set2 retain their existing owners.
 Use setPoolingEnabled(false) for fresh-invocation diagnostics and poolStatistics()
 for current retention, at a synchronized update boundary.
+
+
+## Internal-resolution reconstruction
+
+With built-in GBuffer/RTGI components, `RendererDeferred` may apply
+[depth- and normal-aware GI upsampling](GIUpsampling.md) after temporal accumulation
+and denoising. It maps reduced-quality GI to the internal G-buffer extent before
+lighting. This private compute stage is not called by standalone `RTGlobalIllumination`
+clients. It is independent of output-size FSR/MetalFX reconstruction, and adds no
+new GI history. Initialization/capability failure preserves original scaled-GI
+sampling with a renderer warning; per-pixel invalid estimates retain zero alpha
+and the existing IBL validity fallback.

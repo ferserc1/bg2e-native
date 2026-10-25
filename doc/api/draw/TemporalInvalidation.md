@@ -82,7 +82,7 @@ calls when measuring hits/bytes; validation intentionally restores full serializ
 work. Native timings and visual acceptance remain pending.
 
 Phase 0 accepts trails on moving receivers and stale AO/GI/reflections on stationary
-receivers, including FSR artifacts from camera-only vectors. Motion renews a per-key
+receivers, including temporal-upscaler artifacts when only camera/depth vectors are available. Motion renews a per-key
 rolling window lasting 3*maxFrames subsequent rendered scene records; it preserves
 the authored freeze preference. This is approximate stale-lighting recovery, not
 exact local invalidation. Existing application callbacks that explicitly invalidate

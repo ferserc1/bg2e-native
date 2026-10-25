@@ -120,7 +120,9 @@ UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
 - [Renderer configuration and injection](Renderer.md)
 - [Migration](../../migration_to_draw.md)
 
-- [Upscaler extension contract](Upscaler.md)
+- [Upscaler: FSR, MetalFX and bilinear reconstruction](Upscaler.md)
+- [Depth- and normal-aware GI upsampling](GIUpsampling.md)
+- [Deferred rendering model and resolution domains](../../deferred_render_model.md)
 
 ## Resource reuse and diagnostics
 

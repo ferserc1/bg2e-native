@@ -1,4 +1,77 @@
-# Upscaler extension contract
+# Upscaling: FSR, MetalFX and the extension contract
+
+## Choosing a reconstruction method
+
+An upscaler reconstructs the **complete composed linear HDR image** from internal
+render size to output size. This is separate from
+[guided GI upsampling](GIUpsampling.md), which reconstructs one lighting signal
+before composition. Temporal reconstruction additionally uses previous images,
+depth, motion and subpixel camera jitter; bilinear reconstruction uses only current
+color. Jitter is a small projection offset, not physical camera motion.
+
+| Public method | Implementation | Principal requirements |
+|---------------|----------------|------------------------|
+| `None` (0) | Bilinear fallback, no SDK history | Built-in selection sets scale 1.0 |
+| `FSR` (1) | `FsrUpscaler`, FidelityFX FSR 3.1 | Vulkan backend, compiled optional SDK, supported formats/device, 1–4 SDK frame slots |
+| `MetalFX` (2) | `MetalFXUpscaler`, native temporal scaler | Metal backend, macOS 13+, supported device and accepted scale/configuration |
+
+This path supplies reconstruction, not SDK frame generation. DLSS is not
+implemented. Public method/mode controls retain a backend implementation rather
+than constructing a new one on every frame. Backend-incompatible selections
+reject; optional unavailability normally leaves bilinear rendering operational.
+
+`UpscaleMode` selects these fractions of output **per dimension**: Native=1.0,
+Quality=0.60, Balanced=0.55, Performance=0.50, UltraPerformance=0.35. Presets use exact
+integer floor and a one-pixel minimum. None uses 1.0 while retaining the selected
+mode. These are engine ratios; the names do not imply SDK-standard ratios or
+support for every preset. Unsupported MetalFX scale preserves the selected
+internal extent with bilinear fallback.
+
+Configure before initialization, for example on a Vulkan engine:
+
+```cpp
+bg2e::draw::RendererConfiguration configuration;
+configuration.upscaleMethod = bg2e::draw::UpscaleMethod::FSR;
+configuration.upscaleMode = bg2e::draw::UpscaleMode::Quality;
+// Supply configuration to DefaultRenderLoopDelegate::setRenderer.
+```
+
+On a Metal engine choose `UpscaleMethod::MetalFX`. For live edits, enqueue a
+conservative renderer operation, use the renderer passed to that callback and
+check `supportsUpscaleMethod` before calling `setUpscaleMethod`/`setUpscaleMode`.
+Extent changes require the delegate's reconfiguration boundary. Do not resize or
+replace GPU resources inside an unsynchronized UI callback. The settings facade
+already queues this work; see [Settings](Settings.md).
+
+`supportsUpscaleMethod` indicates selector compatibility; it is not equivalent to
+`upscaler()->available()` or successful recording. Inspect `status()`,
+`sdkAvailable()`, `backendSupported()` and optional opaque-motion diagnostics to
+understand fallback. The FSR implementation also exposes `hardwareStatus()` and
+sharpness in [0,1], default 0.5; MetalFX has no corresponding public sharpness control.
+
+## Pipeline and anti-aliasing behavior
+
+Both implementations consume output-before-tone-map RGBA16F color, preserved opaque
+depth and a camera snapshot. They produce output-sized linear HDR RGBA16F. The
+renderer performs tone/color conversion once afterwards. A successful record from
+a jitter-requiring implementation skips the optional `FinalProcessor`, including
+SMAA, for that frame. On bilinear fallback an injected processor can run; the
+renderer does not insert SMAA automatically. Temporal diagnostic images bypass
+SDK reconstruction.
+
+Native mode requests temporal reconstruction at matching input/output sizes; it
+can act as temporal anti-aliasing where accepted. It does not promise that MetalFX
+accepts 1× on every system. Orthographic/identity and other unsupported camera
+projections use an unjittered fallback when detected by `prepare`.
+
+Opaque receiver replay is explicit (`setTemporalSurfaceEnabled(true)`) and defaults
+off. With replay off or invalid metadata, camera/depth vectors cover the image.
+With valid opaque tokens, rigid object vectors replace those estimates locally.
+Transparent/refraction color and reflected content can have motion different from
+the opaque receiver; no reactive mask or virtual reflected-object vectors correct
+that mismatch. Temporal ghosting remains possible.
+
+## Shared lifecycle and custom implementations
 
 Header: `<bg2e/draw/Upscaler.hpp>`. Implement Upscaler and retain the shared owner
 in RendererConfiguration::upscaler. identifier/label provide stable identity and
@@ -34,14 +107,14 @@ See [settings and limits](Settings.md),
 `UpscalerInput` appends optional `UpscalerOpaqueMotion opaqueMotion`. Its motion and
 token pointers are borrowed RG16F/R32_UINT images, both present or both absent.
 Optional motionOwner/tokenOwner shared pointers must match the respective borrowed
-pointer; FsrUpscaler retains supplied owners per invocation in the acquired slot
+pointer; the built-in temporal consumers retain supplied owners per invocation in the acquired slot
 until that slot is retired. Unowned borrowed images must independently survive GPU
 completion. Existing six-field aggregate callers and custom/resampling upscalers
 remain valid; custom consumers must retain any supplied owners if they read them.
 
 `UpscalerOpaqueMotion::validate(device, internalExtent)` checks pair/owner agreement,
 same valid Device, full internal extent, sampled usage, Image2D, one mip and one
-layer, and exact RG16F motion / R32_UINT token formats. FSR validates supplied
+layer, and exact RG16F motion / R32_UINT token formats. The built-in temporal consumers validate supplied
 metadata even if its optional selection shader or SDK is unavailable; malformed
 input is a caller error, not an unsupported-platform error. Absent metadata is
 valid and keeps the camera-only path. No float conversion of tokens is permitted.
@@ -172,5 +245,5 @@ which bypasses the final processor for that slot.
 
 Implementation references: [Apple descriptor API](https://developer.apple.com/documentation/metalfx/mtlfxtemporalscalerdescriptor)
 and [Apple temporal scaler API](https://developer.apple.com/documentation/metalfx/mtlfxtemporalscalerbase).
-No compilation, tests, shader compilation, native execution or acceptance validation
-was performed for this implementation. Platform and visual acceptance remain manual.
+Platform-specific runtime and visual acceptance must be checked on the target
+device; the presence of the source implementation does not establish that coverage.

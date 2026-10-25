@@ -26,7 +26,9 @@ callbacks; compose existing callbacks explicitly before using another owner.
 `RendererConfiguration` carries output/internal extents, color/depth formats,
 public layer selections, environment snapshot, soft-shadow pass, upscaler and
 resolution settings. A zero internal extent follows output; an explicit extent is
-fixed across output resize unless enabled resolution policy overrides it. The
+fixed across output resize unless enabled resolution policy overrides it.
+Current deferred initialization enables that policy and derives scale from
+`upscaleMethod`/`upscaleMode` on Vulkan and Metal; see [Upscaler](Upscaler.md). The
 actual output format/extent comes from the retained target. The default delegate
 creates an empty scene; override `createScene()` or supply `setScene`.
 
@@ -200,7 +202,9 @@ hash sampling with noiseStatus. invalidateHistories resets effect generation and
 SDK history; resetUpscaler remains a forwarding compatibility hook.
 
 [FinalProcessor/SMAAProcessor](SMAAProcessor.md) runs only after current final color,
-once per rendered frame, before overlays/UI. See [signal/quality/surface contracts](../../architecture/draw_advanced_lighting.md)
+once per rendered frame when temporal reconstruction was not applied, before
+overlays/UI. Successful FSR/MetalFX reconstruction bypasses it; final color
+conversion itself still runs. See [signal/quality/surface contracts](../../architecture/draw_advanced_lighting.md)
 and [settings](Settings.md) for actual modes/diagnostic IDs.
 
 ## Public linear/final split
@@ -228,12 +232,15 @@ setPoolingEnabled(false) and poolStatistics(); change them at the normal synchro
 update boundary. Reuse does not change the existing temporal-invalidating signature.
 
 The renderer reuses [temporal signature components](TemporalInvalidation.md) while
-preserving the full serialized reset policy, including object motion. Use
+preserving the current reduced history-policy comparison. Full fingerprints
+remain transform-sensitive, while transform-only observation preserves global
+histories and supplies scene motion to temporal scheduling. Use
 setTemporalSignatureValidationEnabled(true) for exact reference parity and
 setTemporalSignatureReuseEnabled(false) for full-serialization decisions. Both are
 synchronized diagnostic controls. Out-of-band sceneFingerprint calls preserve the
-old byte format and do not consume edits before update. No narrower effect reset
-or additional dynamic-object history retention is enabled by this optimization.
+old byte format and do not consume edits before update. Signature caching itself
+does not authorize otherwise incompatible history reuse;
+receiver compatibility and temporal capabilities are checked separately.
 
 ## Recorded camera coordinates (P2.1)
 
@@ -262,9 +269,9 @@ scale matrices are captured when invertible, but previous-normal raster support 
 native acceptance remain pending. Explicit camera cuts/teleports must call
 `invalidateHistories()` (and reset upscaler history as required by its API).
 
-P2.1 only captures and validates state. Moving receivers still reject under the
-Phase 1 policy; motion attachments, enhanced reprojection and FSR integration are
-P2.2–P2.4 work. Existing camera rejection/reset behavior remains unchanged.
+Current consumers use optional receiver metadata for rigid reprojection and opaque
+upscaler motion as described below. Metadata replay remains opt-in/default off;
+capability failures retain the applicable legacy path.
 
 ## Rigid metadata generation (P2.2)
 
@@ -329,17 +336,11 @@ fragment values, degenerate normals and motion exceeding RG16F finite range
 emit token zero and position/normal w=0 while retaining receiver depth coverage.
 Valid moving receivers keep their canonical nonzero token.
 
-P2.2 generates metadata only. It does not transport accumulator/FSR history.
-Until P2.3, `TemporalSurfaceResult::legacyCompatible` is false for a domain containing
-valid moving receivers; RendererDeferred supplies that domain to the unchanged v1
-accumulator path instead of letting the P1 token-only consumer misinterpret motion.
-Static domains retain P1 metadata consumption. No global motion reset is added;
-continuous fallback uses Phase 0 rolling history. Returning to enhanced P1 input
-requires its existing missing-predecessor-metadata rejection. Token diagnostics
-remain available; actual acceptance diagnostics show unavailable when v1 is used.
-This temporary compatibility gate must be removed/replaced by P2.3 correspondence
-validation. Public token/depth metadata access remains a P1 pair; callers must not
-interpret it as a complete object-reprojection contract.
+Metadata generation does not itself accumulate history. The accumulator consumes
+supported previous-position/normal metadata through its v3 or later path. Injected
+legacy consumers cannot interpret moving receiver tokens alone: the renderer drops
+metadata when the consumer lacks reprojection and the domain is not
+`legacyCompatible`. Static compatible domains may still use token-only metadata.
 
 Static verification passed; compilation, shader compilation, Vulkan/Metal execution,
 format support, visual quality and performance remain not_run. Native follow-up:
@@ -358,7 +359,8 @@ components keep static/capability fallback. Slot-captured camera matrices now fe
 recordLinear's reconstruction/effect/denoise and transparent view calculations.
 See [TemporalAccumulator](TemporalAccumulator.md#expected-previous-surface-consumption-p23)
 for the 352-byte ABI, previous-camera tolerance, local compatibility switches,
-explicit camera-cut requirement and unrun native validation. FSR remains P2.4 work.
+explicit camera-cut requirement and validation limits. Opaque motion is also
+consumed by the current FSR and MetalFX integrations.
 
 ## P2.4 opaque upscaler input
 
@@ -367,9 +369,9 @@ before transparent passes, with matching strong owners. FsrUpscaler produces a
 complete motion field by selecting finite object vectors at nonzero tokens and the
 unchanged camera/depth result elsewhere. Replay remains default off and FSR does
 not enable it automatically. Transparent/refraction motion remains approximate.
+MetalFX uses the same opaque/camera selection contract.
 See [Upscaler](Upscaler.md#opaque-object-motion-for-fsr-p24) for ownership, validation,
-SDK units/jitter conventions and the unrun native acceptance scenarios. Phase 2's
-next source step is P2.5; no build/native/performance validation is claimed.
+SDK units/jitter conventions and native acceptance limits.
 
 ## Phase 2 diagnostic views (P2.5)
 
@@ -383,3 +385,49 @@ metadata is black. Use Raw HDR for unprocessed diagnostic color. Replay and effe
 selection remain explicit, with default replay off and no ordinary readback/wait.
 See TemporalAccumulator.md and the Phase 2 P2.5 acceptance matrix. Phase 2 source
 work is implemented_unverified; compile/native/visual/performance checks have not run.
+
+
+## Resolution, reconstruction and final processing
+
+See [Upscaler](Upscaler.md) for the full API and [Settings](Settings.md) for live
+method/mode changes. A null configuration upscaler retains a disabled FSR instance
+on Vulkan or MetalFX instance on Metal. `ResamplingUpscaler` is independently
+initialized as the fallback. The method selects None/FSR/MetalFX; the mode selects
+100/60/55/50/35 percent per dimension. These are separate from effect quality.
+Initialization resolves the internal extent before creating layer targets.
+
+`recordLinear` composes HDR at internal extent and reconstructs to output RGBA16F.
+It passes preserved opaque depth and the captured unjittered/jittered camera pair,
+plus optional retained opaque motion/token metadata. SDK failure/unavailability
+uses bilinear; temporal diagnostics also bypass SDK reconstruction. A successful
+upscaler record with `requirements().jitter` sets the slot's
+`temporalUpscaleApplied`. `recordFinal` always executes final tone/color conversion,
+then runs an injected `FinalProcessor` only when that flag is false, and finally
+records overlays. There is no automatic SMAA insertion or second tone map in an SDK.
+
+`initializationWarnings()` reports recoverable initialization failures and their
+fallbacks. `upscaler()->available()`/`status()` report the active implementation;
+selector compatibility alone does not prove a requested ratio/camera works.
+`setCameraParameters` supplies near/far/FOV metadata for reconstruction; it does
+not replace `setCamera`'s view/projection matrices. Keep them consistent.
+
+## Guided reconstruction of low-resolution GI
+
+The private [GI upsampling stage](GIUpsampling.md) runs after temporal/denoise and
+before lighting, independently of full-image reconstruction. It reconstructs a
+smaller built-in RTGI signal to internal extent using a 4×4 joint bilateral filter
+with current normal/depth guides. Opaque and shared transparent receivers each
+use their actual captured scratch depth. No extra history is introduced.
+Only exact built-in GBuffer/RTGI types are admitted; unsupported initialization
+keeps original scaled signal sampling and records a warning.
+
+## Current temporal options
+
+The default accumulator requests optional metadata v2, rigid reprojection v3,
+adaptive v4 and moment v5 shader interfaces. Provisioning an interface is distinct
+from enabling its policy: receiver replay defaults off and
+`TemporalSettings::adaptiveEnabled` defaults false. Availability queries and the
+selected diagnostic view report which optional paths can execute. Current views
+include tokens, local history, motion, expected previous position/normal, current
+weight, reactivity, variance and effective count. See
+[TemporalAccumulator](TemporalAccumulator.md) for individual signal/history rules.

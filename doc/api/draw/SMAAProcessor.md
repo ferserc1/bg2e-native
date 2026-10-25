@@ -8,10 +8,13 @@ Inject a shared SMAAProcessor into RendererConfiguration::finalProcessor before
 initializing RendererDeferred. It starts disabled; setEnabled(true) or use the
 shared settings target `finalProcessor`. Both existing advanced examples already
 inject one. Null keeps the ordinary final pass. FSR is a separate optional HDR
-reconstruction component; SMAA also operates with default resampling and no RT.
+reconstruction component, as is MetalFX. Successful jitter-requiring reconstruction
+bypasses the injected final processor; fallback does not insert SMAA automatically.
+SMAA also operates with default resampling and no RT.
 
 The renderer initializes the component with Engine, output format and acquired
-slot count, records after final color and before overlays/UI, then cleans it up at
+slot count, records after final color and before overlays/UI only when temporal reconstruction
+was not successfully applied for that frame, then cleans it up at
 a stopped boundary. Output format changes recreate the renderer lifecycle. Size
 changes need no component rebuild: each call allocates scratch for its actual
 input extent. Cleanup drains the device. The caller keeps Engine/Device alive.
@@ -50,6 +53,6 @@ linear filtering. Official bytes remain in `lib/third_party/iryku_smaa` under th
 original license. Missing formats/native kernels report unavailable and preserve
 input. No RT, indexed material arrays or FidelityFX capability gate is used.
 
-[Integration contracts](../../../docs/render_to_draw/plan/milestone_03_ray_tracing/integration.md)
+[Renderer integration contracts](RendererDeferred.md)
 · [Manual validation](../../../tests/draw/advanced_integration/README.md).
 The implementation is accepted by project lead continuation; exact backend/scenario coverage is unspecified. No documentation-agent compilation/runtime execution is claimed.

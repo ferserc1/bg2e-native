@@ -14,7 +14,9 @@ released. For example, removing a node that owns Vulkan textures or buffers must
 until the device has finished using those resources.
 
 `safeUpdateScene` solves both problems by deferring scene mutations to a safe point
-in the frame loop: after the GPU is idle and before any traversal begins.
+in the frame loop: after draining the active execution and before frame rendering.
+This does not exclude independent CPU readers or background GPU producers; the
+application must stop those before changing their sources.
 
 ## How It Works
 
@@ -91,7 +93,7 @@ Key properties:
 
 ### Basic Usage
 
-Queue a lambda to modify the scene on the next frame:
+Queue a lambda to modify the scene at the next main-loop safe drain:
 
 ```cpp
 bg2e::app::MainLoop::current()->safeUpdateScene([&]() {
@@ -148,7 +150,16 @@ The queue stores a weak reference to the token rather than extending its
 lifetime. When the caller releases the last token reference (e.g., when the
 owner object is destroyed), the token destructor sets `alive` to `false` and
 the weak reference expires. `executeSafeUpdateScene()` skips that queued lambda.
-An entry queued without a token remains unconditional.
+An entry queued without a token remains unconditional. Retain the token in the
+owner until execution is wanted: passing a temporary token cancels the entry as
+soon as that temporary is released. Do not capture the token strongly in the
+callback, because that would keep it alive and defeat owner-based cancellation.
+
+A token is a cancellation check, not a lock or an ownership guarantee for `this`.
+It cannot prevent concurrent owner destruction after the check. Keep owner
+lifecycle on the main thread, or lock a weak owner in the callback. Likewise,
+captured `shared_ptr` values keep objects alive but do not establish that they
+still belong to the current document.
 
 ### API
 
@@ -170,108 +181,46 @@ MainLoop::current()->safeUpdateScene(fn, token);
 | Lambda modifies a singleton or global state | No |
 | Lambda is queued from a delegate that has cleanup/destroy lifecycle | **Yes** |
 
-## Real Example: model_edit Environment Restore
+## Current Example: Composer Node Edits
 
-The `model_edit` application allows the user to restore environment settings (skybox,
-lights) from a file. This operation replaces a subtree of the scene graph, which
-must happen when the GPU is idle and no traversal is active.
+`apps/bg2e_composer` uses `draw::DefaultRenderLoopDelegate` update queues rather
+than `MainLoop::safeUpdateScene` for editor mutations. The implementation in
+[EditorActions.cpp](../apps/bg2e_composer/src/EditorActions.cpp) centralizes node
+edits in `AppDelegate::enqueueNodeEdit`:
 
-### StageScene Members
+1. Capture the current document generation, a weak delegate and a weak node.
+2. Choose `enqueueRendererUpdate` for arbitrary changes, or
+   `enqueueCpuValueUpdate` for CPU values consumed by future frame snapshots.
+3. At execution, lock the owner and node, check the document generation and
+   membership in the current stage (with an explicit fill-light exception).
+4. Invalidate lightmap sources before the operation. Rebuild tools and refresh
+   selection when requested.
+5. Call `notifyEdited(renderer)` even after a caught `std::exception`, since an
+   operation may have changed part of its target. This marks the stage modified,
+   invalidates temporal histories, refreshes the camera and requests a scene frame.
+   It keeps the current scene attached; document replacement has a separate lifecycle.
 
-```cpp
-class StageScene {
-    // ...
-    bool _restoringEnvironment = false;
-    std::shared_ptr<bg2e::app::SafeUpdateToken> _restoreToken;
-};
-```
+`queueNodeEdit` selects the conservative path for geometry modifiers, hierarchy
+changes and resource edits. `queueNodeValueEdit` selects the CPU path for supported
+value edits, including node names and submesh metadata. Camera intrinsics and
+highlight intensity also use `enqueueCpuValueUpdate` directly.
 
-### restoreEnvironmentSettings Implementation
+The material editor opts into CPU value and retained resource edits, with a
+weak owner/document-generation guard and an `onChanged` notification to
+`notifyEdited`. These opt-ins rely on the material editor's specific snapshot
+and resource-retention contracts; they do not make arbitrary callbacks safe.
 
-```cpp
-void StageScene::restoreEnvironmentSettings(const std::filesystem::path& path)
-{
-    // Guard: prevent multiple concurrent restores
-    if (_restoringEnvironment) return;
-    _restoringEnvironment = true;
-
-    // Load the new scene from file (on the main thread, before queuing)
-    auto newScene = bg2e::db::loadScene(path);
-
-    // Find the environment and lights nodes in the loaded scene
-    auto findEnvironment =
-        std::make_shared<FindNodeComponentVisitor<EnvironmentComponent>>();
-    auto environmentNode = findEnvironment->find(newScene->rootNode());
-
-    auto findLights = std::make_shared<FindNodeByProperties>();
-    findLights->byName("Lights");
-    auto lightNodes = findLights->find(newScene->rootNode());
-
-    if (!environmentNode.empty() && lightNodes.size() == 1)
-    {
-        // Create a cancellation token
-        _restoreToken = std::make_shared<bg2e::app::SafeUpdateToken>();
-
-        // Queue the scene mutation
-        bg2e::app::MainLoop::current()->safeUpdateScene(
-            [this, environmentNode, newScene, lightNodes]()
-            {
-                auto envNode = environmentNode[0].lock();
-                if (!envNode) {
-                    _restoringEnvironment = false;
-                    return;
-                }
-
-                // Swap the environment subtree
-                _sceneRoot->removeChild(_environmentNode);
-                _environment = std::dynamic_pointer_cast<EnvironmentComponent>(
-                    envNode->environment()->shared_from_this());
-                _environmentNode = std::static_pointer_cast<Node>(
-                    newScene->rootNode()->shared_from_this());
-                _lightsNode = lightNodes[0];
-                _sceneRoot->addChild(_environmentNode);
-                _sceneRoot->scene()->updateLights();
-
-                _restoringEnvironment = false;
-            },
-            _restoreToken   // pass the token
-        );
-    }
-    else
-    {
-        _restoringEnvironment = false;
-        // Show error...
-    }
-}
-```
-
-### Why Each Protection Exists
-
-1. **Guard flag** (`_restoringEnvironment`): Prevents the user from triggering
-   multiple restores in the same frame (e.g., double-clicking "Restore Settings").
-   Without this, two lambdas would be queued and the second would try to remove a
-   node that the first already replaced, corrupting the scene tree.
-
-2. **Explicit capture** (`[this, environmentNode, newScene, lightNodes]`): Makes
-   it clear which objects the lambda depends on. The `[&]` capture was replaced
-   because it implicitly captures `this` and all referenced members by reference,
-   making lifetime analysis difficult.
-
-3. **SafeUpdateToken** (`_restoreToken`): If `StageScene` is destroyed before the
-   lambda executes (e.g., the user closes the application right after clicking
-   "Restore"), the token is destroyed and the queued weak reference expires, so
-   the lambda is discarded. Without this, the lambda would access a destroyed
-   `this` pointer.
-
-4. **`newScene` captured by value**: The loaded scene is captured by `shared_ptr`
-   value in the lambda, ensuring the scene graph stays alive until the lambda
-   executes and transfers ownership to `_sceneRoot`.
+Environment restore is also queued conservatively. `environmentPreset` validates
+the loaded preset, synchronizes a candidate through the active deferred renderer's
+environment generator, then adopts it and refreshes tools/selection. A failure
+after adoption still marks the stage modified and invalidates histories. This
+is the current Composer flow, rather than the older `model_edit` restore example.
 
 ## Summary
 
 | Function | Purpose |
 |----------|---------|
-| `safeUpdateScene(fn)` | Queue a scene mutation for the next frame |
+| `safeUpdateScene(fn)` | Queue a scene mutation for the next main-loop safe drain |
 | `safeUpdateScene(fn, token)` | Queue with cancellation support |
 | `SafeUpdateToken` | RAII token — destroyed token cancels the lambda |
 | `executeSafeUpdateScene()` | Internal: runs all valid lambdas at frame start |
@@ -281,27 +230,54 @@ scene graph outside of the initialization phase. Use a `SafeUpdateToken` when th
 lambda captures `this` or references to objects that may be destroyed before the
 next frame.
 
-## Draw draw scene path
+## Draw Scene and Renderer Lifecycle
 
 The separate [draw renderer lifecycle](api/draw/RendererDeferred.md) and [live settings contract](api/draw/Settings.md)
 cover deferred scene ownership, public injection and queued safe changes.
 Production render behavior described above remains supported.
 
-## Draw draw histories and settings
+## Draw Update Queues, Histories and Settings
 
-Draw edits use DefaultRenderLoopDelegate::enqueueRendererUpdate with current
-renderer generation at the synchronized pre-acquisition boundary. Use the callback's
-Renderer::invalidateHistories before a possibly partial multi-object mutation,
-and request scene work; do not capture an old renderer pointer. The built-in
-signature detects many identities/value changes, but in-place uploads/custom shader
-changes and same-camera teleports still require explicit notification. Settings
-catalog/window edits use the same safe queued path. Renderer generation is not a
-replacement for document/import/bake-job generations.
+Draw queues run on the main thread in `DefaultRenderLoopDelegate::prepareFrame`,
+before acquisition and frame UI/update callbacks. They are separate from the
+mutex-protected MainLoop queue: enqueue draw work on the main thread. Each prepare
+hook takes a snapshot; work enqueued by its callbacks waits for a later hook.
 
-See [renderer lifecycle](api/draw/RendererDeferred.md), [settings](api/draw/Settings.md)
-and [temporal ownership](api/draw/TemporalAccumulator.md). This addition does not
-migrate production safeUpdateScene callers or create a draw bake scheduler.
+| Queue | Synchronization contract |
+|-------|--------------------------|
+| `enqueueRendererUpdate` | Conservative: a batch containing any arbitrary callback opens a `gpu::Device::ResourceUpdateScope` before execution, including stale callbacks. |
+| `enqueueCpuValueUpdate` | May skip the drain for CPU values copied into future frame snapshots. No permission to change native resources or submit GPU work without separate synchronization. |
+| `enqueueRetainedResourceUpdate` | May skip the drain when publishing resource versions. Retain replaced native owners until their submissions finish; never overwrite resources referenced by submitted or unsubmitted commands. Uploads synchronize their own dependencies. |
+| `enqueueFinalColorUpdate` | Bounded typed route for supported standard final-pass exposure, contrast, brightness and gamma. Unsupported configurations return `false` without queueing; use a conservative fallback. |
 
+Mixed batches containing a conservative callback still synchronize and preserve
+queue order. `setValueUpdateDrainElisionEnabled(false)` forces typed batches to
+drain as a diagnostic baseline. Background producers must remain stopped; GPU
+completion does not provide CPU-thread exclusion.
+
+Generic callbacks validate renderer generation and target binding through
+`withRenderer`; stale work invokes the optional stale callback. A successful
+callback requests a scene frame. Do not capture an old renderer pointer: use the
+renderer passed to the callback. Renderer generation does not replace weak owner,
+document, import or bake-job validity checks.
+
+Scene/renderer replacements queued by `setScene`/`setRenderer` commit at the draw
+prepare boundary under their own resource-update scope. They are not committed
+synchronously by a MainLoop safe-update callback. Rebinding changes renderer target
+validity; updates from an old generation can therefore become stale.
+
+Arbitrary edits must explicitly invalidate histories when needed, including after
+possibly partial changes. The built-in signature detects many identity/value
+changes, but in-place uploads/custom shader changes and same-camera teleports
+still need notification. Composer's node-edit path performs this through
+`notifyEdited`; this is not an automatic property of every queued operation.
+
+Settings use the same queue infrastructure, with a typed route for the four
+supported final color properties and conservative fallback for other changes.
+See [update synchronization](api/draw/UpdateSynchronization.md),
+[renderer lifecycle](api/draw/RendererDeferred.md), [settings](api/draw/Settings.md)
+and [temporal ownership](api/draw/TemporalAccumulator.md). These paths do not
+implicitly migrate `safeUpdateScene` callers or create a draw bake scheduler.
 
 ## Integrated draw bake edits
 
@@ -316,7 +292,7 @@ before material adoption; applying one map mid-batch would invalidate its baseli
 
 ## Composer document and worker validity
 
-Draw Composer checks request/document generations and weak node membership independently of renderer generation. Graph/component intent callbacks queue work at the stopped boundary; they do not make a captured raw node safe after document replacement. Imports parse CPU inputs on owned readers and realize graph/images/GPU resources on the main thread. MainLoop workers are joined before graphics cleanup; app import/HTTP readers have their own stop/join lifecycle. See [draw import lifecycle](apps/composer/draw_import_lifecycle.md).
+Draw Composer checks request/document generations and weak node membership independently of renderer generation. Graph/component intent callbacks queue work at the pre-acquisition boundary with the synchronization appropriate to the edit; they do not make a captured raw node safe after document replacement. Imports parse CPU inputs on owned readers and realize graph/images/GPU resources on the main thread. MainLoop workers are joined before graphics cleanup; app import/HTTP readers have their own stop/join lifecycle. See [draw import lifecycle](apps/composer/draw_import_lifecycle.md).
 
 Integrated scene baking freezes the batch source, finishes all targets, then prepares/adopts maps. Complete DB save publication and partial interactive material adoption have different guarantees; see [Composer](apps/draw_composer.md).
 

@@ -35,3 +35,6 @@ add_subdirectory(draw/12_lightmaps)
 
 # M05 headless scene sampling, settings import and PNG output.
 add_subdirectory(draw/13_offscreen_application)
+
+# Reflection tutorial: built-in and application-owned node inspectors.
+add_subdirectory(tutorials/reflection)

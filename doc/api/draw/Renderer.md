@@ -16,8 +16,9 @@ between active renderer/bake lifecycles is unsupported; use separate instances.
 | softShadows | Null selects the default public query shadow pass. |
 | ambientOcclusion | Null selects the disabled public AO default. |
 | globalIllumination/reflections | Null selects enabled public defaults; indirectLighting defaults GlobalIllumination. |
-| upscaler/resolution | Null selects bilinear reconstruction / original fixed-or-follow-output policy. |
-| temporal/denoise/finalProcessor | Shared replaceable effect owners; final processing precedes overlays. |
+| upscaler/resolution | Deferred defaults retain a disabled backend temporal implementation and create resolution settings; method/mode initialize the effective internal scale. Bilinear is the fallback. |
+| upscaleMethod/upscaleMode | Optional None/FSR/MetalFX selection and Native/Quality/Balanced/Performance/UltraPerformance mode; see [Upscaler](Upscaler.md). |
+| temporal/denoise/finalProcessor | Shared replaceable effect owners; final processor follows final color and is skipped when temporal reconstruction succeeds. Overlays follow. |
 | overlays | Ordered non-null post-final passes; one lifecycle slot per mutable pass. |
 
 Null behavior is specific to each slot, not a universal disabled setting.

@@ -28,7 +28,7 @@ See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_r
 - [RendererDeferred and DefaultRenderLoopDelegate](RendererDeferred.md): runtime ownership, lifecycle and public pipeline replacement.
 - [Drawable, material, scene and bindings](Resources.md): canonical ownership, deep clones and safe edits.
 - [Environment tools](Environment.md): public conversion/IBL and HDR precision.
-- [Settings and upscaling](Settings.md): live catalog, codec/facade/UI, resolution and optional FSR.
+- [Settings and upscaling](Settings.md): live catalog, codec/facade/UI, resolution, FSR and MetalFX.
 
 ## Advanced effect contracts
 
@@ -58,3 +58,5 @@ mode metadata, live/stored adoption and the updated HDR G-buffer format.
 - [TransparentRegions](TransparentRegions.md): conservative raster/composition bounds and full fallbacks.
 - [UpdateSynchronization](UpdateSynchronization.md): typed final-color updates and conservative generic callbacks.
 - [CPU/GPU profiling](../../architecture/cpu_profiling.md): collection, recording, native granularity and Performance UI ownership.
+
+- [GI upsampling](GIUpsampling.md): guided reconstruction of low-resolution diffuse radiance.
