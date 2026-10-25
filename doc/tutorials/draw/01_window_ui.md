@@ -1,4 +1,4 @@
-# Tutorial 01: Window and UI with the Draw Draw API
+# Tutorial 01: Window and UI with the Draw API
 
 This tutorial walks through the `01_window_ui` example: opening a window,
 clearing a retained scene image with `bg2e::gpu` commands, and presenting an
@@ -258,6 +258,55 @@ The complete application is available in
 [main.cpp](../../../examples/draw/01_window_ui/src/main.cpp).
 Its [CMakeLists.txt](../../../examples/draw/01_window_ui/CMakeLists.txt)
 registers the `draw_window_ui` target through `bundle_app_sdl()`.
+
+## CMake utilities for engine applications
+
+The example's complete `CMakeLists.txt` is:
+
+```cmake
+cmake_minimum_required(VERSION 3.18)
+
+set(APP_TARGET_NAME draw_window_ui)
+bundle_app_sdl(
+    TARGET_NAME ${APP_TARGET_NAME}
+)
+```
+
+The repository root adds `lib` before `examples`. The library's CMake setup
+includes [`cmake/utils.cmake`](../../../cmake/utils.cmake), making these helper
+functions available, and exports the engine target, include path, and shader
+location to the parent scope. `examples/CMakeLists.txt` adds this example with
+`add_subdirectory(draw/01_window_ui)`. Run CMake from the repository root;
+this small example file is not a standalone build definition.
+
+`APP_TARGET_NAME` names the executable. The current helpers also read that
+variable internally, so set it to the same value passed as `TARGET_NAME`.
+`bundle_app_sdl()` discovers `.cpp` files directly in the example's `src`
+folder, creates the executable (an application bundle on macOS), adds engine,
+application, and Vulkan include paths, and links bg2e, Vulkan, and SDL2.
+SDL is the window/event library used by the application framework.
+
+The helper sets runtime/library/archive output directories to `PRODUCT_DIR`
+(default `bin/<platform>`), deploys engine shaders and assets, and on macOS
+copies the engine, SDL, and Vulkan runtime resources into the bundle. It also
+sets the bundle's runtime library search path. Multi-configuration generators
+may append a configuration directory such as `Debug` to the output path.
+
+### Related helpers
+
+| Helper | Purpose |
+|--------|---------|
+| `bundle_app(TARGET_NAME name)` | Similar application setup; links SDL directly on Windows, whereas `bundle_app_sdl` links it explicitly on every platform. |
+| `bundle_app_sdl(TARGET_NAME name SHADERS_SRC path)` | Also compiles application GLSL shaders and deploys them under `shaders/<target>`. This example needs no application shaders. |
+| `bundle_lib(TARGET_NAME name LIB_PATH path SUBPATH lib)` | Copies one library into a macOS bundle; no-op elsewhere. |
+| `bundle_libs(target subpath paths...)` | Copies several libraries into a macOS bundle. |
+| `bundle_resources(TARGET_NAME name SRC_PATH path SUBPATH name)` | Copies resources to the runtime directory, or `Contents/Resources/<name>` on macOS. |
+| `copy_vulkan_resources(target sdk_path)` | Deploys Vulkan libraries and loader configuration in a macOS bundle; called by the application helpers. |
+
+These are repository functions, not built-in CMake commands. A small independent
+plugin can use ordinary `add_library(... SHARED ...)`; it does not need the
+application helper or a link to bg2e. The
+[dynamic library tutorial](../plugins/dynamic_library.md) explains that setup.
 
 ## Building and running
 

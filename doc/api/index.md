@@ -3,6 +3,7 @@
 Production scene rendering uses draw over Vulkan or Metal; GPU provides the
 low-level backend abstraction. Root `<bg2e/all.hpp>` exports the current modules.
 
+- [Base](base/index.md): CPU data, platform services, dynamic libraries, timers and profiling.
 - [Draw](draw/index.md): lifecycle, renderer, resources, effects and settings.
 - [GPU](gpu/index.md): devices, commands, capabilities, native boundaries and GUI bridge.
 - [Bake](bake/index.md): integrated/standalone UV jobs, settings and typed output.

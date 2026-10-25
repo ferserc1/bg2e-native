@@ -76,6 +76,7 @@ else()
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE "opengl32.lib")
 endif()
 
+target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${CMAKE_DL_LIBS})
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${VULKAN_LIB})
 
