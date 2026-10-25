@@ -41,6 +41,8 @@ target_include_directories(${BG2E_TARGET_NAME} PRIVATE
     ${SDL2_INCLUDE_DIRS}
 )
 
+bg2e_configure_plugin_sdk(${BG2E_TARGET_NAME})
+
 # GTK (Linux only, required for NFD and UI scale detection)
 if(UNIX AND NOT APPLE)
     find_package(PkgConfig REQUIRED)
@@ -94,6 +96,9 @@ set_target_properties(${BG2E_TARGET_NAME} PROPERTIES
 
 if(APPLE)
     set_target_properties(${BG2E_TARGET_NAME} PROPERTIES
+        MACOSX_RPATH TRUE
+        INSTALL_NAME_DIR "@rpath"
+        BUILD_WITH_INSTALL_NAME_DIR TRUE
         INSTALL_RPATH "@executable_path/../lib"
         BUILD_WITH_INSTALL_RPATH TRUE
     )

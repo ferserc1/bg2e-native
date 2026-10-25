@@ -124,6 +124,10 @@ if [ "${CURRENT_PLATFORM}" = "macos" ]; then
     done
 fi
 
+SOURCE_SDK="${PRODUCT_DIR}/sdk"
+[ -f "${SOURCE_SDK}/include/bg2e/plugin/BuildConfig.hpp" ] || die "Build did not produce the paired plugin SDK header"
+[ -f "${SOURCE_SDK}/bg2e-sdk.cmake" ] || die "Build did not produce the paired plugin SDK manifest"
+
 echo "Updating engine headers..."
 rm -rf "${TARGET_INCLUDE_DIR}/bg2e"
 cp "${SOURCE_INCLUDE_DIR}/bg2e.hpp" "${TARGET_INCLUDE_DIR}/bg2e.hpp"
@@ -139,6 +143,13 @@ for tree in draw bake; do
     cp -R "${SOURCE_SHADERS}/${tree}" "${TARGET_PATH}/shaders/${tree}"
 done
 cp "${REPO_ROOT}/cmake/standalone_utils.cmake" "${TARGET_PATH}/cmake/standalone_utils.cmake"
+cp "${REPO_ROOT}/cmake/plugins.cmake" "${TARGET_PATH}/cmake/"
+cp "${REPO_ROOT}/cmake/PLUGINS.md" "${TARGET_PATH}/cmake/"
+mkdir -p "${TARGET_PATH}/doc/api/plugin"
+cp "${REPO_ROOT}/doc/api/plugin/unloading.md" "${TARGET_PATH}/doc/api/plugin/"
+cp "${REPO_ROOT}/cmake/stage_engine_runtime.cmake" "${TARGET_PATH}/cmake/"
+cp "${SOURCE_SDK}/bg2e-sdk.cmake" "${TARGET_PATH}/cmake/"
+cp "${SOURCE_SDK}/include/bg2e/plugin/BuildConfig.hpp" "${TARGET_INCLUDE_DIR}/bg2e/plugin/"
 
 echo ""
 echo "Standalone project libraries updated successfully."

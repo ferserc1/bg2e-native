@@ -1,3 +1,5 @@
+include("${CMAKE_CURRENT_LIST_DIR}/plugins.cmake")
+
 # Build all shaders in the folder SRC_PATH to the folder DST_PATH
 function(build_shaders
     TARGET_NAME
@@ -292,6 +294,7 @@ function(bundle_resources)
         set(BL_SUBPATH "Resources")
     endif()
 
+    get_target_property(APP_RESOURCE_OUTPUT ${BL_TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
     # Windows apps share a configuration-specific runtime directory. Give each
     # source/destination pair one writer instead of concurrent per-app copies.
     # TARGET_FILE_DIR does not add an app dependency under CMP0112 (NEW).
@@ -329,7 +332,7 @@ function(bundle_resources)
         else()
             set(ENGINE_SHADER_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/${BL_SUBPATH}")
         endif()
-        if(APPLE OR CMAKE_CONFIGURATION_TYPES OR NOT "${BL_SRC_PATH}" STREQUAL "${PRODUCT_DIR}/${BL_SUBPATH}")
+        if(APPLE OR CMAKE_CONFIGURATION_TYPES OR NOT "${BL_SRC_PATH}" STREQUAL "${APP_RESOURCE_OUTPUT}/${BL_SUBPATH}")
             foreach(TREE IN ITEMS draw bake)
                 add_custom_command(TARGET ${BL_TARGET_NAME} POST_BUILD
                     COMMAND ${CMAKE_COMMAND} -E copy_directory
@@ -369,7 +372,7 @@ function(bundle_resources)
     # Shader-only edits do not relink an app, so POST_BUILD alone leaves bundle
     # resources stale. Refresh both paired native trees on each app build.
     if(TARGET ${BG2E_LIB_TARGET}_paired_shaders AND "${BL_SRC_PATH}" STREQUAL "${BG2E_SHADER_DIR}"
-        AND (APPLE OR CMAKE_CONFIGURATION_TYPES OR NOT "${BL_SRC_PATH}" STREQUAL "${PRODUCT_DIR}/${BL_SUBPATH}"))
+        AND (APPLE OR CMAKE_CONFIGURATION_TYPES OR NOT "${BL_SRC_PATH}" STREQUAL "${APP_RESOURCE_OUTPUT}/${BL_SUBPATH}"))
         if(APPLE)
             set(PAIRED_RESOURCE_DST "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>/../Resources/${BL_SUBPATH}")
         else()
@@ -445,7 +448,7 @@ endfunction()
 #       )
 function(bundle_app)
     set(options)
-    set(oneValueArgs TARGET_NAME SHADERS_SRC)
+    set(oneValueArgs TARGET_NAME SHADERS_SRC OUTPUT_DIRECTORY)
     cmake_parse_arguments(BL "${options}" "${oneValueArgs}" "" ${ARGN})
 
     file(GLOB APP_SOURCE_FILES
@@ -458,47 +461,61 @@ function(bundle_app)
     set(APP_HEADER_PATH "${CMAKE_CURRENT_LIST_DIR}/src")
 
     if(APPLE)
-        add_executable(${APP_TARGET_NAME} MACOSX_BUNDLE ${APP_SOURCE_FILES})
+        add_executable(${BL_TARGET_NAME} MACOSX_BUNDLE ${APP_SOURCE_FILES})
     else()
-        add_executable(${APP_TARGET_NAME} ${APP_SOURCE_FILES})
+        add_executable(${BL_TARGET_NAME} ${APP_SOURCE_FILES})
     endif()
 
-    target_include_directories(${APP_TARGET_NAME} PUBLIC
+    target_include_directories(${BL_TARGET_NAME} PUBLIC
         ${APP_HEADER_PATH}
         ${BG2E_INCLUDE_PATH}
         ${VULKAN_INCLUDE_PATH}
     )
-    target_link_libraries(${APP_TARGET_NAME} PRIVATE
+    target_link_libraries(${BL_TARGET_NAME} PRIVATE
         ${BG2E_LIB_TARGET}
         ${VULKAN_LIB}  # Some apps need to access Vulkan directly
     )
 
     if(WIN32)
-        target_link_libraries(${APP_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
+        target_link_libraries(${BL_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
     endif()
 
-    set_target_properties(${APP_TARGET_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
-        LIBRARY_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
-        ARCHIVE_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
-    )
+    if(BL_OUTPUT_DIRECTORY)
+        get_filename_component(APP_OUTPUT "${BL_OUTPUT_DIRECTORY}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        set(APP_OUTPUT "${PRODUCT_DIR}")
+    endif()
+    # Set output properties BEFORE resource targets establish their writer keys.
+    set_target_properties(${BL_TARGET_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        LIBRARY_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        ARCHIVE_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>")
+    if(BL_OUTPUT_DIRECTORY AND CMAKE_CONFIGURATION_TYPES)
+        foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CONFIG}" CONFIG_UPPER)
+            set_target_properties(${BL_TARGET_NAME} PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${APP_OUTPUT}/${CONFIG}")
+        endforeach()
+    endif()
+    bg2e_stage_engine_runtime(APP_TARGET ${BL_TARGET_NAME} ENGINE_TARGET ${BG2E_LIB_TARGET})
 
     # Compile the shaders if SHADERS_SRC is set
     if(BL_SHADERS_SRC)
-        set(APP_SHADERS_DST_PATH "${PRODUCT_DIR}/${APP_TARGET_NAME}_resources/app_shaders")
+        set(APP_SHADERS_DST_PATH "${CMAKE_CURRENT_BINARY_DIR}/${BL_TARGET_NAME}_resources/app_shaders")
         message(STATUS "Building app shaders: ${APP_SHADERS_DST_PATH}")
         add_custom_command(
-            TARGET ${APP_TARGET_NAME}
+            TARGET ${BL_TARGET_NAME}
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_SHADERS_DST_PATH}"
         )
-        compile_shaders(${APP_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
-        bundle_resources(TARGET_NAME ${APP_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${APP_TARGET_NAME}")
+        compile_shaders(${BL_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
+        bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${BL_TARGET_NAME}")
     endif()
 
 
-    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
-    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BG2E_LIB_TARGET}>")
+    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
+    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BG2E_LIB_TARGET}>")
 
     # Engine shaders
     bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${BG2E_SHADER_DIR} SUBPATH "shaders")
@@ -528,7 +545,7 @@ endfunction()
 # Same as bundle_app, but links SDL2 directly (for apps that use SDL2 API)
 function(bundle_app_sdl)
     set(options)
-    set(oneValueArgs TARGET_NAME SHADERS_SRC)
+    set(oneValueArgs TARGET_NAME SHADERS_SRC OUTPUT_DIRECTORY)
     cmake_parse_arguments(BL "${options}" "${oneValueArgs}" "" ${ARGN})
 
     file(GLOB APP_SOURCE_FILES
@@ -541,44 +558,58 @@ function(bundle_app_sdl)
     set(APP_HEADER_PATH "${CMAKE_CURRENT_LIST_DIR}/src")
 
     if(APPLE)
-        add_executable(${APP_TARGET_NAME} MACOSX_BUNDLE ${APP_SOURCE_FILES})
+        add_executable(${BL_TARGET_NAME} MACOSX_BUNDLE ${APP_SOURCE_FILES})
     else()
-        add_executable(${APP_TARGET_NAME} ${APP_SOURCE_FILES})
+        add_executable(${BL_TARGET_NAME} ${APP_SOURCE_FILES})
     endif()
 
-    target_include_directories(${APP_TARGET_NAME} PUBLIC
+    target_include_directories(${BL_TARGET_NAME} PUBLIC
         ${APP_HEADER_PATH}
         ${BG2E_INCLUDE_PATH}
         ${VULKAN_INCLUDE_PATH}
     )
-    target_link_libraries(${APP_TARGET_NAME} PRIVATE
+    target_link_libraries(${BL_TARGET_NAME} PRIVATE
         ${BG2E_LIB_TARGET}
         ${VULKAN_LIB}
         ${SDL2_LIBRARIES}
     )
 
-    set_target_properties(${APP_TARGET_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
-        LIBRARY_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
-        ARCHIVE_OUTPUT_DIRECTORY "${PRODUCT_DIR}"
-    )
+    if(BL_OUTPUT_DIRECTORY)
+        get_filename_component(APP_OUTPUT "${BL_OUTPUT_DIRECTORY}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        set(APP_OUTPUT "${PRODUCT_DIR}")
+    endif()
+    # Set output properties BEFORE resource targets establish their writer keys.
+    set_target_properties(${BL_TARGET_NAME} PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        LIBRARY_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        ARCHIVE_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>")
+    if(BL_OUTPUT_DIRECTORY AND CMAKE_CONFIGURATION_TYPES)
+        foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
+            string(TOUPPER "${CONFIG}" CONFIG_UPPER)
+            set_target_properties(${BL_TARGET_NAME} PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY_${CONFIG_UPPER} "${APP_OUTPUT}/${CONFIG}")
+        endforeach()
+    endif()
+    bg2e_stage_engine_runtime(APP_TARGET ${BL_TARGET_NAME} ENGINE_TARGET ${BG2E_LIB_TARGET})
 
     # Compile the shaders if SHADERS_SRC is set
     if(BL_SHADERS_SRC)
-        set(APP_SHADERS_DST_PATH "${PRODUCT_DIR}/${APP_TARGET_NAME}_resources/app_shaders")
+        set(APP_SHADERS_DST_PATH "${CMAKE_CURRENT_BINARY_DIR}/${BL_TARGET_NAME}_resources/app_shaders")
         message(STATUS "Building app shaders: ${APP_SHADERS_DST_PATH}")
         add_custom_command(
-            TARGET ${APP_TARGET_NAME}
+            TARGET ${BL_TARGET_NAME}
             POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E make_directory "${APP_SHADERS_DST_PATH}"
         )
-        compile_shaders(${APP_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
-        bundle_resources(TARGET_NAME ${APP_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${APP_TARGET_NAME}")
+        compile_shaders(${BL_TARGET_NAME} ${VULKAN_SDK} ${BL_SHADERS_SRC} ${APP_SHADERS_DST_PATH})
+        bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${BL_TARGET_NAME}")
     endif()
 
 
-    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
-    bundle_lib(TARGET_NAME ${APP_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BG2E_LIB_TARGET}>")
+    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
+    bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH "$<TARGET_FILE:${BG2E_LIB_TARGET}>")
 
     # Engine shaders
     bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${BG2E_SHADER_DIR} SUBPATH "shaders")

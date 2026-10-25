@@ -72,3 +72,15 @@ else()
             FILES_MATCHING PATTERN "*.spv" PATTERN "*.metallib")
     endforeach()
 endif()
+
+# Plugin authors need public headers and the exact SDK profile paired with bg2e.
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/lib/include/" DESTINATION include COMPONENT Distribution)
+install(FILES "${PRODUCT_DIR}/sdk/include/bg2e/plugin/BuildConfig.hpp"
+    DESTINATION include/bg2e/plugin COMPONENT Distribution)
+install(FILES "${PRODUCT_DIR}/sdk/bg2e-sdk.cmake"
+    "${CMAKE_SOURCE_DIR}/cmake/plugins.cmake"
+    "${CMAKE_SOURCE_DIR}/cmake/PLUGINS.md"
+    "${CMAKE_SOURCE_DIR}/cmake/stage_engine_runtime.cmake"
+    DESTINATION cmake COMPONENT Distribution)
+install(FILES "${CMAKE_SOURCE_DIR}/doc/api/plugin/unloading.md"
+    DESTINATION doc/api/plugin COMPONENT Distribution)

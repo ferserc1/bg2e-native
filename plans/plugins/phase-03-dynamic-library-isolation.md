@@ -19,12 +19,6 @@ The macOS destination is already inside the individual application's `Contents/R
 7. Document that MainLoop may classify this example's raw library as `NotAPlugin` during automatic scanning; that is recoverable and must not prevent the button from explicitly loading `getMessage`. Avoid treating it as a successfully registered engine plugin.
 8. Audit the old shared `plugins` location for stale copies from earlier builds. Document a precise manual migration step for the exact historical example binary. Do not recursively delete the shared directory or unrelated plugins, and do not add a broad configure-time cleanup command.
 
-## Acceptance checks
+## Completion review
 
-- Static review confirms both plugin examples have distinct Linux/Windows runtime roots and neither deploys a module to the ordinary examples' shared `plugins` directory.
-- After explicit compilation authorization, build and run `dylib_example_app` on each platform; verify its existing Load library button still resolves `getMessage` and displays the returned message.
-- Automatic scanning of its private raw library returns `NotAPlugin` without throwing or closing the app.
-- Rebuild after a raw library-only edit and verify the deployed library is refreshed.
-- Verify shaders, assets and required engine/SDL runtime dependencies remain available after isolation, including Windows configurations and launch from another working directory.
-- Verify macOS still uses `Contents/Resources/plugins` inside this application's bundle.
-- Launch an ordinary example and the component-plugin example; neither discovers the raw library from this example once any explicitly identified historical stale copy has been removed.
+Review the source and deployment definitions only. Do not add tests, compile, configure CMake, launch applications or delete historical binaries. Record completion in `progress.md` and stop for feedback.

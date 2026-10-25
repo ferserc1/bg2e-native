@@ -122,6 +122,16 @@ std::filesystem::path bg2e::base::PlatformTools::assetPath()
     return basePath / "assets";
 }
 
+std::filesystem::path bg2e::base::PlatformTools::pluginPath()
+{
+    auto basePath = applicationPath();
+#ifdef BG2E_IS_MAC
+    basePath /= "Contents";
+    basePath /= "Resources";
+#endif
+    return basePath / "plugins";
+}
+
 // macOS version of settingsPath is defined in PlatformTools.mm
 #ifndef BG2E_IS_MAC
 

@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/scene/Component.hpp>
+#include <bg2e/base/RegistrationOwner.hpp>
 
 #include <unordered_map>
 #include <string>
@@ -26,6 +27,8 @@
 #include <memory>
 #include <filesystem>
 #include <utility>
+#include <vector>
+#include <cstdint>
 
 namespace bg2e {
 
@@ -37,9 +40,21 @@ class BG2E_API ComponentFactoryRegistry {
 
     static ComponentFactoryRegistry& get();
 
-    void registerComponent(
+    using Owner = base::RegistrationOwner;
+    enum class RegistrationResult
+    {
+        Registered, Duplicate, Invalid
+    };
+
+    RegistrationResult registerComponent(
         const std::string& componentName,
-        DefaultCreator defaultCreator);
+        DefaultCreator defaultCreator,
+        Owner owner = 0);
+
+    bool remove(const std::string& componentName, Owner owner);
+    void removeOwner(Owner owner);
+    std::vector<std::string> componentNames(Owner owner) const;
+    Owner owner(const std::string& componentName) const;
 
     bool contains(const std::string& componentName) const;
     Component* createDefault(const std::string& componentName) const;
@@ -53,6 +68,7 @@ class BG2E_API ComponentFactoryRegistry {
   private:
     struct FactoryEntry {
         DefaultCreator createDefault;
+        Owner owner = 0;
     };
 
     std::unordered_map<std::string, FactoryEntry> _registry;

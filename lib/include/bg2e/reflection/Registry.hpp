@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/base/RegistrationOwner.hpp>
 #include <bg2e/reflection/TypeInfo.hpp>
 
 #include <cstdint>
@@ -38,7 +39,22 @@ class BG2E_API TypeRegistry {
   public:
     static TypeRegistry& get();
 
-    // Registers (or replaces) the metadata for info.typeName.
+    using Owner = base::RegistrationOwner;
+    enum class RegistrationResult
+    {
+        Registered, Duplicate, Invalid
+    };
+
+    // Existing engine registrations may replace only unowned entries.
+    // Plugin contributions are non-overwriting and explicitly owned.
+    RegistrationResult registerOwnedType(TypeInfo info, Owner owner);
+    bool removeType(const std::string& name, Owner owner);
+    // Invalidates owned metadata/subtype pointers. Callers must discard cached
+    // pointers and executable copies before unloading their provider module.
+    void removeOwner(Owner owner);
+    uint64_t revision() const;
+
+    // Registers (or replaces) unowned metadata for info.typeName.
     void registerType(TypeInfo info);
 
     // nullptr if the type has no reflection metadata.
@@ -49,11 +65,12 @@ class BG2E_API TypeRegistry {
     // Registers a subtype and a type-safe factory for a polymorphic base.
     // Type metadata and subtype metadata may be registered in any order.
     template <typename Base, typename Derived>
-    void registerSubtype(
+    RegistrationResult registerSubtype(
         std::string baseTypeName,
         std::string key,
         std::string displayName,
-        std::string typeName = {})
+        std::string typeName = {},
+        Owner owner = 0)
     {
         static_assert(std::is_base_of_v<Base, Derived>,
                       "bg2e::reflection: registered subtype must derive from its base type");
@@ -61,23 +78,24 @@ class BG2E_API TypeRegistry {
                       "bg2e::reflection: polymorphic subtype bases must have virtual dispatch");
         static_assert(std::is_default_constructible_v<Derived>,
                       "bg2e::reflection: default subtype registration requires a default constructor");
-        registerSubtype<Base, Derived>(
+        return registerSubtype<Base, Derived>(
             std::move(baseTypeName), std::move(key), std::move(displayName),
             []
             {
                 return std::make_shared<Derived>();
             },
-            std::move(typeName));
+            std::move(typeName), owner);
     }
 
     template <typename Base, typename Derived, typename Factory>
         requires std::is_invocable_r_v<std::shared_ptr<Derived>, Factory>
-    void registerSubtype(
+    RegistrationResult registerSubtype(
         std::string baseTypeName,
         std::string key,
         std::string displayName,
         Factory factory,
-        std::string typeName = {})
+        std::string typeName = {},
+        Owner owner = 0)
     {
         static_assert(std::is_base_of_v<Base, Derived>,
                       "bg2e::reflection: registered subtype must derive from its base type");
@@ -91,6 +109,7 @@ class BG2E_API TypeRegistry {
 
         RegisteredSubtype registered;
         registered.info = std::move(info);
+        registered.owner = owner;
         registered.dynamicType = std::type_index(typeid(Derived));
         registered.factory = [factory = std::move(factory)]() -> std::any
         {
@@ -104,7 +123,7 @@ class BG2E_API TypeRegistry {
         {
             return dynamic_cast<Derived*>(static_cast<Base*>(object));
         };
-        registerSubtypeData(std::move(registered));
+        return registerSubtypeData(std::move(registered));
     }
 
     const SubtypeInfo* subtype(const std::string& baseTypeName, const std::string& key) const;
@@ -154,19 +173,22 @@ class BG2E_API TypeRegistry {
 
     struct RegisteredSubtype {
         SubtypeInfo info;
+        Owner owner = 0;
         std::type_index dynamicType = std::type_index(typeid(void));
         std::function<std::any()> factory;
         std::function<const void*(const void*)> constObjectCast;
         std::function<void*(void*)> mutableObjectCast;
     };
 
-    void registerSubtypeData(RegisteredSubtype subtype);
+    RegistrationResult registerSubtypeData(RegisteredSubtype subtype);
     const RegisteredSubtype* subtypeData(
         const std::string& baseTypeName,
         const std::string& key) const;
 
-    std::unordered_map<std::string, TypeInfo> _registry;
-    std::unordered_map<std::string, std::vector<RegisteredSubtype>> _subtypes;
+    std::unordered_map<std::string, std::shared_ptr<TypeInfo>> _registry;
+    std::unordered_map<std::string, Owner> _owners;
+    uint64_t _revision = 0;
+    std::unordered_map<std::string, std::vector<std::shared_ptr<RegisteredSubtype>>> _subtypes;
     static TypeRegistry* _registrySingleton;
 };
 

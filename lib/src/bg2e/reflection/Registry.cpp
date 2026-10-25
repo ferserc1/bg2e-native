@@ -74,13 +74,90 @@ TypeRegistry& TypeRegistry::get()
 
 void TypeRegistry::registerType(TypeInfo info)
 {
-    _registry[info.typeName] = std::move(info);
+    if (!_owners.contains(info.typeName))
+    {
+        const auto name = info.typeName;
+        _registry[name] = std::make_shared<TypeInfo>(std::move(info));
+        ++_revision;
+    }
+}
+
+TypeRegistry::RegistrationResult TypeRegistry::registerOwnedType(TypeInfo info, Owner owner)
+{
+    if (!owner || info.typeName.empty())
+    {
+        return RegistrationResult::Invalid;
+    }
+    if (_registry.contains(info.typeName))
+    {
+        return RegistrationResult::Duplicate;
+    }
+    const auto name = info.typeName;
+    auto stored = std::make_shared<TypeInfo>(std::move(info));
+    _owners.emplace(name, owner);
+    try
+    {
+        _registry.emplace(name, std::move(stored));
+    }
+    catch (...)
+    {
+        _owners.erase(name);
+        throw;
+    }
+    ++_revision;
+    return RegistrationResult::Registered;
+}
+
+bool TypeRegistry::removeType(const std::string& name, Owner owner)
+{
+    const auto it = _owners.find(name);
+    if (!owner || it == _owners.end() || it->second != owner)
+    {
+        return false;
+    }
+    _registry.erase(name);
+    _owners.erase(it);
+    ++_revision;
+    return true;
+}
+
+void TypeRegistry::removeOwner(Owner owner)
+{
+    if (!owner)
+    {
+        return;
+    }
+    for (auto it = _owners.begin(); it != _owners.end();)
+    {
+        if (it->second == owner)
+        {
+            _registry.erase(it->first);
+            it = _owners.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+    for (auto& [base, entries] : _subtypes)
+    {
+        std::erase_if(entries, [owner](const auto& entry)
+        {
+            return entry->owner == owner;
+        });
+    }
+    ++_revision;
+}
+
+uint64_t TypeRegistry::revision() const
+{
+    return _revision;
 }
 
 const TypeInfo* TypeRegistry::type(const std::string& typeName) const
 {
     auto it = _registry.find(typeName);
-    return it != _registry.end() ? &it->second : nullptr;
+    return it != _registry.end() ? it->second.get() : nullptr;
 }
 
 bool TypeRegistry::contains(const std::string& typeName) const
@@ -99,18 +176,30 @@ std::vector<std::string> TypeRegistry::typeNames() const
     return result;
 }
 
-void TypeRegistry::registerSubtypeData(RegisteredSubtype subtype)
+TypeRegistry::RegistrationResult TypeRegistry::registerSubtypeData(RegisteredSubtype subtype)
 {
+    if (subtype.info.baseTypeName.empty() || subtype.info.key.empty() || !subtype.factory)
+    {
+        return RegistrationResult::Invalid;
+    }
     auto& entries = _subtypes[subtype.info.baseTypeName];
     for (auto& entry : entries)
     {
-        if (entry.info.key == subtype.info.key)
+        if (entry->info.key == subtype.info.key)
         {
-            entry = std::move(subtype);
-            return;
+            if (entry->owner || subtype.owner)
+            {
+                return RegistrationResult::Duplicate;
+            }
+            entry = std::make_shared<RegisteredSubtype>(std::move(subtype));
+            ++_revision;
+            return RegistrationResult::Registered;
         }
     }
-    entries.push_back(std::move(subtype));
+    auto stored = std::make_shared<RegisteredSubtype>(std::move(subtype));
+    entries.push_back(std::move(stored));
+    ++_revision;
+    return RegistrationResult::Registered;
 }
 
 const TypeRegistry::RegisteredSubtype* TypeRegistry::subtypeData(
@@ -124,9 +213,9 @@ const TypeRegistry::RegisteredSubtype* TypeRegistry::subtypeData(
     }
     for (const auto& entry : hierarchy->second)
     {
-        if (entry.info.key == key)
+        if (entry->info.key == key)
         {
-            return &entry;
+            return entry.get();
         }
     }
     return nullptr;
@@ -151,7 +240,7 @@ std::vector<SubtypeInfo> TypeRegistry::subtypes(const std::string& baseTypeName)
     result.reserve(hierarchy->second.size());
     for (const auto& entry : hierarchy->second)
     {
-        result.push_back(entry.info);
+        result.push_back(entry->info);
     }
     return result;
 }
@@ -168,9 +257,9 @@ std::string TypeRegistry::subtypeKey(
     const std::type_index type(dynamicType);
     for (const auto& entry : hierarchy->second)
     {
-        if (entry.dynamicType == type)
+        if (entry->dynamicType == type)
         {
-            return entry.info.key;
+            return entry->info.key;
         }
     }
     return {};

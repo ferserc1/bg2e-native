@@ -237,6 +237,10 @@ class BG2E_API MainLoop {
     {
         {
             std::lock_guard lock(_safeUpdateSceneMutex);
+            if (_stopping.load())
+            {
+                return;
+            }
             _safeUpdateScene.push_back({std::move(fn), token, token != nullptr});
         }
         requestFrame();
@@ -257,6 +261,8 @@ class BG2E_API MainLoop {
     glm::uvec2 _windowSize{0, 0};
 
     bool _quit = false;
+    uint64_t _pluginSession = 0;
+    std::atomic<bool> _stopping{false};
 
     std::string _appId;
 

@@ -205,6 +205,10 @@ if [ "${CURRENT_PLATFORM}" = "macos" ]; then
     done
 fi
 
+SDK_PROFILE="${REPO_ROOT}/bin/${CURRENT_PLATFORM}/sdk"
+[ -f "${SDK_PROFILE}/include/bg2e/plugin/BuildConfig.hpp" ] || die "Missing paired plugin SDK build header; rebuild the engine SDK first."
+[ -f "${SDK_PROFILE}/bg2e-sdk.cmake" ] || die "Missing paired plugin SDK manifest; rebuild the engine SDK first."
+
 [ -d "${TARGET_PATH}" ] && die "Target directory already exists: ${TARGET_PATH}"
 
 # ============================================================================
@@ -221,6 +225,7 @@ mkdir -p "${TARGET_PATH}/lib/windows"
 mkdir -p "${TARGET_PATH}/shaders"
 mkdir -p "${TARGET_PATH}/assets"
 mkdir -p "${TARGET_PATH}/app/src"
+mkdir -p "${TARGET_PATH}/plugin/src"
 
 # ============================================================================
 # Copy common files (headers, assets, shaders, cmake modules)
@@ -243,6 +248,15 @@ echo "Copying CMake modules..."
 cp "${REPO_ROOT}/cmake/FindVulkan.cmake" "${TARGET_PATH}/cmake/"
 cp "${REPO_ROOT}/cmake/FindSDL2.cmake" "${TARGET_PATH}/cmake/"
 cp "${REPO_ROOT}/cmake/standalone_utils.cmake" "${TARGET_PATH}/cmake/"
+cp "${REPO_ROOT}/cmake/plugins.cmake" "${TARGET_PATH}/cmake/"
+cp "${REPO_ROOT}/cmake/PLUGINS.md" "${TARGET_PATH}/cmake/"
+mkdir -p "${TARGET_PATH}/doc/api/plugin"
+cp "${REPO_ROOT}/doc/api/plugin/unloading.md" "${TARGET_PATH}/doc/api/plugin/"
+cp "${REPO_ROOT}/cmake/stage_engine_runtime.cmake" "${TARGET_PATH}/cmake/"
+cp "${SDK_PROFILE}/bg2e-sdk.cmake" "${TARGET_PATH}/cmake/"
+cp "${SDK_PROFILE}/include/bg2e/plugin/BuildConfig.hpp" "${TARGET_PATH}/include/bg2e/plugin/"
+cp "${SCRIPT_DIR}/templates/ApplicationPlugin.cpp" "${TARGET_PATH}/plugin/src/"
+cp "${SCRIPT_DIR}/templates/PLUGIN_README.md" "${TARGET_PATH}/plugin/README.md"
 
 # ============================================================================
 # Platform-specific: copy libraries
@@ -326,6 +340,7 @@ cp "${TEMPLATE_DIR}/main.cpp" "${TARGET_PATH}/app/src/main.cpp"
 
 echo ""
 echo "Project created successfully!"
+echo "Application plugin: plugin/src/ApplicationPlugin.cpp (built and discovered automatically)."
 echo ""
 echo "Project structure:"
 echo "  ${TARGET_PATH}/"

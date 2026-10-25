@@ -30,6 +30,15 @@ class Application {
   public:
     virtual void init(int argc, char** argv) = 0;
 
+    // Main-thread stopped boundary after plugin preparation, before delegates,
+    // UI and graphics are destroyed. Remove plugin components from every scene
+    // and release external objects/history/weak refs/callbacks here. Automatic
+    // unload trusts this caller contract; surviving plugin uses can crash.
+    // See doc/api/plugin/unloading.md.
+    virtual void preparePluginShutdown()
+    {
+    }
+
     inline std::shared_ptr<draw::RenderLoopDelegate>& renderDelegate()
     {
         return _renderDelegate;

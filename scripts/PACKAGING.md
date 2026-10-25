@@ -163,3 +163,33 @@ also require their `.metallib` counterparts on macOS. Creators check these files
 before writing the project; updaters check them after building and before copying.
 Build current sources first. File presence does not establish binary/header ABI
 compatibility or successful standalone execution.
+
+## Plugin SDK and generated application plugin
+
+Standalone creators now generate `plugin/src/ApplicationPlugin.cpp` and a
+`<project-name>_plugin` target through the shared `bg2e_add_plugin` helper. The
+empty plugin registers no components and is discovered automatically from the
+application-private plugin directory. Its README explains how to add components,
+reflection and application shutdown cleanup.
+
+The engine configure step produces `PRODUCT_DIR/sdk/include/bg2e/plugin/BuildConfig.hpp`
+and `PRODUCT_DIR/sdk/bg2e-sdk.cmake`. Creators require both and copy the build header
+on top of the public source-header tree. Both updaters refresh the generated header,
+manifest, shared `plugins.cmake` and runtime deployment script alongside the binary.
+The generated SDK files must belong to the copied binary; merely having files on
+disk cannot establish that an older binary was rebuilt with the current headers.
+SDK/ABI comparison at plugin loading remains authoritative. Use matching compiler,
+architecture, standard library, runtime and ABI options; configuration directory
+names alone are not an ABI guarantee.
+
+Distribution installation now includes public headers, the paired generated SDK
+header, manifest and shared plugin/deployment helpers. The existing packaging
+scripts already install the Distribution component, so they need no separate
+plugin-only build or copy phase. The generators/updaters themselves remain explicit
+user-run commands; none are executed as part of source review.
+
+`cmake/PLUGINS.md` documents application output isolation, engine runtime staging,
+plugin target arguments, dependency direction and imported-engine properties.
+Generated projects require CMake 3.23 or later. Library updating older standalone
+projects refreshes their helper/profile support but does not overwrite user app
+sources or inject a new plugin target into their CMake files.

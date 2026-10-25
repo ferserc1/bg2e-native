@@ -21,6 +21,8 @@
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/app/SDLUtils.hpp>
 #include <bg2e/gpu/Backend.hpp>
+#include <bg2e/plugin/PluginManager.hpp>
+#include <bg2e/base/Log.hpp>
 
 #include "detail/GraphicsExecution.hpp"
 
@@ -156,7 +158,51 @@ int32_t MainLoop::run(app::Application* application, const draw::EngineConfig& c
     {
         throw std::invalid_argument("MainLoop::run: application must not be null.");
     }
-    return runInternal(application, detail::createDrawGraphicsExecution(config));
+    if (_execution || _pluginSession)
+    {
+        throw std::logic_error("MainLoop::run cannot be nested on the same loop");
+    }
+    _stopping.store(false);
+    auto& plugins = plugin::PluginManager::get();
+    const auto session = plugins.beginSession();
+    struct PluginSession {
+        plugin::PluginManager& manager;
+        plugin::SessionId id;
+        std::atomic<bool>& stopping;
+        bool successful = false;
+
+        ~PluginSession()
+        {
+            stopping.store(true);
+            manager.finishSession(id, successful ? plugin::UnloadReason::Shutdown
+                : plugin::UnloadReason::StartupFailure);
+            manager.collect();
+        }
+    } pluginSession{plugins, session, _stopping};
+    const auto discovery = plugins.discover(session);
+    if (discovery.status != plugin::LoadStatus::Loaded)
+    {
+        try
+        {
+            bg2e_log_warning << "Plugin discovery: " << discovery.message << bg2e_log_end;
+        }
+        catch (...)
+        {
+        }
+    }
+    _pluginSession = session;
+    try
+    {
+        const auto result = runInternal(application, detail::createDrawGraphicsExecution(config));
+        pluginSession.successful = true;
+        _pluginSession = 0;
+        return result;
+    }
+    catch (...)
+    {
+        _pluginSession = 0;
+        throw;
+    }
 }
 
 int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<detail::GraphicsExecution> execution)
@@ -186,15 +232,69 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
         std::vector<std::jthread>& workers;
         std::vector<std::shared_ptr<SafeUpdateToken>>& loadTokens;
         ui::UserInterface& userInterface;
+        Application& application;
+        plugin::SessionId session;
+        MainLoop& loop;
+        bool successful = false;
 
         ~ExecutionCleanup()
         {
+            loop._stopping.store(true);
             workers.clear(); // Join CPU readers before any app/UI/Engine teardown.
+            std::vector<SafeUpdateSceneEntry> updates;
+            {
+                std::lock_guard lock(loop._safeUpdateSceneMutex);
+                updates.swap(loop._safeUpdateScene);
+            }
+            updates.clear();
+            for (;;)
+            {
+                std::function<void()> completion;
+                {
+                    std::lock_guard lock(loop._mainThreadQueueMutex);
+                    if (loop._mainThreadQueue.empty())
+                    {
+                        break;
+                    }
+                    completion = std::move(loop._mainThreadQueue.front());
+                    loop._mainThreadQueue.pop();
+                }
+                // Destroy captures outside the mutex and without allocating.
+            }
             loadTokens.clear(); // Cancel completions queued for the exiting run.
             base::CpuProfiler::stop();
             userInterface.clearFrameOverride();
             if (execution)
             {
+                auto& plugins = plugin::PluginManager::get();
+                const auto reason = successful ? plugin::UnloadReason::Shutdown
+                    : plugin::UnloadReason::StartupFailure;
+                plugins.stopSession(session);
+                bool stopped = false;
+                try
+                {
+                    execution->waitIdle();
+                    stopped = true;
+                }
+                catch (...)
+                {
+                }
+                plugins.prepareSession(session, {execution->graphicsEngine(), stopped}, reason);
+                try
+                {
+                    application.preparePluginShutdown();
+                }
+                catch (...)
+                {
+                }
+                try
+                {
+                    execution->cleanupClients();
+                }
+                catch (...)
+                {
+                }
+                plugins.retireSession(session);
                 try
                 {
                     execution->cleanup();
@@ -206,7 +306,7 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
             }
             windowSize = glm::uvec2{0, 0};
         }
-    } executionCleanup{_execution, _windowSize, _asyncLoadWorkers, _asyncLoadTokens, _userInterface};
+    } executionCleanup{_execution, _windowSize, _asyncLoadWorkers, _asyncLoadTokens, _userInterface, *application, _pluginSession, *this};
     int logicalWidth = 0;
     int logicalHeight = 0;
     SDL_GetWindowSize(window, &logicalWidth, &logicalHeight);
@@ -415,13 +515,7 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
         appPreferences.set("windowSize", glm::vec2{storeWidth, storeHeight});
     }
 
-    _asyncLoadWorkers.clear();
-    _asyncLoadTokens.clear();
-    base::CpuProfiler::stop();
-    _userInterface.clearFrameOverride();
-    _execution->waitIdle();
-    _execution->cleanup();
-    _execution.reset();
+    executionCleanup.successful = true;
 
     return 0;
 }
@@ -568,11 +662,12 @@ void MainLoop::asyncLoad(
     glm::vec4 clearColor,
     std::function<void(std::exception_ptr)> onComplete)
 {
-    if (!_execution)
+    if (!_execution || _stopping.load())
     {
         throw std::logic_error("MainLoop::asyncLoad requires an active run; no graphics execution is available.");
     }
 
+    auto registryLease = plugin::PluginManager::get().registryReadLease();
     _execution->pauseScene(clearColor);
 
     if (_execution->userInterfaceReady())
@@ -587,19 +682,24 @@ void MainLoop::asyncLoad(
     try
     {
         _asyncLoadTokens.push_back(token);
-        _asyncLoadWorkers.emplace_back([this, token, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
+        _asyncLoadWorkers.emplace_back([this, token, registryLease, fn = std::move(loadFn), complete = std::move(onComplete)]() mutable
                 {
+                    // Explicit local order keeps the read lease alive through
+                    // destruction of plugin-owned worker function captures.
+                    auto reader = std::move(registryLease);
+                    auto work = std::move(fn);
+                    auto completion = std::move(complete);
                     std::exception_ptr error;
                     try
                     {
-                        fn(&_loader);
+                        work(&_loader);
                     }
                     catch (...)
                     {
                         error = std::current_exception();
                     }
 
-                    safeUpdateScene([this, complete = std::move(complete), error]()
+                    safeUpdateScene([this, complete = std::move(completion), error]()
                                     {
                                         if (_execution->userInterfaceReady())
                                         {

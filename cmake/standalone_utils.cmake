@@ -3,8 +3,20 @@
 # This file is a standalone version of cmake/utils.cmake, designed to work
 # with pre-compiled bg2e libraries outside the bg2e-native repository.
 #
-# DO NOT MODIFY the original cmake/utils.cmake - this file exists to provide
-# standalone-specific functions without affecting the main build system.
+# Shared plugin/runtime helpers are copied alongside this file.
+include("${CMAKE_CURRENT_LIST_DIR}/plugins.cmake")
+# Also initializes SDK properties for older generated roots refreshed by the
+# library updater. The imported engine remains the project's existing target.
+if(TARGET bg2e AND EXISTS "${CMAKE_CURRENT_LIST_DIR}/bg2e-sdk.cmake")
+    include("${CMAKE_CURRENT_LIST_DIR}/bg2e-sdk.cmake")
+    set(BG2E_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/include")
+    set_target_properties(bg2e PROPERTIES
+        BG2E_SDK_INCLUDE_DIRECTORY "${BG2E_INCLUDE_PATH}"
+        BG2E_PLUGIN_ABI_OPTIONS "${BG2E_PLUGIN_ABI_OPTIONS}"
+        INTERFACE_COMPILE_OPTIONS "${BG2E_PLUGIN_ABI_OPTIONS}"
+        MSVC_RUNTIME_LIBRARY "${BG2E_SDK_MSVC_RUNTIME}")
+endif()
+
 
 # ============================================================================
 # Utility functions (copied from cmake/utils.cmake, unchanged)
@@ -223,7 +235,7 @@ endfunction()
 #       )
 function(standalone_bundle_app)
     set(options)
-    set(oneValueArgs TARGET_NAME SHADERS_SRC)
+    set(oneValueArgs TARGET_NAME SHADERS_SRC OUTPUT_DIRECTORY)
     cmake_parse_arguments(BL "${options}" "${oneValueArgs}" "" ${ARGN})
 
     set(BG2E_ROOT "${CMAKE_SOURCE_DIR}")
@@ -258,15 +270,21 @@ function(standalone_bundle_app)
         target_link_libraries(${BL_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
     endif()
 
+    if(BL_OUTPUT_DIRECTORY)
+        get_filename_component(APP_OUTPUT "${BL_OUTPUT_DIRECTORY}" ABSOLUTE BASE_DIR "${CMAKE_CURRENT_BINARY_DIR}")
+    else()
+        set(APP_OUTPUT "${CMAKE_BINARY_DIR}/bin")
+    endif()
     set_target_properties(${BL_TARGET_NAME} PROPERTIES
-        RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-        LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-        ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
-    )
+        RUNTIME_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        LIBRARY_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        ARCHIVE_OUTPUT_DIRECTORY "${APP_OUTPUT}"
+        VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>")
+    bg2e_stage_engine_runtime(APP_TARGET ${BL_TARGET_NAME} ENGINE_TARGET bg2e)
 
     # Compile app-specific shaders if SHADERS_SRC is set
     if(BL_SHADERS_SRC)
-        set(APP_SHADERS_DST_PATH "${CMAKE_BINARY_DIR}/bin/${BL_TARGET_NAME}_resources/app_shaders")
+        set(APP_SHADERS_DST_PATH "${CMAKE_CURRENT_BINARY_DIR}/${BL_TARGET_NAME}_resources/app_shaders")
         message(STATUS "Building app shaders: ${APP_SHADERS_DST_PATH}")
         add_custom_command(
             TARGET ${BL_TARGET_NAME}
@@ -277,26 +295,8 @@ function(standalone_bundle_app)
         bundle_resources(TARGET_NAME ${BL_TARGET_NAME} SRC_PATH ${APP_SHADERS_DST_PATH} SUBPATH "shaders/${BL_TARGET_NAME}")
     endif()
 
-    # Copy bg2e library alongside the executable
-    if(WIN32)
-        # On Windows, copy the DLL to the output directory
-        add_custom_command(
-            TARGET ${BL_TARGET_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${BG2E_ROOT}/lib/windows/bg2e.dll"
-                "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>"
-        )
-    elseif(APPLE)
-        bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH "${BG2E_ROOT}/lib/macos/libbg2e.dylib")
+    if(APPLE)
         bundle_lib(TARGET_NAME ${BL_TARGET_NAME} LIB_PATH ${SDL2_LIBRARY})
-    else()
-        # Linux: copy libbg2e.so alongside the executable
-        add_custom_command(
-            TARGET ${BL_TARGET_NAME} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${BG2E_ROOT}/lib/linux/libbg2e.so"
-                "$<TARGET_FILE_DIR:${BL_TARGET_NAME}>"
-        )
     endif()
 
     # Copy only the canonical engine trees; retain custom app shader resources.

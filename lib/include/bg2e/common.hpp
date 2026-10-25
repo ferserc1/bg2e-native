@@ -25,7 +25,7 @@
 #pragma warning(disable : 4251)
 #pragma warning(disable : 4275)
 
-#ifdef _WINDLL
+#if defined(_WINDLL) && !defined(BG2E_PLUGIN_BUILD)
 #define BG2E_API __declspec(dllexport)
 #else
 #define BG2E_API __declspec(dllimport)

@@ -37,3 +37,8 @@ Each documentation page uses the same filename as its public header.
 
 Private implementation details such as `Timeout::TimerEntry` are not application
 APIs. See the individual pages for ownership, default values, and error behavior.
+
+## Plugin resource path
+
+`PlatformTools::pluginPath()` supplies the default native module directory;
+see [PlatformTools](PlatformTools.md) and [plugin discovery](../plugin/lifecycle.md).

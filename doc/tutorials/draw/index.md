@@ -84,3 +84,10 @@ Tutorials [10](10_deferred_renderer.md#advanced-lighting-and-visible-controls) a
 
 - [Bake model/prefab lightmaps without a camera](standalone_lightmaps.md):
   standalone Engine/Scene lifetime, UV2 preparation, serial batch and typed file output.
+
+## Reflected components and application plugins
+
+The [reflection tutorial](../refection/01_scene_and_manipulation.md) extends the
+manipulation scene with component metadata and inspectors. Continue with
+[automatic application plugins](../plugins/plugin.md) to move those components
+into a module while retaining the engine inspector and the same scene controls.

@@ -112,6 +112,13 @@ foreach ($Stage in @('draw\raster\gbuffer.frag.spv', 'bake\uv_surface\surface.fr
     }
 }
 
+$SourceSdk = "$Products\sdk"
+foreach ($SdkFile in @('include\bg2e\plugin\BuildConfig.hpp', 'bg2e-sdk.cmake')) {
+    if (-not (Test-Path "$SourceSdk\$SdkFile" -PathType Leaf)) {
+        Stop-WithError "Build did not produce the paired plugin SDK file: $SdkFile"
+    }
+}
+
 Write-Host "Updating engine headers..."
 $TargetHeaderTree = "$TargetIncludeDir\bg2e"
 if (Test-Path $TargetHeaderTree) {
@@ -134,6 +141,13 @@ foreach ($Tree in @('draw', 'bake')) {
     Copy-Item "$SourceShaders\$Tree" $DestinationTree -Recurse -Force
 }
 Copy-Item "$ResolvedRepoRoot\cmake\standalone_utils.cmake" "$ResolvedTargetPath\cmake\standalone_utils.cmake" -Force
+Copy-Item "$ResolvedRepoRoot\cmake\plugins.cmake" "$ResolvedTargetPath\cmake\" -Force
+Copy-Item "$ResolvedRepoRoot\cmake\PLUGINS.md" "$ResolvedTargetPath\cmake\" -Force
+New-Item -ItemType Directory -Path "$ResolvedTargetPath\doc\api\plugin" -Force | Out-Null
+Copy-Item "$ResolvedRepoRoot\doc\api\plugin\unloading.md" "$ResolvedTargetPath\doc\api\plugin\" -Force
+Copy-Item "$ResolvedRepoRoot\cmake\stage_engine_runtime.cmake" "$ResolvedTargetPath\cmake\" -Force
+Copy-Item "$SourceSdk\bg2e-sdk.cmake" "$ResolvedTargetPath\cmake\" -Force
+Copy-Item "$SourceSdk\include\bg2e\plugin\BuildConfig.hpp" "$TargetIncludeDir\bg2e\plugin\" -Force
 
 Write-Host ""
 Write-Host "Standalone project libraries updated successfully."

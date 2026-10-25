@@ -2,7 +2,7 @@
 
 ## Outcome
 
-Provide a graphics-independent registration and loading API, automatic MainLoop discovery and safe two-stage shutdown. Runtime unload must refuse or defer physical library release whenever plugin code can still be referenced.
+Provide a graphics-independent registration and loading API, automatic MainLoop discovery and safe two-stage shutdown. Runtime unload follows an explicit programmer-owned cleanup contract. The programmer must remove plugin components from every active scene and release all external uses before requesting physical unload; violating this contract causes undefined behavior and may crash.
 
 ## 1. Define API and ownership
 
@@ -16,11 +16,16 @@ Provide a graphics-independent registration and loading API, automatic MainLoop 
 
 ## 2. Establish the binary contract
 
+- Provide `BG2E_DEFINE_PLUGIN(PluginClass)` (final spelling documented in the public API) to generate `getPluginApi`, `getPluginInstance` and plugin-owned destruction with the correct C linkage, calling convention, visibility and exception boundaries. Plugin authors implement their class and plugin metadata, not exported query functions or compatibility constants.
+- Publish SDK version and ABI identity in SDK headers shipped with the engine. Keep plugin semantic version independent from contract and SDK/ABI versions. Generate any build-specific ABI configuration through the supported CMake helpers; do not ask authors to copy version strings.
 - Export the exact symbol `getPluginInstance` with C linkage and an explicit plugin export macro independent of the engine export/import macro.
-- Add a versioned C descriptor query, such as `getPluginApi`, with structure size, contract version, engine SDK/ABI identity and plugin-owned destruction function.
+- Add the versioned C descriptor query `getPluginApi`, with structure size, contract version, engine SDK/ABI identity and plugin-owned destruction function.
 - Validate the descriptor before obtaining/invoking the C++ instance. Reject missing entries, unsupported sizes/versions, null functions, null instances and incompatible engine requirements.
 - Document a compatible SDK/toolchain ABI contract; C linkage does not make shared C++ objects compiler-independent. Initially use conservative SDK compatibility rather than promising compatibility based only on semantic version ranges.
+- Define the descriptor as a C-compatible, fixed-width bootstrap contract with explicit size/version rules and no STL types. Reject unsupported contract versions before interpreting later fields.
+- Compare the descriptor against the running engine's own identity: C contract version, conservative SDK ABI identity and module ABI configuration. Specify exact supported matches; semantic version ranges alone do not establish C++ ABI compatibility. Return structured mismatch details before invoking the C++ factory.
 - Cover architecture, standard-library ABI, runtime configuration, packing and relevant compiler settings. Windows must follow the repository's actual `MultiThreadedDLL` configuration rather than infer CRT mode solely from the configuration name.
+- Native loading resolves dependencies and may execute static initializers before descriptor validation. The host cannot prevent arbitrary plugin static initialization or contain native faults; the descriptor check protects subsequent API use, not the act of mapping an arbitrary library.
 - Plugins link to the application's shared engine, never an embedded duplicate engine. Do not allow static registration or graphics initialization in plugin global constructors.
 - Make plugin factory/destruction C entry points catch their own exceptions; retain a defensive host boundary for plugin callbacks.
 
@@ -54,15 +59,17 @@ Provide a graphics-independent registration and loading API, automatic MainLoop 
 - Copy metadata and diagnostics into host-owned memory. Clear plugin-origin exception objects and callbacks before unloading their code.
 - Design a minimal allocation-free fallback error state before declaring public loading entry points `noexcept`; optional strings/vector details may be unavailable under allocation failure. Do not turn allocation failure into `std::terminate` by merely adding `noexcept`.
 
-## 6. Track uses and provide scene cleanup
+## 6. Provide scene cleanup and the explicit unload contract
 
 - Add `PluginComponentsVisitor` under the integration module. Collect matching node/component/type entries, including disabled nodes; remove components in a separate pass through normal Node callbacks.
-- Track module use beyond scene membership: detached components, clones, undo/clipboard references, factories, reflection callbacks, asynchronous work and shared/weak ownership control blocks.
-- Establish an enforceable common creation/ownership contract covering registry construction, direct plugin construction and `clone()`. A counter attached only to `createDefault()` or decremented in the base destructor is insufficient.
-- Choose and document the concrete host-owned lifetime mechanism before enabling physical runtime unload. Retain the module through completion of derived destructors, plugin deleters and control-block destruction; perform the final release later at a host safe point.
-- Provide `RefuseIfInUse` and `RemoveComponents` policies. The latter operates on supplied scene roots and asks the application to release auxiliary references; return pending/in-use status if uses remain.
-- Block new creation while unloading, cancel/join owned jobs and remove callbacks. No unsafe forced unload option.
-- Serialize load/unload and live registry mutation on the main thread. Coordinate background parsing/loading as well as GPU work.
+- Store successfully registered persistent component IDs on the base Plugin instance. Append only after the factory and optional reflection are fully committed; omit duplicates, invalid registrations and rolled-back contributions.
+- Expose `Plugin::removeComponents(root)` plus an ID-based facade for hosts using managed plugin IDs. The caller must invoke cleanup for every active scene before explicit unload.
+- Adopt the programmer-owned lifetime contract: the caller must also destroy detached objects, clones, history/clipboard/selection references, plugin-created weak control blocks, reflection caches, queued executable callbacks and plugin-origin exceptions, and cancel/join plugin jobs before unload. This applies to direct construction and cloning as well as registry creation.
+- Do not implement an automatic complete lifetime census or permanently pin modules merely because they registered components/reflection. Unknown surviving uses are a contract violation and may crash when the library closes.
+- Destroy owned registry metadata and callbacks while their module is still loaded; cached pointers and executable copies must be discarded by their consumers before removal. Keep revision notifications for live UI consumers.
+- Keep `RefuseIfInUse` and `RemoveComponents` as checks/cleanup for supplied roots only. Neither proves that all scenes or external references were cleaned. Explicit module leases may defer physical release until a later host safe point; they do not keep a retired Plugin instance alive.
+- Block new registry creation while unloading, cancel/join owned jobs, retire registrations, invoke lifecycle callbacks and destroy the Plugin instance before releasing the native library. Failed cleanup/readers/known leases must not be bypassed by a forced unload option.
+- Serialize load/unload and live registry mutation on the main thread. The caller guarantees stopped producers, drained GPU work and no plugin stack active during physical release. Document the contract prominently in public headers and `doc/api/plugin/unloading.md`.
 
 ## 7. Add resource paths and MainLoop lifecycle boundaries
 
@@ -76,18 +83,8 @@ Provide a graphics-independent registration and loading API, automatic MainLoop 
 - For automatic plugins, run `onUnload` after execution cleanup, destroy plugin instances using their exported destruction functions and release libraries in reverse order when safe.
 - During runtime unload, the graphics engine can still exist for both callbacks. Contexts report actual service availability and shutdown reason.
 - Make callbacks one-shot and cleanup idempotent across normal exit, startup failure and exceptions. A failed cleanup must not prevent safe attempts to clean remaining plugins.
-- If external uses survive application shutdown, report and retain their modules until process termination rather than unload executable code still in use.
+- The application must fulfill the same cleanup contract for automatic plugins in `Application::preparePluginShutdown`. Unknown uses surviving automatic shutdown are a contract violation; do not reintroduce process-lifetime retention as a fallback. Explicit leases or failed cleanup can still defer native release.
 
-## Acceptance checks
+## Completion review
 
-Perform source-level review first. Run executable/build checks only after explicit authorization to compile.
-
-- Early explicit load and automatic load both work without an initialized GPU; default scan precedes backend acquisition.
-- Two duplicate component attempts produce two warnings; the vector overload appends both names and emits no warnings. Later unique components still register.
-- Duplicate types keep the original creator/reflection data and are never removed when the conflicting plugin unloads.
-- Non-plugin libraries, missing symbols, null instances, incompatible contracts, unreadable directories and throwing callbacks return errors without terminating the application.
-- A mid-initialization failure revokes only that attempt's contributions; a directory scan proceeds to other files.
-- Plugin components deserialize and are available through the existing inspector without a custom component list.
-- Discovery includes disabled nodes. Detachment alone cannot release a module held by clones, external ownership, weak control blocks or queued callbacks.
-- Runtime unload waits/refuses safely, and final release occurs outside plugin destructor stacks.
-- Verify callback order and service availability for normal exit, runtime unload, partial graphics initialization and failed startup; automatic libraries close in reverse order when no uses remain.
+Review the source against every requirement above without adding tests, compiling, launching examples or executing build/configuration commands. Record the completed step and remaining work in `progress.md`, then stop for user feedback as specified in `summary.md`.

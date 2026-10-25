@@ -38,6 +38,7 @@ add_subdirectory(draw/13_offscreen_application)
 
 # Reflection tutorial: built-in and application-owned node inspectors.
 add_subdirectory(tutorials/reflection)
+add_subdirectory(tutorials/plugins)
 
 # Dynamic library loading and plugin entry points.
 add_subdirectory(plugins/dynamic_library)

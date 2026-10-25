@@ -67,6 +67,31 @@ on the main thread. Workers join before normal or exceptional teardown.
 The renderer's separately typed final-color update path retains its narrow
 synchronization rules; this migration adds no blanket per-frame drain.
 
+## Plugin discovery and cleanup
+
+Each run installs a plugin-session cleanup guard and scans
+`PlatformTools::pluginPath()` before constructing the graphics execution or
+acquiring its backend. Registration is graphics-free; the application's earlier
+`init(argc, argv)` must not depend on automatic plugin types already being present.
+A missing default directory is empty success, and individual recoverable load
+failures or `NotAPlugin` candidates do not terminate the scan.
+
+Only modules first discovered by that session belong to automatic cleanup;
+explicit loads retain their explicit owner. At shutdown MainLoop blocks new queued
+work, joins workers, stops plugin jobs, drains GPU users and prepares plugins, then
+calls `Application::preparePluginShutdown` while graphics services still exist.
+The application must remove plugin components from every active scene and release
+external objects, weak control blocks and callbacks there. Delegates/UI and owned
+registrations are cleaned before the engine; plugin finalization and native release
+follow execution cleanup in reverse load order.
+
+The loader trusts this programmer-owned cleanup contract; unknown surviving uses
+may crash after unload. See [plugin lifecycle](../plugin/lifecycle.md),
+[unload responsibilities](../plugin/unloading.md) and the
+[automatic plugin tutorial](../../tutorials/plugins/plugin.md). MainLoop async
+parsing holds a registry-read lease; plugin loading/unloading reports `Busy` while
+those reads are active.
+
 ## WindowConfig
 
 `WindowConfig` describes initial position, size, state, decoration, resizing,

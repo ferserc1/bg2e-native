@@ -27,5 +27,6 @@
 #include <bg2e/base/Log.hpp>
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/base/PlatformTools.hpp>
+#include <bg2e/base/RegistrationOwner.hpp>
 #include <bg2e/base/Texture.hpp>
 #include <bg2e/base/Timeout.hpp>

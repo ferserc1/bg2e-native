@@ -31,6 +31,10 @@ struct SDL_Window;
 
 namespace bg2e {
 
+namespace draw {
+class Engine;
+}
+
 namespace ui {
 class UserInterface;
 }
@@ -92,6 +96,8 @@ class GraphicsExecution {
     virtual void pauseScene(const glm::vec4& clearColor) = 0;
     virtual void resumeScene() = 0;
 
+    virtual draw::Engine* graphicsEngine() noexcept = 0;
+    virtual void cleanupClients() = 0;
     virtual void cleanup() = 0;
 };
 

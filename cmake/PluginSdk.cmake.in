@@ -1,0 +1,3 @@
+# This profile belongs to the precompiled engine copied alongside this SDK.
+set(BG2E_PLUGIN_ABI_OPTIONS [==[@BG2E_PLUGIN_ABI_OPTIONS@]==])
+set(BG2E_SDK_MSVC_RUNTIME [==[@BG2E_SDK_MSVC_RUNTIME@]==])

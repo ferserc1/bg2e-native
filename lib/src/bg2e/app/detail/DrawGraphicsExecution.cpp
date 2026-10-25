@@ -202,7 +202,12 @@ class DrawGraphicsExecution : public GraphicsExecution {
         _renderLoop.resumeScene();
     }
 
-    void cleanup() override
+    draw::Engine* graphicsEngine() noexcept override
+    {
+        return _engineInitialized ? &_engine : nullptr;
+    }
+
+    void cleanupClients() override
     {
         // MainLoop has stopped frame production; background producers must also
         // be stopped by their owner before GPU resources are destroyed.
@@ -229,6 +234,23 @@ class DrawGraphicsExecution : public GraphicsExecution {
                 }
             }
             _uiInitialized = false;
+        }
+        if (error)
+        {
+            std::rethrow_exception(error);
+        }
+    }
+
+    void cleanup() override
+    {
+        std::exception_ptr error;
+        try
+        {
+            cleanupClients();
+        }
+        catch (...)
+        {
+            error = std::current_exception();
         }
         try
         {

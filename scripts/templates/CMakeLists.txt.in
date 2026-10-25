@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.23)
 project(${PROJECT_NAME})
 
 set(CMAKE_CXX_STANDARD 20)
@@ -26,6 +26,10 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_SOURCE_DIR}/cmake")
 find_package(SDL2 REQUIRED)
 find_package(Vulkan REQUIRED)
 
+# This manifest and BuildConfig.hpp must accompany the precompiled library.
+include("${CMAKE_SOURCE_DIR}/cmake/bg2e-sdk.cmake")
+set(BG2E_INCLUDE_PATH "${CMAKE_SOURCE_DIR}/include")
+
 # Import pre-compiled bg2e library
 add_library(bg2e SHARED IMPORTED)
 if(WIN32)
@@ -42,6 +46,12 @@ else()
         IMPORTED_LOCATION "${CMAKE_SOURCE_DIR}/lib/linux/libbg2e.so"
     )
 endif()
+
+set_target_properties(bg2e PROPERTIES
+    BG2E_SDK_INCLUDE_DIRECTORY "${BG2E_INCLUDE_PATH}"
+    BG2E_PLUGIN_ABI_OPTIONS "${BG2E_PLUGIN_ABI_OPTIONS}"
+    INTERFACE_COMPILE_OPTIONS "${BG2E_PLUGIN_ABI_OPTIONS}"
+    MSVC_RUNTIME_LIBRARY "${BG2E_SDK_MSVC_RUNTIME}")
 
 # Include standalone utilities
 include("${CMAKE_SOURCE_DIR}/cmake/standalone_utils.cmake")

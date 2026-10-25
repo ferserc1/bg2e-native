@@ -26,6 +26,7 @@
 #include <bg2e/geo/all.hpp>
 #include <bg2e/gpu/all.hpp>
 #include <bg2e/json/all.hpp>
+#include <bg2e/plugin/all.hpp>
 #include <bg2e/manipulation/all.hpp>
 #include <bg2e/scene/all.hpp>
 #include <bg2e/ui/all.hpp>

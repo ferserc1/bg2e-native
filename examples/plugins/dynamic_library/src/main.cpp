@@ -65,11 +65,8 @@ public:
                 {
                     if (!_library.isLoaded())
                     {
-                        auto directory = base::PlatformTools::applicationPath();
-#ifdef __APPLE__
-                        directory /= "Contents/Resources";
-#endif
-                        _library = base::DynamicLibrary::load(directory / "plugins" / DYLIB_EXAMPLE_FILENAME);
+                        _library = base::DynamicLibrary::load(
+                            base::PlatformTools::pluginPath() / DYLIB_EXAMPLE_FILENAME);
                     }
                     using GetMessage = const char* (*)();
                     auto getMessage = reinterpret_cast<GetMessage>(_library.getSymbol("getMessage"));

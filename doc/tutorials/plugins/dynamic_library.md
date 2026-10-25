@@ -88,7 +88,7 @@ library remains loaded. The library has no engine headers, engine dependency,
 Here is the complete example CMake file:
 
 ```cmake
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.23) # CMP0112 NEW: deployment must not depend back on the app.
 
 add_library(dylib_example_lib SHARED plugin/getMessage.cpp)
 set_target_properties(dylib_example_lib PROPERTIES
@@ -98,7 +98,12 @@ set_target_properties(dylib_example_lib PROPERTIES
 )
 
 set(APP_TARGET_NAME dylib_example_app)
-bundle_app_sdl(TARGET_NAME ${APP_TARGET_NAME})
+if(APPLE)
+    bundle_app_sdl(TARGET_NAME ${APP_TARGET_NAME})
+else()
+    bundle_app_sdl(TARGET_NAME ${APP_TARGET_NAME}
+        OUTPUT_DIRECTORY "${PRODUCT_DIR}/examples/dynamic_library")
+endif()
 target_compile_definitions(dylib_example_app PRIVATE
     DYLIB_EXAMPLE_FILENAME="$<TARGET_FILE_NAME:dylib_example_lib>"
 )
@@ -109,7 +114,8 @@ else()
     set(PLUGIN_DESTINATION "$<TARGET_FILE_DIR:dylib_example_app>/plugins")
 endif()
 
-# Refresh on every app build, including when only the plugin has changed.
+# This is a raw getMessage library, not an engine Plugin.
+# Refresh on every app build, including when only the library has changed.
 add_custom_target(dylib_example_app_plugin
     COMMAND ${CMAKE_COMMAND} -E make_directory "${PLUGIN_DESTINATION}"
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -137,12 +143,20 @@ The host does not link the Windows import library: it resolves the export later.
 ### Create the engine application
 
 `bundle_app_sdl` is a repository helper supplied by `cmake/utils.cmake`. Set
-`APP_TARGET_NAME` as shown because the current helper uses that variable as well
-as its `TARGET_NAME` argument. It creates an executable from `src/*.cpp`, adds
+`APP_TARGET_NAME` as a convenient local target name; the helper uses its parsed
+`TARGET_NAME` argument. It creates an executable from `src/*.cpp`, adds
 engine include paths, links the engine, Vulkan, and SDL, and deploys engine
 resources. On macOS it creates and populates an application bundle. The root
 build includes these utilities before processing the examples; configure the
 root project, not this example directory in isolation.
+
+Linux and Windows pass `OUTPUT_DIRECTORY` to place this example in its own runtime
+root before resource/runtime deployment targets are created. Other examples keep
+their own plugin directories. Windows configuration subdirectories remain separate.
+The shared helper stages the engine and required Windows DLLs beside the moved
+executable and configures Linux runtime search paths. No special working directory
+or library-path environment variable is required. macOS keeps its existing bundle
+boundary and output location.
 
 The [window tutorial's CMake section](../draw/01_window_ui.md#cmake-utilities-for-engine-applications)
 has more detail on the application helpers. Everything needed for this example's
@@ -170,9 +184,13 @@ These are build dependencies, not a link dependency on the plugin.
 The deployed layout is:
 
 ```text
-Linux/Windows executable directory:
-  dylib_example_app[.exe]
-  plugins/<platform library filename>
+Linux:
+  bin/linux/examples/dynamic_library/dylib_example_app
+  bin/linux/examples/dynamic_library/plugins/<platform library filename>
+
+Windows (example configuration):
+  bin/windows/examples/dynamic_library/Debug/dylib_example_app.exe
+  bin/windows/examples/dynamic_library/Debug/plugins/<platform library filename>
 
 macOS bundle:
   dylib_example_app.app/Contents/
@@ -181,8 +199,8 @@ macOS bundle:
 ```
 
 The existing application helper handles the engine's own libraries/resources.
-No new plugin CMake helper is needed for this one-file library. The engine target
-also links `${CMAKE_DL_LIBS}` for platforms where the POSIX loader needs a
+The engine-plugin `bg2e_add_plugin` helper is not used for this raw one-file
+library. The engine target also links `${CMAKE_DL_LIBS}` for platforms where the POSIX loader needs a
 separate library; the example does not need to repeat that linkage.
 
 ## 4. Understand the engine objects we will use
@@ -252,15 +270,23 @@ owned message string.
 ## 7. Find, load, and call the library
 
 First, the handler checks `isLoaded()` so repeated clicks reuse the same owner.
-It obtains the application location using `PlatformTools::applicationPath()`.
-That method returns the executable directory on Linux/Windows and the `.app`
-bundle directory on macOS; it does not depend on the shell's working directory.
-On macOS we append `Contents/Resources`. Appending `plugins` and the CMake-supplied
-filename now matches the deployment layout in step 3.
+`PlatformTools::pluginPath()` returns the executable-sibling `plugins` directory
+on Linux/Windows, or `Contents/Resources/plugins` inside the macOS application
+bundle. It does not depend on the shell's working directory. Append only the
+CMake-supplied filename to match the deployment layout in step 3:
 
 ```cpp
-_library = base::DynamicLibrary::load(directory / "plugins" / DYLIB_EXAMPLE_FILENAME);
+_library = base::DynamicLibrary::load(
+    base::PlatformTools::pluginPath() / DYLIB_EXAMPLE_FILENAME);
 ```
+
+MainLoop automatically scans that directory before graphics startup. This raw
+library exports `getMessage`, not the engine's `getPluginInstance` contract, so the
+scan classifies it as `NotAPlugin`. That recoverable result does not register an
+engine plugin or prevent the window from opening. The **Load library** button
+still loads it independently through `base::DynamicLibrary` and resolves
+`getMessage`. The automatic scanner's temporary handle is separate from the UI's
+explicit library owner.
 
 `load` returns an owning value. Its move assignment transfers the handle into
 `_library`, leaving the temporary unloaded. Copying owners is disabled, which
@@ -379,11 +405,8 @@ public:
                 {
                     if (!_library.isLoaded())
                     {
-                        auto directory = base::PlatformTools::applicationPath();
-#ifdef __APPLE__
-                        directory /= "Contents/Resources";
-#endif
-                        _library = base::DynamicLibrary::load(directory / "plugins" / DYLIB_EXAMPLE_FILENAME);
+                        _library = base::DynamicLibrary::load(
+                            base::PlatformTools::pluginPath() / DYLIB_EXAMPLE_FILENAME);
                     }
                     using GetMessage = const char* (*)();
                     auto getMessage = reinterpret_cast<GetMessage>(_library.getSymbol("getMessage"));
@@ -489,7 +512,7 @@ the application's copy target.
 With the default `PRODUCT_DIR`, launch Linux with:
 
 ```sh
-./bin/linux/dylib_example_app
+./bin/linux/examples/dynamic_library/dylib_example_app
 ```
 
 For Xcode's Debug output on macOS:
@@ -501,7 +524,7 @@ For Xcode's Debug output on macOS:
 For Visual Studio's Debug output on Windows:
 
 ```powershell
-.\bin\windows\Debug\dylib_example_app.exe
+.\bin\windows\examples\dynamic_library\Debug\dylib_example_app.exe
 ```
 
 If using another configuration, a custom output directory, or a macOS Ninja
@@ -513,6 +536,28 @@ Click **Load library**. The panel displays
 function again. Closing the application releases the library automatically.
 The application does not parse `--backend` options; it uses the default
 `EngineConfig` backend described above.
+
+## Remove the historical shared copy after migration
+
+Earlier versions copied this example's raw library into the runtime directory
+shared by ordinary examples. Rebuilding the isolated example does not remove an
+old copy. With applications closed, locate and remove **only the exact historical
+example library** if it exists:
+
+| Platform | Historical file to remove manually (default output root) |
+|----------|-----------------------------------------------------------|
+| Linux | `bin/linux/plugins/libdylib_example_lib.so` |
+| Windows, Debug | `bin/windows/Debug/plugins/dylib_example_lib.dll` |
+| Windows, Release | `bin/windows/Release/plugins/dylib_example_lib.dll` |
+| Windows, other existing configurations | `bin/windows/<configuration>/plugins/dylib_example_lib.dll` |
+| Windows, an older flat output layout | `bin/windows/plugins/dylib_example_lib.dll` |
+
+Use the previous `PRODUCT_DIR` instead of `bin/<platform>` for a custom output
+root. Remove the individual file with the names above, preserving the directory
+and every unrelated plugin. Do not recursively delete `plugins`, and do not remove
+the new copies under `examples/dynamic_library` or `examples/tutorial_plugins`.
+macOS has always used the example's private bundle and needs no shared-directory
+migration. No configure-time cleanup or automatic binary deletion is performed.
 
 ## If loading fails
 
@@ -530,6 +575,8 @@ The application does not parse `--backend` options; it uses the default
 - [Base API](../../api/base/index.md) — related CPU data and platform services.
 - [Window and UI](../draw/01_window_ui.md) — optional background controls, retained-scene invalidation, and backend selection.
 
-This example establishes a single exported function contract. A larger plugin
-system can add versioned interfaces and registration later while retaining the
-same explicit library ownership rules.
+This example establishes a single exported function contract. The engine's
+[Plugin API](../../api/plugin/index.md) adds SDK/ABI validation, registration and
+lifecycle management; that separate contract is demonstrated by the
+[automatic component plugin tutorial](plugin.md). This raw example continues to use explicit
+`base::DynamicLibrary` ownership and `getMessage`.

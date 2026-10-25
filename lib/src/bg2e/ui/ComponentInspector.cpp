@@ -117,6 +117,12 @@ void restoreResource(
 
 void ComponentInspector::draw()
 {
+    const auto revision = reflection::TypeRegistry::get().revision();
+    if (_registryRevision != revision)
+    {
+        _registryRevision = revision;
+        _selectedComponentIndex = 0;
+    }
     if (!_node)
     {
         Text::text("No selection");

@@ -90,6 +90,18 @@ class Application final : public app::Application {
         setInputDelegate(std::make_shared<app::InputDelegate>());
         setUiDelegate(std::make_shared<UiDelegate>());
     }
+
+    void preparePluginShutdown() override
+    {
+        auto delegate = std::static_pointer_cast<SceneDelegate>(renderDelegate());
+        auto root = delegate->scene();
+        for (const auto id : plugin::PluginManager::get().plugins())
+        {
+            plugin::Plugin::removeComponents(id, root.get());
+        }
+        // When extending the app: release any additional roots, detached plugin
+        // objects, history, weak control blocks and queued plugin callbacks here.
+    }
 };
 }
 

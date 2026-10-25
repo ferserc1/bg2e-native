@@ -1,4 +1,11 @@
-cmake_minimum_required(VERSION 3.18)
+cmake_minimum_required(VERSION 3.23)
 
 set(APP_TARGET_NAME ${PROJECT_NAME})
 standalone_bundle_app(TARGET_NAME ${APP_TARGET_NAME})
+
+# Built and deployed automatically whenever the application target is built.
+bg2e_add_plugin(
+    TARGET_NAME ${PROJECT_NAME}_plugin
+    APP_TARGET ${APP_TARGET_NAME}
+    ENGINE_TARGET bg2e
+    SOURCES ../plugin/src/ApplicationPlugin.cpp)

@@ -95,6 +95,13 @@ if (-not (Test-Path "$ScriptDir\templates\main.cpp")) {
     exit 1
 }
 
+$SdkProfile = "$RepoRoot\bin\windows\sdk"
+foreach ($SdkFile in @('include\bg2e\plugin\BuildConfig.hpp', 'bg2e-sdk.cmake')) {
+    if (-not (Test-Path "$SdkProfile\$SdkFile" -PathType Leaf)) {
+        throw "Missing paired plugin SDK file: $SdkFile. Rebuild the engine SDK first."
+    }
+}
+
 if (Test-Path $TargetPath) {
     Write-Host "ERROR: Target directory already exists: $TargetPath"
     exit 1
@@ -118,6 +125,7 @@ New-Item -ItemType Directory -Path "$TargetPath\lib\windows" -Force | Out-Null
 New-Item -ItemType Directory -Path "$TargetPath\shaders" -Force | Out-Null
 New-Item -ItemType Directory -Path "$TargetPath\assets" -Force | Out-Null
 New-Item -ItemType Directory -Path "$TargetPath\app\src" -Force | Out-Null
+New-Item -ItemType Directory -Path "$TargetPath\plugin\src" -Force | Out-Null
 
 # ============================================================================
 # Copy files
@@ -139,6 +147,15 @@ Write-Host "Copying CMake modules..."
 Copy-Item "$RepoRoot\cmake\FindVulkan.cmake" "$TargetPath\cmake\" -Force
 Copy-Item "$RepoRoot\cmake\FindSDL2.cmake" "$TargetPath\cmake\" -Force
 Copy-Item "$RepoRoot\cmake\standalone_utils.cmake" "$TargetPath\cmake\" -Force
+Copy-Item "$RepoRoot\cmake\plugins.cmake" "$TargetPath\cmake\" -Force
+Copy-Item "$RepoRoot\cmake\PLUGINS.md" "$TargetPath\cmake\" -Force
+New-Item -ItemType Directory -Path "$TargetPath\doc\api\plugin" -Force | Out-Null
+Copy-Item "$RepoRoot\doc\api\plugin\unloading.md" "$TargetPath\doc\api\plugin\" -Force
+Copy-Item "$RepoRoot\cmake\stage_engine_runtime.cmake" "$TargetPath\cmake\" -Force
+Copy-Item "$SdkProfile\bg2e-sdk.cmake" "$TargetPath\cmake\" -Force
+Copy-Item "$SdkProfile\include\bg2e\plugin\BuildConfig.hpp" "$TargetPath\include\bg2e\plugin\" -Force
+Copy-Item "$ScriptDir\templates\ApplicationPlugin.cpp" "$TargetPath\plugin\src\" -Force
+Copy-Item "$ScriptDir\templates\PLUGIN_README.md" "$TargetPath\plugin\README.md" -Force
 
 Write-Host "Copying pre-compiled library (windows)..."
 Copy-Item "$LibDir\bg2e.dll" "$TargetPath\lib\windows\" -Force
@@ -247,6 +264,7 @@ Copy-Item "$ScriptDir\templates\main.cpp" "$TargetPath\app\src\main.cpp" -Force
 
 Write-Host ""
 Write-Host "Project created successfully!"
+Write-Host "Application plugin: plugin/src/ApplicationPlugin.cpp (built and discovered automatically)."
 Write-Host ""
 Write-Host "Project structure:"
 Write-Host "  $TargetPath\"

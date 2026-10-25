@@ -88,6 +88,7 @@ class BG2E_API ComponentInspector {
   protected:
     scene::Node* _node = nullptr;
     uint32_t _selectedComponentIndex = 0;
+    uint64_t _registryRevision = 0;
     std::function<void()> _onChanged;
     ResourceChangedCallback _onResourceChanged;
     std::function<void(const std::string&)> _onAddRequested;

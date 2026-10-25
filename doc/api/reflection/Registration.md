@@ -96,6 +96,18 @@ reflection::TypeRegistration<scene::MyComponent> _myComp(
 
 ---
 
+## Dynamically loaded plugins
+
+Use the owner-aware [ComponentRegistrar](../plugin/ComponentRegistrar.md) inside
+`Plugin::registerComponents` for plugin factories, metadata and polymorphic
+subtypes. Do not use namespace-scope TypeRegistration or one-time registration
+statics for those contributions: the plugin manager must attribute successful
+entries and retire executable callbacks before native release. The static helper
+below remains for permanent engine/application definitions. Cached metadata or
+copied callbacks must obey the [plugin unload contract](../plugin/unloading.md).
+
+---
+
 ## Static-initialization safety
 
 `TypeRegistry::get()` lazily creates the singleton on first use, so registering

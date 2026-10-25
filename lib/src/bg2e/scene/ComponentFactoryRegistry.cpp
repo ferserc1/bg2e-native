@@ -34,11 +34,58 @@ ComponentFactoryRegistry& ComponentFactoryRegistry::get()
     return *_registrySingleton;
 }
 
-void ComponentFactoryRegistry::registerComponent(
+ComponentFactoryRegistry::RegistrationResult ComponentFactoryRegistry::registerComponent(
     const std::string& componentName,
-    DefaultCreator defaultCreator)
+    DefaultCreator defaultCreator,
+    Owner owner)
 {
-    _registry[componentName] = {std::move(defaultCreator)};
+    if (componentName.empty() || !defaultCreator)
+    {
+        return RegistrationResult::Invalid;
+    }
+    return _registry.emplace(componentName, FactoryEntry{std::move(defaultCreator), owner}).second
+        ? RegistrationResult::Registered : RegistrationResult::Duplicate;
+}
+
+bool ComponentFactoryRegistry::remove(const std::string& name, Owner owner)
+{
+    const auto it = _registry.find(name);
+    if (!owner || it == _registry.end() || it->second.owner != owner)
+    {
+        return false;
+    }
+    _registry.erase(it);
+    return true;
+}
+
+void ComponentFactoryRegistry::removeOwner(Owner owner)
+{
+    if (owner)
+    {
+        std::erase_if(_registry, [owner](const auto& entry)
+        {
+            return entry.second.owner == owner;
+        });
+    }
+}
+
+std::vector<std::string> ComponentFactoryRegistry::componentNames(Owner owner) const
+{
+    std::vector<std::string> result;
+    for (const auto& [name, entry] : _registry)
+    {
+        if (entry.owner == owner)
+        {
+            result.push_back(name);
+        }
+    }
+    return result;
+}
+
+ComponentFactoryRegistry::Owner ComponentFactoryRegistry::owner(const std::string& name) const
+{
+    const auto it = _registry.find(name);
+    return it == _registry.end() ? 0 : it->second.owner;
 }
 
 bool ComponentFactoryRegistry::contains(const std::string& componentName) const
@@ -54,7 +101,9 @@ Component* ComponentFactoryRegistry::createDefault(const std::string& componentN
         bg2e_log_warning << "component type not found: " << componentName << bg2e_log_end;
         return nullptr;
     }
-    return it->second.createDefault();
+    // Keep the callable alive if a constructor causes a registry mutation.
+    auto factory = it->second.createDefault;
+    return factory();
 }
 
 Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
@@ -77,7 +126,8 @@ Component* ComponentFactoryRegistry::create(std::shared_ptr<json::JsonNode> data
         bg2e_log_warning << "Skipping component without a schema constructor: " << *type << bg2e_log_end;
         return nullptr;
     }
-    std::unique_ptr<Component> result(it->second.createDefault());
+    auto factory = it->second.createDefault;
+    std::unique_ptr<Component> result(factory());
     if (!result)
     {
         throw std::runtime_error("Component constructor returned null for " + *type);
