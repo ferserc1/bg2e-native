@@ -137,14 +137,16 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
                         ui::Text::text("Clear Environment Image to use the procedural sky colors.");
                     }
                 }
-                ui::ReflectionWidget::drawProperties(component.get(), *info, 0,
+                const ui::ReflectionWidget::EditHandler edit =
                     [weak, node, target = std::weak_ptr<scene::Component>(component)](auto operation, bool resourceChange)
                 {
                     if (auto owner = weak.lock())
                     {
                         owner->editComponentProperties(node, target, std::move(operation), resourceChange);
                     }
-                });
+                };
+                ui::ReflectionWidget::drawProperties(component.get(), *info, 0, edit);
+                ui::ReflectionWidget::drawActions(component.get(), *info, edit);
             }
         }
         catch (const std::exception& error)

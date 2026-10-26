@@ -6,6 +6,14 @@
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <bg2e/reflection/Registration.hpp>
@@ -17,6 +25,7 @@ namespace {
 
 constexpr const char* projectionType = "bg2e::math::Projection";
 constexpr const char* perspectiveType = "bg2e::math::PerspectiveProjection";
+constexpr const char* orthographicType = "bg2e::math::OrthographicProjection";
 constexpr const char* opticalType = "bg2e::math::OpticalProjection";
 
 reflection::TypeRegistration<math::Projection> _projectionReflection(
@@ -75,6 +84,21 @@ reflection::TypeRegistration<math::OpticalProjection> _opticalReflection(
             .drag();
     });
 
+reflection::TypeRegistration<math::OrthographicProjection> _orthographicReflection(
+    orthographicType,
+    [](reflection::TypeInfoBuilder<math::OrthographicProjection>& t)
+    {
+        t.displayName("Orthographic Projection");
+        t.property("height", &math::OrthographicProjection::height,
+                   &math::OrthographicProjection::setHeight)
+            .displayName("View Height")
+            .category("Orthographic")
+            .tooltip("Vertical view size in world units; width follows the viewport aspect ratio")
+            .range(0.001, 100000.0)
+            .step(0.1)
+            .drag();
+    });
+
 struct ProjectionSubtypeRegistration {
     ProjectionSubtypeRegistration()
     {
@@ -84,6 +108,11 @@ struct ProjectionSubtypeRegistration {
             "PerspectiveProjection",
             "Perspective",
             perspectiveType);
+        registry.registerSubtype<math::Projection, math::OrthographicProjection>(
+            projectionType,
+            "OrthographicProjection",
+            "Orthographic",
+            orthographicType);
         registry.registerSubtype<math::Projection, math::OpticalProjection>(
             projectionType,
             "OpticalProjection",

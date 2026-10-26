@@ -262,7 +262,7 @@ void GizmoAndSelectionRenderer::update(const draw::pipeline::OverlayContext& con
         {
             const auto color = item.drawMaterial->materialAttributes().albedo();
             draws.highlights.push_back({mesh, item.submeshIndex, item.worldMatrix,
-                {color.r, color.g, color.b, std::clamp(_lineIntensity, 0.0f, 1.0f)}});
+                {1.0f - color.r, 1.0f - color.g, 1.0f - color.b, std::clamp(_lineIntensity, 0.0f, 1.0f)}});
         }
     }
     collectDrawNodes(context.sceneRoot);

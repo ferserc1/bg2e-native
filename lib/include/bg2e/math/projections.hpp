@@ -273,5 +273,53 @@ class OpticalProjection : public Projection {
     float _frameSize = 35.0f;
 };
 
+// A centered orthographic view. Width follows the viewport aspect ratio.
+class OrthographicProjection : public Projection {
+  public:
+    void apply(glm::mat4& matrix) override
+    {
+        const float halfHeight = _height * 0.5f;
+        const float halfWidth = halfHeight * _viewport.width / _viewport.height;
+        matrix = glm::ortho(-halfWidth, halfWidth, -halfHeight, halfHeight, _near, _far);
+    }
+
+    std::shared_ptr<Projection> clone() const override
+    {
+        return std::make_shared<OrthographicProjection>(*this);
+    }
+
+    float height() const
+    {
+        return _height;
+    }
+    void setHeight(float height)
+    {
+        _height = height;
+    }
+
+    void deserialize(std::shared_ptr<json::JsonNode> data) override
+    {
+        Projection::deserialize(data);
+        json::ObjectReader reader(data);
+        if (auto height = reader.getNumber("height"))
+        {
+            _height = *height;
+        }
+    }
+
+    std::shared_ptr<json::JsonNode> serialize() override
+    {
+        using namespace bg2e::json;
+        auto result = Projection::serialize();
+        JsonObject& obj = result->objectValue();
+        obj["type"] = JSON("OrthographicProjection");
+        obj["height"] = JSON(_height);
+        return result;
+    }
+
+  protected:
+    float _height = 10.0f;
+};
+
 }
 }

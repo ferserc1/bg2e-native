@@ -89,6 +89,12 @@ class BG2E_API Camera {
                 proj->deserialize(projection->node());
                 _projection = proj;
             }
+            else if (type == "OrthographicProjection")
+            {
+                auto proj = std::make_shared<math::OrthographicProjection>();
+                proj->deserialize(projection->node());
+                _projection = proj;
+            }
             else
             {
                 throw std::invalid_argument("Unsupported camera projection type: " + type);

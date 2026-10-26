@@ -51,7 +51,6 @@
 #include <utility>
 #include <algorithm>
 #include <cctype>
-#include <typeinfo>
 
 namespace bg2e_composer {
 namespace {
@@ -69,32 +68,7 @@ unsigned enabledLightCount(bg2e::scene::Node* root)
     return count;
 }
 
-class CameraProjection final : public bg2e::math::PerspectiveProjection {
-  public:
-    std::shared_ptr<bg2e::math::Projection> clone() const override
-    {
-        return std::make_shared<CameraProjection>(*this);
-    }
 
-    void apply(glm::mat4& matrix) override
-    {
-        matrix = glm::perspectiveRH_ZO(glm::radians(fov()), _viewport.width / _viewport.height, near(), far());
-    }
-};
-
-class OpticalCameraProjection final : public bg2e::math::OpticalProjection {
-  public:
-    std::shared_ptr<bg2e::math::Projection> clone() const override
-    {
-        return std::make_shared<OpticalCameraProjection>(*this);
-    }
-
-    void apply(glm::mat4& matrix) override
-    {
-        const float fov = 2.0f * std::atan(frameSize() / (2.0f * focalLength()));
-        matrix = glm::perspectiveRH_ZO(fov, _viewport.width / _viewport.height, near(), far());
-    }
-};
 }
 
 StageScene::StageScene(bg2e::draw::Engine* engine) : _engine(engine)
@@ -148,7 +122,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
     _camera->addComponent(new scene::TransformComponent());
     _camera->addComponent(new scene::OrbitCameraComponent());
     _camera->addComponent(new scene::CameraComponent());
-    _camera->camera()->setProjection(new CameraProjection());
+    _camera->camera()->setProjection(new bg2e::math::PerspectiveProjection());
     auto* orbit = _camera->getComponent<scene::OrbitCameraComponent>();
     orbit->setWheelSpeed(0.4f);
     orbit->setRotateButtons(true, false, false);
@@ -427,7 +401,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::newDocumentRoot() const
     auto camera = std::make_shared<scene::Node>("Camera");
     camera->addComponent(new scene::TransformComponent());
     camera->addComponent(new scene::CameraComponent());
-    camera->camera()->setProjection(new CameraProjection());
+    camera->camera()->setProjection(new bg2e::math::PerspectiveProjection());
     auto orbit = std::make_shared<scene::OrbitCameraComponent>();
     orbit->setDistance(8);
     orbit->setRotation({15, 30});
@@ -445,25 +419,11 @@ void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) 
         auto* projection = camera->projection();
         if (!projection)
         {
-            auto fallback = std::make_shared<OpticalCameraProjection>();
+            auto fallback = std::make_shared<math::OpticalProjection>();
             fallback->setFrameSize(50);
             fallback->setFocalLength(55);
             fallback->setFar(1000);
             camera->setProjection(fallback);
-        }
-        else if (typeid(*projection) == typeid(math::PerspectiveProjection))
-        {
-            auto converted = std::make_shared<CameraProjection>();
-            static_cast<math::PerspectiveProjection&>(*converted) =
-                *static_cast<math::PerspectiveProjection*>(projection);
-            camera->setProjection(converted);
-        }
-        else if (typeid(*projection) == typeid(math::OpticalProjection))
-        {
-            auto converted = std::make_shared<OpticalCameraProjection>();
-            static_cast<math::OpticalProjection&>(*converted) =
-                *static_cast<math::OpticalProjection*>(projection);
-            camera->setProjection(converted);
         }
         const auto* prepared = camera->projection();
         if (!std::isfinite(prepared->near()) || !std::isfinite(prepared->far()) ||
