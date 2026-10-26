@@ -44,11 +44,8 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
     _workspace.leftPanelSize().min = 300;
 }
 
-void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session)
+void EditorUi::initFileMenu()
 {
-    _ui = session;
-    _toolbar.setTitle("Scene tools");
-    _toolbar.options.noClose = true;
     const auto weakDelegate = _delegate;
     const auto weakUi = weak_from_this();
     bg2e::ui::MenuItem file("File");
@@ -113,6 +110,70 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         }
     }}});
     _toolbar.addMenuItem(file);
+}
+
+void EditorUi::initEditMenu()
+{
+    const auto weakDelegate = _delegate;
+    bg2e::ui::MenuItem edit("Edit");
+    edit.addMenuItem({"Duplicate", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->duplicateSelection();
+        }
+    }}});
+    edit.addMenuItem({"Remove", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->removeSelection();
+        }
+    }}});
+    edit.addMenuItem({});
+    edit.addMenuItem({"Z up to Y up", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->editGeometry(0);
+        }
+    }}});
+    edit.addMenuItem({"Center Geometry", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->editGeometry(1);
+        }
+    }}});
+    edit.addMenuItem({"Put on Floor", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->editGeometry(2);
+        }
+    }}});
+    edit.addMenuItem({});
+    edit.addMenuItem({"centimeters to meters", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->editGeometry(3);
+        }
+    }}});
+    edit.addMenuItem({"meters to centimeters", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->editGeometry(4);
+        }
+    }}});
+    _toolbar.addMenuItem(edit);
+}
+
+void EditorUi::initViewMenu()
+{
+    const auto weakDelegate = _delegate;
+    const auto weakUi = weak_from_this();
     bg2e::ui::MenuItem view("View");
     view.addMenuItem({"Reset camera", {.handler = [weakDelegate]
     {
@@ -128,7 +189,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             owner->frameSelection();
         }
     }}});
-    view.addMenuItem({"Analyze best view", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyA, .handler = [weakDelegate]
+    view.addMenuItem({"Analyze best view", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyF, .handler = [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
         {
@@ -148,7 +209,11 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         }
     }}});
     _toolbar.addMenuItem(view);
+}
 
+void EditorUi::initCreateNodeMenu()
+{
+    const auto weakDelegate = _delegate;
     bg2e::ui::MenuItem create("Create Node");
     const char* nodeTypes[]{"Group", "Camera", "Light", "Environment"};
     for (unsigned kind = 0; kind < 4; ++kind)
@@ -161,6 +226,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             }
         }}});
     }
+    create.addMenuItem({});
     const char* primitiveTypes[]{"Cube", "Sphere", "Plane"};
     for (unsigned kind = 0; kind < 3; ++kind)
     {
@@ -173,7 +239,11 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         }}});
     }
     _toolbar.addMenuItem(create);
+}
 
+void EditorUi::initWindowMenu()
+{
+    const auto weakUi = weak_from_this();
     bg2e::ui::MenuItem window("Window");
     window.addMenuItem({"Model Properties", {.handler = [weakUi]
     {
@@ -238,11 +308,29 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         }
     }}});
     _toolbar.addMenuItem(window);
+}
+
+void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session)
+{
+    _ui = session;
+    _toolbar.setTitle("Scene tools");
+    _toolbar.options.noClose = true;
+    const auto weakDelegate = _delegate;
+    const auto weakUi = weak_from_this();
+    initFileMenu();
+    initEditMenu();
+    initViewMenu();
+
+    initCreateNodeMenu();
+
+    initWindowMenu();
 
     const auto addPanelButton = [this](const char* label, auto action, bg2e::ui::Toolbar::Alignment alignment = bg2e::ui::Toolbar::AlignLeft)
     {
         _toolbar.addButton({.label = label, .action = std::move(action)}, alignment);
     };
+
+    /*
     addPanelButton("Z up to Y up", [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
@@ -292,6 +380,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             owner->removeSelection();
         }
     });
+    */
     addPanelButton("Model Properties", [weakUi]
     {
         if (auto owner = weakUi.lock())

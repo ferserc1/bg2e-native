@@ -182,6 +182,11 @@ void AppDelegate::editGeometry(unsigned operation)
                 ApplyTransformModifier<Mesh> modifier(glm::scale(glm::mat4(1), glm::vec3(0.01f)));
                 drawable->applyModifier(&modifier);
             }
+            else if (operation == 4)
+            {
+                ApplyTransformModifier<Mesh> modifier(glm::scale(glm::mat4(1), glm::vec3(100.0f)));
+                drawable->applyModifier(&modifier);
+            }
         }, true);
     }
 }

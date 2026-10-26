@@ -44,6 +44,12 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void drawUI() override;
 
   private:
+    void initFileMenu();
+    void initEditMenu();
+    void initViewMenu();
+    void initCreateNodeMenu();
+    void initWindowMenu();
+
     void drawImportSettings(const std::shared_ptr<AppDelegate>& delegate);
     void drawImportProgress(const std::shared_ptr<AppDelegate>& delegate);
     void chooseImport(const std::shared_ptr<AppDelegate>& delegate);
