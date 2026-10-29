@@ -19,6 +19,7 @@
 #include "Dispatcher.hpp"
 
 #include <limits>
+#include <bg2e/plugin/PluginManager.hpp>
 #include <stdexcept>
 #include <utility>
 
@@ -34,6 +35,13 @@ class Envelope final : public Command {
         Dispatcher::EffectHandler handler, std::function<bool()> valid)
         : _command(std::move(command)), _effects(effects), _handler(std::move(handler)), _valid(std::move(valid))
     {
+        auto& plugins = bg2e::plugin::PluginManager::get();
+        if (!plugins.plugins().empty())
+        {
+            // Hold registries/modules stable while pending/history callbacks and
+            // weak control blocks exist. Unload (and new loading) returns Busy.
+            _registryLease = plugins.registryReadLease();
+        }
     }
 
     const CommandInfo& info() const noexcept override
@@ -44,11 +52,12 @@ class Envelope final : public Command {
     CommandMemory memory() const override
     {
         auto result = _command->memory();
-        if (result.localBytes > std::numeric_limits<size_t>::max() - sizeof(*this))
+        constexpr size_t overhead = sizeof(*this) + 256;
+        if (result.localBytes > std::numeric_limits<size_t>::max() - overhead)
         {
             throw std::length_error("Composer command memory overflow");
         }
-        result.localBytes += sizeof(*this);
+        result.localBytes += overhead;
         return result;
     }
 
@@ -71,6 +80,8 @@ class Envelope final : public Command {
     CommandMemory retiredMemory;
 
   private:
+    // Declared first so command-owned objects/callbacks die before the lease.
+    std::shared_ptr<void> _registryLease;
     std::unique_ptr<Command> _command;
     Effects _effects;
     Dispatcher::EffectHandler _handler;
@@ -160,7 +171,10 @@ Dispatcher::Dispatcher(uint64_t generation, bool saved, Scheduler scheduler,
       _effects(std::move(effects)), _completion(std::move(completion))
 {
     _history = std::make_unique<bg2e::app::CommandHistory>(bg2e::app::CommandHistoryLimits{},
-        bg2e::app::CommandPreferenceResolver{}, _retirement);
+        [this](std::string_view category) -> std::optional<bool>
+        {
+            return category == "selection" ? std::optional<bool>(_selectionHistory) : std::nullopt;
+        }, _retirement);
     if (generation > 1)
     {
         const auto result = _history->resetBaseline(generation, saved);
@@ -202,9 +216,33 @@ bg2e::app::CommandResult Dispatcher::submit(std::unique_ptr<bg2e::app::Command> 
     {
         return {bg2e::app::CommandStatus::Rejected, "Command category has conflicting execution boundaries"};
     }
+    const auto compatibility = command->info().impact == bg2e::app::CommandDocumentImpact::None
+        ? bg2e::app::CommandCompatibility::Preserve : bg2e::app::CommandCompatibility::Unspecified;
     auto wrapped = std::make_unique<Envelope>(std::move(command), effects, _effects, std::move(valid));
-    return _queue->enqueue(std::move(wrapped), {_history->documentState().generation}, _completion);
+    return _queue->enqueue(std::move(wrapped), {_history->documentState().generation, bg2e::app::CommandOrigin::Editor, compatibility}, _completion);
 }
+
+bg2e::app::CommandResult Dispatcher::beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command)
+{
+    if (_queue->pending())
+    {
+        return {bg2e::app::CommandStatus::Rejected, "Wait for pending commands before manipulating"};
+    }
+    return _history->beginTransaction(std::move(command), {_history->documentState().generation});
+}
+
+
+void Dispatcher::setSelectionHistoryEnabled(bool enabled)
+{
+    _selectionHistory = enabled;
+}
+
+
+bool Dispatcher::selectionHistoryEnabled() const
+{
+    return _selectionHistory;
+}
+
 
 void Dispatcher::undo()
 {
@@ -218,6 +256,13 @@ void Dispatcher::redo()
 
 void Dispatcher::pump()
 {
+    // CPU interactions are supervised outside the transport queue, at input
+    // boundaries. Keep admitted commands ordered and reserved until adoption or
+    // cancellation, rather than executing against an in-progress preview.
+    if (_history->transactionActive() && !_history->faulted())
+    {
+        return;
+    }
     _queue->pump();
 }
 

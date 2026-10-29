@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <bg2e/ui/EditInteraction.hpp>
+
 #include "AppDelegate.hpp"
 
 #include <bg2e/draw/RenderSettingsPreferences.hpp>
@@ -62,6 +64,11 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     bg2e::ui::DrawMaterialEditor _material;
     bg2e::ui::SceneTree _sceneTree;
     bg2e::ui::ComponentInspector _componentInspector;
+    std::unique_ptr<bg2e::ui::EditSession> _nameEdit;
+    std::unique_ptr<bg2e::ui::EditSession> _metadataEdit;
+    bool _componentInspectorDrawn = false;
+    std::weak_ptr<bg2e::scene::Node> _nameEditNode;
+    uint64_t _nameEditGeneration = 0;
     bg2e::ui::Window _properties;
     bg2e::ui::Window _sceneProperties;
     uint64_t _boundGeneration = UINT64_MAX;

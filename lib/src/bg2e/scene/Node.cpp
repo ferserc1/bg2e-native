@@ -28,6 +28,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <typeinfo>
+#include <unordered_set>
 
 namespace bg2e::scene {
 
@@ -55,6 +56,133 @@ void Node::addChild(std::shared_ptr<Node> node)
     _children.push_back(node);
     node->_parent = this;
 }
+
+void Node::setChildLists(std::vector<ChildList> lists)
+{
+    std::unordered_set<Node*> parents;
+    std::unordered_map<Node*, Node*> proposed;
+    for (const auto& list : lists)
+    {
+        if (!list.parent || !parents.insert(list.parent.get()).second)
+        {
+            throw std::invalid_argument("Child placement requires unique live parents");
+        }
+    }
+    for (const auto& list : lists)
+    {
+        for (const auto& child : list.children)
+        {
+            if (!child || child->_scene || child == list.parent || !proposed.emplace(child.get(), list.parent.get()).second ||
+                (child->_parent && !parents.contains(child->_parent)))
+            {
+                throw std::invalid_argument("Invalid or multiply owned child placement");
+            }
+        }
+    }
+    // Removed children become detached in the proposed graph.
+    for (const auto& list : lists)
+    {
+        for (const auto& child : list.parent->_children)
+        {
+            proposed.try_emplace(child.get(), nullptr);
+        }
+    }
+    for (const auto& list : lists)
+    {
+        std::unordered_set<Node*> visited;
+        for (auto* node = list.parent.get(); node;)
+        {
+            if (!visited.insert(node).second)
+            {
+                throw std::invalid_argument("Child placement would create a cycle");
+            }
+            auto found = proposed.find(node);
+            node = found == proposed.end() ? node->_parent : found->second;
+        }
+    }
+    // All publication below is allocation-free and invokes no component hooks.
+    for (const auto& list : lists)
+    {
+        for (const auto& child : list.parent->_children)
+        {
+            child->_parent = nullptr;
+        }
+    }
+    for (auto& list : lists)
+    {
+        list.parent->_children.swap(list.children);
+        for (const auto& child : list.parent->_children)
+        {
+            child->_parent = list.parent.get();
+        }
+    }
+}
+
+
+void Node::setComponentsOrdered(const std::vector<std::shared_ptr<Component>>& components)
+{
+    std::unordered_map<std::string, std::shared_ptr<Component>> next;
+    auto order = components;
+    for (const auto& component : components)
+    {
+        const auto* instance = component.get();
+        if (!component || (component->_owner && component->_owner != this) ||
+            !next.emplace(typeid(*instance).name(), component).second)
+        {
+            throw std::invalid_argument("Component placement requires unique concrete types and valid owners");
+        }
+    }
+    // Prepare order and hook lists before changing membership.
+    std::stable_sort(order.begin(), order.end(), [](const auto& a, const auto& b)
+    {
+        return a->priority() > b->priority();
+    });
+    std::vector<std::shared_ptr<Component>> removed, added;
+    for (const auto& old : orderedComponents())
+    {
+        if (std::find(components.begin(), components.end(), old) == components.end())
+        {
+            removed.push_back(old);
+        }
+    }
+    for (const auto& component : components)
+    {
+        if (component->_owner != this)
+        {
+            added.push_back(component);
+        }
+    }
+    for (const auto& component : removed)
+    {
+        component->willRemoveFromNode(this);
+    }
+    for (const auto& component : added)
+    {
+        component->willAddToNode(this);
+    }
+    _components.swap(next);
+    _orderedComponents.swap(order);
+    _componentsOrderDirty = false;
+    for (const auto& component : removed)
+    {
+        component->_owner = nullptr;
+    }
+    for (const auto& component : added)
+    {
+        component->_owner = this;
+    }
+    // Membership remains inspectable if a callback throws; the command owner
+    // reapplies its retained previous placement and reports failed compensation.
+    for (const auto& component : removed)
+    {
+        component->didRemoveFromNode(this);
+    }
+    for (const auto& component : added)
+    {
+        component->didAddToNode(this);
+    }
+}
+
 
 void Node::removeChild(const std::shared_ptr<Node>& node)
 {
@@ -410,14 +538,17 @@ void Node::sortComponents() const
 {
     if (_componentsOrderDirty)
     {
-        _orderedComponents.clear();
-        for (auto& [_, comp] : _components)
+        std::erase_if(_orderedComponents, [&](const auto& component)
         {
-            _orderedComponents.push_back(comp);
-
-            if (_orderedComponents.size() > 10)
+            const auto* value = component.get();
+            auto found = _components.find(typeid(*value).name());
+            return found == _components.end() || found->second != component;
+        });
+        for (const auto& entry : _components)
+        {
+            if (std::find(_orderedComponents.begin(), _orderedComponents.end(), entry.second) == _orderedComponents.end())
             {
-                std::cout << "Cuidado" << std::endl;
+                _orderedComponents.push_back(entry.second);
             }
         }
         std::stable_sort(

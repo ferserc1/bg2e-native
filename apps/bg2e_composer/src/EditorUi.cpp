@@ -130,6 +130,17 @@ void EditorUi::initEditMenu()
             owner->redoEdit();
         }
     }}});
+    edit.addMenuItem({"Record selection in undo history", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->toggleSelectionHistory();
+        }
+    }}, [weakDelegate]
+    {
+        auto owner = weakDelegate.lock();
+        return owner && owner->selectionHistoryEnabled();
+    }});
     edit.addMenuItem({});
     edit.addMenuItem({"Duplicate", {.handler = [weakDelegate]
     {
@@ -414,12 +425,50 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
     {
         _material.init(engine, delegate);
         const auto weak = weak_from_this();
+        delegate->onSettleUiInteractions([weak](bool commit)
+        {
+            auto ui = weak.lock();
+            if (!ui)
+            {
+                return true;
+            }
+            if (commit)
+            {
+                return (!ui->_nameEdit || ui->_nameEdit->commit()) &&
+                    (!ui->_metadataEdit || ui->_metadataEdit->commit()) &&
+                    ui->_componentInspector.commitInteraction();
+            }
+            if (ui->_nameEdit)
+            {
+                ui->_nameEdit->cancel();
+            }
+            if (ui->_metadataEdit)
+            {
+                ui->_metadataEdit->cancel();
+            }
+            ui->_componentInspector.cancelInteraction();
+            return (!ui->_nameEdit || !ui->_nameEdit->active()) &&
+                (!ui->_metadataEdit || !ui->_metadataEdit->active());
+        });
         delegate->onToolsCleanup([weak]
         {
             if (auto ui = weak.lock())
             {
                 ui->_lightmap.cleanup();
                 ui->_material.cleanup();
+                if (ui->_nameEdit)
+                {
+                    ui->_nameEdit->cancel();
+                    ui->_nameEdit.reset();
+                }
+                if (ui->_metadataEdit)
+                {
+                    ui->_metadataEdit->cancel();
+                    ui->_metadataEdit.reset();
+                }
+                ui->_componentInspector.cancelInteraction();
+                ui->_componentInspector.onEditRequested({});
+                ui->_componentInspector.onActionRequested({});
                 ui->_graphics.clear();
                 ui->_performance.close();
                 ui->_sceneTree.setRootNode(nullptr);
@@ -439,6 +488,10 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             {
                 if (auto delegate = ui->_delegate.lock())
                 {
+                    if (ui->_metadataEdit)
+                    {
+                        ui->_metadataEdit->cancel();
+                    }
                     ui->_material.setSelectionManager(delegate->selection());
                 }
             }
@@ -510,6 +563,33 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
 
 void EditorUi::drawUI()
 {
+    _componentInspectorDrawn = false;
+    if (_nameEdit)
+    {
+        _nameEdit->beginFrame();
+    }
+    if (_metadataEdit)
+    {
+        _metadataEdit->beginFrame();
+    }
+    struct SettleMissingControls {
+        EditorUi& ui;
+        ~SettleMissingControls()
+        {
+            if (ui._nameEdit)
+            {
+                ui._nameEdit->endFrame();
+            }
+            if (ui._metadataEdit)
+            {
+                ui._metadataEdit->endFrame();
+            }
+            if (!ui._componentInspectorDrawn)
+            {
+                ui._componentInspector.cancelInteraction();
+            }
+        }
+    } settleMissing{*this};
     auto delegate = _delegate.lock();
     if (!delegate || !delegate->scene())
     {

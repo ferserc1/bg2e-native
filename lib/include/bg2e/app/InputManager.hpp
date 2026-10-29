@@ -33,6 +33,7 @@ class BG2E_API InputManager {
   public:
     static glm::vec2 normalizedCursorPosition(uint32_t viewportWidth, uint32_t viewportHeight);
 
+    void focusLost();
     void keyDown(const KeyEvent& event);
     void keyUp(const KeyEvent& event);
     void mouseMove(int x, int y);

@@ -58,6 +58,12 @@ void Group::pushId(int id)
     ImGui::PushID(id);
 }
 
+void Group::pushId(const std::string& id)
+{
+    ImGui::PushID(id.c_str());
+}
+
+
 void Group::popId()
 {
     ImGui::PopID();

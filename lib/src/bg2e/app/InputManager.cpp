@@ -37,10 +37,21 @@ glm::vec2 InputManager::normalizedCursorPosition(uint32_t viewportWidth, uint32_
     return glm::vec2{nx * 2.0f - 1.0f, ny * 2.0f - 1.0f};
 }
 
+void InputManager::focusLost()
+{
+    _sceneMouseButtons = 0;
+    if (_delegate)
+    {
+        _delegate->focusLost();
+    }
+}
+
+
 void InputManager::keyDown(const KeyEvent& event)
 {
     ImGuiIO& io = ImGui::GetIO();
-    if (_delegate.get() && !io.WantCaptureKeyboard)
+    if (_delegate && (!io.WantCaptureKeyboard ||
+        (event.key() == KeyEvent::KeyEscape && _delegate->mouseInputCaptured())))
     {
         _delegate->keyDown(event);
     }

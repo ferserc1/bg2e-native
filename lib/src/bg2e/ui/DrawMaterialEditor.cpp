@@ -95,13 +95,57 @@ struct DrawMaterialEditor::State {
 };
 struct DrawMaterialEditor::Impl {
     std::array<DrawTextureWidgets, 6> textures;
+    std::unique_ptr<EditSession> session;
+    MaterialEditTargets targets;
+    MaterialEditIntent lastIntent;
+    EditInteractionState interactionState;
+    bool drawing = false;
+    bool submitted = false;
 };
+
+void TextureSamplingEdit::apply(base::Texture& texture) const
+{
+    if (colorType)
+    {
+        texture.setColorType(*colorType);
+    }
+    if (magFilter)
+    {
+        texture.setMagFilter(*magFilter);
+    }
+    if (minFilter)
+    {
+        texture.setMinFilter(*minFilter);
+    }
+    if (addressU)
+    {
+        texture.setAddressModeU(*addressU);
+    }
+    if (addressV)
+    {
+        texture.setAddressModeV(*addressV);
+    }
+    if (mipmaps)
+    {
+        texture.setUseMipmaps(*mipmaps);
+    }
+    if (lodBias)
+    {
+        texture.setMipLodBias(*lodBias);
+    }
+}
+
 
 DrawMaterialEditor::DrawMaterialEditor() : _state(std::make_shared<State>()), _impl(std::make_unique<Impl>())
 {
 }
 
-DrawMaterialEditor::~DrawMaterialEditor() = default;
+DrawMaterialEditor::~DrawMaterialEditor()
+{
+    // Explicit cleanup is required before destruction if restoration can fail.
+    // Intent callbacks are required not to throw across this ownership boundary.
+    cancelInteraction();
+}
 
 void DrawMaterialEditor::init(draw::Engine* engine, const std::shared_ptr<draw::DefaultRenderLoopDelegate>& delegate)
 {
@@ -116,6 +160,11 @@ void DrawMaterialEditor::init(draw::Engine* engine, const std::shared_ptr<draw::
 
 void DrawMaterialEditor::setSelectionManager(const std::shared_ptr<manipulation::SelectionManager>& selection)
 {
+    cancelInteraction();
+    if (_impl->session && _impl->session->active())
+    {
+        throw std::logic_error("Material interaction must settle before rebinding");
+    }
     ++_state->binding;
     _state->pending = false;
     _state->error.clear();
@@ -129,6 +178,11 @@ void DrawMaterialEditor::setEditMaterial(const std::shared_ptr<draw::MaterialBas
     {
         throw std::invalid_argument("Material belongs to another draw engine");
     }
+    cancelInteraction();
+    if (_impl->session && _impl->session->active())
+    {
+        throw std::logic_error("Material interaction must settle before rebinding");
+    }
     ++_state->binding;
     _state->pending = false;
     _state->error.clear();
@@ -138,6 +192,11 @@ void DrawMaterialEditor::setEditMaterial(const std::shared_ptr<draw::MaterialBas
 
 void DrawMaterialEditor::setEditGuard(std::function<bool()> guard)
 {
+    cancelInteraction();
+    if (_impl->session && _impl->session->active())
+    {
+        throw std::logic_error("Material interaction must settle before rebinding");
+    }
     ++_state->binding;
     _state->pending = false;
     _state->guard = std::move(guard);
@@ -145,6 +204,11 @@ void DrawMaterialEditor::setEditGuard(std::function<bool()> guard)
 
 void DrawMaterialEditor::cleanup()
 {
+    cancelInteraction();
+    if (_impl->session && _impl->session->active())
+    {
+        throw std::logic_error("Material interaction must settle before rebinding");
+    }
     ++_state->binding;
     _state->pending = false;
     _state->cpuValueEditsEnabled = false;
@@ -156,6 +220,7 @@ void DrawMaterialEditor::cleanup()
     _state->guard = {};
     _state->changed = {};
     _state->error.clear();
+    _impl->session.reset();
     for (auto& widget : _impl->textures)
     {
         widget.cleanup();
@@ -189,12 +254,88 @@ void DrawMaterialEditor::onChanged(std::function<void(draw::Renderer&)> callback
     _state->changed = std::move(callback);
 }
 
+void DrawMaterialEditor::cancelInteraction()
+{
+    if (_impl->session)
+    {
+        _impl->session->cancel();
+    }
+}
+
+
+void DrawMaterialEditor::onEditRequested(EditIntentHandler handler)
+{
+    cancelInteraction();
+    if (_state->pending || (_impl->session && _impl->session->active()))
+    {
+        throw std::logic_error("Settle material work before changing mutation owner");
+    }
+    _impl->session.reset();
+    if (handler)
+    {
+        _impl->session = std::make_unique<EditSession>(
+            [this, handler = std::move(handler)](EditPhase phase, uint64_t id, const auto&, const std::any& payload)
+            {
+                if (phase == EditPhase::Begin)
+                {
+                    if (_state->guard && !_state->guard())
+                    {
+                        return false;
+                    }
+                    MaterialEditTargets targets;
+                    if (auto selection = _state->selection.lock())
+                    {
+                        for (const auto& item : selection->selectedItems())
+                        {
+                            if (item && item->lockMesh())
+                            {
+                                targets.selection.push_back(*item);
+                            }
+                        }
+                    }
+                    targets.direct = _state->material;
+                    targets.binding = _state->binding;
+                    auto delegate = _state->delegate.lock();
+                    if (!delegate || (targets.selection.empty() && targets.direct.expired()))
+                    {
+                        return false;
+                    }
+                    targets.rendererGeneration = delegate->rendererGeneration();
+                    _impl->targets = std::move(targets);
+                }
+                // Cancel must reach the original owner even after guard failure.
+                if (phase == EditPhase::Update && _state->guard && !_state->guard())
+                {
+                    return false;
+                }
+                return handler(phase, id, _impl->targets, std::any_cast<const MaterialEditIntent&>(payload));
+            });
+    }
+}
+
+
+bool DrawMaterialEditor::requestEdit(MaterialEditIntent intent)
+{
+    _impl->lastIntent = intent;
+    _impl->submitted = true;
+    return _impl->session->submit("material", std::move(intent), true,
+        _impl->drawing ? _impl->interactionState : EditInteractionState{});
+}
+
+
 bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo)
 {
     if (!modifier.isValid())
     {
         _state->error = "Invalid material patch";
         return false;
+    }
+    if (_impl->session)
+    {
+        MaterialEditIntent intent;
+        intent.patch = modifier;
+        intent.ordinaryAo = ordinaryAo;
+        return requestEdit(std::move(intent));
     }
     return queueEdit([modifier, ordinaryAo](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
@@ -223,6 +364,12 @@ bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier, boo
 
 bool DrawMaterialEditor::queueIndirectMode(base::MaterialAttributes::IndirectTextureMode mode)
 {
+    if (_impl->session)
+    {
+        MaterialEditIntent intent;
+        intent.indirectMode = mode;
+        return requestEdit(std::move(intent));
+    }
     return queueEdit([mode](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
         const bool baked = mode != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
@@ -251,6 +398,11 @@ bool DrawMaterialEditor::queueIndirectMode(base::MaterialAttributes::IndirectTex
 
 bool DrawMaterialEditor::queueTextureSettings(draw::TextureSlot slot, std::function<void(base::Texture&)> edit)
 {
+    if (_impl->session)
+    {
+        _state->error = "Opaque texture edits require a typed sampling edit in intent mode";
+        return false;
+    }
     return queueEdit([slot, edit = std::move(edit)](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
         auto source = material->texture(slot);
@@ -276,11 +428,37 @@ bool DrawMaterialEditor::queueTextureSettings(draw::TextureSlot slot, std::funct
     });
 }
 
+bool DrawMaterialEditor::queueTextureSettings(draw::TextureSlot slot, const TextureSamplingEdit& edit)
+{
+    if (size_t(slot) >= 6)
+    {
+        return false;
+    }
+    if (_impl->session)
+    {
+        MaterialEditIntent intent;
+        intent.samplingSlot = slot;
+        intent.sampling = edit;
+        return requestEdit(std::move(intent));
+    }
+    return queueTextureSettings(slot, [edit](auto& texture)
+    {
+        edit.apply(texture);
+    });
+}
+
+
 bool DrawMaterialEditor::queueClearTexture(draw::TextureSlot slot)
 {
     if (size_t(slot) >= 6)
     {
         return false;
+    }
+    if (_impl->session)
+    {
+        MaterialEditIntent intent;
+        intent.clearSlot = int(slot);
+        return requestEdit(std::move(intent));
     }
     return queueEdit([slot](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
@@ -411,6 +589,44 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
 
 bool DrawMaterialEditor::draw(UserInterface& ui)
 {
+    _impl->submitted = false;
+    if (_impl->session && _impl->session->active())
+    {
+        std::vector<manipulation::SelectionItem> current;
+        if (auto selection = _state->selection.lock())
+        {
+            for (const auto& item : selection->selectedItems())
+            {
+                if (item && item->lockMesh())
+                {
+                    current.push_back(*item);
+                }
+            }
+        }
+        const auto& frozen = _impl->targets;
+        auto delegate = _state->delegate.lock();
+        bool same = current.size() == frozen.selection.size() &&
+            _state->material.lock() == frozen.direct.lock() && delegate &&
+            delegate->rendererGeneration() == frozen.rendererGeneration;
+        for (size_t i = 0; same && i < current.size(); ++i)
+        {
+            same = current[i].node.lock() == frozen.selection[i].node.lock() &&
+                current[i].lockMesh() == frozen.selection[i].lockMesh() &&
+                current[i].submesh == frozen.selection[i].submesh;
+        }
+        if (!same || (_state->guard && !_state->guard()))
+        {
+            cancelInteraction();
+            if (_impl->session->active())
+            {
+                return false; // Receiver retains the failed restoration for retry.
+            }
+        }
+    }
+    if (_impl->session)
+    {
+        _impl->session->beginFrame();
+    }
     auto material = _state->material.lock();
     size_t selectedCount = material ? 1 : 0;
     if (auto selection = _state->selection.lock())
@@ -432,6 +648,10 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     }
     if (!material || material->engine() != _state->engine)
     {
+        if (_impl->session)
+        {
+            _impl->session->endFrame();
+        }
         for (auto& widget : _impl->textures)
         {
             widget.cleanup();
@@ -450,255 +670,248 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     }
     ImGui::BeginDisabled(_state->pending);
     json::JsonObject patch;
-    auto& attributes = material->materialAttributes();
-    const auto scalar = [&](const char* label, const char* key, float value)
-    {
-        if (ImGui::SliderFloat(label, &value, 0.0f, 1.0f))
-        {
-            patch[key] = std::make_shared<json::JsonNode>(value);
-        }
-    };
-    const auto boolean = [&](const char* label, const char* key, bool value)
-    {
-        if (ImGui::Checkbox(label, &value))
-        {
-            patch[key] = std::make_shared<json::JsonNode>(value);
-        }
-    };
-    auto color = attributes.albedo();
-    if (Value::colorPicker("Albedo", color))
-    {
-        patch["albedo"] = std::make_shared<json::JsonNode>(color);
-    }
-    scalar("Metalness", "metalness", attributes.metalness());
-    scalar("Roughness", "roughness", attributes.roughness());
-    scalar("Alpha cutoff", "alphaCutoff", attributes.alphaCutoff());
-    scalar("Sheen intensity", "sheenIntensity", attributes.sheenIntensity());
-    float emission = attributes.lightEmission();
-    if (ImGui::DragFloat("Emission", &emission, 0.05f, 0, 10000))
-    {
-        patch["lightEmission"] = std::make_shared<json::JsonNode>(emission);
-    }
-    float refraction = attributes.refractionFactor();
-    if (ImGui::DragFloat("Refraction", &refraction, 0.01f, 0, 4))
-    {
-        patch["refractionFactor"] = std::make_shared<json::JsonNode>(refraction);
-    }
-    boolean("Transparent", "isTransparent", attributes.isTransparent());
-    boolean("Solid", "isSolid", attributes.isSolid());
-    boolean("Unlit", "unlit", attributes.isUnlit());
-    auto fresnel = attributes.fresnelTint();
-    auto sheen = attributes.sheenColor();
-    if (Value::colorPicker("Fresnel", fresnel))
-    {
-        patch["fresnelTint"] = std::make_shared<json::JsonNode>(fresnel);
-    }
-    if (Value::colorPicker("Sheen", sheen))
-    {
-        patch["sheenColor"] = std::make_shared<json::JsonNode>(sheen);
-    }
-    const std::array<const char*, 6> names{"Albedo texture", "Metalness texture", "Roughness texture", "Normal texture", "AO texture", "Emission texture"};
-    const std::array<const char*, 6> textureKeys{"albedoTexture", "metalnessTexture", "roughnessTexture", "normalTexture", "ambientOcclussion", "lightEmissionTexture"};
-    const std::array<const char*, 6> prefixes{"albedo", "metalness", "roughness", "normal", "ambientOcclussion", "lightEmission"};
-    std::array<uint32_t, 6> uv{attributes.albedoUVSet(), attributes.metalnessUVSet(), attributes.roughnessUVSet(), attributes.normalUVSet(), attributes.aoUVSet(), attributes.lightEmissionUVSet()};
-    std::array<glm::vec2, 6> scale{attributes.albedoScale(), attributes.metalnessScale(), attributes.roughnessScale(), attributes.normalScale(), attributes.aoScale(), attributes.lightEmissionScale()};
-    std::array<uint32_t, 6> channel{0, attributes.metalnessChannel(), attributes.roughnessChannel(), 0, attributes.aoChannel(), attributes.lightEmissionChannel()};
-    std::array<bool, 6> inverted{false, attributes.metalnessInvert(), attributes.roughnessInvert(), false, false, attributes.lightEmissionInvert()};
     int linearSelected = -1;
     int samplingSlot = -1;
-    std::function<void(base::Texture&)> samplingEdit;
+    TextureSamplingEdit samplingEdit;
     bool ordinaryAo = false;
     bool textureChanged = false;
     bool modeChanged = false;
-    uint32_t indirect = static_cast<uint32_t>(attributes.indirectTextureMode());
-    if (Value::comboBox("Indirect map interpretation", {"Ambient occlusion", "Baked AO (RGB UV2)", "Baked GI (RGB UV2)"}, indirect))
-    {
-        modeChanged = true;
-    }
+    uint32_t indirect = 0;
     int clear = -1;
-    for (size_t i = 0; i < names.size(); ++i)
+    _impl->drawing = true;
+    const auto interactionState = EditInteraction::draw([&]
     {
-        ImGui::PushID(int(i));
-        if (ImGui::CollapsingHeader(names[i]))
+        auto& attributes = material->materialAttributes();
+        const auto scalar = [&](const char* label, const char* key, float value)
         {
-            const auto choice = _impl->textures[i].draw(ui, names[i], material->texture(draw::TextureSlot(i)));
-            if (choice.selected)
+            if (ImGui::SliderFloat(label, &value, 0.0f, 1.0f))
             {
-                textureChanged = true;
-                patch[textureKeys[i]] = std::make_shared<json::JsonNode>(choice.path.string());
-                if (i == 1 || i == 2 || i == 3)
-                {
-                    linearSelected = int(i);
-                }
-                if (i == 4)
-                {
-                    ordinaryAo = true;
-                }
+                patch[key] = std::make_shared<json::JsonNode>(value);
             }
-            if (choice.cleared)
+        };
+        const auto boolean = [&](const char* label, const char* key, bool value)
+        {
+            if (ImGui::Checkbox(label, &value))
             {
-                clear = int(i);
+                patch[key] = std::make_shared<json::JsonNode>(value);
             }
-            auto source = material->texture(draw::TextureSlot(i));
-            if (source)
-            {
-                const auto* settings = source->base();
-                auto append = [&](std::function<void(base::Texture&)> edit)
-                {
-                    samplingSlot = int(i);
-                    samplingEdit = [previous = std::move(samplingEdit), edit = std::move(edit)](auto& target)
-                    {
-                        if (previous)
-                        {
-                            previous(target);
-                        }
-                        edit(target);
-                    };
-                };
-                int color = settings->colorType() == base::Color::TypeLinear ? 1 : 0;
-                if (ImGui::Combo("Color interpretation", &color, "sRGB\0Linear\0"))
-                {
-                    append([color](auto& target)
-                    {
-                        target.setColorType(color ? base::Color::TypeLinear : base::Color::TypeSRGB);
-                    });
-                }
-                int mag = int(settings->magFilter());
-                int min = int(settings->minFilter());
-                if (ImGui::Combo("Magnification", &mag, "Linear\0Nearest\0"))
-                {
-                    append([mag](auto& target)
-                    {
-                        target.setMagFilter(static_cast<base::Texture::Filter>(mag));
-                    });
-                }
-                if (ImGui::Combo("Minification", &min, "Linear\0Nearest\0"))
-                {
-                    append([min](auto& target)
-                    {
-                        target.setMinFilter(static_cast<base::Texture::Filter>(min));
-                    });
-                }
-                int u = int(settings->addressModeU());
-                int v = int(settings->addressModeV());
-                const char* addressing = "Repeat\0Mirror\0Clamp edge\0Clamp border\0";
-                if (ImGui::Combo("Address U", &u, addressing))
-                {
-                    append([u](auto& target)
-                    {
-                        target.setAddressModeU(static_cast<base::Texture::AddressMode>(u));
-                    });
-                }
-                if (ImGui::Combo("Address V", &v, addressing))
-                {
-                    append([v](auto& target)
-                    {
-                        target.setAddressModeV(static_cast<base::Texture::AddressMode>(v));
-                    });
-                }
-                bool mips = settings->useMipmaps();
-                if (ImGui::Checkbox("Sample mipmaps", &mips))
-                {
-                    append([mips](auto& target)
-                    {
-                        target.setUseMipmaps(mips);
-                    });
-                }
-                float bias = settings->mipLodBias();
-                if (ImGui::DragFloat("Mip LOD bias", &bias, 0.05f, -16, 16))
-                {
-                    append([bias](auto& target)
-                    {
-                        target.setMipLodBias(bias);
-                    });
-                }
-            }
-            int selectedUV = int(uv[i]);
-            if (ImGui::Combo("UV", &selectedUV, "Set 0\0Set 1\0"))
-            {
-                if (i == 4 && attributes.indirectTextureMode() != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
-                {
-                    selectedUV = 1;
-                }
-                patch[std::string(prefixes[i]) + "UV"] = std::make_shared<json::JsonNode>(uint32_t(selectedUV));
-            }
-            if (ImGui::DragFloat2("Scale", &scale[i].x, 0.01f))
-            {
-                patch[std::string(prefixes[i]) + "Scale"] = std::make_shared<json::JsonNode>(scale[i]);
-            }
-            if (i == 1 || i == 2 || i == 4 || i == 5)
-            {
-                int selectedChannel = int(channel[i]);
-                if (ImGui::Combo("Channel", &selectedChannel, "Red\0Green\0Blue\0Alpha\0"))
-                {
-                    patch[std::string(prefixes[i]) + "Channel"] = std::make_shared<json::JsonNode>(uint32_t(selectedChannel));
-                }
-            }
-            if (i == 1 || i == 2 || i == 5)
-            {
-                if (ImGui::Checkbox("Invert", &inverted[i]))
-                {
-                    patch[std::string(prefixes[i]) + "Invert"] = std::make_shared<json::JsonNode>(inverted[i]);
-                }
-            }
+        };
+        auto color = attributes.albedo();
+        if (Value::colorPicker("Albedo", color))
+        {
+            patch["albedo"] = std::make_shared<json::JsonNode>(color);
         }
-        ImGui::PopID();
-    }
+        scalar("Metalness", "metalness", attributes.metalness());
+        scalar("Roughness", "roughness", attributes.roughness());
+        scalar("Alpha cutoff", "alphaCutoff", attributes.alphaCutoff());
+        scalar("Sheen intensity", "sheenIntensity", attributes.sheenIntensity());
+        float emission = attributes.lightEmission();
+        if (ImGui::DragFloat("Emission", &emission, 0.05f, 0, 10000))
+        {
+            patch["lightEmission"] = std::make_shared<json::JsonNode>(emission);
+        }
+        float refraction = attributes.refractionFactor();
+        if (ImGui::DragFloat("Refraction", &refraction, 0.01f, 0, 4))
+        {
+            patch["refractionFactor"] = std::make_shared<json::JsonNode>(refraction);
+        }
+        boolean("Transparent", "isTransparent", attributes.isTransparent());
+        boolean("Solid", "isSolid", attributes.isSolid());
+        boolean("Unlit", "unlit", attributes.isUnlit());
+        auto fresnel = attributes.fresnelTint();
+        auto sheen = attributes.sheenColor();
+        if (Value::colorPicker("Fresnel", fresnel))
+        {
+            patch["fresnelTint"] = std::make_shared<json::JsonNode>(fresnel);
+        }
+        if (Value::colorPicker("Sheen", sheen))
+        {
+            patch["sheenColor"] = std::make_shared<json::JsonNode>(sheen);
+        }
+        const std::array<const char*, 6> names{"Albedo texture", "Metalness texture", "Roughness texture", "Normal texture", "AO texture", "Emission texture"};
+        const std::array<const char*, 6> textureKeys{"albedoTexture", "metalnessTexture", "roughnessTexture", "normalTexture", "ambientOcclussion", "lightEmissionTexture"};
+        const std::array<const char*, 6> prefixes{"albedo", "metalness", "roughness", "normal", "ambientOcclussion", "lightEmission"};
+        std::array<uint32_t, 6> uv{attributes.albedoUVSet(), attributes.metalnessUVSet(), attributes.roughnessUVSet(), attributes.normalUVSet(), attributes.aoUVSet(), attributes.lightEmissionUVSet()};
+        std::array<glm::vec2, 6> scale{attributes.albedoScale(), attributes.metalnessScale(), attributes.roughnessScale(), attributes.normalScale(), attributes.aoScale(), attributes.lightEmissionScale()};
+        std::array<uint32_t, 6> channel{0, attributes.metalnessChannel(), attributes.roughnessChannel(), 0, attributes.aoChannel(), attributes.lightEmissionChannel()};
+        std::array<bool, 6> inverted{false, attributes.metalnessInvert(), attributes.roughnessInvert(), false, false, attributes.lightEmissionInvert()};
+        indirect = static_cast<uint32_t>(attributes.indirectTextureMode());
+        if (Value::comboBox("Indirect map interpretation", {"Ambient occlusion", "Baked AO (RGB UV2)", "Baked GI (RGB UV2)"}, indirect))
+        {
+            modeChanged = true;
+        }
+        for (size_t i = 0; i < names.size(); ++i)
+        {
+            ImGui::PushID(int(i));
+            if (ImGui::CollapsingHeader(names[i]))
+            {
+                const auto choice = _impl->textures[i].draw(ui, names[i], material->texture(draw::TextureSlot(i)));
+                if (choice.selected)
+                {
+                    textureChanged = true;
+                    patch[textureKeys[i]] = std::make_shared<json::JsonNode>(choice.path.string());
+                    if (i == 1 || i == 2 || i == 3)
+                    {
+                        linearSelected = int(i);
+                    }
+                    if (i == 4)
+                    {
+                        ordinaryAo = true;
+                    }
+                }
+                if (choice.cleared)
+                {
+                    clear = int(i);
+                }
+                auto source = material->texture(draw::TextureSlot(i));
+                if (source)
+                {
+                    const auto* settings = source->base();
+                    int color = settings->colorType() == base::Color::TypeLinear ? 1 : 0;
+                    if (ImGui::Combo("Color interpretation", &color, "sRGB\0Linear\0"))
+                    {
+                        samplingSlot = int(i);
+                        samplingEdit.colorType = color ? base::Color::TypeLinear : base::Color::TypeSRGB;
+                    }
+                    int mag = int(settings->magFilter());
+                    int min = int(settings->minFilter());
+                    if (ImGui::Combo("Magnification", &mag, "Linear\0Nearest\0"))
+                    {
+                        samplingSlot = int(i);
+                        samplingEdit.magFilter = static_cast<base::Texture::Filter>(mag);
+                    }
+                    if (ImGui::Combo("Minification", &min, "Linear\0Nearest\0"))
+                    {
+                        samplingSlot = int(i);
+                        samplingEdit.minFilter = static_cast<base::Texture::Filter>(min);
+                    }
+                    int u = int(settings->addressModeU());
+                    int v = int(settings->addressModeV());
+                    const char* addressing = "Repeat\0Mirror\0Clamp edge\0Clamp border\0";
+                    if (ImGui::Combo("Address U", &u, addressing))
+                    {
+                        samplingSlot = int(i);
+                        samplingEdit.addressU = static_cast<base::Texture::AddressMode>(u);
+                    }
+                    if (ImGui::Combo("Address V", &v, addressing))
+                    {
+                        samplingSlot = int(i);
+                        samplingEdit.addressV = static_cast<base::Texture::AddressMode>(v);
+                    }
+                    bool mips = settings->useMipmaps();
+                    if (ImGui::Checkbox("Sample mipmaps", &mips))
+                    {
+                        samplingSlot = int(i);
+                        samplingEdit.mipmaps = mips;
+                    }
+                    float bias = settings->mipLodBias();
+                    if (ImGui::DragFloat("Mip LOD bias", &bias, 0.05f, -16, 16))
+                    {
+                        samplingSlot = int(i);
+                        samplingEdit.lodBias = bias;
+                    }
+                }
+                int selectedUV = int(uv[i]);
+                if (ImGui::Combo("UV", &selectedUV, "Set 0\0Set 1\0"))
+                {
+                    if (i == 4 && attributes.indirectTextureMode() != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
+                    {
+                        selectedUV = 1;
+                    }
+                    patch[std::string(prefixes[i]) + "UV"] = std::make_shared<json::JsonNode>(uint32_t(selectedUV));
+                }
+                if (ImGui::DragFloat2("Scale", &scale[i].x, 0.01f))
+                {
+                    patch[std::string(prefixes[i]) + "Scale"] = std::make_shared<json::JsonNode>(scale[i]);
+                }
+                if (i == 1 || i == 2 || i == 4 || i == 5)
+                {
+                    int selectedChannel = int(channel[i]);
+                    if (ImGui::Combo("Channel", &selectedChannel, "Red\0Green\0Blue\0Alpha\0"))
+                    {
+                        patch[std::string(prefixes[i]) + "Channel"] = std::make_shared<json::JsonNode>(uint32_t(selectedChannel));
+                    }
+                }
+                if (i == 1 || i == 2 || i == 5)
+                {
+                    if (ImGui::Checkbox("Invert", &inverted[i]))
+                    {
+                        patch[std::string(prefixes[i]) + "Invert"] = std::make_shared<json::JsonNode>(inverted[i]);
+                    }
+                }
+            }
+            ImGui::PopID();
+        }
+    });
+    _impl->interactionState = interactionState;
     ImGui::EndDisabled();
     bool queued = false;
     if (!patch.empty())
     {
         const bool cpuValuesOnly = !textureChanged && clear < 0;
         const utils::MaterialModifier modifier(std::make_shared<json::JsonNode>(std::move(patch)));
-        queued = queueEdit([modifier, clear, ordinaryAo, linearSelected, cpuValuesOnly](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
+        if (_impl->session)
         {
-            if (cpuValuesOnly)
+            MaterialEditIntent intent;
+            intent.patch = modifier;
+            intent.clearSlot = clear;
+            intent.ordinaryAo = ordinaryAo;
+            intent.linearSlot = linearSelected;
+            intent.cpuValuesOnly = cpuValuesOnly;
+            queued = requestEdit(std::move(intent));
+        }
+        else
+        {
+            queued = queueEdit([modifier, clear, ordinaryAo, linearSelected, cpuValuesOnly](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
             {
-                // Do not realize unrelated pending texture changes in a value edit.
-                modifier.apply(material->materialAttributes());
-                if (drawable)
+                if (cpuValuesOnly)
                 {
-                    modifier.apply(drawable->materialDefinition(submesh));
+                    // Do not realize unrelated pending texture changes in a value edit.
+                    modifier.apply(material->materialAttributes());
+                    if (drawable)
+                    {
+                        modifier.apply(drawable->materialDefinition(submesh));
+                    }
                 }
-            }
-            else if (drawable)
-            {
-                modifier.apply(*drawable, submesh);
-            }
-            else
-            {
-                modifier.apply(*material);
-            }
-            if (linearSelected >= 0)
-            {
-                const auto slot = static_cast<draw::TextureSlot>(linearSelected);
-                auto replacement = textureWithColorType(material->texture(slot), base::Color::TypeLinear);
-                material->setTexture(slot, replacement);
-                if (drawable)
+                else if (drawable)
                 {
-                    storeTextureSettings(drawable, submesh, slot, replacement);
+                    modifier.apply(*drawable, submesh);
                 }
-            }
-            if (ordinaryAo)
-            {
-                const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
-                auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
-                material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
-                if (drawable)
+                else
                 {
-                    drawable->materialDefinition(submesh).setAoTexture(draw::cloneTextureSettings(*texture->base()));
+                    modifier.apply(*material);
                 }
-                material->materialAttributes().setIndirectTextureMode(mode);
-                if (drawable)
+                if (linearSelected >= 0)
                 {
-                    drawable->materialDefinition(submesh).setIndirectTextureMode(mode);
+                    const auto slot = static_cast<draw::TextureSlot>(linearSelected);
+                    auto replacement = textureWithColorType(material->texture(slot), base::Color::TypeLinear);
+                    material->setTexture(slot, replacement);
+                    if (drawable)
+                    {
+                        storeTextureSettings(drawable, submesh, slot, replacement);
+                    }
                 }
-            }
-            if (clear >= 0)
-            {
-                clearTexture(drawable, material, submesh, draw::TextureSlot(clear));
-            }
-        }, cpuValuesOnly);
+                if (ordinaryAo)
+                {
+                    const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
+                    auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
+                    material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
+                    if (drawable)
+                    {
+                        drawable->materialDefinition(submesh).setAoTexture(draw::cloneTextureSettings(*texture->base()));
+                    }
+                    material->materialAttributes().setIndirectTextureMode(mode);
+                    if (drawable)
+                    {
+                        drawable->materialDefinition(submesh).setIndirectTextureMode(mode);
+                    }
+                }
+                if (clear >= 0)
+                {
+                    clearTexture(drawable, material, submesh, draw::TextureSlot(clear));
+                }
+            }, cpuValuesOnly);
+        }
     }
     else if (samplingSlot >= 0)
     {
@@ -711,6 +924,15 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     else if (clear >= 0)
     {
         queued = queueClearTexture(draw::TextureSlot(clear));
+    }
+    _impl->drawing = false;
+    if (_impl->session)
+    {
+        if (!_impl->submitted && _impl->session->active())
+        {
+            _impl->session->submit("material", _impl->lastIntent, false, interactionState);
+        }
+        _impl->session->endFrame();
     }
     if (!_state->error.empty())
     {

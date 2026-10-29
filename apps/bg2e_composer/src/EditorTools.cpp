@@ -34,15 +34,63 @@ void EditorUi::bindDocument(const std::shared_ptr<AppDelegate>& delegate)
     {
         return;
     }
+    if (_metadataEdit)
+    {
+        _metadataEdit->cancel();
+    }
     _boundGeneration = document->generation;
     const auto generation = _boundGeneration;
     const auto weak = _delegate;
+    _componentInspector.onEditRequested([weak, generation](const auto& component, auto phase, uint64_t, const auto& intent)
+    {
+        if (phase == bg2e::ui::EditPhase::Cancel)
+        {
+            return true;
+        }
+        auto owner = weak.lock();
+        return owner && owner->document() && owner->document()->generation == generation &&
+            owner->componentEditIntent(component, phase, intent);
+    });
+    _componentInspector.onActionRequested([weak, generation](const auto& component, const auto& intent)
+    {
+        if (auto owner = weak.lock(); owner && owner->document() && owner->document()->generation == generation)
+        {
+            owner->componentAction(component, intent);
+        }
+    });
+    _metadataEdit = std::make_unique<bg2e::ui::EditSession>(
+        [weak, generation](auto phase, uint64_t, const auto&, const std::any& value)
+        {
+            if (phase == bg2e::ui::EditPhase::Cancel)
+            {
+                return true;
+            }
+            auto owner = weak.lock();
+            if (!owner || !owner->document() || owner->document()->generation != generation)
+            {
+                return false;
+            }
+            if (phase == bg2e::ui::EditPhase::Commit)
+            {
+                try
+                {
+                    return owner->editSubmeshMetadata(std::any_cast<const command::scene::MetadataRequest&>(value)).accepted();
+                }
+                catch (...)
+                {
+                    return false;
+                }
+            }
+            return true;
+        });
+    _metadataEdit->beginFrame();
     _material.setSelectionManager(delegate->selection());
     _material.setEditGuard([weak, generation]
     {
         auto owner = weak.lock();
         return owner && owner->document() && owner->document()->generation == generation &&
-            owner->document()->commands && !owner->document()->commands->history().faulted();
+            owner->document()->commands && !owner->document()->commands->history().faulted() &&
+            !owner->document()->commands->history().transactionActive();
     });
     _material.onChanged([weak](auto& renderer)
     {
@@ -101,42 +149,41 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
         auto name = mesh->submeshName(item->submesh);
         auto group = mesh->submeshGroupName(item->submesh);
         auto visible = mesh->submeshVisibility(item->submesh);
-        auto editMetadata = [&](const auto& operation, bool all = false)
+        const auto drawMetadata = [&](command::scene::MetadataField field, const char* label, bool all)
         {
-            const auto targets = all ? selection->selectedItems() : std::vector<std::shared_ptr<manipulation::SelectionItem>>{item};
-            for (const auto& current : targets)
+            command::scene::MetadataRequest request;
+            request.field = field;
+            request.text = field == command::scene::MetadataField::Name ? name : group;
+            request.visible = visible;
+            const auto targets = all ? selection->selectedItems() : std::vector{item};
+            for (const auto& target : targets)
             {
-                const auto snapshot = *current;
-                delegate->queueNodeValueEdit(current->node, [snapshot, operation](auto&)
-                {
-                    if (auto mesh = snapshot.lockMesh())
-                    {
-                        operation(*mesh, snapshot.submesh);
-                    }
-                });
+                request.targets.push_back(*target);
             }
-        };
-        if (ui::Value::text("Submesh name", name))
-        {
-            editMetadata([name](auto& mesh, auto sub)
+            const auto key = std::to_string(reinterpret_cast<uintptr_t>(mesh.get())) + ":" +
+                std::to_string(item->submesh) + ":" + std::to_string(static_cast<int>(field));
+            request = std::any_cast<command::scene::MetadataRequest>(_metadataEdit->value(key, std::move(request)));
+            bool changed = false;
+            const auto state = ui::EditInteraction::draw([&]
             {
-                mesh.setSubmeshName(name, sub);
+                if (field == command::scene::MetadataField::Visibility)
+                {
+                    changed = ui::Button::checkBox(label, &request.visible);
+                }
+                else if (request.text.size() < 4096)
+                {
+                    changed = ui::Value::text(label, request.text, 4096);
+                }
+                else
+                {
+                    ui::Text::text("Metadata is too long to edit");
+                }
             });
-        }
-        if (ui::Value::text("Group", group))
-        {
-            editMetadata([group](auto& mesh, auto sub)
-            {
-                mesh.setSubmeshGroupName(group, sub);
-            }, true);
-        }
-        if (ui::Button::checkBox("Visible", &visible))
-        {
-            editMetadata([visible](auto& mesh, auto sub)
-            {
-                mesh.setSubmeshVisibility(visible, sub);
-            }, true);
-        }
+            _metadataEdit->submit(key, std::move(request), changed, state);
+        };
+        drawMetadata(command::scene::MetadataField::Name, "Submesh name", false);
+        drawMetadata(command::scene::MetadataField::Group, "Group", true);
+        drawMetadata(command::scene::MetadataField::Visibility, "Visible", true);
         ui::Text::separator("Geometry (whole selected meshes)");
         const char* operations[]{"Z up to Y up", "Center geometry", "Put on floor", "cm to m"};
         for (unsigned i = 0; i < 4; ++i)

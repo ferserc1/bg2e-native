@@ -35,6 +35,9 @@ void AppDelegate::notifyEdited(bg2e::draw::Renderer& renderer)
 {
     // Transitional edits have no memento yet. Invalidate incompatible history
     // explicitly; do not infer a new command from this notification.
+    // Settle the explicit gesture before the transitional nonhistorical reset.
+    // This notification does not capture or manufacture a property memento.
+    finishTransformInteraction(true);
     _stage->markModified();
     command::Effects effects;
     effects.lightmapSources = true;
@@ -65,6 +68,11 @@ void AppDelegate::enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
     {
         return;
     }
+    if (document()->commands && document()->commands->history().transactionActive())
+    {
+        _status = "Finish the active edit interaction first";
+        return;
+    }
     _status.clear();
     const auto generation = document()->generation;
     const auto enqueue = cpuValuesOnly
@@ -82,6 +90,10 @@ void AppDelegate::enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
             (!_stage->contains(node.get()) && node != _stage->fillLightNode()))
         {
             return;
+        }
+        if (document()->commands && document()->commands->history().transactionActive())
+        {
+            return; // A direct manipulation owns the authored state until settlement.
         }
         invalidateLightmapSources();
         try
@@ -101,43 +113,6 @@ void AppDelegate::enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
         // Edits/texture callbacks can fail after modifying part of the target.
         notifyEdited(renderer);
     }, {});
-}
-
-void AppDelegate::selectNode(std::weak_ptr<bg2e::scene::Node> target, uint32_t submesh, bool additive)
-{
-    const auto generation = document() ? document()->generation : 0;
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), target, submesh, additive, generation](auto&)
-    {
-        auto owner = weak.lock();
-        if (!owner)
-        {
-            return;
-        }
-        auto node = target.lock();
-        if (!node || !document() || document()->generation != generation || !_stage->contains(node.get()))
-        {
-            return;
-        }
-        if (!additive)
-        {
-            _selection->deselect();
-        }
-        if (auto component = node->drawable())
-        {
-            if (_selection->isSelected(node.get(), component, submesh))
-            {
-                _selection->removeFromSelectedItems(node.get(), submesh);
-            }
-            else
-            {
-                _selection->addToSelectedItems(node.get(), component, submesh);
-            }
-        }
-        else
-        {
-            _selection->addToSelectedItems(node.get());
-        }
-    });
 }
 
 void AppDelegate::editGeometry(unsigned operation)
@@ -189,17 +164,6 @@ void AppDelegate::editGeometry(unsigned operation)
                 ApplyTransformModifier<Mesh> modifier(glm::scale(glm::mat4(1), glm::vec3(100.0f)));
                 drawable->applyModifier(&modifier);
             }
-        }, true);
-    }
-}
-
-void AppDelegate::duplicateSelection()
-{
-    if (auto node = _selection ? _selection->selectedNode() : nullptr)
-    {
-        queueNodeEdit(node->shared_from_this(), [this](auto& target)
-        {
-            _stage->duplicate(target.shared_from_this());
         }, true);
     }
 }
@@ -262,18 +226,6 @@ void AppDelegate::pasteMaterial()
             }
             mesh->materialDefinition(target.submesh) = bg2e::draw::cloneMaterialAttributes(material->materialAttributes());
         });
-    }
-}
-
-void AppDelegate::removeSelection()
-{
-    if (auto node = _selection ? _selection->selectedNode() : nullptr)
-    {
-        queueNodeEdit(node->shared_from_this(), [this](auto& target)
-        {
-            _selection->deselect();
-            _stage->remove(target.shared_from_this());
-        }, true);
     }
 }
 
@@ -356,6 +308,11 @@ void AppDelegate::editEnvironment(std::function<void(bg2e::scene::EnvironmentCom
         {
             return;
         }
+        owner->finishTransformInteraction(true);
+        if (owner->commandFaulted())
+        {
+            return;
+        }
         bool adopted = false;
         try
         {
@@ -399,6 +356,11 @@ void AppDelegate::environmentPreset(const std::filesystem::path& path, bool save
     {
         auto owner = weak.lock();
         if (!owner || !document() || document()->generation != generation)
+        {
+            return;
+        }
+        owner->finishTransformInteraction(true);
+        if (owner->commandFaulted())
         {
             return;
         }
@@ -455,6 +417,11 @@ void AppDelegate::setCameraIntrinsics(float fov, float nearPlane, float farPlane
         auto owner = weak.lock();
         if (!owner || !std::isfinite(fov) || !std::isfinite(nearPlane) || !std::isfinite(farPlane) ||
             fov <= 0 || fov >= 179 || nearPlane <= 0 || farPlane <= nearPlane)
+        {
+            return;
+        }
+        finishTransformInteraction(true);
+        if (commandFaulted())
         {
             return;
         }

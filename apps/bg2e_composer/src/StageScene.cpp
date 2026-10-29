@@ -382,6 +382,15 @@ void cleanupTree(bg2e::scene::Node& node)
 }
 }
 
+void StageScene::cleanupRetainedNode(const std::shared_ptr<bg2e::scene::Node>& node)
+{
+    if (node && !node->parent() && !node->scene())
+    {
+        cleanupTree(*node);
+    }
+}
+
+
 void StageScene::discardCandidate(const std::shared_ptr<bg2e::scene::Node>& candidate) noexcept
 {
     if (!candidate || candidate->parent() || candidate->scene())
@@ -417,7 +426,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::newDocumentRoot() const
     return root;
 }
 
-void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) const
+void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root, bool allowFallback) const
 {
     using namespace bg2e;
     if (auto* camera = root->camera())
@@ -425,6 +434,10 @@ void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) 
         auto* projection = camera->projection();
         if (!projection)
         {
+            if (!allowFallback)
+            {
+                throw std::invalid_argument("An authored camera must retain a valid projection");
+            }
             auto fallback = std::make_shared<math::OpticalProjection>();
             fallback->setFrameSize(50);
             fallback->setFocalLength(55);
@@ -458,7 +471,7 @@ void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) 
     }
     for (const auto& child : root->children())
     {
-        prepareCameras(child);
+        prepareCameras(child, allowFallback);
     }
 }
 
@@ -771,10 +784,7 @@ void StageScene::validateEditingGraph(bool prepareCameraState)
     {
         throw std::invalid_argument("Keep at least one enabled document camera");
     }
-    if (prepareCameraState)
-    {
-        prepareCameras(_document.root);
-    }
+    prepareCameras(_document.root, prepareCameraState);
 }
 
 void StageScene::refreshCamera(bool preserveControllers)
@@ -1144,14 +1154,89 @@ bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Nod
     return true;
 }
 
+std::shared_ptr<command::SceneRetention> StageScene::retainForCommand(const std::shared_ptr<bg2e::scene::Node>& node)
+{
+    for (const auto& lease : _commandRetained)
+    {
+        if (lease->node == node)
+        {
+            return lease;
+        }
+    }
+    auto lease = std::make_shared<command::SceneRetention>(node);
+    _commandRetained.push_back(lease);
+    return lease;
+}
+
+
+std::shared_ptr<command::SceneRetention> StageScene::retainForCommand(const std::shared_ptr<bg2e::scene::Component>& component)
+{
+    for (const auto& lease : _commandRetained)
+    {
+        if (lease->component == component)
+        {
+            return lease;
+        }
+    }
+    auto lease = std::make_shared<command::SceneRetention>(component);
+    _commandRetained.push_back(lease);
+    return lease;
+}
+
+
 void StageScene::releaseRetired()
 {
     std::exception_ptr error;
-    for (const auto& node : _retired)
+    const auto heldByHistory = [&](bg2e::scene::Node* root)
     {
+        for (const auto& lease : _commandRetained)
+        {
+            if (lease.use_count() <= 1)
+            {
+                continue;
+            }
+            auto* node = lease->node ? lease->node.get() : lease->component->ownerNode();
+            for (; node; node = node->parent())
+            {
+                if (node == root)
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    };
+    for (auto it = _commandRetained.begin(); it != _commandRetained.end();)
+    {
+        if (it->use_count() != 1)
+        {
+            ++it;
+            continue;
+        }
+        if ((*it)->node && heldByHistory((*it)->node.get()))
+        {
+            ++it;
+            continue;
+        }
+        if ((*it)->detached())
+        {
+            _engine->device()->waitIdle();
+            (*it)->release(*this);
+        }
+        it = _commandRetained.erase(it);
+    }
+    for (auto it = _retired.begin(); it != _retired.end();)
+    {
+        if (heldByHistory(it->get()))
+        {
+            ++it;
+            continue;
+        }
         try
         {
-            cleanupTree(*node);
+            _engine->device()->waitIdle();
+            cleanupTree(**it);
+            it = _retired.erase(it);
         }
         catch (...)
         {
@@ -1159,9 +1244,16 @@ void StageScene::releaseRetired()
             {
                 error = std::current_exception();
             }
+            ++it;
         }
     }
-    _retired.clear();
+    // Primitive construction retains partial resources until a stopped cleanup.
+    // Once cleanup has cleared the engine binding, the cache must not keep CPU
+    // geometry/settings alive after the last command lease is retired.
+    std::erase_if(_drawables, [](const auto& drawable)
+    {
+        return !drawable->isLoaded() && !drawable->engine();
+    });
     if (error)
     {
         std::rethrow_exception(error);
@@ -1196,7 +1288,8 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
 {
     // The initial environment light is a stage fixture, outside the document
     // subtree. Refresh its tools alongside document tools after loads/edits too.
-    if (_fillLight && root != _fillLight)
+    const bool refresh = !root;
+    if (refresh && _fillLight)
     {
         prepareTools(_fillLight);
     }
@@ -1239,8 +1332,19 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
         }
         node->template getComponent<manipulation::GizmoComponent>()->synchronizeResources();
     });
-    refreshCamera();
+    if (refresh)
+    {
+        refreshCamera(true);
+    }
 }
+
+void StageScene::prepareCommandCandidate(const std::shared_ptr<bg2e::scene::Node>& node)
+{
+    command::requireSupportedTree(node);
+    prepareCameras(node);
+    prepareTools(node);
+}
+
 
 void StageScene::duplicate(const std::shared_ptr<bg2e::scene::Node>& node)
 {

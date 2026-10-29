@@ -19,13 +19,40 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/ui/EditInteraction.hpp>
 #include <bg2e/reflection/TypeInfo.hpp>
 
+#include <any>
+#include <string>
+#include <vector>
 #include <cstdint>
 #include <functional>
 
 namespace bg2e {
 namespace ui {
+
+// Each segment identifies a property in a registered owner type. For an
+// intermediate polymorphic segment, subtypeKey freezes the expected subtype;
+// subtypeObject selects its derived view rather than the base view.
+struct ReflectionPropertySegment {
+    std::string ownerType;
+    std::string property;
+    std::string subtypeKey;
+    bool subtypeObject = false;
+};
+using ReflectionPropertyPath = std::vector<ReflectionPropertySegment>;
+
+struct ReflectionEditIntent {
+    ReflectionPropertyPath path;
+    reflection::PropertyType type = reflection::PropertyType::Float;
+    std::any proposed; // Exact getter/setter value type, including Resource storage type.
+};
+
+struct ReflectionActionIntent {
+    ReflectionPropertyPath objectPath;
+    std::string ownerType;
+    std::string action;
+};
 
 // Generic ImGui drawer for bg2e::reflection metadata. It builds a user
 // interface for any reflected type, addressing instances as void*, using
@@ -49,6 +76,23 @@ class BG2E_API ReflectionWidget {
         const reflection::TypeInfo& info,
         uint32_t depth = 0,
         const EditHandler& edit = {});
+
+    // Optional typed mode. The session owns drafts, the application owns live
+    // mutation. Bracket the whole editor frame, not each recursive call, with
+    // session.beginFrame/endFrame. Cancellation is required before target rebind.
+    // Arbitrary actions and polymorphic replacement have no implicit restoration
+    // contract: actions require a separate adapter. Subtype replacement proposes
+    // a key with PolymorphicObject type; the receiver must retain old/new objects.
+    static bool drawEditIntents(void* instance, const reflection::TypeInfo& info,
+        EditSession& session,
+        const std::function<void(const ReflectionActionIntent&)>& action = {},
+        const ReflectionPropertyPath& path = {});
+
+    // Resolve afresh at execution/replay. Returned pointers are borrowed only for
+    // that operation; never store them in a command. Null means stale/readonly.
+    static const reflection::PropertyInfo* resolveProperty(void* root,
+        const reflection::TypeInfo& rootInfo, const ReflectionPropertyPath& path,
+        void*& owner);
 
     // Edits a transient scalar value only; never invokes the original property's
     // accessors. The caller validates/queues the result against its live target.

@@ -19,6 +19,7 @@
 #pragma once
 
 #include "Document.hpp"
+#include "command/SceneRetention.hpp"
 #include <bg2e/db/scene_gltf.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/db/mesh_obj.hpp>
@@ -87,10 +88,14 @@ class StageScene {
     EditingState editingState() const;
     void restoreEditingState(const EditingState& state);
     size_t editingStateBytes() const;
+    void cleanupRetainedNode(const std::shared_ptr<bg2e::scene::Node>& node);
     void discardCandidate(const std::shared_ptr<bg2e::scene::Node>& candidate) noexcept;
     void releaseRetired();
+    std::shared_ptr<command::SceneRetention> retainForCommand(const std::shared_ptr<bg2e::scene::Node>& node);
+    std::shared_ptr<command::SceneRetention> retainForCommand(const std::shared_ptr<bg2e::scene::Component>& component);
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
     std::shared_ptr<bg2e::scene::Node> createPrimitive(unsigned kind);
+    void prepareCommandCandidate(const std::shared_ptr<bg2e::scene::Node>& node);
     bool contains(bg2e::scene::Node* node) const;
     void duplicate(const std::shared_ptr<bg2e::scene::Node>& node);
     void remove(const std::shared_ptr<bg2e::scene::Node>& node);
@@ -149,7 +154,7 @@ class StageScene {
     std::shared_ptr<bg2e::scene::Node> prepareScene(const std::filesystem::path& path,
         bool requireCamera, bg2e::scene::SceneProgressCallback progress,
         std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
-    void prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root) const;
+    void prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root, bool allowFallback = true) const;
     void refreshEnvironment(bool reset = false);
 
     void addDrawable(const char* name, std::shared_ptr<bg2e::draw::Drawable> drawable,
@@ -161,6 +166,7 @@ class StageScene {
     Document _document;
     std::shared_ptr<bg2e::scene::Node> _model;
     std::vector<std::shared_ptr<bg2e::scene::Node>> _retired;
+    std::vector<std::shared_ptr<command::SceneRetention>> _commandRetained;
     bg2e::draw::Engine* _engine;
     std::shared_ptr<bg2e::scene::Node> _root;
     std::shared_ptr<bg2e::scene::Node> _camera;

@@ -270,6 +270,189 @@ bool ReflectionWidget::drawProperties(
     return changed;
 }
 
+const reflection::PropertyInfo* ReflectionWidget::resolveProperty(void* root,
+    const reflection::TypeInfo& rootInfo, const ReflectionPropertyPath& path, void*& owner)
+{
+    owner = nullptr;
+    if (!root || path.empty() || path.size() > reflection::maxObjectDepth + 1)
+    {
+        return nullptr;
+    }
+    auto* current = root;
+    const auto* info = &rootInfo;
+    auto& registry = reflection::TypeRegistry::get();
+    for (size_t i = 0; i < path.size(); ++i)
+    {
+        const auto& segment = path[i];
+        if (!info || info->typeName != segment.ownerType)
+        {
+            return nullptr;
+        }
+        const auto* property = info->property(segment.property);
+        if (!property || property->isReadOnly())
+        {
+            return nullptr;
+        }
+        if (i + 1 == path.size())
+        {
+            owner = current;
+            return property;
+        }
+        if (property->type == PropertyType::Object && property->objectMutableGetter)
+        {
+            current = property->objectMutableGetter(current);
+            info = registry.type(property->objectTypeName);
+        }
+        else if (property->type == PropertyType::PolymorphicObject &&
+            property->polymorphicObjectMutableGetter && property->polymorphicTypeKey &&
+            property->polymorphicTypeKey(current) == segment.subtypeKey)
+        {
+            current = property->polymorphicObjectMutableGetter(current);
+            info = registry.type(property->polymorphicBaseTypeName);
+            if (current && segment.subtypeObject)
+            {
+                const auto* subtype = registry.subtype(property->polymorphicBaseTypeName, segment.subtypeKey);
+                current = registry.subtypeObject(property->polymorphicBaseTypeName, segment.subtypeKey, current);
+                info = subtype ? registry.type(subtype->typeName) : nullptr;
+            }
+        }
+        else
+        {
+            return nullptr;
+        }
+        if (!current)
+        {
+            return nullptr;
+        }
+    }
+    return nullptr;
+}
+
+
+bool ReflectionWidget::drawEditIntents(void* instance, const reflection::TypeInfo& info,
+    EditSession& session, const std::function<void(const ReflectionActionIntent&)>& action,
+    const ReflectionPropertyPath& path)
+{
+    if (!instance || path.size() > reflection::maxObjectDepth)
+    {
+        return false;
+    }
+    bool changed = false;
+    auto& registry = reflection::TypeRegistry::get();
+    for (const auto& property : info.properties)
+    {
+        auto next = path;
+        next.push_back({info.typeName, property.name, {}, false});
+        // Length-prefix every component: names containing separators cannot alias.
+        std::string key;
+        for (const auto& segment : next)
+        {
+            for (const auto* part : {&segment.ownerType, &segment.property, &segment.subtypeKey})
+            {
+                key += std::to_string(part->size()) + ":" + *part;
+            }
+            key += segment.subtypeObject ? "1" : "0";
+        }
+        Group::pushId(key);
+        if (property.type == PropertyType::Object || property.type == PropertyType::PolymorphicObject)
+        {
+            if (Group::beginTree(nameFor(property)))
+            {
+                if (!property.isReadOnly() && next.size() <= reflection::maxObjectDepth)
+                {
+                    if (property.type == PropertyType::Object)
+                    {
+                        auto* child = property.objectMutableGetter ? property.objectMutableGetter(instance) : nullptr;
+                        const auto* childInfo = registry.type(property.objectTypeName);
+                        if (child && childInfo)
+                        {
+                            changed = drawEditIntents(child, *childInfo, session, action, next) || changed;
+                        }
+                    }
+                    else
+                    {
+                        auto* child = property.polymorphicObjectMutableGetter
+                            ? property.polymorphicObjectMutableGetter(instance) : nullptr;
+                        auto subtypeKey = property.polymorphicTypeKey ? property.polymorphicTypeKey(instance) : std::string{};
+                        const auto* subtype = registry.subtype(property.polymorphicBaseTypeName, subtypeKey);
+                        std::vector<std::string> labels, keys;
+                        uint32_t selected = 0;
+                        for (const auto& option : registry.subtypes(property.polymorphicBaseTypeName))
+                        {
+                            if (!property.polymorphicSubtypeKeys.empty() &&
+                                std::find(property.polymorphicSubtypeKeys.begin(), property.polymorphicSubtypeKeys.end(), option.key) == property.polymorphicSubtypeKeys.end())
+                            {
+                                continue;
+                            }
+                            if (option.key == subtypeKey)
+                            {
+                                selected = static_cast<uint32_t>(keys.size());
+                            }
+                            labels.push_back(option.displayName);
+                            keys.push_back(option.key);
+                        }
+                        if (property.polymorphicObjectReplacer && !keys.empty())
+                        {
+                            if (Value::comboBox("Type", labels, selected) && keys[selected] != subtypeKey)
+                            {
+                                ReflectionEditIntent replacement{next, property.type, keys[selected]};
+                                changed = session.submit(key, std::move(replacement), true, {}) || changed;
+                            }
+                        }
+                        else
+                        {
+                            Text::text("Type: " + subtypeKey);
+                        }
+                        if (child && subtype)
+                        {
+                            next.back().subtypeKey = subtypeKey;
+                            const auto* baseInfo = registry.type(property.polymorphicBaseTypeName);
+                            if (baseInfo && subtype->typeName != property.polymorphicBaseTypeName)
+                            {
+                                changed = drawEditIntents(child, *baseInfo, session, action, next) || changed;
+                            }
+                            auto* derived = registry.subtypeObject(property.polymorphicBaseTypeName, subtypeKey, child);
+                            const auto* derivedInfo = registry.type(subtype->typeName);
+                            if (derived && derivedInfo)
+                            {
+                                next.back().subtypeObject = true;
+                                changed = drawEditIntents(derived, *derivedInfo, session, action, next) || changed;
+                            }
+                        }
+                    }
+                }
+                Group::endTree();
+            }
+        }
+        else if (property.getter)
+        {
+            ReflectionEditIntent intent{next, property.type, property.getter(instance)};
+            auto draft = session.value(key, intent);
+            intent = std::any_cast<ReflectionEditIntent>(std::move(draft));
+            bool edited = false;
+            const auto state = EditInteraction::draw([&]
+            {
+                edited = editValue(intent.proposed, property);
+            });
+            changed = session.submit(key, std::move(intent), edited, state) || changed;
+        }
+        Group::popId();
+    }
+    for (const auto& entry : info.actions)
+    {
+        Group::beginDisabled(!action);
+        if (Button::button((entry.displayName.empty() ? entry.name : entry.displayName) + "##" + entry.name) && action)
+        {
+            // The application must supply a reversible adapter or explicitly
+            // execute this as a nonhistorical action. No callable is captured.
+            action({path, info.typeName, entry.name});
+        }
+        Group::endDisabled();
+    }
+    return changed;
+}
+
+
 bool ReflectionWidget::editValue(std::any& value, const reflection::PropertyInfo& property, bool editable)
 {
     auto proxy = property;

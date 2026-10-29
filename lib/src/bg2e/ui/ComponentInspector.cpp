@@ -31,6 +31,7 @@
 #include <bg2e/app/MainLoop.hpp>
 
 #include <algorithm>
+#include <stdexcept>
 #include <memory>
 #include <any>
 #include <filesystem>
@@ -115,8 +116,129 @@ void restoreResource(
 
 } // anonymous namespace
 
+ComponentInspector::ComponentInspector(const ComponentInspector& other)
+{
+    *this = other;
+}
+
+
+ComponentInspector& ComponentInspector::operator=(const ComponentInspector& other)
+{
+    if (this != &other)
+    {
+        cancelInteraction();
+        if (_editSession && _editSession->active())
+        {
+            throw std::logic_error("Settle the component interaction before assigning the inspector");
+        }
+        _node = other._node;
+        _selectedComponentIndex = other._selectedComponentIndex;
+        _registryRevision = other._registryRevision;
+        _onChanged = other._onChanged;
+        _onResourceChanged = other._onResourceChanged;
+        _onAddRequested = other._onAddRequested;
+        _onRemoveRequested = other._onRemoveRequested;
+        _onDrawComponent = other._onDrawComponent;
+        _onActionRequested = other._onActionRequested;
+        onEditRequested(other._onEditRequested);
+    }
+    return *this;
+}
+
+
+void ComponentInspector::setNode(scene::Node* node)
+{
+    if (_node != node)
+    {
+        cancelInteraction();
+        if (_editSession && _editSession->active())
+        {
+            throw std::logic_error("Settle the component interaction before rebinding");
+        }
+        _node = node;
+        _selectedComponentIndex = 0;
+    }
+}
+
+
+void ComponentInspector::cancelInteraction()
+{
+    if (_editSession)
+    {
+        _editSession->cancel();
+    }
+}
+
+
+bool ComponentInspector::commitInteraction()
+{
+    return !_editSession || _editSession->commit();
+}
+
+
+void ComponentInspector::onEditRequested(EditIntentHandler handler)
+{
+    cancelInteraction();
+    if (_editSession && _editSession->active())
+    {
+        throw std::logic_error("Settle the component interaction before changing mutation owner");
+    }
+    _editSession.reset();
+    _onEditRequested = handler;
+    if (handler)
+    {
+        _editSession = std::make_unique<EditSession>(
+            [this, handler = std::move(handler)](EditPhase phase, uint64_t id, const auto&, const std::any& value)
+            {
+                const auto& intent = std::any_cast<const ReflectionEditIntent&>(value);
+                if (phase == EditPhase::Begin)
+                {
+                    _editTarget.reset();
+                    if (_node && !intent.path.empty())
+                    {
+                        for (const auto& component : _node->orderedComponents())
+                        {
+                            if (component->typeName() == intent.path.front().ownerType)
+                            {
+                                _editTarget = component;
+                                break;
+                            }
+                        }
+                    }
+                }
+                auto target = _editTarget.lock();
+                if (!target && phase != EditPhase::Cancel)
+                {
+                    return false;
+                }
+                return handler(target, phase, id, intent);
+            });
+    }
+}
+
+
+void ComponentInspector::onActionRequested(ActionIntentHandler handler)
+{
+    _onActionRequested = std::move(handler);
+}
+
+
 void ComponentInspector::draw()
 {
+    if (_editSession)
+    {
+        _editSession->beginFrame();
+    }
+    struct SessionScope {
+        std::unique_ptr<EditSession>& session;
+        ~SessionScope()
+        {
+            if (session)
+            {
+                session->endFrame();
+            }
+        }
+    } scope{_editSession};
     const auto revision = reflection::TypeRegistry::get().revision();
     if (_registryRevision != revision)
     {
@@ -150,6 +272,11 @@ void ComponentInspector::draw()
 
         if (Button::button("Add Component", false))
         {
+            cancelInteraction();
+            if (_editSession && _editSession->active())
+            {
+                return;
+            }
             if (_onAddRequested)
             {
                 _onAddRequested(componentOptions[_selectedComponentIndex].typeName);
@@ -211,6 +338,25 @@ void ComponentInspector::draw()
                 continue;
             }
 
+            if (_editSession)
+            {
+                std::function<void(const ReflectionActionIntent&)> action;
+                if (_onActionRequested)
+                {
+                    action = [this, comp](const auto& intent)
+                    {
+                        cancelInteraction();
+                        if (!_editSession->active())
+                        {
+                            _onActionRequested(comp, intent);
+                        }
+                    };
+                }
+                ReflectionWidget::drawEditIntents(comp.get(), *typeInfo, *_editSession, action);
+                Group::popId();
+                continue;
+            }
+
             std::vector<ResourceSnapshot> resources;
             for (const auto& property : typeInfo->properties)
             {
@@ -258,6 +404,11 @@ void ComponentInspector::draw()
 
     if (pendingRemove)
     {
+        cancelInteraction();
+        if (_editSession && _editSession->active())
+        {
+            return;
+        }
         if (_onRemoveRequested)
         {
             _onRemoveRequested(pendingRemove);

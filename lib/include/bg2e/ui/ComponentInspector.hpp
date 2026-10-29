@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/ui/ReflectionWidget.hpp>
 
 #include <functional>
 #include <memory>
@@ -39,26 +40,37 @@ namespace ui {
 // properties, because they may provide essential scene behavior.
 class BG2E_API ComponentInspector {
   public:
+    ComponentInspector() = default;
+    // Copies configuration, never an active preview or its target ownership.
+    ComponentInspector(const ComponentInspector& other);
+    ComponentInspector& operator=(const ComponentInspector& other);
+
     using ResourceChangedCallback = std::function<bool(
         scene::Component* component,
         const std::string& propertyName,
         const std::filesystem::path& previousPath,
         const std::filesystem::path& selectedPath)>;
 
-    void setNode(scene::Node* node)
-    {
-        if (_node != node)
-        {
-            _node = node;
-            _selectedComponentIndex = 0;
-        }
-    }
+    void setNode(scene::Node* node);
     scene::Node* node() const
     {
         return _node;
     }
 
     void draw();
+
+    // Optional property intent owner; custom onDrawComponent overrides this
+    // drawer. Actions need a separate reversible/nonhistorical adapter. This mode
+    // never invokes property setters or onChanged. Cancel before hiding/rebinding
+    // or destruction; callbacks follow EditSession's no-throw/recovery contract.
+    using EditIntentHandler = std::function<bool(const std::shared_ptr<scene::Component>&,
+        EditPhase, uint64_t, const ReflectionEditIntent&)>;
+    using ActionIntentHandler = std::function<void(const std::shared_ptr<scene::Component>&,
+        const ReflectionActionIntent&)>;
+    void onEditRequested(EditIntentHandler handler);
+    void onActionRequested(ActionIntentHandler handler);
+    void cancelInteraction();
+    bool commitInteraction();
 
     // Fired when any property changes or a component is removed
     void onChanged(std::function<void()> cb)
@@ -86,6 +98,10 @@ class BG2E_API ComponentInspector {
     }
 
   protected:
+    std::unique_ptr<EditSession> _editSession;
+    std::weak_ptr<scene::Component> _editTarget;
+    ActionIntentHandler _onActionRequested;
+    EditIntentHandler _onEditRequested;
     scene::Node* _node = nullptr;
     uint32_t _selectedComponentIndex = 0;
     uint64_t _registryRevision = 0;

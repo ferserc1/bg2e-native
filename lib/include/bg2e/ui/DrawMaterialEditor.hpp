@@ -19,6 +19,8 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/ui/EditInteraction.hpp>
+#include <optional>
 #include <bg2e/draw/MaterialBase.hpp>
 #include <bg2e/manipulation/SelectionManager.hpp>
 #include <bg2e/utils/MaterialModifier.hpp>
@@ -32,6 +34,38 @@ class Renderer;
 }
 namespace bg2e::ui {
 class UserInterface;
+
+// A typed partial sampler edit. Unspecified fields preserve each target's
+// own settings; it never carries an opaque operation on a live resource.
+struct BG2E_API TextureSamplingEdit {
+    std::optional<base::Color::Type> colorType;
+    std::optional<base::Texture::Filter> magFilter;
+    std::optional<base::Texture::Filter> minFilter;
+    std::optional<base::Texture::AddressMode> addressU;
+    std::optional<base::Texture::AddressMode> addressV;
+    std::optional<bool> mipmaps;
+    std::optional<float> lodBias;
+
+    void apply(base::Texture& texture) const;
+};
+
+struct MaterialEditIntent {
+    std::optional<utils::MaterialModifier> patch;
+    bool ordinaryAo = false;
+    bool cpuValuesOnly = false;
+    int linearSlot = -1;
+    int clearSlot = -1;
+    std::optional<base::MaterialAttributes::IndirectTextureMode> indirectMode;
+    std::optional<TextureSamplingEdit> sampling;
+    draw::TextureSlot samplingSlot = draw::TextureSlot::Albedo;
+};
+
+struct MaterialEditTargets {
+    std::vector<manipulation::SelectionItem> selection;
+    std::weak_ptr<draw::MaterialBase> direct;
+    uint64_t binding = 0;
+    uint64_t rendererGeneration = 0;
+};
 
 // Queued material controls never mutate live
 // targets during UI draw. Queued edits use weak targets and renderer generations.
@@ -59,10 +93,22 @@ class BG2E_API DrawMaterialEditor {
     // texture bindings are retired against their outstanding submissions.
     void setRetainedResourceEditsEnabled(bool enabled);
 
+    // Optional exclusive mutation owner. Receives immutable values before any
+    // live edit, with targets frozen on Begin. No internal edit queue or changed
+    // notification runs in this mode. The handler owns validation, safe scheduling,
+    // capture, recovery and any history policy. Callbacks must not throw, and
+    // rejected Begin must leave no transaction open. It must synchronously settle
+    // Cancel before a rebind/cleanup; false keeps the session open for recovery.
+    using EditIntentHandler = std::function<bool(EditPhase, uint64_t,
+        const MaterialEditTargets&, const MaterialEditIntent&)>;
+    void onEditRequested(EditIntentHandler handler);
+    void cancelInteraction();
+
     bool draw(UserInterface& ui);
     bool queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo = false);
     bool queueIndirectMode(base::MaterialAttributes::IndirectTextureMode mode);
     bool queueTextureSettings(draw::TextureSlot slot, std::function<void(base::Texture&)> edit);
+    bool queueTextureSettings(draw::TextureSlot slot, const TextureSamplingEdit& edit);
     bool queueClearTexture(draw::TextureSlot slot);
 
     bool pending() const;
@@ -77,6 +123,8 @@ class BG2E_API DrawMaterialEditor {
     struct Impl;
     std::shared_ptr<State> _state;
     std::unique_ptr<Impl> _impl;
+
+    bool requestEdit(MaterialEditIntent intent);
 
     bool queueEdit(std::function<void(draw::Drawable*, draw::MaterialBase*, uint32_t)> operation,
         bool cpuValuesOnly = false);

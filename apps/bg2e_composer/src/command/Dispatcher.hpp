@@ -50,6 +50,15 @@ class Dispatcher {
 
     bg2e::app::CommandResult submit(std::unique_ptr<bg2e::app::Command> command,
         Boundary boundary, Effects effects, std::function<bool()> valid);
+    // CPU-only supervised interactions begin at the input/graphics boundary.
+    // The transaction owns validation, effects and recovery; it retains no native
+    // resources. Pending commands prevent admission. History blocks execution of
+    // other commands until this interaction is settled.
+    bg2e::app::CommandResult beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command);
+
+    void setSelectionHistoryEnabled(bool enabled);
+    bool selectionHistoryEnabled() const;
+
     void undo();
     void redo();
     void pump();
@@ -63,6 +72,7 @@ class Dispatcher {
     const bg2e::app::CommandHistory& history() const;
 
   private:
+    bool _selectionHistory = false;
     struct Retirement;
     std::shared_ptr<Retirement> _retirement;
     std::unique_ptr<bg2e::app::CommandHistory> _history;

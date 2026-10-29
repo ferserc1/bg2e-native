@@ -89,6 +89,14 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
             }
         }
     });
+    _selection->onPickRequested([weak](bg2e::manipulation::SelectionItem item, bool additive)
+    {
+        if (auto owner = weak.lock())
+        {
+            owner->selectPickedItem(std::move(item), additive);
+        }
+    });
+    initializeTransformInteractions();
     initializeImports();
     sampleNavigation(false);
     return root;
@@ -144,7 +152,7 @@ void AppDelegate::queueInput(std::function<void()> event)
         if (manipulating)
         {
             invalidateLightmapSources();
-            _stage->markModified(); // Legacy gizmo publication: step 4 adds transactions.
+            // The supervised gizmo transaction owns document state/history.
         }
         else if (orbit && (orbit->rotation() != beforeRotation ||
             orbit->center() != beforeCenter || orbit->distance() != beforeDistance))
@@ -160,6 +168,11 @@ void AppDelegate::keyDown(const bg2e::app::KeyEvent& keyEvent)
 {
     queueInput([this, keyEvent]
     {
+        if (keyEvent.key() == bg2e::app::KeyEvent::KeyEscape)
+        {
+            finishTransformInteraction(false);
+            return;
+        }
         if (!_selection->sceneInputBlocked())
         {
             if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
@@ -252,6 +265,11 @@ void AppDelegate::resetCamera()
         if (auto owner = weak.lock(); owner && owner->document() &&
             owner->document()->generation == generation && !owner->commandFaulted())
         {
+            owner->finishTransformInteraction(true);
+            if (owner->commandFaulted())
+            {
+                return;
+            }
             owner->_stage->resetCamera();
             owner->_stage->markModified(bg2e::app::CommandCompatibility::Preserve);
             owner->sampleNavigation(false);
@@ -294,6 +312,11 @@ void AppDelegate::frameSelection()
         }
         try
         {
+            owner->finishTransformInteraction(true);
+            if (owner->commandFaulted())
+            {
+                return;
+            }
             if (!owner->_stage->frameNode(node.get()))
             {
                 owner->_viewpointStatus = "Framing requires visible geometry and an authored orbit controller";
@@ -370,6 +393,11 @@ void AppDelegate::analyzeBestView()
             {
                 return analysis.pixelsPerSubmesh[lhs] > analysis.pixelsPerSubmesh[rhs];
             });
+            owner->finishTransformInteraction(true);
+            if (owner->commandFaulted())
+            {
+                return;
+            }
             owner->_stage->applyViewpoint(candidate);
             owner->_stage->markModified(bg2e::app::CommandCompatibility::Preserve);
             owner->sampleNavigation(false);
@@ -665,6 +693,7 @@ void AppDelegate::cleanup()
         {
             // Producers are joined; drain before releasing history/module leases.
             _engine->device()->waitIdle();
+            finishTransformInteraction(false);
             auto* previousRenderer = _commandRenderer;
             _commandRenderer = renderer();
             document()->commands->shutdown();
@@ -680,6 +709,17 @@ void AppDelegate::cleanup()
             }
             _stage->retireCommands();
         }
+    }
+    for (const auto& resume : _resumeTransformWriters)
+    {
+        resume();
+    }
+    _resumeTransformWriters.clear();
+    _transformTransaction = 0;
+    if (_settleUiInteractions)
+    {
+        _settleUiInteractions(false);
+        _settleUiInteractions = {};
     }
     if (_toolsCleanup)
     {

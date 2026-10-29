@@ -99,7 +99,7 @@ void GizmoComponent::didAddToNode(scene::Node* node)
 
 void GizmoComponent::didRemoveFromNode(scene::Node*)
 {
-    endTransform();
+    cancelTransform();
     _ownerReference.reset();
     _transformVisible = false;
     if (_currentTransform.lock().get() == this)
@@ -245,7 +245,7 @@ std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
 
 void GizmoComponent::cleanupDrawResources()
 {
-    endTransform();
+    cancelTransform();
     clearDrawable();
     _drawGizmoCache.clear();
     _transformSubmeshIds.clear();
@@ -278,11 +278,24 @@ void GizmoComponent::synchronizeResources()
     }
 }
 
+std::vector<std::shared_ptr<draw::Drawable>> GizmoComponent::retainedDrawables() const
+{
+    std::vector<std::shared_ptr<draw::Drawable>> result;
+    result.reserve(_drawGizmoCache.size());
+    for (const auto& entry : _drawGizmoCache)
+    {
+        result.push_back(entry.second);
+    }
+    return result;
+}
+
+
 void GizmoComponent::setCurrentTransform(scene::Node* node)
 {
     // Hide the previously visible transform gizmo and reset the tracked one.
     if (auto prev = _currentTransform.lock())
     {
+        prev->cancelTransform();
         prev->setTransformVisible(false);
     }
     _currentTransform.reset();
@@ -421,18 +434,28 @@ uint32_t GizmoComponent::transformSubmeshIdentifier(uint32_t submeshIndex)
 
 void GizmoComponent::beginTransform(TransformHandle handle, int mouseX, int mouseY)
 {
-    _activeHandle = handle;
+    if (isTransforming())
+    {
+        cancelTransform();
+    }
     _mouseDownX = mouseX;
     _mouseDownY = mouseY;
 
     auto node = _ownerReference.lock();
-    if (!node || !node->transform())
+    if (!node || !node->transform() || handle == TransformHandle::None)
     {
         return;
     }
 
     auto transform = node->transform();
     _initialLocalMatrix = transform->matrix();
+    _transformReference = std::static_pointer_cast<scene::TransformComponent>(transform->shared_from_this());
+    if (_transformEditObserver && !_transformEditObserver(TransformEditPhase::Begin,
+        node, _initialLocalMatrix, _initialLocalMatrix))
+    {
+        return;
+    }
+    _activeHandle = handle;
     _localRotation = scene::TransformComponent::extractRotation(_initialLocalMatrix);
     _initialScale = scene::TransformComponent::extractScale(_initialLocalMatrix);
     _initialWorldPos = glm::vec3(node->worldMatrix()[3]);
@@ -496,8 +519,10 @@ void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY
     }
 
     auto node = _ownerReference.lock();
-    if (!node || !node->transform())
+    auto transform = _transformReference.lock();
+    if (!node || !transform || node->transform() != transform.get() || node->scene() != scene)
     {
+        cancelTransform();
         return;
     }
 
@@ -568,10 +593,55 @@ void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY
     default:
         break;
     }
+    if (_transformEditObserver && !_transformEditObserver(TransformEditPhase::Update,
+        node, _initialLocalMatrix, node->transform()->matrix()))
+    {
+        cancelTransform();
+    }
 }
+
+void GizmoComponent::setTransformEditObserver(TransformEditObserver observer)
+{
+    cancelTransform();
+    _transformEditObserver = std::move(observer);
+}
+
+
+void GizmoComponent::cancelTransform()
+{
+    finishTransform(true);
+}
+
 
 void GizmoComponent::endTransform()
 {
+    finishTransform(false);
+}
+
+
+void GizmoComponent::finishTransform(bool cancel)
+{
+    if (!isTransforming())
+    {
+        return;
+    }
+    auto node = _ownerReference.lock();
+    auto transform = _transformReference.lock();
+    cancel = cancel || !node || !transform || node->transform() != transform.get();
+    if (!cancel && _transformEditObserver && transform)
+    {
+        cancel = !_transformEditObserver(TransformEditPhase::Commit,
+            node, _initialLocalMatrix, transform->matrix());
+    }
+    if (cancel && transform)
+    {
+        transform->setMatrix(_initialLocalMatrix);
+    }
+    if ((cancel || !transform) && _transformEditObserver)
+    {
+        _transformEditObserver(TransformEditPhase::Cancel, node,
+            _initialLocalMatrix, _initialLocalMatrix);
+    }
     // Restore original handle color
     auto drawResource = transformDrawable();
     int submeshIdx = activeSubmeshIndex();
@@ -581,6 +651,7 @@ void GizmoComponent::endTransform()
     }
 
     _activeHandle = TransformHandle::None;
+    _transformReference.reset();
 }
 
 int GizmoComponent::handleAxisIndex(TransformHandle h)

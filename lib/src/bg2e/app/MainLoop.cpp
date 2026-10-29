@@ -378,6 +378,7 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
                      event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
             {
                 isForeground = false;
+                _inputManager.focusLost();
                 nextBackgroundFrame = std::chrono::steady_clock::now();
                 requestFrame();
             }

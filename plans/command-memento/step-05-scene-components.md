@@ -2,6 +2,8 @@
 
 Dependency: step 4.
 
+Status: implemented in source; uncompiled. See [progress.md](progress.md) and the [step 5 checkpoint](mutation-inventory.md#step-5-implementation-checkpoint). Resource/custom cases without a supported lifetime, memory or restoration contract are explicitly rejected; they are not executed through a legacy mutation fallback.
+
 ## Work
 
 - Implement `bg2e_composer::command::scene` and `::component` commands for node/submesh names and metadata, enabled/visible state, creation, duplication, removal, reparenting, transforms and component properties/addition/removal/replacement.

@@ -36,6 +36,11 @@ class InputDelegate {
     {
     }
 
+    // Optional cancellation boundary for editor interactions and held input.
+    virtual void focusLost()
+    {
+    }
+
     // A scene-owned drag can continue across UI regions. New presses over UI
     // are still owned by the UI; the router tracks accepted button presses.
     virtual bool mouseInputCaptured() const

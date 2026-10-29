@@ -26,6 +26,7 @@
 #include <bg2e/math/base.hpp>
 
 #include <memory>
+#include <functional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -34,6 +35,7 @@ namespace bg2e {
 namespace scene {
 class Node;
 class Scene;
+class TransformComponent;
 }
 
 namespace manipulation {
@@ -65,6 +67,14 @@ enum class TransformHandle
     ScaleZ,
     ScaleUniform
 };
+
+enum class TransformEditPhase { Begin, Update, Commit, Cancel };
+
+// Begin is delivered before mutation and may veto admission. Update/Commit
+// observe already-applied local matrices. Rejecting either restores the original
+// matrix and delivers Cancel. Callbacks must not throw or mutate the transform.
+using TransformEditObserver = std::function<bool(TransformEditPhase,
+    const std::shared_ptr<scene::Node>&, const glm::mat4&, const glm::mat4&)>;
 
 class BG2E_API GizmoComponent : public scene::DrawableComponent {
   public:
@@ -137,6 +147,8 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
     // asset has been loaded (see ensureTransformGizmoLoaded()).
 
     [[nodiscard]] std::shared_ptr<draw::Drawable> transformDrawable() const;
+    // Resource accounting/lifetime inspection, including inactive cached facets.
+    std::vector<std::shared_ptr<draw::Drawable>> retainedDrawables() const;
 
     // Current transform node management. setCurrentTransform hides the previous
     // transform gizmo, resets the tracked component and, if the given node owns
@@ -173,6 +185,8 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
     void beginTransform(TransformHandle handle, int mouseX, int mouseY);
     void updateTransform(scene::Scene* scene, int mouseX, int mouseY);
     void endTransform();
+    void cancelTransform();
+    void setTransformEditObserver(TransformEditObserver observer);
     [[nodiscard]] TransformHandle activeHandle() const
     {
         return _activeHandle;
@@ -217,6 +231,10 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
 
     // Currently active transform handle (None when not manipulating).
     TransformHandle _activeHandle = TransformHandle::None;
+
+    TransformEditObserver _transformEditObserver;
+    std::weak_ptr<scene::TransformComponent> _transformReference;
+    void finishTransform(bool cancel);
 
     // Drag-start state captured at beginTransform
     glm::mat4 _initialLocalMatrix{1.0f};

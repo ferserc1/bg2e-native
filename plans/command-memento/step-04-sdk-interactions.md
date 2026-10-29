@@ -2,6 +2,8 @@
 
 Dependency: step 3.
 
+Status: complete in source; uncompiled. See the step 4 entry in [progress.md](progress.md) and the [implementation checkpoint](mutation-inventory.md#step-4-implementation-checkpoint). Composer component/property adapters and installation of material intents remain in steps 5 and 6 respectively.
+
 ## Work
 
 - Extend UI wrappers with optional begin/update/commit/cancel information using engine-owned types only. No public ImGui types/includes and no dependency from ordinary widgets to a command history.

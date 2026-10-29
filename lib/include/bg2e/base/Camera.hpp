@@ -39,6 +39,11 @@ class BG2E_API Camera {
     {
         _projection = p;
     }
+    std::shared_ptr<math::Projection> projectionResource() const
+    {
+        return _projection;
+    }
+
     inline math::Projection* projection()
     {
         return _projection.get();

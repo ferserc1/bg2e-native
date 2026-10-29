@@ -71,6 +71,85 @@ draw::Drawable* SelectionItem::meshPtr() const
     return lockMesh().get();
 }
 
+SelectionState SelectionManager::captureSelection() const
+{
+    SelectionState result;
+    result.nodes = _selectedNodes;
+    result.items.reserve(_selectedItems.size());
+    for (const auto& item : _selectedItems)
+    {
+        result.items.push_back(*item);
+    }
+    return result;
+}
+
+
+void SelectionManager::restoreSelection(const SelectionState& state,
+    const std::function<bool(scene::Node*)>& belongs)
+{
+    std::vector<std::shared_ptr<SelectionItem>> items;
+    std::vector<std::weak_ptr<scene::Node>> nodes;
+    for (const auto& weak : state.nodes)
+    {
+        if (auto node = weak.lock(); node && (!belongs || belongs(node.get())))
+        {
+            const bool hadGeometry = std::any_of(state.items.begin(), state.items.end(), [&](const auto& item)
+            {
+                return item.node.lock() == node;
+            });
+            const bool hasGeometry = std::any_of(state.items.begin(), state.items.end(), [&](const auto& item)
+            {
+                return item.node.lock() == node && bool(item.lockMesh());
+            });
+            if (hadGeometry && !hasGeometry)
+            {
+                continue; // Stale geometry must not become a node-only selection.
+            }
+            if (std::none_of(nodes.begin(), nodes.end(), [&](const auto& entry)
+            {
+                return entry.lock() == node;
+            }))
+            {
+                nodes.push_back(node);
+            }
+        }
+    }
+    for (const auto& item : state.items)
+    {
+        auto node = item.node.lock();
+        if (node && (!belongs || belongs(node.get())) && item.lockMesh())
+        {
+            items.push_back(std::make_shared<SelectionItem>(item));
+        }
+    }
+    cancelTransform();
+    // Allocate snapshot storage before changing highlight state or membership.
+    for (const auto& item : _selectedItems)
+    {
+        if (auto node = item->node.lock())
+        {
+            if (auto selectable = node->getComponent<SelectableComponent>())
+            {
+                selectable->setSelected(item->submesh, false);
+            }
+        }
+    }
+    _selectedItems.swap(items);
+    _selectedNodes.swap(nodes);
+    for (const auto& item : _selectedItems)
+    {
+        if (auto node = item->node.lock())
+        {
+            if (auto selectable = node->getComponent<SelectableComponent>())
+            {
+                selectable->setSelected(item->submesh, true);
+            }
+        }
+    }
+    callOnChange();
+}
+
+
 void SelectionManager::refreshSelection()
 {
     std::vector<scene::Node*> affected;
@@ -152,6 +231,11 @@ bool SelectionManager::pick(
             return true;
         }
 
+        if (_pickRequested)
+        {
+            _pickRequested(result, additive);
+            return true;
+        }
         if (!additive)
         {
             deselect();
@@ -186,7 +270,14 @@ bool SelectionManager::pick(
     }
     else if (_clearSelectionOnEmptyPick)
     {
-        deselect();
+        if (_pickRequested)
+        {
+            _pickRequested({}, false);
+        }
+        else
+        {
+            deselect();
+        }
     }
 
     return false;
@@ -218,8 +309,13 @@ bool SelectionManager::mouseButtonDown(scene::Scene* scene, int button, int x, i
                         auto handle = GizmoComponent::handleForSubmesh(
                             modern->submeshName(result.submesh),
                             modern->submeshGroupName(result.submesh));
+                        gizmo->setTransformEditObserver(_transformEditObserver);
                         gizmo->beginTransform(handle, x, y);
-                        _capturing = true;
+                        _capturing = gizmo->isTransforming();
+                        if (_capturing)
+                        {
+                            _capturedGizmo = std::static_pointer_cast<GizmoComponent>(gizmo->shared_from_this());
+                        }
                         return false; // captured: do not propagate to the scene graph
                     }
                 }
@@ -234,11 +330,13 @@ bool SelectionManager::mouseMove(scene::Scene* scene, int x, int y)
 {
     if (_capturing)
     {
-        if (auto node = GizmoComponent::currentTransformNode())
+        if (_capturedGizmo)
         {
-            if (auto gizmo = node->getComponent<GizmoComponent>())
+            _capturedGizmo->updateTransform(scene, x, y);
+            if (!_capturedGizmo->isTransforming())
             {
-                gizmo->updateTransform(scene, x, y);
+                _capturedGizmo.reset();
+                _capturing = false;
             }
         }
         return false;
@@ -259,12 +357,10 @@ bool SelectionManager::mouseButtonUp(scene::Scene* scene, int button, int x, int
     }
     if (_capturing)
     {
-        if (auto node = GizmoComponent::currentTransformNode())
+        if (_capturedGizmo)
         {
-            if (auto gizmo = node->getComponent<GizmoComponent>())
-            {
-                gizmo->endTransform();
-            }
+            _capturedGizmo->endTransform();
+            _capturedGizmo.reset();
         }
         _capturing = false;
         return false; // the press was captured; do not propagate the release
@@ -299,19 +395,43 @@ bool SelectionManager::pickObject(
     return pickDrawObject(rootNode, viewMatrix, projMatrix, vp, x, y, result);
 }
 
+void SelectionManager::setTransformEditObserver(TransformEditObserver observer)
+{
+    cancelTransform();
+    _transformEditObserver = std::move(observer);
+}
+
+
+void SelectionManager::commitTransform()
+{
+    if (_capturedGizmo)
+    {
+        _capturedGizmo->endTransform();
+        _capturedGizmo.reset();
+    }
+    _capturing = false;
+    _leftPressed = false;
+}
+
+
+void SelectionManager::cancelTransform()
+{
+    if (_capturedGizmo)
+    {
+        _capturedGizmo->cancelTransform();
+        _capturedGizmo.reset();
+    }
+    _capturing = false;
+    _leftPressed = false;
+}
+
+
 void SelectionManager::deselect()
 {
     _leftPressed = false;
     if (_capturing)
     {
-        if (auto node = GizmoComponent::currentTransformNode())
-        {
-            if (auto gizmo = node->getComponent<GizmoComponent>())
-            {
-                gizmo->endTransform();
-            }
-        }
-        _capturing = false;
+        cancelTransform();
     }
     for (const auto& item : _selectedItems)
     {

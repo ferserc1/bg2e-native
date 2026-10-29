@@ -43,6 +43,7 @@ class BG2E_API Group {
     // Pushes/pops an identifier into the ImGui ID stack to disambiguate
     // repeated labels. popId() must always be called after pushId().
     static void pushId(int id);
+    static void pushId(const std::string& id);
     static void popId();
 };
 

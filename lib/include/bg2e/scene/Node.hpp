@@ -108,6 +108,21 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
     const std::vector<std::shared_ptr<Node>>& children() const;
     void clearChildren();
 
+    // Atomic placement publication. All affected parents must be supplied;
+    // children may move only between those parents or detached ownership.
+    // Validation/allocation precedes publication. The caller refreshes scene
+    // camera/light/environment references after a successful batch.
+    struct ChildList {
+        std::shared_ptr<Node> parent;
+        std::vector<std::shared_ptr<Node>> children;
+    };
+    static void setChildLists(std::vector<ChildList> lists);
+
+    // Restores exact membership and equal-priority insertion order. Components
+    // must be detached or already owned by this node. Runs attach/detach hooks;
+    // callers must treat a throwing hook as requiring explicit recovery.
+    void setComponentsOrdered(const std::vector<std::shared_ptr<Component>>& components);
+
     Node* parent()
     {
         return _parent;

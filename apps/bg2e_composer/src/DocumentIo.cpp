@@ -354,6 +354,14 @@ void AppDelegate::processDocumentIo()
                 DefaultRenderLoopDelegate::prepareFrame();
             });
         published = true;
+        // Failed-recovery interactions can only be discarded with their old
+        // document. Publication has succeeded, so release its paused writers.
+        for (const auto& resume : _resumeTransformWriters)
+        {
+            resume();
+        }
+        _resumeTransformWriters.clear();
+        _transformTransaction = 0;
         if (previousCommands)
         {
             previousCommands->shutdown();

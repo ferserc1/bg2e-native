@@ -58,3 +58,5 @@
 #include <bg2e/ui/DrawTextureWidgets.hpp>
 
 #include <bg2e/ui/TexturePreview.hpp>
+
+#include <bg2e/ui/EditInteraction.hpp>

@@ -19,6 +19,8 @@
 #pragma once
 
 #include "StageScene.hpp"
+#include "command/scene/MetadataCommands.hpp"
+#include <bg2e/ui/ReflectionWidget.hpp>
 #include "SceneImporter.hpp"
 #include "ImportServer.hpp"
 #include "ImportSettings.hpp"
@@ -56,6 +58,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     {
         return _selection && _selection->sceneInputBlocked();
     }
+    void focusLost() override;
     void keyDown(const bg2e::app::KeyEvent& keyEvent) override;
     void keyUp(const bg2e::app::KeyEvent& keyEvent) override;
 
@@ -125,6 +128,9 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     {
         return _stage;
     }
+    void initializeTransformInteractions();
+    void finishTransformInteraction(bool commit);
+
     void setLogicalExtent(uint32_t width, uint32_t height);
     void selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t submesh, bool additive);
     void queueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
@@ -138,10 +144,15 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void editComponent(std::weak_ptr<bg2e::scene::Node> node,
         std::weak_ptr<bg2e::scene::Component> original,
         std::shared_ptr<bg2e::scene::Component> replacement);
-    void editComponentProperties(std::weak_ptr<bg2e::scene::Node> node,
-        std::weak_ptr<bg2e::scene::Component> component,
-        std::function<void(void*)> operation, bool resourceChange);
-    void renameNode(std::weak_ptr<bg2e::scene::Node> node, const std::string& name);
+    bool componentEditIntent(const std::shared_ptr<bg2e::scene::Component>& component,
+        bg2e::ui::EditPhase phase, const bg2e::ui::ReflectionEditIntent& intent);
+    void componentAction(const std::shared_ptr<bg2e::scene::Component>& component,
+        const bg2e::ui::ReflectionActionIntent& intent);
+    bg2e::app::CommandResult editSubmeshMetadata(command::scene::MetadataRequest request);
+    void toggleSelectionHistory();
+    bool selectionHistoryEnabled() const;
+    void selectPickedItem(bg2e::manipulation::SelectionItem item, bool additive);
+    bg2e::app::CommandResult renameNode(std::weak_ptr<bg2e::scene::Node> node, const std::string& name);
     void undoEdit();
     void redoEdit();
     void setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled);
@@ -180,6 +191,11 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     {
         _selectionChanged = std::move(callback);
     }
+    void onSettleUiInteractions(std::function<bool(bool)> callback)
+    {
+        _settleUiInteractions = std::move(callback);
+    }
+
     void onToolsCleanup(std::function<void()> callback)
     {
         _toolsCleanup = std::move(callback);
@@ -213,6 +229,10 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void stopLightmapBake(bool cancelled);
     void invalidateLightmapSources();
 
+    std::function<bool(bool)> _settleUiInteractions;
+    bool _settlingUiInteractions = false;
+    uint64_t _transformTransaction = 0;
+    std::vector<std::function<void()>> _resumeTransformWriters;
     std::shared_ptr<bg2e::manipulation::GizmoAndSelectionRenderer> _overlay;
     std::shared_ptr<bg2e::manipulation::SelectionManager> _selection;
     glm::uvec2 _logicalExtent{0};
@@ -241,8 +261,12 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         std::vector<Resource> resources;
         size_t nextResource = 0;
     };
+    void queueSceneCommand(std::function<std::unique_ptr<bg2e::app::Command>()> prepare);
+    bg2e::app::CommandResult submitSceneCommand(std::unique_ptr<bg2e::app::Command> action,
+        command::Effects effects = {}, command::Boundary boundary = command::Boundary::Conservative);
+    std::vector<std::weak_ptr<bg2e::scene::Node>> selectedSceneBranches() const;
     std::shared_ptr<command::Dispatcher> makeCommandDispatcher(uint64_t generation);
-    void submitNodeCommand(std::weak_ptr<bg2e::scene::Node> node,
+    bg2e::app::CommandResult submitNodeCommand(std::weak_ptr<bg2e::scene::Node> node,
         std::unique_ptr<bg2e::app::Command> action, command::Boundary boundary, command::Effects effects);
     void applyCommandEffects(bg2e::draw::Renderer& renderer, const command::Effects& effects);
     bool flushDocumentCommands(bool commit, bool allowFault = false);

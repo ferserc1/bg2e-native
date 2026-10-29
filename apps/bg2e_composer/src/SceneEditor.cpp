@@ -26,6 +26,8 @@
 #include <bg2e/ui/ReflectionWidget.hpp>
 #include <bg2e/reflection/Registry.hpp>
 #include <typeinfo>
+#include <algorithm>
+#include <limits>
 #include <stdexcept>
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
@@ -79,11 +81,62 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
         return;
     }
     const auto node = std::weak_ptr<scene::Node>(target->shared_from_this());
-    auto name = target->name();
-    if (ui::Value::text("Node name", name))
+    if (!_nameEdit || _nameEditNode.lock().get() != target || _nameEditGeneration != document->generation)
     {
-        delegate->renameNode(node, name);
+        if (_nameEdit)
+        {
+            _nameEdit->cancel();
+        }
+        _nameEditNode = target->shared_from_this();
+        _nameEditGeneration = document->generation;
+        _nameEdit = std::make_unique<ui::EditSession>(
+            [weak, node, generation = document->generation](ui::EditPhase phase, uint64_t, const auto&, const std::any& value)
+            {
+                auto owner = weak.lock();
+                if (phase == ui::EditPhase::Cancel)
+                {
+                    return true; // Only a transient UI draft exists until Commit.
+                }
+                auto target = node.lock();
+                if (!owner || !target || !owner->document() || owner->document()->generation != generation ||
+                    (!owner->stage()->contains(target.get()) && target != owner->stage()->fillLightNode()))
+                {
+                    return false;
+                }
+                if (phase == ui::EditPhase::Begin && owner->document()->commands->history().transactionActive())
+                {
+                    return false;
+                }
+                if (phase == ui::EditPhase::Commit)
+                {
+                    try
+                    {
+                        return owner->renameNode(node, std::any_cast<const std::string&>(value)).accepted();
+                    }
+                    catch (...)
+                    {
+                        return false;
+                    }
+                }
+                return true;
+            });
+        _nameEdit->beginFrame();
     }
+    auto name = std::any_cast<std::string>(_nameEdit->value("name", target->name()));
+    bool nameChanged = false;
+    const auto nameState = ui::EditInteraction::draw([&]
+    {
+        if (name.size() <= size_t(std::numeric_limits<int>::max() - 256))
+        {
+            const auto capacity = std::max(size_t(200), name.size() + 256);
+            nameChanged = ui::Value::text("Node name", name, static_cast<int>(capacity));
+        }
+        else
+        {
+            ui::Text::text("Node name is too long to edit");
+        }
+    });
+    _nameEdit->submit("name", std::move(name), nameChanged, nameState);
     auto enabled = target->enabled();
     if (ui::Button::checkBox("Enabled", &enabled))
     {
@@ -104,377 +157,11 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
             owner->editComponent(node, component, {});
         }
     });
-    _componentInspector.onDrawComponent([weak, node](auto component)
-    {
-        try
-        {
-            // Drawable resources have their own left-hand editor.
-            if (dynamic_cast<scene::DrawableComponent*>(component.get()))
-            {
-                ui::Text::text("Edit drawable and materials in Model Properties.");
-                return;
-            }
-            if (const auto* info = reflection::TypeRegistry::get().type(component->typeName()))
-            {
-                if (auto environment = dynamic_cast<scene::EnvironmentComponent*>(component.get()))
-                {
-                    if (auto owner = weak.lock())
-                    {
-                        const bool active = owner->stage()->environmentNode().get() == environment->ownerNode();
-                        ui::Text::text(active ?
-                            "Active scene environment" : "Inactive environment (not used for rendering)");
-                        if (auto deferred = dynamic_cast<draw::RendererDeferred*>(owner->renderer());
-                            active && deferred && !deferred->environmentError().empty())
-                        {
-                            ui::Text::text("Environment error: " + deferred->environmentError());
-                        }
-                    }
-                    if (!environment->environmentImage().empty())
-                    {
-                        ui::Text::text("Clear Environment Image to use the procedural sky colors.");
-                    }
-                }
-                const ui::ReflectionWidget::EditHandler edit =
-                    [weak, node, target = std::weak_ptr<scene::Component>(component)](auto operation, bool resourceChange)
-                {
-                    if (auto owner = weak.lock())
-                    {
-                        owner->editComponentProperties(node, target, std::move(operation), resourceChange);
-                    }
-                };
-                ui::ReflectionWidget::drawProperties(component.get(), *info, 0, edit);
-                ui::ReflectionWidget::drawActions(component.get(), *info, edit);
-            }
-        }
-        catch (const std::exception& error)
-        {
-            ui::Text::text(error.what());
-        }
-    });
+    _componentInspector.onDrawComponent({});
+    _componentInspectorDrawn = true;
     _componentInspector.draw();
     ui::Layout::endChild();
 }
 
-
-void AppDelegate::selectTreeNode(std::weak_ptr<bg2e::scene::Node> target, bool additive)
-{
-    const auto generation = document() ? document()->generation : 0;
-    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), target, additive, generation](auto&)
-    {
-        auto owner = weak.lock();
-        auto node = target.lock();
-        if (!owner || !node || !owner->document() || owner->document()->generation != generation ||
-            !owner->_stage->contains(node.get()))
-        {
-            return;
-        }
-        auto selection = owner->_selection;
-        const bool selected = selection->isSelected(node.get());
-        if (!additive)
-        {
-            selection->deselect();
-        }
-        if (additive && selected)
-        {
-            selection->removeFromSelectedItems(node.get());
-        }
-        else
-        {
-            selection->addNodeToSelection(node.get());
-        }
-        owner->requestSceneFrame();
-    });
-}
-
-
-void AppDelegate::editComponentProperties(std::weak_ptr<bg2e::scene::Node> node,
-    std::weak_ptr<bg2e::scene::Component> component,
-    std::function<void(void*)> operation, bool resourceChange)
-{
-    auto current = component.lock();
-    if (!current || !operation)
-    {
-        return;
-    }
-    using namespace bg2e::scene;
-    const auto& type = typeid(*current);
-    // Only known CPU representations opt out of the conservative GPU boundary.
-    // A custom component's reflected setters may own native resources.
-    const bool cpuValuesOnly = !resourceChange &&
-        (type == typeid(TransformComponent) || type == typeid(LightComponent) ||
-         type == typeid(CameraComponent) || type == typeid(EnvironmentComponent) ||
-         type == typeid(OrbitCameraComponent) || type == typeid(PolarTransformControllerComponent) ||
-         type == typeid(FixedScaleTransformControllerComponent) ||
-         type == typeid(InputChainJointComponent) || type == typeid(OutputChainJointComponent));
-    auto edit = [this, component, operation = std::move(operation)](auto& target)
-    {
-        auto current = component.lock();
-        if (!current || current->ownerNode() != &target)
-        {
-            return;
-        }
-        // Changing a light's type can exceed the supported enabled-light count.
-        // Keep the original representation for rollback without detaching it.
-        auto* light = dynamic_cast<LightComponent*>(current.get());
-        const auto previousLight = light
-            ? std::optional<bg2e::base::Light>(light->light()) : std::nullopt;
-        try
-        {
-            operation(current.get());
-            _stage->validateEditingGraph();
-        }
-        catch (...)
-        {
-            if (previousLight)
-            {
-                light->light() = *previousLight;
-            }
-            throw;
-        }
-        // Gizmos detect representation changes in their normal update path;
-        // property edits do not require a document-wide tools rebuild.
-    };
-    if (cpuValuesOnly)
-    {
-        queueNodeValueEdit(node, std::move(edit));
-    }
-    else
-    {
-        queueNodeEdit(node, std::move(edit));
-    }
-}
-
-
-void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
-    std::weak_ptr<bg2e::scene::Component> original,
-    std::shared_ptr<bg2e::scene::Component> replacement)
-{
-    queueNodeEdit(node, [this, original, replacement](auto& target)
-    {
-        auto old = original.lock();
-        if (!old || old->ownerNode() != &target)
-        {
-            return;
-        }
-        const auto* replacementComponent = replacement.get();
-        const auto* oldComponent = old.get();
-        if (replacementComponent && (replacementComponent->ownerNode() ||
-            typeid(*replacementComponent) != typeid(*oldComponent)))
-        {
-            throw std::invalid_argument("Component replacement must be detached and retain its type");
-        }
-        if (replacement)
-        {
-            replacement->setPriority(old->priority());
-            replacement->setIgnoreSerialization(old->ignoreSerialization());
-        }
-        if (replacement && typeid(*oldComponent) == typeid(bg2e::scene::EnvironmentComponent))
-        {
-            // Keep the authored component identity and inspector/widget state.
-            // Only the selected environment is realized by RendererDeferred.
-            auto& current = static_cast<bg2e::scene::EnvironmentComponent&>(*old);
-            const auto& edited = static_cast<const bg2e::scene::EnvironmentComponent&>(*replacement);
-            current.setSkyHorizonColor(edited.skyHorizonColor());
-            current.setSkyZenithColor(edited.skyZenithColor());
-            current.setGroundColor(edited.groundColor());
-            current.setSkyboxBlur(edited.skyboxBlur());
-            current.setSkyboxVisible(edited.skyboxVisible());
-            current.setEnvironmentImage(edited.environmentImage());
-            return;
-        }
-        auto* scene = _stage->sceneObject();
-        const bool activeEnvironment = scene && scene->hasExplicitMainEnvironment() && scene->mainEnvironment() == old.get();
-        target.removeComponent(old);
-        try
-        {
-            if (replacement)
-            {
-                target.addComponent(replacement);
-            }
-            _stage->validateEditingGraph();
-            if (activeEnvironment)
-            {
-                auto* nextEnvironment = dynamic_cast<bg2e::scene::EnvironmentComponent*>(replacement.get());
-                if (nextEnvironment)
-                {
-                    scene->setMainEnvironment(nextEnvironment);
-                }
-                else
-                {
-                    scene->setMainEnvironment(nullptr);
-                }
-            }
-            if (replacement && dynamic_cast<bg2e::scene::EnvironmentComponent*>(old.get()))
-            {
-                _stage->environmentComponentReplaced(target);
-            }
-        }
-        catch (...)
-        {
-            if (replacement && replacement->ownerNode() == &target)
-            {
-                target.removeComponent(replacement);
-            }
-            target.addComponent(old);
-            if (activeEnvironment)
-            {
-                auto* oldEnvironment = dynamic_cast<bg2e::scene::EnvironmentComponent*>(old.get());
-                if (oldEnvironment)
-                {
-                    scene->setMainEnvironment(oldEnvironment);
-                }
-                else
-                {
-                    scene->setMainEnvironment(nullptr);
-                }
-            }
-            if (dynamic_cast<bg2e::scene::EnvironmentComponent*>(old.get()))
-            {
-                _stage->environmentComponentReplaced(target);
-            }
-            throw;
-        }
-        // queueNodeEdit refreshes stale submesh/component handles after rebuilding
-        // tools. Keep the authored node selected while editing its inspector.
-    }, true);
-}
-
-
-void AppDelegate::addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName)
-{
-    queueNodeEdit(node, [this, typeName](auto& target)
-    {
-        for (const auto& current : target.orderedComponents())
-        {
-            if (current->typeName() == typeName)
-            {
-                return;
-            }
-        }
-        auto component = std::shared_ptr<bg2e::scene::Component>(
-            bg2e::scene::ComponentFactoryRegistry::get().createDefault(typeName));
-        if (!component || component->ownerNode() || component->typeName() != typeName)
-        {
-            throw std::invalid_argument("Component factory must return the requested detached type");
-        }
-        target.addComponent(component);
-        try
-        {
-            _stage->validateEditingGraph();
-            component->loadResources(*_engine);
-        }
-        catch (...)
-        {
-            target.removeComponent(component);
-            throw;
-        }
-    }, true);
-}
-
-
-void AppDelegate::addSceneItem(unsigned kind)
-{
-    using namespace bg2e;
-    if (!document() || !document()->root || kind > 3)
-    {
-        return;
-    }
-    auto selected = _selection->selectedNode();
-    auto parent = selected ? selected->shared_from_this() : document()->root;
-    queueNodeEdit(parent, [this, kind](auto& target)
-    {
-        auto child = std::make_shared<scene::Node>(kind == 1 ? "Camera" : kind == 2 ? "Light" : kind == 3 ? "Environment" : "Group");
-        child->addComponent(new scene::TransformComponent());
-        if (kind == 1)
-        {
-            child->addComponent(new scene::CameraComponent());
-        }
-        else if (kind == 2)
-        {
-            child->addComponent(new scene::LightComponent());
-        }
-        else if (kind == 3)
-        {
-            child->addComponent(new scene::EnvironmentComponent());
-        }
-        target.addChild(child);
-        try
-        {
-            _stage->validateEditingGraph();
-        }
-        catch (...)
-        {
-            target.removeChild(child);
-            throw;
-        }
-    }, true);
-}
-
-
-void AppDelegate::addPrimitive(unsigned kind)
-{
-    if (!document() || !document()->root || kind > 2)
-    {
-        return;
-    }
-    auto selected = _selection->selectedNode();
-    auto parent = selected ? selected->shared_from_this() : document()->root;
-    queueNodeEdit(parent, [this, kind](auto& target)
-    {
-        auto child = _stage->createPrimitive(kind);
-        target.addChild(child);
-        try
-        {
-            _stage->prepareTools(child);
-            _stage->validateEditingGraph();
-        }
-        catch (...)
-        {
-            target.removeChild(child);
-            _stage->discardCandidate(child);
-            throw;
-        }
-    }, true);
-}
-
-
-void AppDelegate::reparentNode(std::weak_ptr<bg2e::scene::Node> target,
-    std::weak_ptr<bg2e::scene::Node> destination)
-{
-    queueNodeEdit(target, [this, destination](auto& node)
-    {
-        auto parent = destination.lock();
-        if (!parent || !_stage->contains(parent.get()) || !node.parent() || &node == document()->root.get())
-        {
-            return;
-        }
-        for (auto ancestor = parent.get(); ancestor; ancestor = ancestor->parent())
-        {
-            if (ancestor == &node)
-            {
-                throw std::invalid_argument("Cannot reparent a node into its own subtree");
-            }
-        }
-        auto oldParent = node.parent()->shared_from_this();
-        auto retained = node.shared_from_this();
-        oldParent->removeChild(retained);
-        try
-        {
-            parent->addChild(retained);
-            _stage->validateEditingGraph();
-        }
-        catch (...)
-        {
-            if (node.parent() == parent.get())
-            {
-                parent->removeChild(retained);
-            }
-            oldParent->addChild(retained);
-            throw;
-        }
-        _selection->deselect();
-        _selection->addNodeToSelection(&node);
-    }, true);
-}
 
 }

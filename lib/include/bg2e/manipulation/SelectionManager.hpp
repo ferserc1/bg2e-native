@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <bg2e/manipulation/GizmoComponent.hpp>
+
 #include <bg2e/common.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
@@ -52,6 +54,12 @@ struct BG2E_API SelectionItem {
     [[nodiscard]] draw::Drawable* meshPtr() const;
     [[nodiscard]] bool expired() const;
 
+};
+
+// Ordered identity snapshot; weak references do not prolong scene/device life.
+struct SelectionState {
+    std::vector<SelectionItem> items;
+    std::vector<std::weak_ptr<scene::Node>> nodes;
 };
 
 typedef std::function<void()> OnSelectCallback;
@@ -169,6 +177,12 @@ class BG2E_API SelectionManager {
     bool mouseMove(scene::Scene* scene, int x, int y);
     bool mouseButtonUp(scene::Scene* scene, int button, int x, int y, bool additive = false);
 
+    // Observer installation is optional. Targets are frozen for the gesture;
+    // selection changes never redirect an in-progress drag to a different node.
+    void setTransformEditObserver(TransformEditObserver observer);
+    void cancelTransform();
+    void commitTransform();
+
     // True while a transform gizmo handle is being manipulated; the app must not
     // forward input to the scene graph while this is true.
     [[nodiscard]] inline bool sceneInputBlocked() const
@@ -186,6 +200,15 @@ class BG2E_API SelectionManager {
     inline void setTransformManipulationEnabled(bool e)
     {
         _transformManipulationEnabled = e;
+    }
+
+    SelectionState captureSelection() const;
+    void restoreSelection(const SelectionState& state,
+        const std::function<bool(scene::Node*)>& belongs = {});
+    // Optional pre-mutation pick intent. Empty item means an empty-space clear.
+    void onPickRequested(std::function<void(SelectionItem, bool)> callback)
+    {
+        _pickRequested = std::move(callback);
     }
 
     // Removal is safe through weak references; refreshSelection prunes stale entries.
@@ -302,6 +325,8 @@ class BG2E_API SelectionManager {
     // Transform gizmo manipulation / input capture state.
     bool _transformManipulationEnabled = true;
     bool _capturing = false;
+    std::shared_ptr<GizmoComponent> _capturedGizmo;
+    TransformEditObserver _transformEditObserver;
     bool _leftPressed = false;
     int _mouseDownX = 0;
     int _mouseDownY = 0;
@@ -314,6 +339,7 @@ class BG2E_API SelectionManager {
         const glm::mat4& projection, const math::Viewport& viewport,
         uint32_t x, uint32_t y, SelectionItem* result);
 
+    std::function<void(SelectionItem, bool)> _pickRequested;
     std::vector<OnSelectCallback> _onSelectCallbacks;
     void callOnChange();
 
