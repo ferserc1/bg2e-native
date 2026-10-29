@@ -79,12 +79,16 @@ StageScene::StageScene(bg2e::draw::Engine* engine) : _engine(engine)
     }
 }
 
-std::shared_ptr<bg2e::scene::Node> StageScene::create()
+std::shared_ptr<bg2e::scene::Node> StageScene::create(std::shared_ptr<command::Dispatcher> commands)
 {
     using namespace bg2e;
     if (_root)
     {
         throw std::logic_error("The composer stage is already initialized");
+    }
+    if (!commands || commands->history().documentState().generation != 1)
+    {
+        throw std::invalid_argument("The initial stage requires a generation-one dispatcher");
     }
     _root = std::make_shared<scene::Node>("Composer stage");
 
@@ -106,6 +110,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create()
     _root->addChild(_model);
     _document.root = _model;
     _document.generation = 1;
+    _document.commands = std::move(commands);
+    _document.synchronizeDirty();
 
     auto floor = std::make_shared<draw::Drawable>();
     floor->setMesh(geo::createPlane(20, 20));
@@ -752,7 +758,7 @@ void StageScene::insert(std::shared_ptr<bg2e::scene::Node> candidate,
     refreshCamera();
 }
 
-void StageScene::validateEditingGraph()
+void StageScene::validateEditingGraph(bool prepareCameraState)
 {
     if (enabledLightCount(_document.root.get()) > 8)
     {
@@ -765,10 +771,13 @@ void StageScene::validateEditingGraph()
     {
         throw std::invalid_argument("Keep at least one enabled document camera");
     }
-    prepareCameras(_document.root);
+    if (prepareCameraState)
+    {
+        prepareCameras(_document.root);
+    }
 }
 
-void StageScene::refreshCamera()
+void StageScene::refreshCamera(bool preserveControllers)
 {
     refreshEnvironment();
     if (_fillLight && enabledLightCount(_document.root.get()) >= 8)
@@ -783,7 +792,7 @@ void StageScene::refreshCamera()
         if (auto camera = weak.lock())
         {
             auto next = camera->ownerNode()->shared_from_this();
-            if (_camera != next)
+            if (_camera != next && !preserveControllers)
             {
                 // Controller clones retain authored settings and clear transient
                 // pressed-button state before another camera starts receiving input.
@@ -814,7 +823,79 @@ void StageScene::refreshCamera()
     throw std::logic_error("The editable scene has no enabled camera");
 }
 
-void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source)
+StageScene::EditingState StageScene::editingState() const
+{
+    EditingState state;
+    state.camera = _camera;
+    state.explicitEnvironment = _scene->hasExplicitMainEnvironment();
+    if (state.explicitEnvironment)
+    {
+        if (auto environment = _scene->mainEnvironment())
+        {
+            state.environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(environment->shared_from_this());
+        }
+    }
+    state.fillEnabled = _fillLight && _fillLight->enabled();
+    state.knownEnvironments = _knownEnvironmentNodes;
+    return state;
+}
+
+
+void StageScene::restoreEditingState(const EditingState& state)
+{
+    auto camera = state.camera.lock();
+    auto environment = state.environment.lock();
+    if (!camera || !contains(camera.get()) || !camera->camera() ||
+        (environment && !contains(environment->ownerNode())))
+    {
+        throw std::logic_error("Cannot restore stale scene references");
+    }
+    // Copy before changing any active reference; allocation can fail safely.
+    auto known = state.knownEnvironments;
+    _scene->setMainCamera(camera->camera());
+    if (state.explicitEnvironment)
+    {
+        _scene->setMainEnvironment(environment.get());
+    }
+    else
+    {
+        _scene->resetMainEnvironmentSelection();
+    }
+    _camera = std::move(camera);
+    _knownEnvironmentNodes = std::move(known);
+    if (_fillLight)
+    {
+        _fillLight->setEnabled(state.fillEnabled);
+    }
+    _scene->updateLights();
+    if (state.explicitEnvironment)
+    {
+        _scene->updateEnvironment();
+    }
+}
+
+
+size_t StageScene::editingStateBytes() const
+{
+    size_t bytes = sizeof(EditingState);
+    // Upper bound for environment-map nodes/keys in both before and after.
+    std::function<void(const std::shared_ptr<bg2e::scene::Node>&)> count;
+    count = [&](const auto& node)
+    {
+        bytes += sizeof(std::pair<const std::string, std::weak_ptr<bg2e::scene::EnvironmentComponent>>);
+        bytes += node->identifier().capacity() + 4 * sizeof(void*);
+        for (const auto& child : node->children())
+        {
+            count(child);
+        }
+    };
+    count(_document.root);
+    return bytes;
+}
+
+
+void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source,
+    std::shared_ptr<command::Dispatcher> commands, std::function<void(bool restoring)> rebind)
 {
     if (!candidate || candidate->parent() || candidate->scene())
     {
@@ -847,22 +928,86 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
         next.savePath = next.sourcePath;
     }
     next.generation = _document.generation + 1;
-    // Reserve all allocating state before changing the stage graph.
-    _retired.reserve(_retired.size() + 1);
+    if (!commands || commands->history().documentState().generation != next.generation)
+    {
+        throw std::invalid_argument("Replacement requires a prepared command dispatcher");
+    }
+    next.commands = std::move(commands);
+    if (next.dirty)
+    {
+        next.commands->history().noteNonhistoricalChange(bg2e::app::CommandCompatibility::Preserve);
+    }
+    next.synchronizeDirty();
+    // Keep the original document/history and stage order until publication is
+    // known to be usable. Failures before this point never touch either.
+    auto previousDocument = _document;
+    auto previousModel = _model;
+    const auto previousChildren = _root->children();
+    const auto previousState = editingState();
+    _retired.reserve(_retired.size() + 2);
     _root->addChild(candidate);
-    if (_model)
+    try
     {
-        _retired.push_back(_model);
-        _root->removeChild(_model);
+        if (previousModel)
+        {
+            _root->removeChild(previousModel);
+        }
+        _model = candidate;
+        _document = std::move(next);
+        refreshEnvironment(true);
+        if (totalLights == 8)
+        {
+            _fillLight->setEnabled(false);
+        }
+        refreshCamera(true);
+        if (rebind)
+        {
+            rebind(false);
+        }
     }
-    _model = std::move(candidate);
-    _document = std::move(next);
-    refreshEnvironment(true);
-    if (totalLights == 8)
+    catch (...)
     {
-        _fillLight->setEnabled(false);
+        try
+        {
+            _root->removeChild(candidate);
+            for (const auto& child : previousChildren)
+            {
+                _root->removeChild(child);
+            }
+            for (const auto& child : previousChildren)
+            {
+                _root->addChild(child);
+            }
+            _model = previousModel;
+            _document = std::move(previousDocument);
+            restoreEditingState(previousState);
+            if (rebind)
+            {
+                rebind(true);
+            }
+        }
+        catch (...)
+        {
+            // Neither publication can be assumed usable. Preserve both branches
+            // until renderer-first teardown, and explicitly block history replay.
+            if (previousModel)
+            {
+                _retired.push_back(previousModel);
+            }
+            _retired.push_back(candidate);
+            if (_document.commands)
+            {
+                _document.commands->history().reportExternalFault();
+                _document.synchronizeDirty();
+            }
+            throw;
+        }
+        throw;
     }
-    refreshCamera();
+    if (previousModel)
+    {
+        _retired.push_back(previousModel);
+    }
 }
 
 bool StageScene::save(const std::filesystem::path& path, bool destinationConfirmed)
@@ -870,6 +1015,11 @@ bool StageScene::save(const std::filesystem::path& path, bool destinationConfirm
     if (!_document.root)
     {
         throw std::logic_error("Open a document before saving");
+    }
+    if (_document.commands && (_document.commands->pending() ||
+        _document.commands->history().transactionActive() || _document.commands->history().faulted()))
+    {
+        throw std::logic_error("Flush and settle document commands before saving");
     }
     const auto target = bg2e::db::inspectSceneSaveTarget(path);
     const bool current = !target.pathChanged && target.path == _document.savePath;
@@ -888,8 +1038,16 @@ bool StageScene::save(const std::filesystem::path& path, bool destinationConfirm
         return false;
     }
     // Commit metadata only after complete resource/main publication succeeds.
+    if (_document.commands)
+    {
+        const auto saved = _document.commands->history().markSaved();
+        if (!saved.accepted())
+        {
+            throw std::logic_error("Document history was not settled before saving");
+        }
+    }
     _document.savePath = std::move(committedPath);
-    _document.dirty = false;
+    _document.synchronizeDirty();
     return true;
 }
 

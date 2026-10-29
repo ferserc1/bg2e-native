@@ -1,5 +1,7 @@
 # Step 1 — Mutation inventory and contracts
 
+Status: complete. Deliverable: [mutation-inventory.md](mutation-inventory.md).
+
 Dependency: none. Read [summary.md](summary.md) and [progress.md](progress.md) first.
 
 ## Objective

@@ -42,7 +42,7 @@ class StageScene {
   public:
     explicit StageScene(bg2e::draw::Engine* engine);
 
-    std::shared_ptr<bg2e::scene::Node> create();
+    std::shared_ptr<bg2e::scene::Node> create(std::shared_ptr<command::Dispatcher> commands);
     void cleanup();
 
     void resetCamera();
@@ -53,7 +53,8 @@ class StageScene {
     const std::vector<bg2e::utils::AnalyzedSubmesh>& analyzedSubmeshes() const;
     std::shared_ptr<bg2e::scene::Node> load(const std::filesystem::path& path,
         std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
-    void adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source);
+    void adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source,
+        std::shared_ptr<command::Dispatcher> commands, std::function<void(bool restoring)> rebind = {});
     bool save(const std::filesystem::path& path, bool destinationConfirmed = false);
 
     // Call only at a stopped renderer boundary. Candidates stay detached until
@@ -73,8 +74,19 @@ class StageScene {
         const std::shared_ptr<bg2e::scene::Node>& parent);
     bool exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
         const std::filesystem::path& destination, bool batch);
-    void refreshCamera();
-    void validateEditingGraph();
+    void refreshCamera(bool preserveControllers = false);
+    void validateEditingGraph(bool prepareCameraState = true);
+
+    struct EditingState {
+        std::weak_ptr<bg2e::scene::Node> camera;
+        std::weak_ptr<bg2e::scene::EnvironmentComponent> environment;
+        bool explicitEnvironment = false;
+        bool fillEnabled = false;
+        std::map<std::string, std::weak_ptr<bg2e::scene::EnvironmentComponent>> knownEnvironments;
+    };
+    EditingState editingState() const;
+    void restoreEditingState(const EditingState& state);
+    size_t editingStateBytes() const;
     void discardCandidate(const std::shared_ptr<bg2e::scene::Node>& candidate) noexcept;
     void releaseRetired();
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
@@ -120,9 +132,17 @@ class StageScene {
         return _document;
     }
 
-    void markModified()
+    void markModified(bg2e::app::CommandCompatibility compatibility = bg2e::app::CommandCompatibility::ResetHistory)
     {
-        _document.markModified();
+        _document.markModified(compatibility);
+    }
+    void retireCommands()
+    {
+        _document.commands.reset();
+    }
+    void synchronizeDirty()
+    {
+        _document.synchronizeDirty();
     }
 
   private:

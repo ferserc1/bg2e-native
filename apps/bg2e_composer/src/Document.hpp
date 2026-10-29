@@ -18,7 +18,9 @@
 
 #pragma once
 
+#include "command/Dispatcher.hpp"
 #include <bg2e/scene/Node.hpp>
+#include <stdexcept>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -30,12 +32,35 @@ struct Document {
     std::shared_ptr<bg2e::scene::Node> root;
     std::filesystem::path sourcePath;
     std::filesystem::path savePath;
+    std::shared_ptr<command::Dispatcher> commands;
     bool dirty = false;
     uint64_t generation = 0;
 
-    void markModified()
+    void synchronizeDirty()
     {
-        dirty = true;
+        if (commands)
+        {
+            dirty = commands->history().dirty();
+        }
+    }
+
+    // Transitional authored edits invalidate undo/redo until migrated. Persisted
+    // navigation explicitly opts into Preserve and only advances its revision.
+    void markModified(bg2e::app::CommandCompatibility compatibility = bg2e::app::CommandCompatibility::ResetHistory)
+    {
+        if (commands)
+        {
+            const auto result = commands->history().noteNonhistoricalChange(compatibility);
+            synchronizeDirty();
+            if (!result.accepted() && result.status != bg2e::app::CommandStatus::Faulted)
+            {
+                throw std::logic_error("Settle command interactions before legacy document edits");
+            }
+        }
+        else
+        {
+            dirty = true;
+        }
     }
 };
 

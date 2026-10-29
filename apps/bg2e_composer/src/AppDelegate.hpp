@@ -141,6 +141,9 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void editComponentProperties(std::weak_ptr<bg2e::scene::Node> node,
         std::weak_ptr<bg2e::scene::Component> component,
         std::function<void(void*)> operation, bool resourceChange);
+    void renameNode(std::weak_ptr<bg2e::scene::Node> node, const std::string& name);
+    void undoEdit();
+    void redoEdit();
     void setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled);
     void addSceneItem(unsigned kind);
     void addPrimitive(unsigned kind);
@@ -238,6 +241,22 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         std::vector<Resource> resources;
         size_t nextResource = 0;
     };
+    std::shared_ptr<command::Dispatcher> makeCommandDispatcher(uint64_t generation);
+    void submitNodeCommand(std::weak_ptr<bg2e::scene::Node> node,
+        std::unique_ptr<bg2e::app::Command> action, command::Boundary boundary, command::Effects effects);
+    void applyCommandEffects(bg2e::draw::Renderer& renderer, const command::Effects& effects);
+    bool flushDocumentCommands(bool commit, bool allowFault = false);
+    void sampleNavigation(bool trackChanges);
+    std::weak_ptr<bg2e::scene::OrbitCameraComponent> _observedOrbit;
+    glm::vec2 _observedRotation{0};
+    glm::vec3 _observedCenter{0};
+    float _observedDistance = 0;
+    bg2e::draw::Renderer* _commandRenderer = nullptr; // Borrowed only during a safe executor callback.
+
+    bool commandFaulted() const
+    {
+        return document() && document()->commands && document()->commands->history().faulted();
+    }
     void initializeImports();
     void processImports();
     void enqueueImport(ImportRequest request);

@@ -39,6 +39,10 @@ namespace bg2e_composer {
 
 void AppDelegate::render(const bg2e::draw::FrameContext& frame)
 {
+    if (commandFaulted())
+    {
+        return; // Do not record against an unrecovered scene/extraction.
+    }
     if (_bakeContext && _bakeRendererGeneration != rendererGeneration())
     {
         stopLightmapBake(true);

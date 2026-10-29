@@ -82,10 +82,7 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
     auto name = target->name();
     if (ui::Value::text("Node name", name))
     {
-        delegate->queueNodeValueEdit(node, [name](auto& current)
-        {
-            current.setName(name);
-        });
+        delegate->renameNode(node, name);
     }
     auto enabled = target->enabled();
     if (ui::Button::checkBox("Enabled", &enabled))
@@ -186,25 +183,6 @@ void AppDelegate::selectTreeNode(std::weak_ptr<bg2e::scene::Node> target, bool a
             selection->addNodeToSelection(node.get());
         }
         owner->requestSceneFrame();
-    });
-}
-
-
-void AppDelegate::setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled)
-{
-    queueNodeValueEdit(node, [this, enabled](auto& target)
-    {
-        const bool before = target.enabled();
-        target.setEnabled(enabled);
-        try
-        {
-            _stage->validateEditingGraph();
-        }
-        catch (...)
-        {
-            target.setEnabled(before);
-            throw;
-        }
     });
 }
 

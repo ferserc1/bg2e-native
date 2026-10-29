@@ -36,3 +36,9 @@
 #include <bg2e/app/Uv2SafeReload.hpp>
 
 #include <bg2e/app/DrawOffscreenApplicationDelegate.hpp>
+
+#include <bg2e/app/Command.hpp>
+#include <bg2e/app/CommandHistory.hpp>
+#include <bg2e/app/CommandQueue.hpp>
+#include <bg2e/app/CommandTransaction.hpp>
+#include <bg2e/app/CompositeCommand.hpp>

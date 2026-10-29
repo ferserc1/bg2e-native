@@ -1,5 +1,7 @@
 # Step 2 — Reusable infrastructure in bg2e::app
 
+Status: complete. Public APIs are in `lib/include/bg2e/app/{Command,CommandHistory,CommandQueue,CommandTransaction,CompositeCommand}.hpp`; focused sources are in `tests/app/command_memento/`. Tests have not been compiled or run.
+
 Dependency: step 1.
 
 ## Work

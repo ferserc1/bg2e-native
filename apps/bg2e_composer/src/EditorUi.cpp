@@ -116,6 +116,21 @@ void EditorUi::initEditMenu()
 {
     const auto weakDelegate = _delegate;
     bg2e::ui::MenuItem edit("Edit");
+    edit.addMenuItem({"Undo", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyZ, .handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->undoEdit();
+        }
+    }}});
+    edit.addMenuItem({"Redo", {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyZ, .handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->redoEdit();
+        }
+    }}});
+    edit.addMenuItem({});
     edit.addMenuItem({"Duplicate", {.handler = [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())

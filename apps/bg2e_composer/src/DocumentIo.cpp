@@ -150,7 +150,9 @@ bool AppDelegate::saveBeforeReplace()
     {
         return false;
     }
-    return _stage->save(path, document()->savePath.empty()); // Cancellation/failure prevents replacement.
+    const bool saved = _stage->save(path, document()->savePath.empty());
+    sampleNavigation(false);
+    return saved; // Cancellation/failure prevents replacement.
 }
 
 void AppDelegate::processDocumentIo()
@@ -162,15 +164,21 @@ void AppDelegate::processDocumentIo()
     auto operation = std::move(*_pendingIo);
     _pendingIo.reset();
     std::shared_ptr<bg2e::scene::Node> candidate;
+    bool published = false;
     try
     {
         stopLightmapBake(true);
-        DefaultRenderLoopDelegate::prepareFrame(); // Flush authored edits first.
-        _engine->device()->waitIdle();
         using Kind = PendingIo::Kind;
+        const bool replacing = operation.kind == Kind::Open || operation.kind == Kind::New;
+        if (!flushDocumentCommands(true, replacing))
+        {
+            return;
+        }
+        _engine->device()->waitIdle();
         if (operation.kind == Kind::Save)
         {
             const bool saved = _stage->save(operation.path, operation.destinationConfirmed);
+            sampleNavigation(false);
             _status = saved ? "Saved " + document()->savePath.filename().string() : "Scene save cancelled or failed (see log)";
             return;
         }
@@ -304,15 +312,54 @@ void AppDelegate::processDocumentIo()
             candidate = operation.kind == Kind::New ? _stage->newDocumentRoot() : _stage->load(operation.path);
         }
         _stage->prepareTools(candidate);
-        _stage->adopt(candidate, operation.kind == Kind::New ? std::filesystem::path{} : operation.path);
+        // Prepare all command ownership/callback storage before publication.
+        auto commands = makeCommandDispatcher(document()->generation + 1);
+        auto previousCommands = document()->commands;
+        // Snapshot selected identities before tentative publication. The old
+        // document remains owned by StageScene until reattachment succeeds.
+        std::vector<bg2e::manipulation::SelectionItem> previousSelection;
+        for (const auto& item : _selection->selectedItems())
+        {
+            previousSelection.push_back(*item);
+        }
         if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(renderer());
             deferred && deferred->environmentGenerator())
         {
-            // Reload file contents even when a new document uses the same HDR path.
             deferred->environmentGenerator()->resetSourceCache();
         }
+        _stage->adopt(candidate, operation.kind == Kind::New ? std::filesystem::path{} : operation.path,
+            std::move(commands), [&](bool restoring)
+            {
+                _selection->deselect();
+                if (restoring)
+                {
+                    for (const auto& item : previousSelection)
+                    {
+                        if (auto node = item.node.lock(); node && _stage->contains(node.get()))
+                        {
+                            if (auto mesh = item.lockMesh(); mesh && node->drawable())
+                            {
+                                _selection->addToSelectedItems(node.get(), node->drawable(), item.submesh);
+                            }
+                            else
+                            {
+                                _selection->addNodeToSelection(node.get());
+                            }
+                        }
+                    }
+                }
+                setScene(scene());
+                // Commit extraction now, so a failed attach restores the old
+                // graph AND renderer before the old history can be retired.
+                DefaultRenderLoopDelegate::prepareFrame();
+            });
+        published = true;
+        if (previousCommands)
+        {
+            previousCommands->shutdown();
+            previousCommands.reset();
+        }
         invalidateImports();
-        _selection->deselect();
         for (int button = 0; button < 3; ++button)
         {
             _input.mouseButtonUp(scene().get(), button, 0, 0);
@@ -320,7 +367,6 @@ void AppDelegate::processDocumentIo()
         _clipboard.reset();
         _viewpointStatus.clear();
         invalidateLightmapSources();
-        setScene(scene()); // Drop renderer queues before releasing retired resources.
         // The new document owns its EnvironmentComponent, but environment
         // generation runs at Renderer::prepareFrame's stopped boundary.
         requestSceneFrame();
@@ -334,13 +380,16 @@ void AppDelegate::processDocumentIo()
     }
     catch (const std::exception& error)
     {
-        _stage->discardCandidate(candidate);
+        if (!commandFaulted())
+        {
+            _stage->discardCandidate(candidate);
+        }
         if (_sceneResourceLoad)
         {
             _sceneResourceLoad = false;
             bg2e::app::MainLoop::current()->resumeScene();
         }
-        _status = std::string("Scene operation failed: ") + error.what();
+        _status = std::string(published ? "Scene opened; follow-up update failed: " : "Scene operation failed: ") + error.what();
         bg2e::app::MessageBox::showWarning("Scene operation failed", _status,
             {{0, "OK", bg2e::app::MessageBox::Return}});
         requestSceneFrame();

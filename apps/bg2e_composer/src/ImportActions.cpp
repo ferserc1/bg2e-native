@@ -288,7 +288,11 @@ void AppDelegate::processImports()
                 {
                     _selection->deselect();
                     _clipboard.reset();
-                    notifyEdited(*renderer());
+                    command::Effects effects;
+                    effects.lightmapSources = true;
+                    effects.renderHistories = true;
+                    effects.sceneReferences = true;
+                    applyCommandEffects(*renderer(), effects);
                     DefaultRenderLoopDelegate::prepareFrame(); // Retire old extraction before GPU cleanup.
                 }
                 catch (...)
@@ -311,6 +315,11 @@ void AppDelegate::processImports()
             {
                 // Neither binding is usable. Keep resources until normal renderer-
                 // first teardown rather than rendering with a failed extraction.
+                if (document()->commands)
+                {
+                    document()->commands->history().reportExternalFault();
+                    _stage->synchronizeDirty();
+                }
                 throw;
             }
             if (candidate && !candidate->parent())

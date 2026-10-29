@@ -41,7 +41,8 @@ void EditorUi::bindDocument(const std::shared_ptr<AppDelegate>& delegate)
     _material.setEditGuard([weak, generation]
     {
         auto owner = weak.lock();
-        return owner && owner->document() && owner->document()->generation == generation;
+        return owner && owner->document() && owner->document()->generation == generation &&
+            owner->document()->commands && !owner->document()->commands->history().faulted();
     });
     _material.onChanged([weak](auto& renderer)
     {

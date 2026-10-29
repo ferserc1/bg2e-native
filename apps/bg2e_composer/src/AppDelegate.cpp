@@ -58,7 +58,7 @@ bg2e::draw::RendererConfiguration AppDelegate::configuration(
 std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
 {
     _stage = std::make_shared<StageScene>(_engine);
-    auto root = _stage->create();
+    auto root = _stage->create(makeCommandDispatcher(1));
     _selection = std::make_shared<bg2e::manipulation::SelectionManager>(_engine);
     _selection->init();
     const auto weakSelection = std::weak_ptr<bg2e::manipulation::SelectionManager>(_selection);
@@ -90,6 +90,7 @@ std::shared_ptr<bg2e::scene::Node> AppDelegate::createScene()
         }
     });
     initializeImports();
+    sampleNavigation(false);
     return root;
 }
 
@@ -110,7 +111,7 @@ glm::ivec2 AppDelegate::inputPosition(int x, int y) const
 
 void AppDelegate::queueInput(std::function<void()> event)
 {
-    if (_imports.busy() || sceneLoading())
+    if (_imports.busy() || sceneLoading() || commandFaulted())
     {
         return;
     }
@@ -122,7 +123,7 @@ void AppDelegate::queueInput(std::function<void()> event)
         {
             return;
         }
-        if (!document() || document()->generation != generation)
+        if (!document() || document()->generation != generation || commandFaulted())
         {
             return;
         }
@@ -140,12 +141,18 @@ void AppDelegate::queueInput(std::function<void()> event)
         {
             _status = error.what();
         }
-        if (manipulating || (orbit && (orbit->rotation() != beforeRotation ||
-            orbit->center() != beforeCenter || orbit->distance() != beforeDistance)))
+        if (manipulating)
         {
             invalidateLightmapSources();
-            _stage->markModified();
+            _stage->markModified(); // Legacy gizmo publication: step 4 adds transactions.
         }
+        else if (orbit && (orbit->rotation() != beforeRotation ||
+            orbit->center() != beforeCenter || orbit->distance() != beforeDistance))
+        {
+            invalidateLightmapSources();
+            _stage->markModified(bg2e::app::CommandCompatibility::Preserve);
+        }
+        sampleNavigation(false);
     });
 }
 
@@ -179,17 +186,12 @@ void AppDelegate::mouseMove(int x, int y)
     queueInput([this, x, y]
     {
         const auto p = inputPosition(x, y);
-        const bool manipulating = _selection->sceneInputBlocked();
         if (_selection->mouseMove(_stage->sceneObject(), p.x, p.y))
         {
             if (auto controller = _stage->orbitCamera(); controller && controller->enabled())
             {
                 controller->mouseMove(x, y);
             }
-        }
-        if (manipulating)
-        {
-            _stage->markModified();
         }
     });
 }
@@ -240,17 +242,24 @@ void AppDelegate::mouseWheel(int dx, int dy)
 
 void AppDelegate::resetCamera()
 {
-    const auto weakStage = std::weak_ptr<StageScene>(_stage);
-    enqueueRendererUpdate(rendererGeneration(), [weakStage](bg2e::draw::Renderer& renderer)
+    if (!document() || commandFaulted())
     {
-        if (auto stage = weakStage.lock())
+        return;
+    }
+    const auto generation = document()->generation;
+    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), generation](bg2e::draw::Renderer& renderer)
+    {
+        if (auto owner = weak.lock(); owner && owner->document() &&
+            owner->document()->generation == generation && !owner->commandFaulted())
         {
-            stage->resetCamera();
-            stage->markModified();
+            owner->_stage->resetCamera();
+            owner->_stage->markModified(bg2e::app::CommandCompatibility::Preserve);
+            owner->sampleNavigation(false);
             renderer.invalidateHistories();
         }
     });
 }
+
 
 void AppDelegate::frameSelection()
 {
@@ -296,7 +305,8 @@ void AppDelegate::frameSelection()
             owner->_viewpointStatus = error.what();
             return;
         }
-        owner->_stage->markModified();
+        owner->_stage->markModified(bg2e::app::CommandCompatibility::Preserve);
+        owner->sampleNavigation(false);
         owner->_viewpointStatus = "Camera framed " + node->name();
         renderer.invalidateHistories();
     });
@@ -361,7 +371,8 @@ void AppDelegate::analyzeBestView()
                 return analysis.pixelsPerSubmesh[lhs] > analysis.pixelsPerSubmesh[rhs];
             });
             owner->_stage->applyViewpoint(candidate);
-            owner->_stage->markModified();
+            owner->_stage->markModified(bg2e::app::CommandCompatibility::Preserve);
+            owner->sampleNavigation(false);
             owner->_viewpointStatus = "Best of " + std::to_string(samples.size()) + " views (#" +
                 std::to_string(bestIndex + 1) + "): " + std::to_string(analysis.visibleSubmeshCount) +
                 "/" + std::to_string(owner->_stage->analyzedSubmeshes().size()) + " submeshes, " +
@@ -483,6 +494,10 @@ bool AppDelegate::confirmClose()
     {
         prepareFrame(); // Flush pending edits before deciding whether close needs a prompt.
     }
+    if (_stage && !flushDocumentCommands(true, true))
+    {
+        return false;
+    }
     if (!_stage || !_stage->document().dirty)
     {
         _quitConfirmed = true;
@@ -510,6 +525,7 @@ bool AppDelegate::confirmClose()
         // MainLoop invokes this callback between frames, before command acquisition.
         _engine->device()->waitIdle();
         _quitConfirmed = _stage->save(path, _stage->document().savePath.empty());
+        sampleNavigation(false);
         return _quitConfirmed;
     }
     catch (const std::exception& error)
@@ -546,18 +562,47 @@ void AppDelegate::prepareFrame()
             flag = false;
         }
     } reset{_preparing};
+    if (!commandFaulted())
+    {
+        sampleNavigation(true);
+    }
     retireBakeFrame();
     processDocumentIo();
     if (sceneLoading())
     {
         return; // Keep renderer/import mutations stopped while the Loader owns the UI.
     }
+    if (commandFaulted())
+    {
+        document()->commands->pump(); // Complete cancellation of dependent requests.
+        if (_quitPending)
+        {
+            confirmQuitRequest();
+        }
+        return; // Preserve recovery resources until repair/replacement or teardown.
+    }
     if (_selection && _stage && _selection->selectedNode() && !_stage->contains(_selection->selectedNode()))
     {
         _selection->deselect();
     }
+    if (document() && document()->commands)
+    {
+        document()->commands->pump();
+    }
     DefaultRenderLoopDelegate::prepareFrame();
+    if (commandFaulted())
+    {
+        return;
+    }
     processImports();
+    if (_stage)
+    {
+        _stage->synchronizeDirty();
+        if (document()->commands)
+        {
+            document()->commands->releaseRetired();
+        }
+    }
     if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(renderer()))
     {
         const auto& error = deferred->environmentError();
@@ -613,6 +658,28 @@ void AppDelegate::cleanup()
     catch (...)
     {
         error = std::current_exception();
+    }
+    if (_stage && document()->commands)
+    {
+        try
+        {
+            // Producers are joined; drain before releasing history/module leases.
+            _engine->device()->waitIdle();
+            auto* previousRenderer = _commandRenderer;
+            _commandRenderer = renderer();
+            document()->commands->shutdown();
+            _commandRenderer = previousRenderer;
+            _stage->retireCommands();
+        }
+        catch (...)
+        {
+            _commandRenderer = nullptr;
+            if (!error)
+            {
+                error = std::current_exception();
+            }
+            _stage->retireCommands();
+        }
     }
     if (_toolsCleanup)
     {

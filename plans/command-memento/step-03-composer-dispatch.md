@@ -1,5 +1,7 @@
 # Step 3 — Composer dispatch and document lifecycle
 
+Status: complete (source integration; uncompiled). See [progress.md](progress.md) and the step 3 checkpoint in [mutation-inventory.md](mutation-inventory.md).
+
 Dependency: step 2.
 
 ## Work

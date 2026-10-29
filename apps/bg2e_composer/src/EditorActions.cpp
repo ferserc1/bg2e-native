@@ -33,13 +33,15 @@ namespace bg2e_composer {
 
 void AppDelegate::notifyEdited(bg2e::draw::Renderer& renderer)
 {
-    invalidateLightmapSources();
+    // Transitional edits have no memento yet. Invalidate incompatible history
+    // explicitly; do not infer a new command from this notification.
     _stage->markModified();
-    renderer.invalidateHistories();
-    _stage->refreshCamera();
-    // Property edits keep the current scene attached. Scene replacement belongs
-    // to the document lifecycle, not to the general edit notification.
-    requestSceneFrame();
+    command::Effects effects;
+    effects.lightmapSources = true;
+    effects.renderHistories = true;
+    effects.sceneReferences = true;
+    applyCommandEffects(renderer, effects);
+    sampleNavigation(false);
 }
 
 void AppDelegate::queueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
@@ -59,7 +61,7 @@ void AppDelegate::queueNodeValueEdit(std::weak_ptr<bg2e::scene::Node> target,
 void AppDelegate::enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
     std::function<void(bg2e::scene::Node&)> operation, bool rebuild, bool cpuValuesOnly)
 {
-    if (!document() || !document()->root)
+    if (!document() || !document()->root || commandFaulted())
     {
         return;
     }
@@ -76,7 +78,7 @@ void AppDelegate::enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
             return;
         }
         auto node = target.lock();
-        if (!node || !document() || document()->generation != generation ||
+        if (!node || !document() || commandFaulted() || document()->generation != generation ||
             (!_stage->contains(node.get()) && node != _stage->fillLightNode()))
         {
             return;
@@ -342,7 +344,7 @@ void AppDelegate::setFloor(bool visible, float height)
 
 void AppDelegate::editEnvironment(std::function<void(bg2e::scene::EnvironmentComponent&)> operation)
 {
-    if (!document() || !document()->root)
+    if (!document() || !document()->root || commandFaulted())
     {
         return;
     }
@@ -350,7 +352,7 @@ void AppDelegate::editEnvironment(std::function<void(bg2e::scene::EnvironmentCom
     enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), generation, operation = std::move(operation)](auto& renderer)
     {
         auto owner = weak.lock();
-        if (!owner || !owner->document() || owner->document()->generation != generation)
+        if (!owner || !owner->document() || owner->commandFaulted() || owner->document()->generation != generation)
         {
             return;
         }

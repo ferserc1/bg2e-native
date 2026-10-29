@@ -1,6 +1,6 @@
 # Command/memento implementation plan
 
-Status: planning complete; implementation has not started. This plan does not authorize compilation or CMake changes.
+Status: steps 1–3 complete (inventory, generic application core and initial Composer dispatch/lifecycle); step 4 pending. See [mutation-inventory.md](mutation-inventory.md) and [progress.md](progress.md). This plan does not authorize compilation or CMake changes.
 
 ## Purpose
 
