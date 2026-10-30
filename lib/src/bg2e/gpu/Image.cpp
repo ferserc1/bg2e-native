@@ -286,6 +286,18 @@ void Image::uploadImage(const base::Image* image)
     default:
         break;
     }
+    // stb file decoding already produces tightly packed RGBA. Preserve those
+    // bytes/floats directly when the GPU storage has the identical layout.
+    if (image->channels() == 4 && _pixelFormat == PixelFormat::R8G8B8A8_UNORM && image->data())
+    {
+        upload({image->data(), size_t(width()) * height() * 4});
+        return;
+    }
+    if (image->channels() == 4 && _pixelFormat == PixelFormat::R32G32B32A32_SFLOAT && image->dataf())
+    {
+        upload({image->dataf(), size_t(width()) * height() * 4 * sizeof(float)});
+        return;
+    }
     std::vector<uint8_t> packed(size_t(width()) * height() * channels * componentBytes);
     const bool bgra = _pixelFormat == PixelFormat::B8G8R8A8_UNORM || _pixelFormat == PixelFormat::B8G8R8A8_SRGB;
     for (size_t pixel = 0; pixel < size_t(width()) * height(); ++pixel)

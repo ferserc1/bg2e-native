@@ -111,6 +111,18 @@ Metal image wrapper. Wraps `MTL::Texture*`.
 See [rendering/subresources and transfer](Subresources_and_rendering.md) for
 MRT attachments, explicit views/layouts, capability limits and synchronous IO.
 
+## CPU image upload
+
+`uploadImage(const base::Image*)` uploads matching 2D color dimensions. Four-channel
+byte pixels targeting `R8G8B8A8_UNORM` and four-channel float pixels targeting
+`R32G32B32A32_SFLOAT` are passed directly to the backend upload path, without an
+intermediate conversion buffer or per-component float round trip. Other supported
+layouts retain the generic channel/format conversion path.
+
+This is not zero-copy GPU storage: backend staging allocation/copy and synchronous
+submission still apply. Upload and mip generation are not batched. See
+[image loading architecture](../../architecture/texture_and_image_load.md).
+
 ## Completed image readback
 
 `readPixels(bytes, range, finalLayout)` is synchronous for one full initialized

@@ -72,8 +72,12 @@ class BG2E_API Drawable {
     // until their completion) before discarding the exchanged state.
     bool exchangeGeometry(PreparedGeometry& prepared) noexcept;
     void load(Engine* engine, std::function<void()> onTextureLoaded = nullptr);
+    // An explicit context extends image reuse across multiple Drawables. The
+    // convenience overload creates one context for this Drawable's materials.
+    void load(Engine* engine, ImageLoadContext& context, std::function<void()> onTextureLoaded = nullptr);
     void reload();
     void updateMaterials(std::function<void()> onTextureLoaded = nullptr);
+    void updateMaterials(ImageLoadContext& context, std::function<void()> onTextureLoaded = nullptr);
     void cleanup(); // Synchronous; stop frame/background producers first.
     bool isLoaded() const
     {

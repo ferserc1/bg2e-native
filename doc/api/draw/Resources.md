@@ -23,6 +23,17 @@ operations: stop producers, synchronize outstanding users, mutate and resume.
 `utils::TextureCache` keeps weak draw realizations with engine/device validation;
 explicit cached sharing does not override clone independence.
 
+Ordinary `Drawable::load` and `updateMaterials` create a local
+[ImageLoadContext](ImageLoadContext.md). File sources reuse decoded pixels and
+compatible GPU images across slots/materials in that operation; neutral white and
+flat-normal images are reused too. Each texture keeps independent settings and a
+sampler. Explicit overloads accept a shared import context across Drawables; glTF
+uses one across its import. `MaterialBase::updateTextures` also accepts a context.
+`useTextureCache()` remains false by default: context image reuse is distinct from
+that optional whole-texture cache. Reload/load replace images; callers must not
+write shared image pixels through raw GPU accessors. Deep cloning still creates
+independent writable images. Contexts retain CPU pixels only until their destruction.
+
 `scene::DrawableComponent::drawable()` returns the sole draw realization; const
 component access returns a const Drawable. `setDrawable`/`clearDrawable` release
 component references at a safe boundary, checking context ownership on replacement.

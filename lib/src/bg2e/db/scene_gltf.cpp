@@ -20,6 +20,7 @@
 #include <bg2e/geo/Mesh.hpp>
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/db/image.hpp>
+#include <bg2e/draw/ImageLoadContext.hpp>
 #include <bg2e/math/base.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
@@ -35,6 +36,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <type_traits>
+#include <algorithm>
 #include <bg2e/draw/Drawable.hpp>
 
 #define CGLTF_IMPLEMENTATION
@@ -107,8 +109,9 @@ static std::vector<uint8_t> decodeBase64(const std::string& encoded)
 
 class TemporaryImages {
   public:
-    TemporaryImages(const std::filesystem::path& gltfPath, const cgltf_data* data)
-        : _gltfPath(gltfPath), _data(data)
+    TemporaryImages(const std::filesystem::path& gltfPath, const cgltf_data* data,
+        draw::ImageLoadContext& context)
+        : _gltfPath(gltfPath), _data(data), _context(context)
     {
     }
 
@@ -135,6 +138,19 @@ class TemporaryImages {
 
         try
         {
+            // Keep external sources intact instead of decoding/re-encoding them
+            // as temporary PNGs. The import context decodes each path once.
+            if (!image->buffer_view && image->uri && std::string(image->uri).rfind("data:", 0) != 0)
+            {
+                std::string uri(image->uri);
+                if (uri.find("://") != std::string::npos)
+                {
+                    throw std::runtime_error("Remote image URI is unsupported");
+                }
+                uri.resize(cgltf_decode_uri(uri.data()));
+                const auto path = std::filesystem::absolute(_gltfPath.parent_path() / uri).lexically_normal();
+                return _paths.emplace(index, path).first->second;
+            }
             auto encoded = readEncoded(image);
             uint32_t width = 0;
             uint32_t height = 0;
@@ -143,6 +159,14 @@ class TemporaryImages {
             const auto path = _directory /
                               (_directory.filename().string() + "_image_" + std::to_string(index) + ".png");
             db::saveImage(path, pixels.data(), width, height, 4);
+            // The PNG remains the reload/export source, but initial realization
+            // consumes these pixels without reading and decoding the PNG again.
+            auto owned = std::make_unique<uint8_t[]>(pixels.size());
+            std::copy(pixels.begin(), pixels.end(), owned.get());
+            auto decoded = std::make_shared<base::Image>(owned.get(), width, height, 4);
+            owned.release();
+            decoded->setPath(path.string());
+            _context.registerPixels(path, std::move(decoded));
             return _paths.emplace(index, path).first->second;
         }
         catch (const std::exception& error)
@@ -226,6 +250,7 @@ class TemporaryImages {
 
     std::filesystem::path _gltfPath;
     const cgltf_data* _data;
+    draw::ImageLoadContext& _context;
     std::filesystem::path _directory;
     std::unordered_map<size_t, std::filesystem::path> _paths;
     bool _committed = false;
@@ -619,7 +644,8 @@ static scene::Node* loadGltfImpl(
     {
         data = std::shared_ptr<cgltf_data>(gltf::loadGltfFile(filePath), &cgltf_free);
     }
-    gltf::TemporaryImages temporaryImages(filePath, data.get());
+    draw::ImageLoadContext imageContext(engine);
+    gltf::TemporaryImages temporaryImages(filePath, data.get(), imageContext);
     if constexpr (std::is_same_v<DrawableT, draw::Drawable>)
     {
         if (data->skins_count || data->animations_count)
@@ -772,7 +798,7 @@ static scene::Node* loadGltfImpl(
             drw->setSubmeshName(submeshNames[meshNameIndex], submeshIndex);
             ++meshNameIndex;
         }
-        drw->load(engine);
+        drw->load(engine, imageContext);
         if (onProgress)
         {
             onProgress(drw->name(), ++processed, total);

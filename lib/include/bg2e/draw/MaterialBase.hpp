@@ -42,7 +42,8 @@ enum class TextureSlot
 };
 
 // Value attributes are live material state. GPU textures are stable resources,
-// not frame-ring bindings. Cache sharing is explicit and disabled for clones.
+// not frame-ring bindings. Whole-texture cache sharing is explicit; import
+// contexts reuse only image storage. Deep clones retain independent pixels.
 class BG2E_API MaterialBase {
   public:
     explicit MaterialBase(Engine* engine);
@@ -69,6 +70,8 @@ class BG2E_API MaterialBase {
         return _engine;
     }
     void updateTextures(std::function<void()> onTextureLoaded = nullptr);
+    // Reuse image storage without sharing mutable Texture/settings/sampler state.
+    void updateTextures(ImageLoadContext& context, std::function<void()> onTextureLoaded = nullptr);
     bool texturesUpdated() const;
     void setTexture(TextureSlot slot, std::shared_ptr<Texture> texture);
     std::shared_ptr<Texture> texture(TextureSlot slot) const

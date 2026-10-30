@@ -126,6 +126,7 @@ UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
 
 ## Resource reuse and diagnostics
 
+- [ImageLoadContext](ImageLoadContext.md): import-scoped CPU decoding and GPU image reuse with independent texture settings/samplers.
 - [TemporaryResourcePool](TemporaryResourcePool.md): recording completion, resource leases and bounded retention.
 - [TemporalInvalidation](TemporalInvalidation.md): lazy signatures and explicit invalidation.
 - [TransparentRegions](TransparentRegions.md): conservative raster/composition bounds and full fallbacks.

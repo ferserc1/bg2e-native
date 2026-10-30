@@ -24,6 +24,7 @@
 #include <bg2e/gpu/Sampler.hpp>
 
 namespace bg2e::draw {
+class ImageLoadContext;
 // Deep-copy editable settings, snapshotting procedural generators into pixels.
 BG2E_API std::shared_ptr<base::Texture> cloneTextureSettings(const base::Texture& source);
 
@@ -59,6 +60,8 @@ class BG2E_API Texture {
     {
         return _settings.get();
     }
+    // Import contexts may share pixel storage. Treat it as read-only; use load,
+    // reload or a deep clone instead of writing shared image contents in place.
     gpu::Image* image() const
     {
         return _image.get();
@@ -91,6 +94,8 @@ class BG2E_API Texture {
     }
 
   private:
+    friend class ImageLoadContext;
+
     Engine* _engine;
     std::shared_ptr<base::Texture> _settings;
     std::shared_ptr<gpu::Image> _image;

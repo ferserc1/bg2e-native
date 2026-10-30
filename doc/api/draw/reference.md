@@ -27,6 +27,7 @@ See [MainLoop](../app/MainLoop.md), [architecture](../../architecture/MainLoop_r
 
 - [RendererDeferred and DefaultRenderLoopDelegate](RendererDeferred.md): runtime ownership, lifecycle and public pipeline replacement.
 - [Drawable, material, scene and bindings](Resources.md): canonical ownership, deep clones and safe edits.
+- [ImageLoadContext](ImageLoadContext.md): synchronous import-scoped decoding and image reuse, embedded GLB pixel registration, and independent samplers.
 - [Environment tools](Environment.md): public conversion/IBL and HDR precision.
 - [Settings and upscaling](Settings.md): live catalog, codec/facade/UI, resolution, FSR and MetalFX.
 

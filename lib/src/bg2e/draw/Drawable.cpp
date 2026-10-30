@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/Drawable.hpp>
+#include <bg2e/draw/ImageLoadContext.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 
 #include <algorithm>
@@ -122,6 +123,17 @@ void Drawable::iterateMaterials(std::function<void(base::MaterialAttributes&)> o
 
 void Drawable::load(Engine* engine, std::function<void()> onTextureLoaded)
 {
+    ImageLoadContext context(engine);
+    load(engine, context, std::move(onTextureLoaded));
+}
+
+
+void Drawable::load(Engine* engine, ImageLoadContext& context, std::function<void()> onTextureLoaded)
+{
+    if (context.engine() != engine)
+    {
+        throw std::invalid_argument("Drawable image context belongs to another engine");
+    }
     if (!engine || (_engine && _engine != engine))
     {
         throw std::invalid_argument("Drawable cannot change engine without synchronized cleanup");
@@ -142,7 +154,7 @@ void Drawable::load(Engine* engine, std::function<void()> onTextureLoaded)
     }
     _engine = engine;
     buildDrawMesh();
-    updateMaterials(std::move(onTextureLoaded));
+    updateMaterials(context, std::move(onTextureLoaded));
     buildRayTracingMeshes();
 }
 
@@ -159,6 +171,17 @@ void Drawable::buildDrawMesh()
 
 void Drawable::updateMaterials(std::function<void()> onTextureLoaded)
 {
+    ImageLoadContext context(_engine);
+    updateMaterials(context, std::move(onTextureLoaded));
+}
+
+
+void Drawable::updateMaterials(ImageLoadContext& context, std::function<void()> onTextureLoaded)
+{
+    if (context.engine() != _engine)
+    {
+        throw std::invalid_argument("Drawable image context belongs to another engine");
+    }
     if (!_engine)
     {
         throw std::logic_error("Drawable has no engine");
@@ -177,7 +200,7 @@ void Drawable::updateMaterials(std::function<void()> onTextureLoaded)
             _materials[i] = std::make_shared<MaterialBase>(_engine);
             _materials[i]->setMaterialAttributes(cloneMaterialAttributes(_attributes[i].material));
         }
-        _materials[i]->updateTextures(onTextureLoaded);
+        _materials[i]->updateTextures(context, onTextureLoaded);
     }
     _loaded = bool(_drawMesh);
 }

@@ -22,6 +22,7 @@
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/utils/MaterialSerializer.hpp>
 #include <bg2e/base/Texture.hpp>
+#include <bg2e/draw/ImageLoadContext.hpp>
 #include <bg2e/utils/utils.hpp>
 #include <bg2e/json/JsonParser.hpp>
 #include <bg2e/json/NodeReader.hpp>
@@ -651,7 +652,8 @@ std::shared_ptr<draw::Drawable> loadDrawableBg2(const std::filesystem::path& fil
         result->setSubmeshGroupName(material.groupName(), i);
         result->setSubmeshVisibility(material.visible(), i);
     }
-    result->load(&engine, std::move(onTextureLoaded));
+    draw::ImageLoadContext imageContext(&engine);
+    result->load(&engine, imageContext, std::move(onTextureLoaded));
     return result;
 }
 

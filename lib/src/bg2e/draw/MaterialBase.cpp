@@ -18,6 +18,7 @@
 
 #include <bg2e/draw/MaterialBase.hpp>
 #include <bg2e/utils/TextureCache.hpp>
+#include <bg2e/draw/ImageLoadContext.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/CleanupManager.hpp>
 #include <bg2e/base/CpuProfile.hpp>
@@ -76,6 +77,17 @@ void MaterialBase::setMaterialAttributes(const base::MaterialAttributes& attribu
 
 void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
 {
+    ImageLoadContext context(_engine);
+    updateTextures(context, std::move(onTextureLoaded));
+}
+
+
+void MaterialBase::updateTextures(ImageLoadContext& context, std::function<void()> onTextureLoaded)
+{
+    if (context.engine() != _engine)
+    {
+        throw std::invalid_argument("Material image context belongs to another engine");
+    }
     // No native owner changes and no upload/callback work for realized revisions.
     if (texturesUpdated())
     {
@@ -97,13 +109,12 @@ void MaterialBase::updateTextures(std::function<void()> onTextureLoaded)
         }
         if (!settings)
         {
-            textures[i] = Texture::colorTexture(_engine, i == size_t(TextureSlot::Normal)
-                ? base::Color(0.5f, 0.5f, 1.0f, 1.0f) : base::Color::White());
+            textures[i] = context.neutralTexture(i == size_t(TextureSlot::Normal));
         }
         else
         {
             textures[i] = _useTextureCache && settings->type() == base::Texture::TypeFilesystem
-                ? utils::TextureCache::get().load(_engine, *settings) : std::make_shared<Texture>(_engine, settings);
+                ? utils::TextureCache::get().load(_engine, *settings) : context.load(*settings);
             if (onTextureLoaded)
             {
                 onTextureLoaded();

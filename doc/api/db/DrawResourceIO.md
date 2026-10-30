@@ -25,7 +25,11 @@ between frames and drains the device before saving.
   cgltf parser is shared with readGltf. Realization imports the selected
   scene's static mesh hierarchy, local matrices, two UV sets, PBR color and
   metallic/roughness maps, normal/AO/emission maps, alpha mode and sampler settings.
-  Embedded images use the importer's temporary image cache. Materials follow the
+  Embedded images are decoded once, written to temporary PNG reload/export sources,
+  and registered as decoded pixels in a shared draw ImageLoadContext. Initial GPU
+  realization does not reread those PNGs. External image paths are retained without
+  PNG conversion. Compatible GPU images are reused across imported slots and
+  Drawables, while texture settings and samplers remain independent. Materials follow the
   engine's scalar emission model, rather than a separate RGB emission color.
   The draw importer rejects skins/animations, morph targets, cameras/lights,
   non-triangle primitives, unrepresentable material extensions, colored emission
@@ -42,6 +46,13 @@ Callbacks report synchronous parsing/resource work. OBJ texture counts are
 estimated during scene realization and may increase as resources are discovered.
 Schema-only and raw IO remain [separate operations](SceneReferences.md): neither
 requires a device nor exports any referenced image.
+
+BG2 and OBJ Drawable loading also reuse file-backed images across their slots and
+materials through a local [ImageLoadContext](../draw/ImageLoadContext.md). Reuse
+does not require enabling the optional whole-texture TextureCache. The context
+retains CPU pixels only for its scope; later reloads read filesystem sources again.
+Progress callbacks remain slot/resource progress, not unique-image upload counters.
+Uploads/mipmap generation are still synchronous; GPU batching is future work.
 
 ## Saving a complete resource generation
 
