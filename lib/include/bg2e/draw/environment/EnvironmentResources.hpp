@@ -21,6 +21,7 @@
 #include <bg2e/draw/pipeline/RenderLayer.hpp>
 #include <memory>
 #include <bg2e/math/base.hpp>
+#include <bg2e/base/SolarLight.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -34,6 +35,9 @@ namespace environment {
 // Images/samplers retain shared ownership; Device/Engine must outlive all users.
 struct BG2E_API EnvironmentResources {
     std::shared_ptr<gpu::Image> sky;
+    // Optional disk-free background for a screen-resolution analytic solar disk.
+    std::shared_ptr<gpu::Image> skyboxBackground;
+    base::SolarState solar;
     std::shared_ptr<gpu::Image> irradiance;
     std::shared_ptr<gpu::Image> prefilteredSpecular;
     std::shared_ptr<gpu::Image> brdf;

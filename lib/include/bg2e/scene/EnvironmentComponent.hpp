@@ -20,6 +20,7 @@
 
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/base/Color.hpp>
+#include <bg2e/base/SolarLight.hpp>
 
 #include <string>
 #include <filesystem>
@@ -87,6 +88,9 @@ class BG2E_API EnvironmentComponent : public Component {
     }
     void setGroundColor(const base::Color& color);
 
+    // Same-node TypeSun association; detached clones retain resolved values only.
+    base::SolarState solarState() const;
+
     // Exchange authored values while preserving component identity/membership.
     // Both states must be validated/prepared at the caller's safe boundary.
     void exchangeValues(EnvironmentComponent& other) noexcept;
@@ -107,6 +111,8 @@ class BG2E_API EnvironmentComponent : public Component {
     base::Color _skyHorizonColor{0.55f, 0.65f, 0.8f};
     base::Color _skyZenithColor{0.06f, 0.22f, 0.6f};
     base::Color _groundColor{0.04f, 0.035f, 0.025f};
+
+    base::SolarState _solarSnapshot;
 
     // TODO: Other environment parameters
 };

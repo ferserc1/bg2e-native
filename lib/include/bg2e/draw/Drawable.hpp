@@ -57,17 +57,35 @@ class BG2E_API Drawable {
 
     // Geometry-only preparation at a stopped graphics boundary. CPU mesh,
     // material identities and live bindings remain unchanged until publication.
-    // Raster-only: opaque acceleration payloads need a separate accounting seam.
+    // Raster buffers and BLAS are prepared and exchanged as one version.
     class PreparedGeometry {
         friend class Drawable;
         const Drawable* owner = nullptr;
         Engine* engine = nullptr;
         const Mesh* source = nullptr;
         std::shared_ptr<DrawMesh> raster;
+        std::vector<std::shared_ptr<gpu::RayTracingMesh>> tracing;
+        bool tracingEnabled = false;
+
+      public:
+        PreparedGeometry() = default;
+        PreparedGeometry(const PreparedGeometry&) = delete;
+        PreparedGeometry& operator=(const PreparedGeometry&) = delete;
+        PreparedGeometry(PreparedGeometry&&) noexcept = default;
+        PreparedGeometry& operator=(PreparedGeometry&&) noexcept = default;
+
+        size_t accelerationBytes() const;
+        // Lifetime identity for deferred release ledgers. Payload bytes can be
+        // reserved separately by commands that own multiple geometry versions.
+        std::shared_ptr<const void> resourceOwner() const
+        {
+            return raster;
+        }
+
     };
     PreparedGeometry prepareGeometry(const Mesh& data) const;
     bool canExchangeGeometry(const PreparedGeometry& prepared) const noexcept;
-    // Exchange only raster bindings. Caller publishes CPU data once per shared
+    // Exchange raster bindings and their dependent BLAS. Caller publishes CPU data once per shared
     // Mesh and drains outstanding submissions (or retains displaced bindings
     // until their completion) before discarding the exchanged state.
     bool exchangeGeometry(PreparedGeometry& prepared) noexcept;

@@ -31,9 +31,14 @@ and adopts the preview at the graphics boundary. Independent applications may
 continue using selection and gizmo tools without transactions. If they supervise
 them, they own competing-writer pause/resume and cancellation boundaries.
 
-`draw::Drawable::PreparedGeometry` prepares raster data before exchange and
-supports recovery. It does not retain opaque ray-tracing acceleration
-allocations; Composer rejects those cases. See [geometry](composer-geometry.md).
+`draw::Drawable::PreparedGeometry` prepares raster buffers and their dependent
+BLAS before exchange and supports recovery. It is move-only; exchange retains
+the displaced complete native version. Callers publish CPU data once per shared
+Mesh and must stop competing writers and drain readers before exchange and
+retirement. `accelerationBytes()` exposes retained BLAS/scratch bytes;
+`resourceOwner()` supplies a lifetime identity for deferred release ledgers.
+Composer supplies this scheduling, budgeting and retention policy; independent
+SDK callers own those responsibilities. See [geometry](composer-geometry.md).
 
 ## Resource ownership
 

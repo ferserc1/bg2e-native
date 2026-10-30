@@ -44,8 +44,11 @@ struct GenerationPush {
     glm::vec4 skyHorizonColor;
     glm::vec4 skyZenithColor;
     glm::vec4 groundColor;
+    glm::vec4 sunDirectionRadius;
+    glm::vec4 sunRadiance;
+    glm::vec4 solarParameters;
 };
-static_assert(sizeof(GenerationPush) == 80);
+static_assert(sizeof(GenerationPush) == 128);
 std::string semantic(GenerationKind kind)
 {
     switch (kind)
@@ -138,6 +141,10 @@ void CubemapRenderer::initialize(Engine& engine, const pipeline::LayerConfigurat
     cleanup();
     _source = std::move(source);
     _realized = _settings;
+    if (_kind == GenerationKind::ProceduralSky && _realized.solar.enabled)
+    {
+        _realized.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
+    }
     const bool hasSource = _kind == GenerationKind::Sphere || _kind == GenerationKind::Irradiance || _kind == GenerationKind::Specular;
     auto* device = engine.device();
     if (_realized.size == 0 || _realized.size > device->renderingCapabilities().maxImageDimension2D ||
@@ -154,6 +161,24 @@ void CubemapRenderer::initialize(Engine& engine, const pipeline::LayerConfigurat
                 color.r < 0 || color.r > 1 || color.g < 0 || color.g > 1 || color.b < 0 || color.b > 1)
             {
                 throw std::invalid_argument("Procedural sky colors must have finite linear RGB values in [0, 1]");
+            }
+        }
+    }
+    if (_kind == GenerationKind::ProceduralSky && _realized.solar.enabled)
+    {
+        const auto& solar = _realized.solar;
+        const float directionLength = glm::length(solar.direction);
+        if (!std::isfinite(directionLength) || std::abs(directionLength - 1.0f) > 1.0e-4f ||
+            !std::isfinite(solar.angularRadius) || solar.angularRadius <= 0.0f || solar.angularRadius >= 1.570796327f ||
+            !std::isfinite(solar.skyIntensity) || solar.skyIntensity < 0.0f)
+        {
+            throw std::invalid_argument("Invalid resolved procedural solar state");
+        }
+        for (int i = 0; i < 3; ++i)
+        {
+            if (!std::isfinite(solar.diskRadiance[i]) || solar.diskRadiance[i] < 0.0f)
+            {
+                throw std::invalid_argument("Procedural solar radiance must be finite and nonnegative");
             }
         }
     }
@@ -270,6 +295,9 @@ void CubemapRenderer::recordGeneration(gpu::CommandBuffer& command)
         push.skyHorizonColor = glm::vec4(_realized.skyHorizonColor.r, _realized.skyHorizonColor.g, _realized.skyHorizonColor.b, 1.0f);
         push.skyZenithColor = glm::vec4(_realized.skyZenithColor.r, _realized.skyZenithColor.g, _realized.skyZenithColor.b, 1.0f);
         push.groundColor = glm::vec4(_realized.groundColor.r, _realized.groundColor.g, _realized.groundColor.b, 1.0f);
+        push.sunDirectionRadius = glm::vec4(_realized.solar.direction, _realized.solar.angularRadius);
+        push.sunRadiance = glm::vec4(_realized.solar.diskRadiance, _realized.solar.enabled ? 1.0f : 0.0f);
+        push.solarParameters = glm::vec4(_realized.solar.skyIntensity, _realized.includeSolarDisk ? 1.0f : 0.0f, 0.0f, 0.0f);
         command.pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(push), &push);
         command.draw(3);
     };

@@ -22,6 +22,7 @@
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
+#include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/utils/TextureCache.hpp>
 
 #include <cmath>
@@ -65,9 +66,36 @@ EnvironmentComponent::EnvironmentComponent(const std::filesystem::path& resource
 std::shared_ptr<Component> EnvironmentComponent::clone() const
 {
     auto copy = std::make_shared<EnvironmentComponent>(*this);
+    copy->_solarSnapshot = solarState();
+    if (_owner && _owner->light())
+    {
+        copy->_solarSnapshot = base::evaluateSolarLight(_owner->light()->light(), _owner->light()->direction());
+    }
     copy->_owner = nullptr;
     return copy;
 }
+
+base::SolarState EnvironmentComponent::solarState() const
+{
+    if (!_environmentImage.empty())
+    {
+        return {};
+    }
+    if (!_owner)
+    {
+        return _solarSnapshot;
+    }
+    for (auto* ancestor = _owner; ancestor; ancestor = ancestor->parent())
+    {
+        if (ancestor->disabled())
+        {
+            return {};
+        }
+    }
+    const auto* light = _owner->light();
+    return light ? base::evaluateSolarLight(light->light(), light->direction()) : base::SolarState{};
+}
+
 
 EnvironmentComponent::~EnvironmentComponent()
 {

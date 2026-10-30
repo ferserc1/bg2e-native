@@ -47,7 +47,20 @@ reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
                                                                    .enumValue("Omni", base::Light::TypeOmni)
                                                                    .enumValue("Spot", base::Light::TypeSpot)
                                                                    .enumValue("Directional", base::Light::TypeDirectional)
+                                                                   .enumValue("Sun", base::Light::TypeSun)
                                                                    .enumValue("Disabled", base::Light::TypeDisabled);
+
+                                                               t.property("solarRadiusKm", &base::Light::solarRadiusKm, &base::Light::setSolarRadiusKm)
+                                                                   .displayName("Solar Radius (km)")
+                                                                   .category("Sun")
+                                                                   .min(0.001).drag().step(100.0)
+                                                                   .tooltip("Physical emitter radius in kilometers; used for disk and shadow angular radius.");
+
+                                                               t.property("solarDistanceMillionKm", &base::Light::solarDistanceMillionKm, &base::Light::setSolarDistanceMillionKm)
+                                                                   .displayName("Solar Distance (million km)")
+                                                                   .category("Sun")
+                                                                   .min(0.000001).drag().step(0.1)
+                                                                   .tooltip("Distance in millions of kilometers. Intensity uses existing engine units at 149.6 million km.");
 
                                                                t.property("spotAngle", &base::Light::spotAngle, &base::Light::setSpotAngle)
                                                                    .displayName("Spot Angle")
@@ -74,6 +87,7 @@ reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
 
                                                                t.property("sourceSize", &base::Light::sourceSize, &base::Light::setSourceSize)
                                                                    .displayName("Source Size")
+                                                                   .tooltip("Directional angular radius in degrees; Sun derives this value from its physical radius and distance.")
                                                                    .category("Ray Tracing")
                                                                    .range(0.0, 10.0)
                                                                    .drag()

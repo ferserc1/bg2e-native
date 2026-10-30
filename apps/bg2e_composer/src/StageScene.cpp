@@ -182,7 +182,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createPrimitive(unsigned kind)
         break;
     case 2:
         name = "Plane";
-        mesh.reset(bg2e::geo::createPlane(2.0f, 2.0f));
+        mesh.reset(bg2e::geo::createPlane(10.0f, 10.0f));
         break;
     default:
         throw std::invalid_argument("Unknown scene primitive");

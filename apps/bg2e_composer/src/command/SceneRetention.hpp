@@ -40,6 +40,8 @@ class SceneRetention {
     std::shared_ptr<bg2e::scene::Component> component;
     size_t bytes = 0;
 
+    size_t currentBytes() const;
+    size_t growthBytes() const;
     void refreshBudget();
     bool detached() const;
     void release(StageScene& stage);

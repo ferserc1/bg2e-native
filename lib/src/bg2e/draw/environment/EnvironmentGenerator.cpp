@@ -41,7 +41,7 @@ void EnvironmentResources::validate(gpu::Device* device) const
     {
         throw std::invalid_argument("Environment samplers/settings belong to an invalid context");
     }
-    for (const auto& image : {sky, irradiance, prefilteredSpecular, brdf})
+    for (const auto& image : {sky, irradiance, prefilteredSpecular, brdf, skyboxBackground ? skyboxBackground : sky})
     {
         if (!image || !image->isValid() || image->device() != device ||
             !gpu::hasFlag(image->usage(), gpu::ImageUsage::Sampled) ||
@@ -51,7 +51,8 @@ void EnvironmentResources::validate(gpu::Device* device) const
             throw std::invalid_argument("Environment requires complete same-device shader-readable linear HDR images");
         }
     }
-    if (!sky->isCubemap() || !irradiance->isCubemap() || !prefilteredSpecular->isCubemap() || brdf->isCubemap() ||
+    if ((skyboxBackground && (!skyboxBackground->isCubemap() || !solar.enabled)) ||
+        !sky->isCubemap() || !irradiance->isCubemap() || !prefilteredSpecular->isCubemap() || brdf->isCubemap() ||
         irradiance->mipLevels() != 1 || brdf->mipLevels() != 1 || prefilteredSpecular->mipLevels() < 2)
     {
         throw std::invalid_argument("Invalid environment image type/mip layout");
@@ -180,7 +181,8 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::generate(std::
     auto next = std::make_shared<EnvironmentResources>();
     // A wide-range source must not overflow again in an intermediate cubemap.
     // Preserve requested settings; only the realized generation uses promotion.
-    const bool wideRadiance = source && source->pixelFormat() == gpu::PixelFormat::R32G32B32A32_SFLOAT;
+    const bool wideRadiance = (source && source->pixelFormat() == gpu::PixelFormat::R32G32B32A32_SFLOAT) ||
+        (!source && conversion->settings().solar.enabled);
     const auto radiance = [&](const std::shared_ptr<CubemapRenderer>& tool, std::shared_ptr<gpu::Image> input)
     {
         const auto requested = tool->settings().format;
@@ -201,7 +203,26 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::generate(std::
         }
     };
     next->sky = radiance(conversion, std::move(source));
-    next->irradiance = radiance(_configuration.irradiance, next->sky);
+    auto diffuseSource = next->sky;
+    if (conversion == _configuration.defaultSky && conversion->settings().solar.enabled && conversion->settings().includeSolarDisk)
+    {
+        // Direct solar illumination already comes from the directional light.
+        // Keep the disk in sky/specular, but exclude it from diffuse irradiance.
+        conversion->settings().includeSolarDisk = false;
+        try
+        {
+            diffuseSource = radiance(conversion, {});
+        }
+        catch (...)
+        {
+            conversion->settings().includeSolarDisk = true;
+            throw;
+        }
+        conversion->settings().includeSolarDisk = true;
+        next->skyboxBackground = diffuseSource;
+        next->solar = conversion->settings().solar;
+    }
+    next->irradiance = radiance(_configuration.irradiance, diffuseSource);
     next->prefilteredSpecular = radiance(_configuration.specular, next->sky);
     next->brdf = _configuration.brdf->generate(*_engine);
     bool linear = true;
@@ -292,6 +313,15 @@ bool EnvironmentGenerator::synchronize(const scene::EnvironmentComponent* compon
     if (_configuration.defaultSky)
     {
         auto& settings = _configuration.defaultSky->settings();
+        const auto solar = component ? component->solarState() : base::SolarState{};
+        if (!(settings.solar == solar))
+        {
+            settings.solar = solar;
+            if (path.empty())
+            {
+                _rebuildRequested = true;
+            }
+        }
         const auto skyHorizonColor = component ? component->skyHorizonColor() : base::Color{0.55f, 0.65f, 0.8f};
         if (settings.skyHorizonColor.r != skyHorizonColor.r || settings.skyHorizonColor.g != skyHorizonColor.g || settings.skyHorizonColor.b != skyHorizonColor.b)
         {
@@ -346,6 +376,7 @@ EnvironmentGenerator::State EnvironmentGenerator::captureState() const
         state.horizon = settings.skyHorizonColor;
         state.zenith = settings.skyZenithColor;
         state.ground = settings.groundColor;
+        state.solar = settings.solar;
     }
     return state;
 }
@@ -382,6 +413,7 @@ void EnvironmentGenerator::exchangeState(State& state) noexcept
         swap(settings.skyHorizonColor, state.horizon);
         swap(settings.skyZenithColor, state.zenith);
         swap(settings.groundColor, state.ground);
+        swap(settings.solar, state.solar);
     }
 }
 

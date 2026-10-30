@@ -137,6 +137,7 @@ GeometryEdit::GeometryEdit(const std::shared_ptr<StageScene>& stage,
     : _stage(stage), _stopProducers(std::move(stopProducers)), _operation(operation), _info{name(operation), "geometry.transform"}
 {
     captureTargets(stage, targets);
+    prepareInitial();
 }
 
 GeometryEdit::GeometryEdit(const std::shared_ptr<StageScene>& stage,
@@ -151,6 +152,7 @@ GeometryEdit::GeometryEdit(const std::shared_ptr<StageScene>& stage,
     }
     _groups.front().after = std::make_shared<Mesh>(prepared);
     _groups.front().capacityBound = std::max(_groups.front().capacityBound, bytes(prepared));
+    prepareInitial();
 }
 
 TransformGeometry::TransformGeometry(const std::shared_ptr<StageScene>& stage,
@@ -239,16 +241,29 @@ void GeometryEdit::validate() const
     {
         auto node = target.node.lock();
         auto drawable = target.drawable.lock();
-        if (drawable && (drawable->rayTracingEnabled() || !drawable->rayTracingMeshes().empty()))
-        {
-            throw std::logic_error("Geometry history with ray tracing requires an acceleration-memory adapter");
-        }
         if (!node || !stage->contains(node.get()) || !drawable || !node->drawable() ||
             node->drawable()->drawable() != drawable || drawable->mesh() != _groups[target.group].mesh.lock() ||
-            !drawable->isLoaded() || !drawable->drawMesh() || drawable->rayTracingEnabled() || !drawable->rayTracingMeshes().empty() ||
+            !drawable->isLoaded() || !drawable->drawMesh() ||
             !equal(*drawable->mesh(), drawable->drawMesh()->meshData()))
         {
-            throw std::logic_error("Geometry identity, raster realization or acceleration eligibility changed");
+            throw std::logic_error("Geometry identity or raster realization changed");
+        }
+        const auto& tracing = drawable->rayTracingMeshes();
+        if (tracing.size() != (drawable->rayTracingEnabled() ? drawable->submeshesCount() : 0))
+        {
+            throw std::logic_error("Geometry acceleration membership changed");
+        }
+        for (size_t sub = 0; sub < tracing.size(); ++sub)
+        {
+            const auto& blas = tracing[sub];
+            const auto range = drawable->mesh()->submeshes[sub];
+            if (!blas || !blas->isBuilt() || blas->device() != drawable->engine()->device() ||
+                blas->description().vertexBuffer != drawable->drawMesh()->vertexBuffer() ||
+                blas->description().indexBuffer != drawable->drawMesh()->indexBuffer() ||
+                blas->description().firstIndex != range.firstIndex || blas->description().indexCount != range.indexCount)
+            {
+                throw std::logic_error("Geometry acceleration realization changed");
+            }
         }
     }
     // New live aliases cannot silently keep an old raster representation.
@@ -273,6 +288,61 @@ void GeometryEdit::validate() const
     };
     visit(visit, stage->document().root);
 }
+
+void GeometryEdit::prepareInitial()
+{
+    if (_stopProducers)
+    {
+        _stopProducers();
+    }
+    for (auto& group : _groups)
+    {
+        auto source = group.mesh.lock();
+        group.before = std::make_shared<Mesh>(*source);
+        if (!_replacement)
+        {
+            auto next = std::make_shared<Mesh>(*source);
+            glm::mat4 matrix(1);
+            glm::mat3 directions(1);
+            if (_operation == Operation::Center || _operation == Operation::PutOnFloor)
+            {
+                bg2e::geo::AABoundingBox<Mesh> bounds(*source);
+                const glm::vec3 offset = _operation == Operation::Center ? -bounds.center() : glm::vec3(0, -bounds.min().y, 0);
+                matrix = glm::translate(matrix, offset);
+            }
+            else if (_operation == Operation::ZUpToYUp)
+            {
+                matrix[1] = glm::vec4(0, 0, 1, 0);
+                matrix[2] = glm::vec4(0, -1, 0, 0);
+                directions = glm::mat3(matrix);
+            }
+            else
+            {
+                const float scale = _operation == Operation::CentimetersToMeters ? 0.01f : 100.0f;
+                matrix = glm::scale(matrix, glm::vec3(scale));
+            }
+            for (auto& vertex : next->vertices)
+            {
+                vertex.position = glm::vec3(matrix * glm::vec4(vertex.position, 1));
+                vertex.normal = directions * vertex.normal;
+                vertex.tangent = directions * vertex.tangent;
+            }
+            group.after = std::move(next);
+        }
+        validateData(*group.after);
+        group.capacityBound = std::max({group.capacityBound, bytes(*group.before), bytes(*group.after)});
+        _effective = _effective || !equal(*group.before, *group.after);
+    }
+    if (!_effective)
+    {
+        return;
+    }
+    for (auto& target : _targets)
+    {
+        target.alternate = target.drawable.lock()->prepareGeometry(*_groups[target.group].after);
+    }
+}
+
 
 const bg2e::app::CommandInfo& GeometryEdit::info() const noexcept
 {
@@ -306,7 +376,28 @@ bg2e::app::CommandMemory GeometryEdit::memory() const
             }
         }
     }
-    return {budget, {}};
+    for (const auto& target : _targets)
+    {
+        budget = add(budget, target.alternate.accelerationBytes());
+        if (auto drawable = target.drawable.lock())
+        {
+            for (const auto& blas : drawable->rayTracingMeshes())
+            {
+                budget = add(budget, add(65536, blas->retainedBytes()));
+            }
+        }
+    }
+    bg2e::app::CommandMemory result{budget, {}};
+    for (const auto& target : _targets)
+    {
+        if (auto owner = target.alternate.resourceOwner())
+        {
+            // Native payload is reserved above. Register a resource identity so
+            // Composer drains GPU work before destroying an evicted command.
+            result.resources.push_back({std::move(owner), 0});
+        }
+    }
+    return result;
 }
 
 bg2e::app::CommandResult GeometryEdit::execute() noexcept
@@ -338,89 +429,40 @@ bg2e::app::CommandResult GeometryEdit::apply(bool forward, bool initial) noexcep
             return {CommandStatus::Rejected, "Prepared geometry job or source revision changed"};
         }
         validate();
-        std::vector<std::shared_ptr<Mesh>> sources;
-        std::vector<Mesh> candidates;
-        bool effective = false;
-        for (auto& group : _groups)
-        {
-            auto source = group.mesh.lock();
-            sources.push_back(source);
-            if (initial && _replacement)
-            {
-                group.before = std::make_shared<Mesh>(*source);
-            }
-            if (initial && !_replacement)
-            {
-                glm::vec3 offset(0);
-                if (_operation == Operation::Center || _operation == Operation::PutOnFloor)
-                {
-                    bg2e::geo::AABoundingBox<Mesh> bounds(*source);
-                    offset = _operation == Operation::Center ? -bounds.center() : glm::vec3(0, -bounds.min().y, 0);
-                    group.forward = glm::translate(glm::mat4(1), offset);
-                }
-                else if (_operation == Operation::ZUpToYUp)
-                {
-                    // Match the existing ZtoY modifier: (x, y, z) -> (x, -z, y).
-                    group.forward[1] = glm::vec4(0, 0, 1, 0);
-                    group.forward[2] = glm::vec4(0, -1, 0, 0);
-                    group.directions = glm::mat3(group.forward);
-                }
-                else
-                {
-                    const float scale = _operation == Operation::CentimetersToMeters ? 0.01f : 100.0f;
-                    group.forward = glm::scale(glm::mat4(1), glm::vec3(scale));
-                }
-                const auto determinant = glm::determinant(group.forward);
-                if (!std::isfinite(determinant) || determinant <= 1e-12f)
-                {
-                    throw std::invalid_argument("Geometry transform is singular, reflected or nonfinite");
-                }
-                group.inverse = glm::inverse(group.forward);
-                group.inverseDirections = glm::inverse(group.directions);
-            }
-            auto& next = candidates.emplace_back(_replacement ? *(forward ? group.after : group.before) : *source);
-            if (!_replacement)
-            {
-                const auto& matrix = forward ? group.forward : group.inverse;
-                const auto& directions = forward ? group.directions : group.inverseDirections;
-                for (auto& vertex : next.vertices)
-                {
-                    vertex.position = glm::vec3(matrix * glm::vec4(vertex.position, 1));
-                    // All supported transforms have positive determinant and
-                    // uniform scale/rigid rotation: preserve normal/tangent
-                    // magnitudes, zero vectors, UVs, indices and winding.
-                    vertex.normal = directions * vertex.normal;
-                    vertex.tangent = directions * vertex.tangent;
-                }
-            }
-            validateData(next);
-            effective = effective || !equal(*source, next);
-        }
-        if (!effective && initial)
+        if (!_effective && initial)
         {
             return {};
+        }
+        std::vector<std::shared_ptr<Mesh>> sources;
+        std::vector<Mesh> candidates;
+        for (const auto& group : _groups)
+        {
+            auto source = group.mesh.lock();
+            if (!equal(*source, *(_applied ? group.after : group.before)))
+            {
+                return {CommandStatus::Rejected, "Geometry contents changed outside this command"};
+            }
+            sources.push_back(source);
+            candidates.push_back(*(forward ? group.after : group.before));
         }
         if (_stopProducers)
         {
             _stopProducers();
         }
         std::vector<std::shared_ptr<bg2e::draw::Drawable>> drawables;
-        std::vector<bg2e::draw::Drawable::PreparedGeometry> prepared;
         for (const auto& target : _targets)
         {
             auto drawable = target.drawable.lock();
-            drawables.push_back(drawable);
-            prepared.push_back(drawable->prepareGeometry(candidates[target.group]));
-        }
-        for (size_t i = 0; i < drawables.size(); ++i)
-        {
-            if (!drawables[i]->canExchangeGeometry(prepared[i]))
+            if (!drawable->canExchangeGeometry(target.alternate))
             {
-                return {CommandStatus::Rejected, "Prepared raster owner changed"};
+                return {CommandStatus::Rejected, "Prepared geometry owner changed"};
             }
+            drawables.push_back(drawable);
         }
+        // Drain all readers of the old CPU/raster/BLAS version before exchange.
+        drawables.front()->engine()->device()->waitIdleForResourceUpdate();
         // Every fallible allocation/upload has completed. Retain displaced CPU
-        // data and raster bindings locally until the full batch is published.
+        // data locally and complete GPU versions in the command throughout publication.
         for (size_t i = 0; i < sources.size(); ++i)
         {
             using std::swap;
@@ -428,12 +470,12 @@ bg2e::app::CommandResult GeometryEdit::apply(bool forward, bool initial) noexcep
         }
         for (size_t i = 0; i < drawables.size(); ++i)
         {
-            if (!drawables[i]->exchangeGeometry(prepared[i]))
+            if (!drawables[i]->exchangeGeometry(_targets[i].alternate))
             {
                 bool recovered = true;
                 for (size_t j = 0; j < i; ++j)
                 {
-                    recovered = drawables[j]->exchangeGeometry(prepared[j]) && recovered;
+                    recovered = drawables[j]->exchangeGeometry(_targets[j].alternate) && recovered;
                 }
                 for (size_t j = 0; j < sources.size(); ++j)
                 {

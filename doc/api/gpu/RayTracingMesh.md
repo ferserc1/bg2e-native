@@ -12,6 +12,7 @@ public:
     const RayTracingMeshDescription& description() const;
 
     uint64_t buildGeneration() const;
+    virtual size_t retainedBytes() const noexcept = 0;
 
     virtual bool isBuilt() const = 0;   // true once built on the GPU
 
@@ -48,11 +49,26 @@ if (!physicalDevice->properties()->rayTracingSupported()) {
 }
 ```
 
-Created via [`Device::createRayTracingMesh()`](Device.md). The acceleration
-structure storage and scratch buffers are allocated at creation time, but the
-actual build is a GPU command — record it with
+Created via [`Device::createRayTracingMesh()`](Device.md). Vulkan allocates
+acceleration storage and scratch buffers at creation; Metal allocates them
+lazily on build. The actual build is a GPU command — record it with
 [`CommandBuffer::buildRayTracingMesh()`](CommandBuffer.md), typically inside a
 `Device::immediateSubmit`.
+
+## Retained allocation accounting
+
+`retainedBytes()` returns resident native acceleration storage plus build scratch
+that remains allocated. Vulkan reports the VMA allocation sizes, including scratch
+alignment padding. Metal reports the acceleration structure size plus scratch
+buffer length. It returns zero before allocation and after cleanup. Borrowed
+vertex/index buffers, CPU wrapper metadata and opaque driver bookkeeping are
+excluded; callers budget those separately. Custom backends must implement this
+method and report all native allocations retained by their BLAS wrapper.
+
+The method reports storage, not GPU completion or permission to destroy the
+object. Keep the source buffers alive, retain BLAS referenced by submitted TLAS
+versions, and wait for completion before cleanup. Composer history retains whole
+raster/BLAS versions and drains GPU readers at publication/retirement boundaries.
 
 ---
 

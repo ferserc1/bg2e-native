@@ -23,6 +23,8 @@
 #include <bg2e/json/NodeReader.hpp>
 
 #include <memory>
+#include <cmath>
+#include <stdexcept>
 
 namespace bg2e {
 namespace base {
@@ -34,6 +36,7 @@ class Light {
         TypeOmni = 5,
         TypeSpot = 1,
         TypeDirectional = 4,
+        TypeSun = 6,
 
         TypeDisabled = 10
     };
@@ -122,6 +125,32 @@ class Light {
         return _affectsReflections;
     }
 
+    // Solar dimensions are independent of scene units. Intensity retains engine units.
+    virtual float solarRadiusKm() const
+    {
+        return _solarRadiusKm;
+    }
+    virtual void setSolarRadiusKm(float radius)
+    {
+        if (!std::isfinite(radius) || radius <= 0.0f)
+        {
+            throw std::invalid_argument("Solar radius must be finite and positive (km)");
+        }
+        _solarRadiusKm = radius;
+    }
+    virtual float solarDistanceMillionKm() const
+    {
+        return _solarDistanceMillionKm;
+    }
+    virtual void setSolarDistanceMillionKm(float distance)
+    {
+        if (!std::isfinite(distance) || distance <= 0.0f)
+        {
+            throw std::invalid_argument("Solar distance must be finite and positive (million km)");
+        }
+        _solarDistanceMillionKm = distance;
+    }
+
     std::string typeString() const
     {
         switch (_type)
@@ -132,6 +161,8 @@ class Light {
             return "kTypeSpot";
         case TypeDirectional:
             return "kTypeDirectional";
+        case TypeSun:
+            return "kTypeSun";
         default:
             return "kTypeDisabled";
         }
@@ -167,11 +198,17 @@ class Light {
             {
                 _type = TypeDirectional;
             }
+            else if (*type == "kTypeSun")
+            {
+                _type = TypeSun;
+            }
             else
             {
                 _type = TypeDisabled;
             }
         }
+        setSolarRadiusKm(float(reader.getNumber("solarRadiusKm").value_or(695700.0)));
+        setSolarDistanceMillionKm(float(reader.getNumber("solarDistanceMillionKm").value_or(149.6)));
         if (auto value = reader.getNumber("spotAngle"))
         {
             _spotAngle = *value;
@@ -205,6 +242,8 @@ class Light {
             {"color", JSON(_color)},
             {"intensity", JSON(_intensity)},
             {"type", JSON(typeString())},
+            {"solarRadiusKm", JSON(_solarRadiusKm)},
+            {"solarDistanceMillionKm", JSON(_solarDistanceMillionKm)},
             {"spotAngle", JSON(_spotAngle)},
             {"spotCutoff", JSON(_spotCutoff)},
             {"castShadows", JSON(_castShadows)},
@@ -218,6 +257,8 @@ class Light {
     Color _color{1.0f, 1.0f, 1.0f, 1.0f};
     float _intensity = 1.0f;
     LightType _type = TypeOmni;
+    float _solarRadiusKm = 695700.0f;
+    float _solarDistanceMillionKm = 149.6f;
     float _spotAngle = 22.0f;
     float _spotCutoff = 14.0f;
     bool _castShadows = true;

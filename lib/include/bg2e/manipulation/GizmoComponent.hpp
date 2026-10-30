@@ -48,7 +48,8 @@ enum class GizmoType
     SpotLight,
     DirectionalLight,
     Environment,
-    Transform
+    Transform,
+    SunLight
 };
 
 // Identifies which part of the transform gizmo is being interacted with. The

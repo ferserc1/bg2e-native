@@ -23,10 +23,37 @@ allowed; incompatible resources reject. Inactive environment edits preserve the
 active publication. General structural edits to file-backed environments remain
 protected; prepared presets have a dedicated retained adapter.
 
-GPU realizations are derived and may be rebuilt during undo/redo. Preparation
+GPU realizations are derived; environment replay may rebuild them. Geometry
+commands instead retain complete raster/BLAS versions for exchange. Preparation
 occurs while publication is stopped; resource retirement waits for the
-application's GPU drain. Native acceleration-backed geometry/structure has no
-retention adapter and rejects.
+application's GPU drain.
+
+## Ray tracing geometry and structural retention
+
+Structural history accepts built BLAS whose borrowed vertex/index buffers match
+the retained Drawable's raster mesh. The node/component lease keeps the Drawable,
+raster buffers and BLAS alive across removal, undo and redo. Removing a node does
+not destroy this retained version. Instance extraction still visits only the
+current scene/render queue: a node owned only by history is absent from the next
+TLAS. Previously submitted frames may continue using the old TLAS until drained.
+
+`gpu::RayTracingMesh::retainedBytes()` reports native acceleration and retained
+scratch storage. Vulkan uses VMA allocation sizes; Metal reports acceleration
+storage and scratch buffer length. Borrowed raster buffers and opaque driver
+bookkeeping are excluded. Structural retention includes these native bytes in
+its existing conservative Drawable estimate and deduplicates repeated BLAS
+identities within that Drawable.
+
+Shared lease reservations remain stable in the history ledger. A later structure
+or component-membership command reserves any growth above that lease's original
+budget locally, covering intervening geometry replacement without changing the
+size associated with an identity already registered by another command. This is
+conservative accounting, not a global exact VRAM allocator.
+
+Detached resources are cleaned only after the last history lease is retired and
+GPU work is drained. Geometry commands also register their native versions with
+the deferred release ledger; see [geometry](composer-geometry.md). Primitives keep
+ray tracing enabled by default and no longer require a raster-only workaround.
 
 ## Import, UV2 and lightmap adoption
 

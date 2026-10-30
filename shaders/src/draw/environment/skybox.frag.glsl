@@ -23,6 +23,8 @@ layout(push_constant) uniform Push
 {
     mat4 inverseViewProjection;
     vec4 parameters;
+    vec4 sunDirectionRadius;
+    vec4 sunRadiance;
 } params;
 layout(location = 0) out vec4 outColor;
 void main()
@@ -30,5 +32,15 @@ void main()
     vec2 uv = gl_FragCoord.xy / params.parameters.xy;
     vec4 world = params.inverseViewProjection * vec4(uv.x * 2.0 - 1.0, 1.0 - uv.y * 2.0, 1.0, 1.0);
     vec3 direction = normalize(world.xyz);
-    outColor = vec4(textureLod(samplerCube(sky, skySampler), direction, params.parameters.z).rgb * exp2(params.parameters.w), 1.0);
+    vec3 color = textureLod(samplerCube(sky, skySampler), direction, params.parameters.z).rgb;
+    // Chord distance is stable for the small physical solar angle. Evaluate
+    // coverage at screen resolution rather than magnifying cubemap texels.
+    float chord = length(direction - params.sunDirectionRadius.xyz);
+    float radius = 2.0 * sin(0.5 * params.sunDirectionRadius.w);
+    float edge = max(0.5 * (length(dFdx(direction)) + length(dFdy(direction))), 1e-7);
+    float disk = 1.0 - smoothstep(max(radius - edge, 0.0), radius + edge, chord);
+    float horizonEdge = max(0.5 * fwidth(direction.y), 1e-7);
+    float horizon = smoothstep(-horizonEdge, horizonEdge, direction.y);
+    color += params.sunRadiance.rgb * disk * horizon * params.sunRadiance.w;
+    outColor = vec4(color * exp2(params.parameters.w), 1.0);
 }

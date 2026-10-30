@@ -29,13 +29,17 @@ namespace {
 struct SkyboxPush {
     glm::mat4 inverseViewProjection;
     glm::vec4 parameters; // width, height, specular LOD, exposure
+    glm::vec4 sunDirectionRadius;
+    glm::vec4 sunRadiance; // RGB radiance, analytic disk enabled
 };
-static_assert(sizeof(SkyboxPush) == 80);
+static_assert(sizeof(SkyboxPush) == 112);
 }
+
 float SkyboxRenderer::exposure() const
 {
     return _settings.exposure;
 }
+
 void SkyboxRenderer::setExposure(float value)
 {
     if (!std::isfinite(value) || std::abs(value) > 32)
@@ -44,6 +48,7 @@ void SkyboxRenderer::setExposure(float value)
     }
     _settings.exposure = value;
 }
+
 void SkyboxRenderer::setCamera(const glm::mat4& view, const glm::mat4& projection)
 {
     const auto matrix = projection * glm::mat4(glm::mat3(view));
@@ -53,6 +58,7 @@ void SkyboxRenderer::setCamera(const glm::mat4& view, const glm::mat4& projectio
     }
     _inverseViewProjection = glm::inverse(matrix);
 }
+
 void SkyboxRenderer::setEnvironment(std::shared_ptr<const EnvironmentResources> resources)
 {
     if (_engine)
@@ -63,7 +69,8 @@ void SkyboxRenderer::setEnvironment(std::shared_ptr<const EnvironmentResources> 
     {
         resources->validate(_engine->device());
         auto skySet = _engine->device()->createResourceSet(_layout.get(), 0);
-        skySet->setSampledImage({.vulkan = 0, .metal = 0}, resources->sky.get());
+        skySet->setSampledImage({.vulkan = 0, .metal = 0},
+            resources->skyboxBackground ? resources->skyboxBackground.get() : resources->sky.get());
         skySet->setSampler({.vulkan = 1, .metal = 0}, resources->sampler.get());
         skySet->update();
         auto blurSet = _engine->device()->createResourceSet(_layout.get(), 0);
@@ -80,6 +87,7 @@ void SkyboxRenderer::setEnvironment(std::shared_ptr<const EnvironmentResources> 
     }
     _environment = std::move(resources);
 }
+
 void SkyboxRenderer::initialize(Engine& engine, gpu::PixelFormat color, gpu::PixelFormat depth)
 {
     if (_engine && _engine != &engine)
@@ -113,6 +121,7 @@ void SkyboxRenderer::initialize(Engine& engine, gpu::PixelFormat color, gpu::Pix
     }
     setEnvironment(std::move(environment));
 }
+
 void SkyboxRenderer::initialize(Engine& engine, const pipeline::LayerConfiguration& configuration)
 {
     gpu::PixelFormat color = gpu::PixelFormat::Undefined;
@@ -134,6 +143,7 @@ void SkyboxRenderer::initialize(Engine& engine, const pipeline::LayerConfigurati
     }
     initialize(engine, color, depth);
 }
+
 void SkyboxRenderer::draw(gpu::CommandBuffer& command, gpu::Size2D extent)
 {
     if (!_pipeline || !_environment || !_skySet || !_blurSet || extent.width == 0 || extent.height == 0 ||
@@ -148,11 +158,16 @@ void SkyboxRenderer::draw(gpu::CommandBuffer& command, gpu::Size2D extent)
     const auto blur = _environment->skyboxBlur;
     SkyboxPush push{_inverseViewProjection, {float(extent.width), float(extent.height),
         blur * float(_environment->prefilteredSpecular->mipLevels() - 1), _settings.exposure}};
+    const auto& solar = _environment->solar;
+    push.sunDirectionRadius = glm::vec4(solar.direction, solar.angularRadius);
+    push.sunRadiance = glm::vec4(solar.diskRadiance,
+        blur == 0.0f && _environment->skyboxBackground && solar.enabled ? 1.0f : 0.0f);
     command.bindPipeline(_pipeline.get());
     command.bindResourceSet(_pipeline.get(), 0, blur > 0 ? _blurSet.get() : _skySet.get());
     command.pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(push), &push);
     command.draw(3);
 }
+
 void SkyboxRenderer::record(const pipeline::PassContext& context)
 {
     if (&context.frame.engine != _engine)
@@ -210,16 +225,20 @@ void SkyboxRenderer::record(const pipeline::PassContext& context)
     command.endRendering();
     command.transition(color, gpu::ImageLayout::ShaderReadOnly, {0, 1, 0, 1});
 }
+
 const pipeline::PassContract& SkyboxRenderer::contract() const
 {
     return _contract;
 }
+
 void SkyboxRenderer::attachScene(std::shared_ptr<scene::Node>)
 {
 }
+
 void SkyboxRenderer::update(const FrameContext&)
 {
 }
+
 void SkyboxRenderer::resize(const pipeline::LayerConfiguration& configuration)
 {
     if (!_engine)
@@ -228,6 +247,7 @@ void SkyboxRenderer::resize(const pipeline::LayerConfiguration& configuration)
     }
     initialize(*_engine, configuration);
 }
+
 void SkyboxRenderer::cleanup()
 {
     if (_engine)

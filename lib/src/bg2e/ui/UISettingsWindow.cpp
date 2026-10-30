@@ -114,6 +114,7 @@ void UISettingsWindow::drawUI()
         {"Point Light", GizmoType::PointLight},
         {"Spot Light", GizmoType::SpotLight},
         {"Directional Light", GizmoType::DirectionalLight},
+        {"Sun Light", GizmoType::SunLight},
         {"Environment", GizmoType::Environment},
     };
 

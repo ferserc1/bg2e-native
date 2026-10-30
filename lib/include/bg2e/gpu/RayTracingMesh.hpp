@@ -23,6 +23,7 @@
 #include <bg2e/gpu/DeviceResource.hpp>
 
 #include <cstdint>
+#include <cstddef>
 #include <string>
 
 namespace bg2e {
@@ -77,6 +78,10 @@ class BG2E_API RayTracingMesh : public DeviceResource {
     {
         return _buildGeneration;
     }
+
+    // Resident native allocation bytes, including retained build scratch.
+    // Excludes borrowed vertex/index buffers and driver-private bookkeeping.
+    virtual size_t retainedBytes() const noexcept = 0;
 
     // True once the acceleration structure has been built on the GPU.
     virtual bool isBuilt() const = 0;

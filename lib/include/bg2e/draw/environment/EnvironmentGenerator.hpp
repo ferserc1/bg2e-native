@@ -60,6 +60,7 @@ class BG2E_API EnvironmentGenerator {
         bool pathSource = false;
         bool rebuildRequested = false;
         base::Color horizon, zenith, ground;
+        base::SolarState solar;
     };
     State captureState() const;
     State prepareState(const scene::EnvironmentComponent* component);

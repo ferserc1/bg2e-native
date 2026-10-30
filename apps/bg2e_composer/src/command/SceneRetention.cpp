@@ -57,10 +57,6 @@ size_t drawableBytes(const std::shared_ptr<bg2e::draw::Drawable>& drawable)
     {
         return 0;
     }
-    if (!drawable->rayTracingMeshes().empty())
-    {
-        throw std::invalid_argument("Ray tracing branches require a retained acceleration-memory adapter");
-    }
     size_t bytes = sizeof(*drawable);
     if (const auto& mesh = drawable->mesh())
     {
@@ -69,6 +65,20 @@ size_t drawableBytes(const std::shared_ptr<bg2e::draw::Drawable>& drawable)
         bytes = add(bytes, multiply(mesh->submeshes.capacity(), sizeof(bg2e::geo::Submesh)));
         // Realization keeps a CPU geometry copy as well as native buffers.
         bytes = multiply(bytes, 3);
+    }
+    std::set<const bg2e::gpu::RayTracingMesh*> acceleration;
+    for (const auto& blas : drawable->rayTracingMeshes())
+    {
+        if (!blas || !blas->isBuilt() || !drawable->drawMesh() ||
+            blas->description().vertexBuffer != drawable->drawMesh()->vertexBuffer() ||
+            blas->description().indexBuffer != drawable->drawMesh()->indexBuffer())
+        {
+            throw std::invalid_argument("Retained acceleration geometry must match its raster buffers");
+        }
+        if (acceleration.insert(blas.get()).second)
+        {
+            bytes = add(bytes, add(sizeof(*blas), blas->retainedBytes()));
+        }
     }
     std::set<const bg2e::gpu::Image*> images;
     std::set<const void*> sources;
@@ -251,9 +261,20 @@ SceneRetention::SceneRetention(std::shared_ptr<bg2e::scene::Component> value) : 
     refreshBudget();
 }
 
+size_t SceneRetention::currentBytes() const
+{
+    return node ? nodeBytes(node, _preparedEnvironment) : componentBytes(component);
+}
+
+size_t SceneRetention::growthBytes() const
+{
+    const auto current = currentBytes();
+    return current > bytes ? current - bytes : 0;
+}
+
 void SceneRetention::refreshBudget()
 {
-    bytes = node ? nodeBytes(node, _preparedEnvironment) : componentBytes(component);
+    bytes = currentBytes();
 }
 
 bool SceneRetention::detached() const

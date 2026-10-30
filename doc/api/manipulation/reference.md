@@ -85,3 +85,18 @@ address draw::Drawable only. Locks validate node/component membership, resource
 identity, submesh count and pick identifiers. Replacement invalidates stale items.
 GizmoComponent::transformDrawable() returns its instance-owned draw resource;
 cleanupDrawResources releases resources before device teardown.
+
+
+### Solar light gizmo
+
+`GizmoType::SunLight` represents `base::Light::TypeSun`, loading
+`assets/sun-light-gizmo.bg2`. A sphere, ring and radial rays identify the emitter;
+a long arrow points along local +Z, the direction of emitted light. The sky sun
+lies in the opposite direction. A solar light takes priority over an Environment
+on the same node; the existing Camera priority is unchanged. Scale, opacity and
+visibility are independently configurable alongside other light gizmos.
+
+The asset can be regenerated with `python3 scripts/create_sun_light_gizmo.py`.
+It uses named `SolarBody` and `SolarEmissionDirection` submeshes, without transform
+handle names or external textures. See [Environment](../draw/Environment.md#solar-gizmo-asset)
+for the asset format and [Light](../base/Light.md#solar-lights) for solar units.

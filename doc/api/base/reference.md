@@ -12,7 +12,7 @@ Each documentation page uses the same filename as its public header.
 | `Image` | [Image](Image.md) | Owned CPU byte/float pixel storage. |
 | `Texture, ProceduralTextureGenerator` | [Texture](Texture.md) | Texture descriptions and procedural sources. |
 | `MaterialAttributes` | [MaterialAttributes](MaterialAttributes.md) | Material parameters, textures, and revision tracking. |
-| `Light, LightData` | [Light](Light.md) | Illumination settings and transport data. |
+| `Light, LightData, SolarState` | [Light](Light.md) | Illumination settings, solar evaluation and transport data. |
 | `Joint, LinkJoint` | [Joint](Joint.md) | Serializable articulated transforms. |
 | `PlatformTools` | [PlatformTools](PlatformTools.md) | Platform and application resource paths. |
 | `Log` | [Log](Log.md) | Stream-based diagnostic output. |

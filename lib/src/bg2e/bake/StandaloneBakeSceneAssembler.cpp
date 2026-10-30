@@ -322,7 +322,7 @@ void collectDependencies(scene::Node& node, std::set<std::filesystem::path>& pat
             }
             const auto& value = light->light();
             if (value.type() != base::Light::TypeOmni && value.type() != base::Light::TypeSpot &&
-                value.type() != base::Light::TypeDirectional)
+                value.type() != base::Light::TypeDirectional && value.type() != base::Light::TypeSun)
             {
                 throw std::invalid_argument("Unsupported standalone source light type");
             }

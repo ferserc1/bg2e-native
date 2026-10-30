@@ -26,6 +26,7 @@
 
 #include <filesystem>
 #include <bg2e/base/Color.hpp>
+#include <bg2e/base/SolarLight.hpp>
 
 namespace bg2e::draw::environment {
 enum class GenerationKind
@@ -45,6 +46,8 @@ struct GenerationSettings {
     base::Color skyHorizonColor{0.55f, 0.65f, 0.8f};
     base::Color skyZenithColor{0.06f, 0.22f, 0.6f};
     base::Color groundColor{0.04f, 0.035f, 0.025f};
+    base::SolarState solar;
+    bool includeSolarDisk = true; // Disabled for diffuse IBL to avoid duplicate direct sunlight.
 };
 
 // Public GPU-only generation service and EnvironmentPass implementation.

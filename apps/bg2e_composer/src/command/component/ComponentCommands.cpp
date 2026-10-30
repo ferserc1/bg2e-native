@@ -182,6 +182,7 @@ CommandMemory EditMembership::memory() const
         if (lease)
         {
             result.resources.push_back({lease, lease->bytes});
+            result.localBytes += lease->growthBytes();
         }
     }
     if (auto stage = _stage.lock())

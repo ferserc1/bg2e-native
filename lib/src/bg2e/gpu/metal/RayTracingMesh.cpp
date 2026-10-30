@@ -106,6 +106,13 @@ void RayTracingMesh::build(MTL::CommandBuffer* cmd)
         _scratchSize = sizes.buildScratchBufferSize;
     }
 
+    if (!_scratchBuffer)
+    {
+        descriptor->release();
+        throw std::runtime_error("metal::RayTracingMesh: failed to create scratch buffer");
+    }
+    _retainedBytes = static_cast<size_t>(_accelerationStructure->size()) +
+        (_scratchBuffer ? static_cast<size_t>(_scratchBuffer->length()) : 0);
     MTL::AccelerationStructureCommandEncoder* encoder = cmd->accelerationStructureCommandEncoder();
     encoder->buildAccelerationStructure(_accelerationStructure, descriptor, _scratchBuffer, 0);
     encoder->endEncoding();
@@ -117,11 +124,13 @@ void RayTracingMesh::build(MTL::CommandBuffer* cmd)
 
 void RayTracingMesh::cleanup()
 {
+    _retainedBytes = 0;
     if (_scratchBuffer)
     {
         _scratchBuffer->release();
         _scratchBuffer = nullptr;
     }
+    _scratchSize = 0;
     if (_accelerationStructure)
     {
         _accelerationStructure->release();
@@ -145,6 +154,7 @@ RayTracingMesh::~RayTracingMesh()
 }
 void RayTracingMesh::cleanup()
 {
+    _retainedBytes = 0;
 }
 bool RayTracingMesh::isValid() const
 {

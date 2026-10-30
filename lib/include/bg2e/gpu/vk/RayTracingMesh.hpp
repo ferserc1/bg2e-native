@@ -41,6 +41,11 @@ class RayTracingMesh : public gpu::RayTracingMesh {
     RayTracingMesh(const RayTracingMesh&) = delete;
     RayTracingMesh& operator=(const RayTracingMesh&) = delete;
 
+    size_t retainedBytes() const noexcept override
+    {
+        return _retainedBytes;
+    }
+
     void cleanup() override;
     bool isValid() const override
     {
@@ -74,6 +79,7 @@ class RayTracingMesh : public gpu::RayTracingMesh {
 
     VkDeviceAddress _deviceAddress = 0;
     bool _built = false;
+    size_t _retainedBytes = 0;
 
     // Cached geometry inputs (device addresses are stable for the lifetime of
     // the source buffers).

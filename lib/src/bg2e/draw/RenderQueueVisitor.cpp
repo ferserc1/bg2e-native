@@ -21,6 +21,9 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/LightComponent.hpp>
+#include <bg2e/scene/EnvironmentComponent.hpp>
+#include <bg2e/base/SolarLight.hpp>
+#include <numbers>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -50,7 +53,8 @@ void RenderQueueVisitor::enqueue(scene::Node* root, Engine& engine, RenderQueue&
     _world = root->parent() ? root->parent()->worldMatrix() : glm::mat4{1};
     auto* ownerScene = root->sceneRoot()->scene();
     _explicitEnvironment = ownerScene && ownerScene->hasExplicitMainEnvironment();
-    if (auto* selected = _explicitEnvironment ? ownerScene->mainEnvironment() : nullptr)
+    _activeEnvironment = _explicitEnvironment ? ownerScene->mainEnvironment() : nullptr;
+    if (auto* selected = _activeEnvironment)
     {
         auto intent = std::dynamic_pointer_cast<scene::EnvironmentComponent>(selected->clone());
         if (!intent)
@@ -112,6 +116,16 @@ void RenderQueueVisitor::visit(scene::Node* node)
             throw std::logic_error("Load unresolved draw resources before extraction");
         }
     }
+    if (auto* environment = node->environment(); environment && !_queue->environment() && !_explicitEnvironment)
+    {
+        _activeEnvironment = environment;
+        auto intent = std::dynamic_pointer_cast<scene::EnvironmentComponent>(environment->clone());
+        if (!intent)
+        {
+            throw std::logic_error("Environment clone must preserve its component type");
+        }
+        _queue->setEnvironment(std::move(intent));
+    }
     if (auto* component = node->light(); component && component->light().type() != base::Light::TypeDisabled)
     {
         auto& uniforms = _queue->lights();
@@ -120,7 +134,7 @@ void RenderQueueVisitor::visit(scene::Node* node)
             throw std::length_error("Draw light ABI supports at most eight enabled lights");
         }
         const auto& light = component->light();
-        if (light.type() != base::Light::TypeOmni && light.type() != base::Light::TypeSpot && light.type() != base::Light::TypeDirectional)
+        if (light.type() != base::Light::TypeOmni && light.type() != base::Light::TypeSpot && light.type() != base::Light::TypeDirectional && light.type() != base::Light::TypeSun)
         {
             throw std::invalid_argument("Unsupported draw light type");
         }
@@ -138,6 +152,16 @@ void RenderQueueVisitor::visit(scene::Node* node)
         data.directionAngle = {direction / length, light.spotAngle()};
         data.parameters = {light.spotCutoff(), light.sourceSize(), 0, 0};
         data.flags = {uint32_t(light.type()), light.castShadows() ? 1u : 0u, light.shadowSamples(), light.affectsReflections() ? 1u : 0u};
+        if (light.type() == base::Light::TypeSun)
+        {
+            const bool linked = node->environment() && node->environment() == _activeEnvironment &&
+                _activeEnvironment->environmentImage().empty();
+            const auto solar = linked ? _queue->environment()->solarState() : base::evaluateSolarLight(light, direction, false);
+            data.positionIntensity.w = solar.intensity;
+            data.color = glm::vec4(solar.color, color.a);
+            data.parameters.y = solar.angularRadius * 180.0f / std::numbers::pi_v<float>;
+            data.flags.x = uint32_t(base::Light::TypeDirectional);
+        }
         for (const auto& vector : {data.positionIntensity, data.color, data.directionAngle, data.parameters})
         {
             for (int i = 0; i < 4; ++i)
@@ -150,15 +174,7 @@ void RenderQueueVisitor::visit(scene::Node* node)
         }
         ++uniforms.count.x;
     }
-    if (auto* environment = node->environment(); environment && !_queue->environment() && !_explicitEnvironment)
-    {
-        auto intent = std::dynamic_pointer_cast<scene::EnvironmentComponent>(environment->clone());
-        if (!intent)
-        {
-            throw std::logic_error("Environment clone must preserve its component type");
-        }
-        _queue->setEnvironment(std::move(intent));
-    }
+
 }
 
 void RenderQueueVisitor::didVisit(scene::Node*)

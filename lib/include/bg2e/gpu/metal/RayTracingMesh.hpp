@@ -40,6 +40,11 @@ class RayTracingMesh : public gpu::RayTracingMesh {
     RayTracingMesh(const RayTracingMesh&) = delete;
     RayTracingMesh& operator=(const RayTracingMesh&) = delete;
 
+    size_t retainedBytes() const noexcept override
+    {
+        return _retainedBytes;
+    }
+
     void cleanup() override;
     bool isValid() const override;
     bool isBuilt() const override
@@ -60,6 +65,7 @@ class RayTracingMesh : public gpu::RayTracingMesh {
   private:
     metal::Device* _device = nullptr;
     bool _built = false;
+    size_t _retainedBytes = 0;
 
 #if BG2E_IS_MAC
     MTL::PrimitiveAccelerationStructureDescriptor* buildDescriptor() const;

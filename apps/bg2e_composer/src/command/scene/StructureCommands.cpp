@@ -81,11 +81,13 @@ CommandMemory EditNodes::memory() const
     if (_replaced)
     {
         result.resources.push_back({_replaced, _replaced->bytes});
+        result.localBytes += _replaced->growthBytes();
     }
     std::set<Node*> parents;
     for (const auto& target : _targets)
     {
         result.resources.push_back({target, target->bytes});
+        result.localBytes += target->growthBytes();
         if (target->node->parent())
         {
             parents.insert(target->node->parent());

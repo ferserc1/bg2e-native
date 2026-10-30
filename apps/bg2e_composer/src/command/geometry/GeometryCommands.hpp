@@ -26,7 +26,7 @@ namespace bg2e_composer::command::geometry {
 enum class Operation { ZUpToYUp, Center, PutOnFloor, CentimetersToMeters, MetersToCentimeters };
 
 // Whole-mesh edits affect every document instance sharing the CPU Mesh. Each
-// shared CPU payload is transformed once and every live raster owner is rebuilt.
+// shared CPU payload is transformed once and every live raster/BLAS owner gets a complete prepared version.
 class GeometryEdit : public bg2e::app::Command {
   public:
     const bg2e::app::CommandInfo& info() const noexcept override;
@@ -46,14 +46,13 @@ class GeometryEdit : public bg2e::app::Command {
     struct Group {
         std::weak_ptr<Mesh> mesh;
         size_t capacityBound = 0;
-        glm::mat4 forward{1}, inverse{1};
-        glm::mat3 directions{1}, inverseDirections{1};
         std::shared_ptr<const Mesh> before, after;
     };
     struct Target {
         std::weak_ptr<bg2e::scene::Node> node;
         std::weak_ptr<bg2e::draw::Drawable> drawable;
         size_t group = 0;
+        bg2e::draw::Drawable::PreparedGeometry alternate;
     };
     std::weak_ptr<StageScene> _stage;
     std::function<void()> _stopProducers;
@@ -62,12 +61,14 @@ class GeometryEdit : public bg2e::app::Command {
     std::vector<Target> _targets;
     Operation _operation = Operation::Center;
     bool _replacement = false;
+    bool _effective = false;
     bool _captured = false;
     bool _applied = false;
     bg2e::app::CommandInfo _info;
 
     void captureTargets(const std::shared_ptr<StageScene>& stage,
         const std::vector<bg2e::manipulation::SelectionItem>& targets);
+    void prepareInitial();
     void validate() const;
     bg2e::app::CommandResult apply(bool forward, bool initial) noexcept;
 };

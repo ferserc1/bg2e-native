@@ -44,6 +44,7 @@ std::unordered_map<GizmoType, float> GizmoComponent::_gizmoScales = {
     {GizmoType::PointLight, 0.08f},
     {GizmoType::SpotLight, 0.08f},
     {GizmoType::DirectionalLight, 0.08f},
+    {GizmoType::SunLight, 0.08f},
     {GizmoType::Environment, 0.08f},
     {GizmoType::Transform, 0.25f},
 };
@@ -53,6 +54,7 @@ std::unordered_map<GizmoType, float> GizmoComponent::_gizmoOpacities = {
     {GizmoType::PointLight, 0.6f},
     {GizmoType::SpotLight, 0.6f},
     {GizmoType::DirectionalLight, 0.6f},
+    {GizmoType::SunLight, 0.6f},
     {GizmoType::Environment, 0.6f},
     {GizmoType::Transform, 1.0f},
 };
@@ -62,6 +64,7 @@ std::unordered_map<GizmoType, bool> GizmoComponent::_gizmoVisible = {
     {GizmoType::PointLight, true},
     {GizmoType::SpotLight, true},
     {GizmoType::DirectionalLight, true},
+    {GizmoType::SunLight, true},
     {GizmoType::Environment, true},
     {GizmoType::Transform, true},
 };
@@ -132,6 +135,8 @@ GizmoType GizmoComponent::resolveGizmoType() const
             return GizmoType::PointLight;
         case base::Light::TypeSpot:
             return GizmoType::SpotLight;
+        case base::Light::TypeSun:
+            return GizmoType::SunLight;
         case base::Light::TypeDirectional:
             return GizmoType::DirectionalLight;
         default:
@@ -185,6 +190,9 @@ std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
     {
     case GizmoType::Transform:
         parsed.reset(db::loadMeshBg2(assets, "transformGizmo.bg2"));
+        break;
+    case GizmoType::SunLight:
+        parsed.reset(db::loadMeshBg2(assets, "sun-light-gizmo.bg2"));
         break;
     case GizmoType::DirectionalLight:
         parsed.reset(db::loadMeshBg2(assets, "dir-light-gizmo.bg2"));

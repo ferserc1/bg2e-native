@@ -24,6 +24,7 @@
 #include <bg2e/base/Image.hpp>
 #include <bg2e/base/Joint.hpp>
 #include <bg2e/base/Light.hpp>
+#include <bg2e/base/SolarLight.hpp>
 #include <bg2e/base/Log.hpp>
 #include <bg2e/base/MaterialAttributes.hpp>
 #include <bg2e/base/PlatformTools.hpp>

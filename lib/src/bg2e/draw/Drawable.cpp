@@ -276,9 +276,9 @@ void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
 
 Drawable::PreparedGeometry Drawable::prepareGeometry(const Mesh& data) const
 {
-    if (!_loaded || !_engine || !_mesh || !_tracing.empty() || rayTracingEnabled())
+    if (!_loaded || !_engine || !_mesh)
     {
-        throw std::logic_error("Prepared geometry requires a complete raster-only drawable");
+        throw std::logic_error("Prepared geometry requires a complete drawable");
     }
     validateMesh(data);
     if (data.submeshes.size() != _attributes.size())
@@ -289,18 +289,63 @@ Drawable::PreparedGeometry Drawable::prepareGeometry(const Mesh& data) const
     prepared.owner = this;
     prepared.engine = _engine;
     prepared.source = _mesh.get();
+    prepared.tracingEnabled = rayTracingEnabled();
     prepared.raster = std::make_shared<DrawMesh>();
     prepared.raster->setMeshData(data);
     prepared.raster->build(_engine->device());
+    if (prepared.tracingEnabled)
+    {
+        for (uint32_t submesh = 0; submesh < prepared.raster->submeshCount(); ++submesh)
+        {
+            prepared.tracing.push_back(_engine->device()->createRayTracingMesh(
+                prepared.raster->rayTracingMeshDescription(submesh)));
+        }
+        _engine->device()->immediateSubmit([&](gpu::CommandBuffer* command)
+        {
+            for (const auto& blas : prepared.tracing)
+            {
+                command->buildRayTracingMesh(blas.get());
+            }
+        });
+    }
     return prepared;
+}
+
+
+size_t Drawable::PreparedGeometry::accelerationBytes() const
+{
+    size_t bytes = 0;
+    for (const auto& blas : tracing)
+    {
+        if (blas->retainedBytes() > std::numeric_limits<size_t>::max() - bytes)
+        {
+            throw std::length_error("Prepared acceleration memory overflow");
+        }
+        bytes += blas->retainedBytes();
+    }
+    return bytes;
 }
 
 
 bool Drawable::canExchangeGeometry(const PreparedGeometry& prepared) const noexcept
 {
-    return prepared.owner == this && prepared.engine == _engine && prepared.source == _mesh.get() &&
-        _loaded && _engine && _tracing.empty() && !rayTracingEnabled() && prepared.raster &&
-        prepared.raster->submeshCount() == _attributes.size();
+    if (prepared.owner != this || prepared.engine != _engine || prepared.source != _mesh.get() ||
+        !_loaded || !_engine || prepared.tracingEnabled != rayTracingEnabled() || !prepared.raster ||
+        prepared.tracing.size() != (prepared.tracingEnabled ? _attributes.size() : 0) ||
+        prepared.raster->submeshCount() != _attributes.size())
+    {
+        return false;
+    }
+    for (const auto& blas : prepared.tracing)
+    {
+        if (!blas || !blas->isBuilt() || blas->device() != _engine->device() ||
+            blas->description().vertexBuffer != prepared.raster->vertexBuffer() ||
+            blas->description().indexBuffer != prepared.raster->indexBuffer())
+        {
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -311,6 +356,7 @@ bool Drawable::exchangeGeometry(PreparedGeometry& prepared) noexcept
         return false;
     }
     _drawMesh.swap(prepared.raster);
+    _tracing.swap(prepared.tracing);
     return true;
 }
 

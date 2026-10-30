@@ -141,31 +141,44 @@ RayTracingMesh::RayTracingMesh(vk::Device* device, const RayTracingMeshDescripti
         &_primitiveCount,
         &sizeInfo);
 
-    // --- Acceleration structure storage buffer + object ---
-    createDeviceBuffer(_device, sizeInfo.accelerationStructureSize,
-                       VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
-                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                       _asBuffer, _asAlloc, "BLAS storage buffer");
-
-    VkAccelerationStructureCreateInfoKHR createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
-    createInfo.buffer = _asBuffer;
-    createInfo.size = sizeInfo.accelerationStructureSize;
-    createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
-    VK_ASSERT(createAccelerationStructure(_device->handle(), &createInfo, nullptr, &_accelerationStructure));
-
-    // --- Scratch buffer (padded for the device-address alignment) ---
-    const VkDeviceAddress scratchAlign = _device->accelerationStructureScratchAlignment();
-    createDeviceBuffer(_device, sizeInfo.buildScratchSize + scratchAlign,
-                       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
-                           VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
-                       _scratchBuffer, _scratchAlloc, "BLAS scratch buffer");
-    _scratchAddress = alignUp(bufferDeviceAddress(_device, _scratchBuffer), scratchAlign);
-
-    VkAccelerationStructureDeviceAddressInfoKHR addrInfo{};
-    addrInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
-    addrInfo.accelerationStructure = _accelerationStructure;
-    _deviceAddress = getAccelerationStructureDeviceAddress(_device->handle(), &addrInfo);
+    try
+    {
+        // --- Acceleration structure storage buffer + object ---
+        createDeviceBuffer(_device, sizeInfo.accelerationStructureSize,
+                           VK_BUFFER_USAGE_ACCELERATION_STRUCTURE_STORAGE_BIT_KHR |
+                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                           _asBuffer, _asAlloc, "BLAS storage buffer");
+    
+        VkAccelerationStructureCreateInfoKHR createInfo{};
+        createInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_CREATE_INFO_KHR;
+        createInfo.buffer = _asBuffer;
+        createInfo.size = sizeInfo.accelerationStructureSize;
+        createInfo.type = VK_ACCELERATION_STRUCTURE_TYPE_BOTTOM_LEVEL_KHR;
+        VK_ASSERT(createAccelerationStructure(_device->handle(), &createInfo, nullptr, &_accelerationStructure));
+    
+        // --- Scratch buffer (padded for the device-address alignment) ---
+        const VkDeviceAddress scratchAlign = _device->accelerationStructureScratchAlignment();
+        createDeviceBuffer(_device, sizeInfo.buildScratchSize + scratchAlign,
+                           VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
+                               VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
+                           _scratchBuffer, _scratchAlloc, "BLAS scratch buffer");
+        VmaAllocationInfo allocationInfo{};
+        vmaGetAllocationInfo(_device->allocator(), _asAlloc, &allocationInfo);
+        _retainedBytes = static_cast<size_t>(allocationInfo.size);
+        vmaGetAllocationInfo(_device->allocator(), _scratchAlloc, &allocationInfo);
+        _retainedBytes += static_cast<size_t>(allocationInfo.size);
+        _scratchAddress = alignUp(bufferDeviceAddress(_device, _scratchBuffer), scratchAlign);
+    
+        VkAccelerationStructureDeviceAddressInfoKHR addrInfo{};
+        addrInfo.sType = VK_STRUCTURE_TYPE_ACCELERATION_STRUCTURE_DEVICE_ADDRESS_INFO_KHR;
+        addrInfo.accelerationStructure = _accelerationStructure;
+        _deviceAddress = getAccelerationStructureDeviceAddress(_device->handle(), &addrInfo);
+    }
+    catch (...)
+    {
+        cleanup();
+        throw;
+    }
 }
 
 RayTracingMesh::~RayTracingMesh()
@@ -224,6 +237,7 @@ void RayTracingMesh::build(VkCommandBuffer cmd)
 
 void RayTracingMesh::cleanup()
 {
+    _retainedBytes = 0;
     if (_accelerationStructure != VK_NULL_HANDLE)
     {
         destroyAccelerationStructure(_device->handle(), _accelerationStructure, nullptr);
