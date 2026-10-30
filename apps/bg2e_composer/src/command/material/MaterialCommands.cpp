@@ -246,8 +246,9 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const bg2e::ui::Ma
         }
         auto live = mesh->drawMaterial(item.submesh);
         const auto* instance = live.get();
+        const auto* pasteInstance = paste.get();
         if (typeid(*instance) != typeid(bg2e::draw::MaterialBase) ||
-            (paste && typeid(*paste.get()) != typeid(bg2e::draw::MaterialBase)))
+            (pasteInstance && typeid(*pasteInstance) != typeid(bg2e::draw::MaterialBase)))
         {
             throw std::invalid_argument("Custom materials require an explicit state adapter");
         }
