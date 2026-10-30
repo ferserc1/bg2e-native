@@ -18,3 +18,8 @@ Dependency: step 7.
 ## Completion
 
 All inventory entries are accounted for, command menus/preferences are connected, and the code is ready for the user's Composer exercise. Do not add application tests, manual application checklists or a testing phase. Update `progress.md` with source-review limits.
+
+
+## Implementation status
+
+Complete in source; compilation/runtime verification was not performed. See the [step 8 audit](mutation-inventory.md#step-8-final-integration-audit-source-only) and [progress log](progress.md) for actual APIs, source checks, file/source lease ownership and explicit unsupported cases. The next step is documentation.

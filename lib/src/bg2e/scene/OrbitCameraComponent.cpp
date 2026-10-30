@@ -466,6 +466,14 @@ void OrbitCameraComponent::keyUp(const app::KeyEvent& event)
     }
 }
 
+void OrbitCameraComponent::cancelInput()
+{
+    _keys = {};
+    _mouseButtonPressed = false;
+    keyUp(app::KeyEvent(app::KeyEvent::KeyW));
+}
+
+
 void OrbitCameraComponent::reset()
 {
     _rotation = _initialRotation;

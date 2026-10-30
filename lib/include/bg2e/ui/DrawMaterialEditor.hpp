@@ -103,6 +103,7 @@ class BG2E_API DrawMaterialEditor {
         const MaterialEditTargets&, const MaterialEditIntent&)>;
     void onEditRequested(EditIntentHandler handler);
     void cancelInteraction();
+    bool commitInteraction();
 
     bool draw(UserInterface& ui);
     bool queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo = false);

@@ -763,6 +763,20 @@ bool CommandHistory::faulted() const
     return _impl->fault;
 }
 
+std::string CommandHistory::undoName() const
+{
+    _impl->checkThread();
+    return _impl->cursor ? (*_impl->at(_impl->cursor - 1))->command->info().name : std::string{};
+}
+
+
+std::string CommandHistory::redoName() const
+{
+    _impl->checkThread();
+    return _impl->cursor < _impl->entries.size() ? (*_impl->at(_impl->cursor))->command->info().name : std::string{};
+}
+
+
 size_t CommandHistory::undoCount() const
 {
     _impl->checkThread();

@@ -623,11 +623,16 @@ void AppDelegate::prepareFrame()
         return;
     }
     processImports();
+    processReadActions();
     if (_stage)
     {
         _stage->synchronizeDirty();
         if (document()->commands)
         {
+            if (document()->commands->retiredResourcesPending())
+            {
+                _engine->device()->waitIdleForResourceUpdate();
+            }
             document()->commands->releaseRetired();
         }
     }
@@ -737,8 +742,7 @@ void AppDelegate::cleanup()
         _toolsCleanup = {};
     }
     _selectionChanged = {};
-    _completedLightmaps.clear();
-    _completedLightmap.reset();
+    _deferredReads.clear();
     _clipboard.reset();
     bg2e::manipulation::GizmoComponent::setCurrentTransform(nullptr);
     if (_selection)

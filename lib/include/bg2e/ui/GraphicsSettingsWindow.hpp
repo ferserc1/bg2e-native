@@ -20,6 +20,7 @@
 #pragma once
 
 #include <bg2e/ui/Window.hpp>
+#include <bg2e/ui/EditInteraction.hpp>
 #include <bg2e/draw/RenderSettingsPreferences.hpp>
 
 namespace bg2e::ui {
@@ -36,6 +37,9 @@ class BG2E_API GraphicsSettingsWindow : public Window {
 
     void bind(std::shared_ptr<draw::RenderSettingsPreferences> preferences);
     void clear();
+    void setSceneEditInteractionsEnabled(bool enabled);
+    bool commitInteraction();
+    void cancelInteraction();
     void draw() override;
     void queueEdit(draw::SettingHandle handle, std::any value);
     void importFile(const std::filesystem::path& path,
@@ -50,6 +54,7 @@ class BG2E_API GraphicsSettingsWindow : public Window {
   private:
     struct State;
     std::shared_ptr<State> _state;
+    std::unique_ptr<EditSession> _sceneSession;
     std::shared_ptr<draw::RenderSettingsPreferences> _preferences;
     draw::RenderSettingsPreferences::Completion completion();
     void report(const std::string& code, const std::string& message);

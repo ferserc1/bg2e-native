@@ -22,6 +22,8 @@
 #include <bg2e/base/Color.hpp>
 
 #include <memory>
+#include <cstddef>
+#include <utility>
 #include <cstdint>
 #include <filesystem>
 #include <string>
@@ -182,8 +184,28 @@ class Texture {
             assign(_addressModeW, source._addressModeW);
             assign(_colorType, source._colorType);
             assign(_proceduralGenerator, source._proceduralGenerator);
+            // Publish ownership after the only allocating field (the path) has
+            // copied successfully; a failed path copy retains its old source.
+            _sourceOwner = source._sourceOwner;
+            _sourceBytes = source._sourceBytes;
         }
         return *this;
+    }
+
+    // Optional lifetime for generated/external sources. Copies of editable
+    // settings retain it through cleanup/reload and authored serialization.
+    void retainSource(std::shared_ptr<const void> owner, size_t bytes = 0)
+    {
+        _sourceOwner = std::move(owner);
+        _sourceBytes = bytes;
+    }
+    const std::shared_ptr<const void>& sourceOwner() const
+    {
+        return _sourceOwner;
+    }
+    size_t sourceBytes() const
+    {
+        return _sourceBytes;
     }
 
     uint64_t revision() const
@@ -357,6 +379,8 @@ class Texture {
     mutable uint64_t _generatorRevision = 0;
 
   protected:
+    std::shared_ptr<const void> _sourceOwner;
+    size_t _sourceBytes = 0;
     std::string _imageFilePath;
 
     TextureType _type = TypeFilesystem;

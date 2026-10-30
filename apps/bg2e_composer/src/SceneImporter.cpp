@@ -44,13 +44,14 @@ bool SceneImporter::enqueue(std::shared_ptr<Job> job)
     return true;
 }
 
-void SceneImporter::startNext(bg2e::app::MainLoop* loop)
+void SceneImporter::startNext(bg2e::app::MainLoop* loop, bg2e::app::CommandDocumentState sourceState)
 {
     if (_active || _queue.empty())
     {
         return;
     }
     _active = _queue.front();
+    _active->sourceState = sourceState;
     _queue.pop_front();
     auto job = _active;
     try
@@ -70,6 +71,8 @@ void SceneImporter::startNext(bg2e::app::MainLoop* loop)
                     {
                         throw std::invalid_argument("Import source is not a regular file");
                     }
+                    job->sourceModified = std::filesystem::last_write_time(path);
+                    job->sourceSize = std::filesystem::file_size(path);
                     job->request.filePath = path;
                     auto extension = path.extension().string();
                     std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char c)
@@ -97,6 +100,10 @@ void SceneImporter::startNext(bg2e::app::MainLoop* loop)
                     else
                     {
                         throw std::invalid_argument("Unsupported import format");
+                    }
+                    if (std::filesystem::last_write_time(path) != job->sourceModified || std::filesystem::file_size(path) != job->sourceSize)
+                    {
+                        throw std::runtime_error("Import source changed while parsing");
                     }
                     job->loader.setMessage("Waiting to realize import resources");
                     job->loader.setProgress(0.4f);

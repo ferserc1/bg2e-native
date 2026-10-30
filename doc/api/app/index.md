@@ -85,6 +85,7 @@ for scheduling details and the asynchronous-work contract.
 | Lifecycle and scheduling | [`Application`](Application_and_input.md#application), [`MainLoop`](MainLoop.md), `WindowConfig`, `SafeUpdateToken` |
 | Input | [`InputDelegate`](Application_and_input.md#inputdelegate), `InputManager`, `KeyEvent`, `Keyboard`, `Mouse` |
 | Commands | `Shortcuts`, `ShortcutData` |
+| Reversible edits | [`Command`, `CommandHistory`, `CommandQueue`, `CommandTransaction`, `CompositeCommand`](CommandHistory.md) |
 | Persistence | [`Preferences`, `PreferencesStore`](Preferences.md), [`FileHistory`](Platform_services.md#filehistory) |
 | Native services | [`FileDialog`, `MessageBox`](Platform_services.md), `GPUSelectionDialog` |
 | Headless rendering | [`OffscreenApplication`](OffscreenApplication.md), `DrawOffscreenApplicationDelegate`, `DrawOffscreenApplicationConfig` |
@@ -102,12 +103,16 @@ for scheduling details and the asynchronous-work contract.
 - [Platform services](Platform_services.md) — files, history, and message boxes.
 - [Uv2SafeReload](Uv2SafeReload.md) — schedule UV2 generation and loaded Drawable reload safely.
 - [LightmapGenerator](LightmapGenerator.md) — standalone UV2 generation, headless baking, and output files.
+- [Command history](CommandHistory.md) — optional command, queue, transaction and history API.
 
 ## Implementation architecture
 
 See [MainLoop, render, draw and gpu](../../architecture/MainLoop_render_draw_gpu.md)
 for source excerpts, execution strategies, ownership, frame flow, UI integration,
 asynchronous work and synchronization boundaries.
+
+The implementation and Composer integration are described in the
+[command/memento architecture guide](../../architecture/command-memento/index.md).
 
 ## Windowless draw jobs
 

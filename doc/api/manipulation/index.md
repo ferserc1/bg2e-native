@@ -22,6 +22,12 @@ update boundaries after removals or resource replacement to prune stale items.
 Gizmos are transient and are not serialized. Release draw gizmo resources while
 the associated engine/device is still alive.
 
+Applications that supervise gizmo drags with history should capture the initial
+transform and adopt the final preview at the graphics boundary. The optional
+Composer lifecycle and its conflict rules are documented in the
+[continuous interaction](../../architecture/command-memento/continuous-interactions.md)
+and [lifecycle](../../architecture/command-memento/origins-and-lifecycle.md) chapters.
+
 ## Picking and input
 
 The draw picker uses top-left viewport coordinates and an explicit drawable-pixel

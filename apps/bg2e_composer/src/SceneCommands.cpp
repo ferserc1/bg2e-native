@@ -52,14 +52,14 @@ bg2e::app::CommandResult AppDelegate::submitSceneCommand(std::unique_ptr<bg2e::a
 }
 
 
-void AppDelegate::queueSceneCommand(std::function<std::unique_ptr<bg2e::app::Command>()> prepare)
+void AppDelegate::queueSceneCommand(std::function<std::unique_ptr<bg2e::app::Command>()> prepare, command::Effects effects)
 {
-    if (!document() || commandFaulted() || _pendingIo || sceneLoading() || _imports.busy())
+    if (!document() || commandFaulted() || _pendingIo || sceneLoading() || _imports.busy() || !settleEditDrafts())
     {
         return;
     }
     const auto generation = document()->generation;
-    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), generation, prepare = std::move(prepare)](auto&)
+    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), generation, prepare = std::move(prepare), effects](auto&)
     {
         auto owner = weak.lock();
         if (!owner || !owner->document() || owner->document()->generation != generation || owner->commandFaulted())
@@ -76,9 +76,6 @@ void AppDelegate::queueSceneCommand(std::function<std::unique_ptr<bg2e::app::Com
             auto action = prepare(); // Detached preparation only; publication belongs to execute.
             if (action)
             {
-                command::Effects effects;
-                effects.lightmapSources = true;
-                effects.renderHistories = true;
                 struct SubmissionScope {
                     bool& settling;
                     bool previous;
@@ -122,6 +119,7 @@ void AppDelegate::toggleSelectionHistory()
     auto& preferences = bg2e::app::PreferencesStore::instance().preferences("draw.bg2e_composer.history");
     const bool enabled = !preferences.get<bool>("recordSelection", false);
     preferences.set<bool>("recordSelection", enabled);
+    preferences.save();
     if (document() && document()->commands)
     {
         document()->commands->setSelectionHistoryEnabled(enabled);
@@ -189,6 +187,32 @@ bool AppDelegate::componentEditIntent(const std::shared_ptr<bg2e::scene::Compone
     {
         return true; // Drafts have not mutated the scene.
     }
+    if (auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(component))
+    {
+        if (!document() || commandFaulted() || !_stage->contains(environment->ownerNode()) ||
+            !command::supportedComponent(*environment) || intent.path.size() != 1)
+        {
+            return false;
+        }
+        const auto& key = intent.path.front().property;
+        if (key != "environmentImage" && key != "skyboxBlur" && key != "skyboxVisible" &&
+            key != "skyHorizonColor" && key != "skyZenithColor" && key != "groundColor")
+        {
+            return false;
+        }
+        if (phase == EditPhase::Commit)
+        {
+            try
+            {
+                queueEnvironmentEdit(environment, intent);
+            }
+            catch (...)
+            {
+                return false;
+            }
+        }
+        return true;
+    }
     if (!document() || !component || (!_stage->contains(component->ownerNode()) && component->ownerNode() != _stage->fillLightNode().get()) ||
         !command::component::supportedProperty(*component, intent))
     {
@@ -218,6 +242,10 @@ void AppDelegate::componentAction(const std::shared_ptr<bg2e::scene::Component>&
     const bg2e::ui::ReflectionActionIntent& intent)
 {
     using command::component::Action;
+    if (!settleEditDrafts())
+    {
+        return;
+    }
     Action action;
     if (!component || !intent.objectPath.empty() || !command::supportedComponent(*component))
     {
@@ -241,11 +269,17 @@ void AppDelegate::componentAction(const std::shared_ptr<bg2e::scene::Component>&
         _status = "This action requires a dedicated reversible editor adapter";
         return;
     }
-    command::Effects effects;
-    effects.lightmapSources = true;
-    effects.renderHistories = true;
-    submitSceneCommand(std::make_unique<command::component::EditProperty>(_stage, component,
-        bg2e::ui::ReflectionEditIntent{}, action), effects);
+    queueSceneCommand([weak = weak_from_this(), target = std::weak_ptr<bg2e::scene::Component>(component), action]
+    {
+        auto owner = weak.lock();
+        auto component = target.lock();
+        if (!owner || !component)
+        {
+            throw std::logic_error("Component action receiver expired");
+        }
+        return std::make_unique<command::component::EditProperty>(owner->_stage, component,
+            bg2e::ui::ReflectionEditIntent{}, action);
+    });
 }
 
 }

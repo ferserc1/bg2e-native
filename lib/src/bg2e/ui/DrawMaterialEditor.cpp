@@ -263,6 +263,12 @@ void DrawMaterialEditor::cancelInteraction()
 }
 
 
+bool DrawMaterialEditor::commitInteraction()
+{
+    return !_impl->session || _impl->session->commit();
+}
+
+
 void DrawMaterialEditor::onEditRequested(EditIntentHandler handler)
 {
     cancelInteraction();
@@ -681,7 +687,14 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     _impl->drawing = true;
     const auto interactionState = EditInteraction::draw([&]
     {
-        auto& attributes = material->materialAttributes();
+        auto attributes = material->materialAttributes();
+        // Buffered hosts may defer publication until Commit. Display the last
+        // absolute value while the control remains active, without changing the
+        // live material or creating a history entry for every frame.
+        if (_impl->session && _impl->session->active() && _impl->lastIntent.patch)
+        {
+            _impl->lastIntent.patch->apply(attributes);
+        }
         const auto scalar = [&](const char* label, const char* key, float value)
         {
             if (ImGui::SliderFloat(label, &value, 0.0f, 1.0f))

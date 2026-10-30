@@ -109,6 +109,14 @@ class BG2E_API MaterialBase {
     }
     virtual std::shared_ptr<MaterialBase> clone() const;
 
+    // Independent editable settings with retained immutable realizations. Call at
+    // a stopped scene boundary. No texture file reads or GPU copies are needed.
+    std::shared_ptr<MaterialBase> snapshot() const;
+    // Exchanges prepared state without allocation. Both materials must belong
+    // to the same engine; the caller retains the displaced state until GPU users
+    // retire. Target object identity remains stable.
+    bool exchangeState(MaterialBase& prepared) noexcept;
+
   private:
     Engine* _engine;
     base::MaterialAttributes _attributes;

@@ -30,6 +30,15 @@ enum class SettingsUpdateSynchronization { Conservative, ValueOnlyNotification }
 class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<RenderSettingsPreferences> {
   public:
     using Completion = std::function<void(SettingsResult)>;
+    // Optional exclusive owner for validated authored scene edits. Mixed scene
+    // and renderer imports reject atomically; renderer preferences stay local.
+    using SceneEdits = std::function<void(std::vector<SettingChange>, Completion)>;
+    void onSceneEdits(SceneEdits handler);
+    bool hasSceneEditOwner() const
+    {
+        return bool(_sceneEdits);
+    }
+
     using ExtendCatalog = std::function<void(Renderer&, SettingsCatalog&)>;
     explicit RenderSettingsPreferences(app::Preferences* persistence = nullptr,
         std::string key = "draw.settings.v1.hex");
@@ -58,6 +67,7 @@ class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<R
     // Missing properties retain their current live values. Automatic loading is opt-in.
   private:
     void enqueue(SettingsImport plan, Completion completion);
+    SceneEdits _sceneEdits;
     SettingsCatalog _catalog;
     std::weak_ptr<pipeline::FinalLayer> _boundedFinal;
     uint64_t _boundedFinalCatalogGeneration = 0;

@@ -52,6 +52,20 @@ class BG2E_API EnvironmentGenerator {
     {
         return _resources;
     }
+    // Retained publication plus source-cache identity. A prepared state restores
+    // without reading files or rebuilding GPU images. Engine/device must outlive it.
+    struct State {
+        std::shared_ptr<const EnvironmentResources> resources;
+        std::filesystem::path sourcePath;
+        bool pathSource = false;
+        bool rebuildRequested = false;
+        base::Color horizon, zenith, ground;
+    };
+    State captureState() const;
+    State prepareState(const scene::EnvironmentComponent* component);
+    bool acceptsState(const State& state) const noexcept;
+    void exchangeState(State& state) noexcept;
+
     void cleanup();
   private:
     std::shared_ptr<const EnvironmentResources> generate(std::shared_ptr<gpu::Image> source);

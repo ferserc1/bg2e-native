@@ -216,6 +216,13 @@ void UserInterface::updateScale()
     s_uiScaleChanged = false;
 }
 
+bool UserInterface::textInputActive()
+{
+    return ImGui::GetCurrentContext() && (ImGui::GetIO().WantTextInput ||
+        (ImGui::GetIO().WantCaptureKeyboard && ImGui::IsAnyItemActive()));
+}
+
+
 void UserInterface::processEvent(SDL_Event* event)
 {
     if (!initialized() || !event)

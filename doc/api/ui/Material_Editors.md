@@ -108,6 +108,14 @@ _drawMaterialEditor.setSelectionManager(selection);
 _drawMaterialEditor.draw(ui); // during UI drawing
 ```
 
+For an application-owned reversible edit, use the optional
+`onEditRequested(EditIntentHandler)` path documented in
+[`EditInteraction`](EditInteraction.md). In that mode the handler receives the
+intent before mutation and owns target validation, scheduling, capture and
+recovery. The existing `onChanged` callback remains post-mutation notification.
+It does not create an undo entry. Non-history applications can continue using
+the default queue and `queuePatch` APIs.
+
 Call `cleanup()` before the engine is destroyed. `onChanged()` lets the app
 reset application-owned histories; the deferred renderer's upscaler reset is
 handled automatically. A pending/error status is available through

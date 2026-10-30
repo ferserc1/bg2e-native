@@ -101,6 +101,7 @@ void SceneLightmapWindow::cleanup()
     _uv1Renderer.reset();
     _previewTarget.reset();
     _previewDrawable.reset();
+    _previewGeometry.reset();
     _uv2Target.reset();
     _uv2Drawable.reset();
     _ui = nullptr;
@@ -136,9 +137,10 @@ void SceneLightmapWindow::refreshUvPreview(const std::shared_ptr<bg2e::scene::No
         _uv1Preview.clear();
         _previewTarget.reset();
         _previewDrawable.reset();
+        _previewGeometry.reset();
         return;
     }
-    if (_previewTarget.lock() == target && _previewDrawable.lock() == drawable)
+    if (_previewTarget.lock() == target && _previewDrawable.lock() == drawable && _previewGeometry.lock() == drawable->drawMesh())
     {
         return;
     }
@@ -150,6 +152,7 @@ void SceneLightmapWindow::refreshUvPreview(const std::shared_ptr<bg2e::scene::No
     _uv1Preview.setImage(*_ui, *_engine, _uv1Renderer->image());
     _previewTarget = target;
     _previewDrawable = drawable;
+    _previewGeometry = drawable->drawMesh();
 }
 
 void SceneLightmapWindow::drawContents()
@@ -169,6 +172,7 @@ void SceneLightmapWindow::drawContents()
         _uv2Generating = false;
         _previewTarget.reset();
         _previewDrawable.reset();
+        _previewGeometry.reset();
         _uv0Preview.clear();
         _uv1Preview.clear();
         _resultPreview.clear();

@@ -38,6 +38,8 @@ class BG2E_API MaterialAttributes {
   public:
     MaterialAttributes();
     MaterialAttributes(const MaterialAttributes&) = default;
+    MaterialAttributes(MaterialAttributes&&) noexcept = default;
+    MaterialAttributes& operator=(MaterialAttributes&&) noexcept = default;
     MaterialAttributes& operator=(const MaterialAttributes& source);
 
     // Authored-state revision; independent of pending texture realization flags.

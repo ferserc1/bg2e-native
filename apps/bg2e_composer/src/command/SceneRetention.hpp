@@ -29,10 +29,11 @@ namespace command {
 // eviction/discard; only StageScene releases detached native data, after a drain.
 class SceneRetention {
   private:
+    bool _preparedEnvironment = false;
     std::shared_ptr<void> _registryLease; // Outlives all retained asset/control blocks.
 
   public:
-    explicit SceneRetention(std::shared_ptr<bg2e::scene::Node> node);
+    explicit SceneRetention(std::shared_ptr<bg2e::scene::Node> node, bool preparedEnvironment = false);
     explicit SceneRetention(std::shared_ptr<bg2e::scene::Component> component);
 
     std::shared_ptr<bg2e::scene::Node> node;

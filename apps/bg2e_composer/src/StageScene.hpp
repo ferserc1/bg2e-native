@@ -67,12 +67,6 @@ class StageScene {
         const bg2e::db::GltfDocument* gltf = nullptr,
         std::shared_ptr<bg2e::json::JsonNode> schema = {},
         const bg2e::db::Bg2Mesh* bg2 = nullptr, const bg2e::db::ObjMesh* obj = nullptr);
-    void publishImport(const std::shared_ptr<bg2e::scene::Node>& candidate,
-        const std::shared_ptr<bg2e::scene::Node>& parent,
-        const std::shared_ptr<bg2e::scene::Node>& previous = {},
-        std::function<void(bool restoring)> rebind = {});
-    void insert(std::shared_ptr<bg2e::scene::Node> candidate,
-        const std::shared_ptr<bg2e::scene::Node>& parent);
     bool exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,
         const std::filesystem::path& destination, bool batch);
     void refreshCamera(bool preserveControllers = false);
@@ -93,14 +87,17 @@ class StageScene {
     void releaseRetired();
     std::shared_ptr<command::SceneRetention> retainForCommand(const std::shared_ptr<bg2e::scene::Node>& node);
     std::shared_ptr<command::SceneRetention> retainForCommand(const std::shared_ptr<bg2e::scene::Component>& component);
+    // Only for a validated prepared preset whose command owns GPU snapshots.
+    std::shared_ptr<command::SceneRetention> retainPreparedEnvironment(const std::shared_ptr<bg2e::scene::Node>& node);
+    std::shared_ptr<bg2e::scene::Node> floorNode() const
+    {
+        return _floor;
+    }
+
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
     std::shared_ptr<bg2e::scene::Node> createPrimitive(unsigned kind);
     void prepareCommandCandidate(const std::shared_ptr<bg2e::scene::Node>& node);
     bool contains(bg2e::scene::Node* node) const;
-    void duplicate(const std::shared_ptr<bg2e::scene::Node>& node);
-    void remove(const std::shared_ptr<bg2e::scene::Node>& node);
-    void setFloor(bool visible, float height);
-    void setFillLight(bool enabled);
     std::shared_ptr<bg2e::scene::Node> fillLightNode() const
     {
         return _fillLight;
@@ -120,8 +117,6 @@ class StageScene {
     void environmentComponentReplaced(bg2e::scene::Node& node);
     std::shared_ptr<bg2e::scene::Node> environmentPreset() const;
     void validateEnvironmentPreset(const std::shared_ptr<bg2e::scene::Node>& preset) const;
-    void restoreEnvironment(const std::shared_ptr<bg2e::scene::Node>& preset);
-    void adoptEnvironment(const std::shared_ptr<bg2e::scene::Node>& preset);
 
     bg2e::scene::Scene* sceneObject() const
     {
@@ -137,7 +132,7 @@ class StageScene {
         return _document;
     }
 
-    void markModified(bg2e::app::CommandCompatibility compatibility = bg2e::app::CommandCompatibility::ResetHistory)
+    void markModified(bg2e::app::CommandCompatibility compatibility)
     {
         _document.markModified(compatibility);
     }

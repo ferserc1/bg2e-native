@@ -93,20 +93,10 @@ void AppDelegate::setImportPaused(bool paused)
     {
         if (paused)
         {
-            // A release may be consumed by the loader. Clear scene gestures at
-            // entry so cancel/failure cannot leave an old drag pressed forever.
-            if (_selection)
-            {
-                _selection->deselect();
-            }
+            finishTransformInteraction(false);
             if (auto controller = _stage ? _stage->orbitCamera() : nullptr)
             {
-                auto fresh = controller->clone();
-                fresh->setPriority(controller->priority());
-                fresh->setIgnoreSerialization(controller->ignoreSerialization());
-                auto node = controller->ownerNode();
-                node->removeComponent(controller->shared_from_this());
-                node->addComponent(fresh);
+                controller->cancelInput();
             }
             loop->pauseScene({0.2f, 0.2f, 0.31f, 1.0f});
         }
@@ -145,10 +135,21 @@ void AppDelegate::enqueueImport(ImportRequest request)
     }
     try
     {
+        if (!flushDocumentCommands(true))
+        {
+            fail("Settle pending edits before importing");
+            return;
+        }
+        if (auto controller = _stage->orbitCamera())
+        {
+            controller->cancelInput();
+            sampleNavigation(true);
+        }
         auto job = std::make_shared<SceneImporter::Job>();
         job->request = request;
         job->token = _nextImportToken++;
         job->documentGeneration = document()->generation;
+        job->sourceState = document()->commands->history().documentState();
         job->rendererGeneration = rendererGeneration();
         job->rendererIdentity = renderer();
         auto selected = _selection ? _selection->selectedNode() : nullptr;
@@ -159,8 +160,8 @@ void AppDelegate::enqueueImport(ImportRequest request)
             auto found = _imported.find(job->key);
             if (found != _imported.end())
             {
-                auto previous = found->second.node.lock();
-                if (previous && found->second.generation == document()->generation &&
+                auto previous = found->second->node.lock();
+                if (previous && found->second->generation == document()->generation &&
                     _stage->contains(previous.get()) && previous->parent())
                 {
                     job->previous = previous;
@@ -169,7 +170,7 @@ void AppDelegate::enqueueImport(ImportRequest request)
                 }
                 else
                 {
-                    _imported.erase(found);
+                    found->second->node.reset();
                 }
             }
         }
@@ -178,6 +179,7 @@ void AppDelegate::enqueueImport(ImportRequest request)
             fail("Import queue is full (16 waiting jobs)");
             return;
         }
+        _latestImportTokens[job->key] = job->token;
         _importStatus = "Queued " + request.fileName;
         requestSceneFrame();
     }
@@ -189,6 +191,10 @@ void AppDelegate::enqueueImport(ImportRequest request)
 
 void AppDelegate::cancelImports(bool remoteOnly)
 {
+    if (auto job = _publishingImport.lock(); job && (!remoteOnly || job->request.id != 0))
+    {
+        job->cancelled = true;
+    }
     for (const auto& job : _imports.cancel(remoteOnly))
     {
         if (job->request.id != 0)
@@ -213,6 +219,7 @@ void AppDelegate::invalidateImports()
 {
     cancelImports();
     _imported.clear();
+    _latestImportTokens.clear();
     _importServer.setDocumentGeneration(document()->generation);
 }
 
@@ -222,11 +229,10 @@ void AppDelegate::processImports()
     {
         return;
     }
-    std::erase_if(_imported, [this](const auto& item)
+    if (_importPublicationPending)
     {
-        auto node = item.second.node.lock();
-        return !node || item.second.generation != document()->generation || !_stage->contains(node.get());
-    });
+        return;
+    }
     ImportRequest pending;
     if (_importServer.takePending(pending))
     {
@@ -237,7 +243,7 @@ void AppDelegate::processImports()
         bool ok = false;
         std::string message;
         std::shared_ptr<bg2e::scene::Node> candidate;
-        bool recoveryFailed = false;
+        bool publicationQueued = false;
         try
         {
             auto parent = job->parent.lock();
@@ -245,6 +251,11 @@ void AppDelegate::processImports()
             if (job->cancelled.load())
             {
                 throw std::runtime_error("Import cancelled");
+            }
+            if (job->sourceState != document()->commands->history().documentState() ||
+                _latestImportTokens[job->key] != job->token)
+            {
+                throw std::runtime_error("Import sources or a newer request changed while parsing");
             }
             if (job->documentGeneration != document()->generation ||
                 job->rendererIdentity != renderer() || !parent || !_stage->contains(parent.get()))
@@ -258,6 +269,11 @@ void AppDelegate::processImports()
             if (!job->error.empty())
             {
                 throw std::runtime_error(job->error);
+            }
+            if (std::filesystem::last_write_time(job->request.filePath) != job->sourceModified ||
+                std::filesystem::file_size(job->request.filePath) != job->sourceSize)
+            {
+                throw std::runtime_error("Import source changed before realization");
             }
             // Parsing held no renderer/catalog targets. Reacquire the current
             // binding generation after ordinary same-renderer scene/resize rebinds.
@@ -277,51 +293,86 @@ void AppDelegate::processImports()
                     job->loader.setProgress(0.4f + 0.5f * (total > 0 ? float(processed) / float(total) : 0));
                 }, job->gltf.get(), job->schema, job->bg2.get(), job->obj.get());
             candidate->setName(job->request.fileName.empty() ? job->request.filePath.stem().string() : job->request.fileName);
-            // Reserve table storage before publishing any graph mutation.
+            std::shared_ptr<command::scene::ImportRecord> record;
             if (job->request.id != 0)
             {
-                _imported.try_emplace(job->key);
-            }
-            _stage->publishImport(candidate, parent, previous, [&](bool restoring)
-            {
-                try
+                auto& slot = _imported[job->key];
+                if (!slot)
                 {
-                    _selection->deselect();
-                    _clipboard.reset();
-                    command::Effects effects;
-                    effects.lightmapSources = true;
-                    effects.renderHistories = true;
-                    effects.sceneReferences = true;
-                    applyCommandEffects(*renderer(), effects);
-                    DefaultRenderLoopDelegate::prepareFrame(); // Retire old extraction before GPU cleanup.
+                    slot = std::make_shared<command::scene::ImportRecord>();
+                    slot->generation = document()->generation;
                 }
-                catch (...)
-                {
-                    recoveryFailed = restoring;
-                    throw;
-                }
-            });
-            if (job->request.id != 0)
-            {
-                _imported[job->key] = {candidate, document()->generation};
+                record = slot;
             }
-            job->loader.setProgress(1);
-            ok = true;
-            message = "Imported " + job->request.fileName;
+            auto placement = std::make_unique<command::scene::EditNodes>(_stage, _selection,
+                previous ? command::scene::NodeEdit::Replace : command::scene::NodeEdit::Insert,
+                std::vector{candidate}, parent, std::string(previous ? "Reimport " : "Import ") + candidate->name(), previous);
+            const auto expected = job->sourceState;
+            const auto generation = job->documentGeneration;
+            const auto key = job->key;
+            const auto token = job->token;
+            auto valid = [weak = weak_from_this(), expected, key, token, job = std::weak_ptr<SceneImporter::Job>(job)]
+            {
+                auto owner = weak.lock();
+                auto request = job.lock();
+                return request && !request->cancelled.load() && owner && owner->document() && owner->document()->commands &&
+                    owner->document()->commands->history().documentState() == expected &&
+                    owner->_latestImportTokens[key] == token;
+            };
+            auto action = std::make_unique<command::scene::ApplyImport>(std::move(placement), record, candidate, valid);
+            command::Effects effects;
+            effects.lightmapSources = true;
+            effects.renderHistories = true;
+            effects.selection = true;
+            job->gltf.reset();
+            job->bg2.reset();
+            job->obj.reset();
+            job->schema.reset();
+            auto completion = [weak = weak_from_this(), job](auto result)
+            {
+                if (auto owner = weak.lock())
+                {
+                    if (owner->_publishingImport.lock() == job)
+                    {
+                        owner->_importPublicationPending = false;
+                        owner->_publishingImport.reset();
+                    }
+                    if (!owner->document() || owner->document()->generation != job->documentGeneration)
+                    {
+                        if (job->request.id != 0)
+                        {
+                            owner->_importServer.fulfil(job->request.id, false, "Import document was replaced");
+                        }
+                        return;
+                    }
+                    const bool applied = result.status == bg2e::app::CommandStatus::Applied;
+                    owner->_status = owner->_importStatus = applied ? "Imported " + job->request.fileName : std::string(result.message);
+                    job->loader.setProgress(applied ? 1.0f : 0.0f);
+                    owner->setImportPaused(false);
+                    if (job->request.id != 0)
+                    {
+                        owner->_importServer.fulfil(job->request.id, applied, owner->_importStatus);
+                    }
+                    owner->requestSceneFrame();
+                }
+            };
+            const auto admitted = document()->commands->submit(std::move(action), command::Boundary::Conservative, effects,
+                [weak = weak_from_this(), generation]
+                {
+                    auto owner = weak.lock();
+                    return owner && owner->document() && owner->document()->generation == generation;
+                }, completion, bg2e::app::CommandOrigin::PreparedResult);
+            publicationQueued = true; // Admission failures also complete exactly once.
+            if (admitted.accepted())
+            {
+                _publishingImport = job;
+                _importPublicationPending = true;
+            }
+            document()->commands->pump();
+            message = admitted.accepted() ? "Applying prepared import" : std::string(admitted.message);
         }
         catch (const std::exception& error)
         {
-            if (recoveryFailed)
-            {
-                // Neither binding is usable. Keep resources until normal renderer-
-                // first teardown rather than rendering with a failed extraction.
-                if (document()->commands)
-                {
-                    document()->commands->history().reportExternalFault();
-                    _stage->synchronizeDirty();
-                }
-                throw;
-            }
             if (candidate && !candidate->parent())
             {
                 _stage->discardCandidate(candidate);
@@ -330,19 +381,23 @@ void AppDelegate::processImports()
         }
         _importStatus = message;
         _status = message;
-        if (job->request.id != 0)
+        if (!publicationQueued && job->request.id != 0)
         {
             // Reply only after scene/renderer bindings have been restored.
             setImportPaused(false);
             _importServer.fulfil(job->request.id, ok, message);
         }
     }
+    if (_importPublicationPending)
+    {
+        return;
+    }
     if (_imports.busy() && !_importPaused)
     {
         stopLightmapBake(true);
         setImportPaused(true);
     }
-    _imports.startNext(bg2e::app::MainLoop::current());
+    _imports.startNext(bg2e::app::MainLoop::current(), document()->commands->history().documentState());
     setImportPaused(_imports.busy());
 }
 

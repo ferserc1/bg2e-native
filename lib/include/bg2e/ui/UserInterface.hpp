@@ -46,6 +46,7 @@ class BG2E_API UserInterface {
 
     void init(draw::Engine*);
     bool initialized() const;
+    static bool textInputActive();
 
     void processEvent(SDL_Event* event);
 

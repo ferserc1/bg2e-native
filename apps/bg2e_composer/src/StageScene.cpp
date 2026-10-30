@@ -623,154 +623,6 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesyst
     }
 }
 
-void StageScene::publishImport(const std::shared_ptr<bg2e::scene::Node>& candidate,
-    const std::shared_ptr<bg2e::scene::Node>& parent,
-    const std::shared_ptr<bg2e::scene::Node>& previous,
-    std::function<void(bool restoring)> rebind)
-{
-    if (!candidate || candidate->parent() || !parent || !contains(parent.get()) ||
-        (previous && (!contains(previous.get()) || !previous->parent() || previous == _document.root)))
-    {
-        throw std::invalid_argument("Import publication requires current targets and a detached candidate");
-    }
-    for (auto node = parent.get(); node; node = node->parent())
-    {
-        if (node == previous.get())
-        {
-            throw std::invalid_argument("Cannot replace an import containing its destination parent");
-        }
-    }
-    unsigned lights = 0;
-    unsigned cameras = 0;
-    std::function<void(bg2e::scene::Node*)> count = [&](auto node)
-    {
-        if (!node || node == previous.get() || !node->enabled())
-        {
-            return;
-        }
-        lights += node->light() != nullptr;
-        cameras += node->camera() != nullptr;
-        for (const auto& child : node->children())
-        {
-            count(child.get());
-        }
-    };
-    count(_document.root.get());
-    bool destinationEnabled = true;
-    for (auto node = parent.get(); node; node = node->parent())
-    {
-        destinationEnabled &= node->enabled();
-    }
-    if (destinationEnabled)
-    {
-        count(candidate.get());
-    }
-    if (lights > 8 || cameras == 0)
-    {
-        throw std::invalid_argument("Import must retain an enabled camera and at most eight enabled lights");
-    }
-    // Keep failed candidates alive through renderer-first teardown if restoring
-    // the previous extraction also fails.
-    _retired.reserve(_retired.size() + 2);
-    auto oldParent = previous ? previous->parent()->shared_from_this() : nullptr;
-    const auto oldChildren = oldParent ? oldParent->children() : std::vector<std::shared_ptr<bg2e::scene::Node>>{};
-    const auto oldCamera = _camera;
-    const bool oldDirty = _document.dirty;
-    auto* previousEnvironment = _scene->mainEnvironment();
-    auto oldEnvironment = previousEnvironment ?
-        std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(previousEnvironment->shared_from_this()) : nullptr;
-    auto oldKnownEnvironments = _knownEnvironmentNodes;
-    const bool oldFill = _fillLight && _fillLight->enabled();
-    parent->addChild(candidate);
-    try
-    {
-        if (previous)
-        {
-            oldParent->removeChild(previous);
-        }
-        refreshCamera();
-        if (rebind)
-        {
-            rebind(false);
-        }
-    }
-    catch (...)
-    {
-        parent->removeChild(candidate);
-        if (oldParent)
-        {
-            // Restore sibling order as well as parent identity/camera priority.
-            for (const auto& child : oldChildren)
-            {
-                oldParent->removeChild(child);
-            }
-            for (const auto& child : oldChildren)
-            {
-                oldParent->addChild(child);
-            }
-        }
-        if (_fillLight)
-        {
-            _fillLight->setEnabled(oldFill);
-        }
-        _camera = oldCamera;
-        _scene->setMainEnvironment(oldEnvironment.get());
-        _knownEnvironmentNodes = std::move(oldKnownEnvironments);
-        if (rebind)
-        {
-            try
-            {
-                rebind(true);
-            }
-            catch (...)
-            {
-                _retired.push_back(candidate);
-                throw;
-            }
-        }
-        else
-        {
-            refreshCamera();
-        }
-        _document.dirty = oldDirty;
-        throw;
-    }
-    if (previous)
-    {
-        _retired.push_back(previous);
-    }
-    markModified();
-}
-
-void StageScene::insert(std::shared_ptr<bg2e::scene::Node> candidate,
-    const std::shared_ptr<bg2e::scene::Node>& parent)
-{
-    if (!candidate || candidate->parent() || !parent || !contains(parent.get()))
-    {
-        throw std::invalid_argument("Import requires a detached candidate and a current document parent");
-    }
-    unsigned addedLights = enabledLightCount(candidate.get());
-    for (auto* node = parent.get(); node; node = node->parent())
-    {
-        if (!node->enabled())
-        {
-            addedLights = 0;
-        }
-    }
-    const unsigned totalLights = enabledLightCount(_document.root.get()) + addedLights;
-    if (totalLights > 8)
-    {
-        throw std::invalid_argument("Import would exceed eight enabled document lights");
-    }
-    parent->addChild(candidate);
-    if (totalLights == 8)
-    {
-        _fillLight->setEnabled(false); // Authored lights take priority over fixtures.
-    }
-    markModified();
-    refreshCamera();
-}
-
 void StageScene::validateEditingGraph(bool prepareCameraState)
 {
     if (enabledLightCount(_document.root.get()) > 8)
@@ -1184,6 +1036,14 @@ std::shared_ptr<command::SceneRetention> StageScene::retainForCommand(const std:
 }
 
 
+std::shared_ptr<command::SceneRetention> StageScene::retainPreparedEnvironment(const std::shared_ptr<bg2e::scene::Node>& node)
+{
+    auto lease = std::make_shared<command::SceneRetention>(node, true);
+    _commandRetained.push_back(lease);
+    return lease;
+}
+
+
 void StageScene::releaseRetired()
 {
     std::exception_ptr error;
@@ -1346,80 +1206,9 @@ void StageScene::prepareCommandCandidate(const std::shared_ptr<bg2e::scene::Node
 }
 
 
-void StageScene::duplicate(const std::shared_ptr<bg2e::scene::Node>& node)
-{
-    if (!contains(node.get()))
-    {
-        return;
-    }
-    if (node == _document.root)
-    {
-        throw std::invalid_argument("Select a child node to duplicate; the scene root is retained");
-    }
-    auto copy = node->clone();
-    copy->setName(node->name() + " copy");
-    // Prepare every new component/resource before publishing the branch.
-    try
-    {
-        prepareTools(copy);
-        insert(copy, node->parent()->shared_from_this());
-    }
-    catch (...)
-    {
-        discardCandidate(copy);
-        throw;
-    }
-    prepareTools();
-}
-
-void StageScene::remove(const std::shared_ptr<bg2e::scene::Node>& node)
-{
-    if (!contains(node.get()) || node == _document.root)
-    {
-        throw std::invalid_argument("Select a child node to remove; the document root is retained");
-    }
-    if (_camera)
-    {
-        for (auto current = _camera.get(); current; current = current->parent())
-        {
-            if (current == node.get())
-            {
-                throw std::invalid_argument("Cannot remove the active camera branch");
-            }
-        }
-    }
-    _retired.reserve(_retired.size() + 1);
-    _retired.push_back(node);
-    node->parent()->removeChild(node);
-    refreshCamera();
-}
-
 float StageScene::floorHeight() const
 {
     return _floor ? _floor->transform()->translation().y : 0;
-}
-
-void StageScene::setFillLight(bool enabled)
-{
-    if (enabled && enabledLightCount(_document.root.get()) >= 8)
-    {
-        return; // Keep the authored scene within the draw light ABI.
-    }
-    if (_fillLight && _fillLight->light())
-    {
-        _fillLight->setEnabled(enabled);
-    }
-    refreshCamera();
-}
-
-void StageScene::setFloor(bool visible, float height)
-{
-    if (!std::isfinite(height))
-    {
-        throw std::invalid_argument("Floor height must be finite");
-    }
-    _floor->setEnabled(visible);
-    _floor->transform()->setTranslation(0, height, 0);
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::environmentNode() const
@@ -1486,25 +1275,6 @@ void StageScene::environmentComponentReplaced(bg2e::scene::Node& node)
         known->second = environment ?
             std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(environment->shared_from_this()) : nullptr;
     }
-}
-
-void StageScene::adoptEnvironment(const std::shared_ptr<bg2e::scene::Node>& preset)
-{
-    if (!_document.root || !preset || !preset->environment())
-    {
-        throw std::invalid_argument("Environment preset requires an Environment root and an open document");
-    }
-    // Prepare clones before altering the document. Only environment/light nodes
-    // belong to presets; renderer preferences are deliberately separate.
-    auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(preset->environment()->clone());
-    auto target = environmentNode();
-    if (!target)
-    {
-        target = _document.root;
-    }
-    target->addComponent(environment);
-    _scene->setMainEnvironment(environment.get());
-    refreshCamera();
 }
 
 std::shared_ptr<bg2e::scene::Node> StageScene::environmentPreset() const
@@ -1596,71 +1366,6 @@ void StageScene::validateEnvironmentPreset(const std::shared_ptr<bg2e::scene::No
             throw std::invalid_argument("Could not decode the preset environment image");
         }
     }
-}
-
-void StageScene::restoreEnvironment(const std::shared_ptr<bg2e::scene::Node>& preset)
-{
-    validateEnvironmentPreset(preset);
-    auto rig = std::make_shared<bg2e::scene::Node>("Environment rig");
-    rig->addComponent(preset->environment()->clone());
-    rig->addComponent(new bg2e::scene::TransformComponent(glm::inverse(_document.root->worldMatrix())));
-    std::shared_ptr<bg2e::scene::Node> floor;
-    for (const auto& child : preset->children())
-    {
-        if (child->light() && child->name() != "Stage fill light")
-        {
-            rig->addChild(child->clone());
-        }
-        else if (child->name() == "Stage floor")
-        {
-            floor = child;
-        }
-    }
-    prepareTools(rig); // Resource/asset failures precede any graph mutation.
-    std::vector<std::shared_ptr<bg2e::scene::Component>> old;
-    visitNodes(_document.root, [&](const auto& node)
-    {
-        if (node->environment())
-        {
-            old.push_back(node->environment()->shared_from_this());
-        }
-        if (node->light())
-        {
-            old.push_back(node->light()->shared_from_this());
-        }
-    });
-    _document.root->addChild(rig); // Allocating publication point precedes removals.
-    for (const auto& component : old)
-    {
-        component->ownerNode()->removeComponent(component);
-    }
-    if (floor)
-    {
-        _floor->setEnabled(floor->enabled());
-        _floor->transform()->setMatrix(floor->transform()->matrix());
-    }
-    for (const auto& child : preset->children())
-    {
-        if (child->name() == "Stage fill light")
-        {
-            if (child->light())
-            {
-                if (!_fillLight->light())
-                {
-                    _fillLight->addComponent(new bg2e::scene::LightComponent());
-                }
-                _fillLight->light()->light() = child->light()->light();
-                _fillLight->transform()->setMatrix(child->transform()->matrix());
-            }
-            else if (auto light = _fillLight->light())
-            {
-                _fillLight->removeComponent(light->shared_from_this());
-            }
-            _fillLight->setEnabled(child->enabled());
-            prepareTools(_fillLight);
-        }
-    }
-    refreshCamera();
 }
 
 void StageScene::cleanup()

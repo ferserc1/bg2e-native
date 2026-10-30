@@ -28,10 +28,18 @@ using Node = bg2e::scene::Node;
 
 EditNodes::EditNodes(std::shared_ptr<StageScene> stage,
     std::shared_ptr<bg2e::manipulation::SelectionManager> selection, NodeEdit operation,
-    const std::vector<std::shared_ptr<Node>>& targets, std::weak_ptr<Node> destination, std::string label)
+    const std::vector<std::shared_ptr<Node>>& targets, std::weak_ptr<Node> destination, std::string label, std::shared_ptr<Node> replaced)
     : _stage(stage), _selection(selection), _operation(operation), _destination(std::move(destination)),
       _info{label.empty() ? "Edit scene structure" : std::move(label), "scene.structure"}
 {
+    if (operation == NodeEdit::Replace)
+    {
+        if (!replaced || targets.size() != 1)
+        {
+            throw std::invalid_argument("Import replacement requires one candidate and an original branch");
+        }
+        _replaced = stage->retainForCommand(replaced);
+    }
     std::set<Node*> seen;
     for (const auto& node : targets)
     {
@@ -69,6 +77,10 @@ CommandMemory EditNodes::memory() const
     if (auto stage = _stage.lock())
     {
         result.localBytes += 4 * stage->editingStateBytes();
+    }
+    if (_replaced)
+    {
+        result.resources.push_back({_replaced, _replaced->bytes});
     }
     std::set<Node*> parents;
     for (const auto& target : _targets)
@@ -144,6 +156,12 @@ CommandResult EditNodes::execute() noexcept
         {
             return {CommandStatus::Rejected, "Choose a current scene destination"};
         }
+        if (_operation == NodeEdit::Replace && (!_replaced ||
+            !stage->contains(_replaced->node.get()) || _replaced->node == stage->document().root ||
+            _replaced->node->parent() != destination.get()))
+        {
+            return {CommandStatus::Rejected, "Reimport target or parent changed"};
+        }
         std::vector<std::shared_ptr<Node>> parents;
         const auto remember = [&](const std::shared_ptr<Node>& parent)
         {
@@ -155,7 +173,7 @@ CommandResult EditNodes::execute() noexcept
         for (const auto& target : _targets)
         {
             auto node = target->node;
-            if (_operation == NodeEdit::Insert)
+            if (_operation == NodeEdit::Insert || _operation == NodeEdit::Replace)
             {
                 if (node->parent() || node->scene())
                 {
@@ -215,6 +233,17 @@ CommandResult EditNodes::execute() noexcept
         _after = _before;
         for (auto& placement : _after)
         {
+            if (_operation == NodeEdit::Replace)
+            {
+                for (auto& child : placement.children)
+                {
+                    if (child.lock() == _replaced->node)
+                    {
+                        child = _targets.front()->node;
+                    }
+                }
+                continue;
+            }
             std::erase_if(placement.children, [&](const auto& child)
             {
                 return std::any_of(_targets.begin(), _targets.end(), [&](const auto& target)

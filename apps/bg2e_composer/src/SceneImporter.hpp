@@ -19,6 +19,7 @@
 #pragma once
 
 #include "ImportRequest.hpp"
+#include <bg2e/app/CommandHistory.hpp>
 
 #include <bg2e/db/scene_gltf.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
@@ -45,6 +46,9 @@ class SceneImporter {
         ImportRequest request;
         uint64_t token = 0;
         uint64_t documentGeneration = 0;
+        bg2e::app::CommandDocumentState sourceState;
+        std::filesystem::file_time_type sourceModified;
+        uintmax_t sourceSize = 0;
         uint64_t rendererGeneration = 0;
         const bg2e::draw::Renderer* rendererIdentity = nullptr; // compare only; never dereference
         std::weak_ptr<bg2e::scene::Node> parent;
@@ -64,7 +68,7 @@ class SceneImporter {
     ~SceneImporter();
 
     bool enqueue(std::shared_ptr<Job> job);
-    void startNext(bg2e::app::MainLoop* loop);
+    void startNext(bg2e::app::MainLoop* loop, bg2e::app::CommandDocumentState sourceState);
     std::shared_ptr<Job> takeCompleted();
     std::vector<std::shared_ptr<Job>> cancel(bool remoteOnly = false);
     void shutdown();

@@ -742,9 +742,19 @@ std::shared_ptr<Node> SettingsCodec::readFile(const std::filesystem::path& path)
     }
     return parse(text);
 }
-void SettingsCodec::exportFile(const SettingsCatalog& catalog, const std::filesystem::path& path)
+void SettingsCodec::exportFile(const SettingsCatalog& catalog, const std::filesystem::path& path, bool includeScene)
 {
-    const auto text = stringify(*serialize(catalog));
+    auto document = serialize(catalog);
+    if (!includeScene)
+    {
+        auto& components = document->objectValue().at("components")->listValue();
+        std::erase_if(components, [](const auto& component)
+        {
+            const auto id = component->objectValue().at("id")->stringValue();
+            return id.starts_with("environment/") || id.starts_with("light/");
+        });
+    }
+    const auto text = stringify(*document);
     std::ofstream stream(path, std::ios::binary | std::ios::trunc);
     stream.write(text.data(), std::streamsize(text.size()));
     stream.close();

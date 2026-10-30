@@ -56,6 +56,7 @@ class SceneLightmapWindow final : public bg2e::ui::Window {
     bg2e::ui::BakeLightmapPreview _resultPreview;
     std::weak_ptr<bg2e::scene::Node> _previewTarget;
     std::weak_ptr<bg2e::draw::Drawable> _previewDrawable;
+    std::weak_ptr<bg2e::draw::Drawable::DrawMesh> _previewGeometry;
     std::weak_ptr<bg2e::scene::Node> _uv2Target;
     std::weak_ptr<bg2e::draw::Drawable> _uv2Drawable;
     int _previewResolution = 256;

@@ -101,9 +101,59 @@ void GraphicsSettingsWindow::bind(std::shared_ptr<draw::RenderSettingsPreference
 
 void GraphicsSettingsWindow::clear()
 {
+    cancelInteraction();
     _state = std::make_shared<State>(); // Invalidates weak completion callbacks.
     _preferences.reset();
 }
+
+void GraphicsSettingsWindow::setSceneEditInteractionsEnabled(bool enabled)
+{
+    cancelInteraction();
+    _sceneSession.reset();
+    if (enabled)
+    {
+        _sceneSession = std::make_unique<EditSession>([this](EditPhase phase, uint64_t, const auto&, const std::any& payload)
+        {
+            if (phase == EditPhase::Cancel)
+            {
+                return true;
+            }
+            try
+            {
+                const auto& change = std::any_cast<const draw::SettingChange&>(payload);
+                if (!_preferences || !_preferences->catalog().validate({change}).valid())
+                {
+                    return false;
+                }
+                if (phase == EditPhase::Commit)
+                {
+                    queueEdit(change.handle, change.value);
+                }
+                return true;
+            }
+            catch (...)
+            {
+                return false;
+            }
+        });
+    }
+}
+
+
+bool GraphicsSettingsWindow::commitInteraction()
+{
+    return !_sceneSession || _sceneSession->commit();
+}
+
+
+void GraphicsSettingsWindow::cancelInteraction()
+{
+    if (_sceneSession)
+    {
+        _sceneSession->cancel();
+    }
+}
+
 
 bool GraphicsSettingsWindow::pending() const
 {
@@ -181,7 +231,7 @@ void GraphicsSettingsWindow::exportFile(const std::filesystem::path& path)
     }
     try
     {
-        draw::SettingsCodec::exportFile(_preferences->catalog(), path);
+        draw::SettingsCodec::exportFile(_preferences->catalog(), path, !_preferences->hasSceneEditOwner());
         _state->result = {};
     }
     catch (const std::exception& error)
@@ -220,10 +270,18 @@ void GraphicsSettingsWindow::restore(draw::UnknownSettingPolicy policy)
 
 void GraphicsSettingsWindow::draw()
 {
+    if (_sceneSession)
+    {
+        _sceneSession->beginFrame();
+    }
     Window::draw([this]
     {
         drawContents();
     });
+    if (_sceneSession)
+    {
+        _sceneSession->endFrame();
+    }
 }
 
 void GraphicsSettingsWindow::drawContents()
@@ -238,6 +296,7 @@ void GraphicsSettingsWindow::drawContents()
     {
         // No old descriptors/values survive a rebind. A fresh generation also
         // changes the UI ID scope, discarding in-progress native editor state.
+        cancelInteraction();
         _state->generation = catalog.generation();
     }
     Group::pushId(int(_state->generation & 0x7fffffff));
@@ -328,7 +387,19 @@ void GraphicsSettingsWindow::drawContents()
                     {
                         editor.metadata.displayName = readable(editor.name);
                     }
-                    if (ReflectionWidget::editValue(value, editor, descriptor.available && !pending()))
+                    const bool sceneEdit = _sceneSession && (component.starts_with("environment/") || component.starts_with("light/"));
+                    if (sceneEdit)
+                    {
+                        const auto key = component + "/" + descriptor.property.name;
+                        auto change = std::any_cast<draw::SettingChange>(_sceneSession->value(key, draw::SettingChange{descriptor.handle, value}));
+                        bool changed = false;
+                        auto state = EditInteraction::draw([&]
+                        {
+                            changed = ReflectionWidget::editValue(change.value, editor, descriptor.available && !pending());
+                        });
+                        _sceneSession->submit(key, std::move(change), changed, state);
+                    }
+                    else if (ReflectionWidget::editValue(value, editor, descriptor.available && !pending()))
                     {
                         queueEdit(descriptor.handle, std::move(value));
                     }

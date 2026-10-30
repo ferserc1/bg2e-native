@@ -20,7 +20,10 @@
 
 #include "StageScene.hpp"
 #include "command/scene/MetadataCommands.hpp"
+#include "command/geometry/GeometryCommands.hpp"
+#include "command/scene/ImportCommand.hpp"
 #include <bg2e/ui/ReflectionWidget.hpp>
+#include <bg2e/ui/DrawMaterialEditor.hpp>
 #include "SceneImporter.hpp"
 #include "ImportServer.hpp"
 #include "ImportSettings.hpp"
@@ -29,6 +32,7 @@
 #include <bg2e/app/InputDelegate.hpp>
 #include <bg2e/app/Uv2SafeReload.hpp>
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
+#include <bg2e/draw/RenderSettingsPreferences.hpp>
 #include <bg2e/bake/IntegratedBakerContext.hpp>
 #include <bg2e/bake/LightmapPixels.hpp>
 #include <bg2e/scene/InputVisitor.hpp>
@@ -133,11 +137,6 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
 
     void setLogicalExtent(uint32_t width, uint32_t height);
     void selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t submesh, bool additive);
-    void queueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
-        std::function<void(bg2e::scene::Node&)> operation, bool rebuild = false);
-    // Only CPU values; never replace components, geometry, or GPU resources.
-    void queueNodeValueEdit(std::weak_ptr<bg2e::scene::Node> node,
-        std::function<void(bg2e::scene::Node&)> operation);
     void selectTreeNode(std::weak_ptr<bg2e::scene::Node> node, bool additive);
     void reparentNode(std::weak_ptr<bg2e::scene::Node> node,
         std::weak_ptr<bg2e::scene::Node> parent);
@@ -153,6 +152,10 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     bool selectionHistoryEnabled() const;
     void selectPickedItem(bg2e::manipulation::SelectionItem item, bool additive);
     bg2e::app::CommandResult renameNode(std::weak_ptr<bg2e::scene::Node> node, const std::string& name);
+    bool historyActionAvailable(bool redo) const;
+    std::string historyActionLabel(bool redo) const;
+    void editSceneSettings(std::shared_ptr<bg2e::draw::RenderSettingsPreferences> preferences,
+        std::vector<bg2e::draw::SettingChange> changes, bg2e::draw::RenderSettingsPreferences::Completion completion);
     void undoEdit();
     void redoEdit();
     void setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled);
@@ -160,19 +163,20 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void addPrimitive(unsigned kind);
     void addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName);
 
-    void editGeometry(unsigned operation);
+    void editGeometry(command::geometry::Operation operation);
     void duplicateSelection();
+    bool materialEditIntent(bg2e::ui::EditPhase phase,
+        const bg2e::ui::MaterialEditTargets& targets, const bg2e::ui::MaterialEditIntent& intent);
+    void queueMaterialEdit(bg2e::ui::MaterialEditTargets targets, bg2e::ui::MaterialEditIntent intent,
+        std::shared_ptr<bg2e::draw::MaterialBase> paste = {});
     void copyMaterial();
     void pasteMaterial();
     void removeSelection();
     void applyMaterialPatch(const std::filesystem::path& path);
-    void setFloor(bool visible, float height);
-    void setFillLight(bool enabled);
-    void editEnvironment(std::function<void(bg2e::scene::EnvironmentComponent&)> operation);
+    void queueEnvironmentEdit(std::weak_ptr<bg2e::scene::EnvironmentComponent> target,
+        bg2e::ui::ReflectionEditIntent intent);
     void environmentPreset(const std::filesystem::path& path, bool save);
-    void setCameraIntrinsics(float fov, float nearPlane, float farPlane);
     void setHighlight(float intensity);
-    void notifyEdited(bg2e::draw::Renderer& renderer);
     std::shared_ptr<bg2e::app::SafeUpdateToken> regenerateUv2(std::weak_ptr<bg2e::scene::Node> target,
         const bg2e::geo::Uv2AtlasOptions& options,
         bg2e::app::Uv2SafeReload::CompletionCallback completion);
@@ -222,9 +226,16 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     static bg2e::draw::RendererConfiguration configuration(
         const std::shared_ptr<bg2e::manipulation::GizmoAndSelectionRenderer>& overlay);
     void queueInput(std::function<void()> event);
-    void enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> node,
-        std::function<void(bg2e::scene::Node&)> operation, bool rebuild, bool cpuValuesOnly);
     glm::ivec2 inputPosition(int x, int y) const;
+    struct DeferredRead {
+        enum class Kind { CopyMaterial, SaveEnvironmentPreset };
+        Kind kind;
+        uint64_t generation = 0;
+        bg2e::manipulation::SelectionItem target;
+        std::filesystem::path path;
+    };
+    std::vector<DeferredRead> _deferredReads;
+    void processReadActions();
     void retireBakeFrame();
     void stopLightmapBake(bool cancelled);
     void invalidateLightmapSources();
@@ -261,7 +272,8 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         std::vector<Resource> resources;
         size_t nextResource = 0;
     };
-    void queueSceneCommand(std::function<std::unique_ptr<bg2e::app::Command>()> prepare);
+    void queueSceneCommand(std::function<std::unique_ptr<bg2e::app::Command>()> prepare,
+        command::Effects effects = {.lightmapSources = true, .renderHistories = true});
     bg2e::app::CommandResult submitSceneCommand(std::unique_ptr<bg2e::app::Command> action,
         command::Effects effects = {}, command::Boundary boundary = command::Boundary::Conservative);
     std::vector<std::weak_ptr<bg2e::scene::Node>> selectedSceneBranches() const;
@@ -269,6 +281,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     bg2e::app::CommandResult submitNodeCommand(std::weak_ptr<bg2e::scene::Node> node,
         std::unique_ptr<bg2e::app::Command> action, command::Boundary boundary, command::Effects effects);
     void applyCommandEffects(bg2e::draw::Renderer& renderer, const command::Effects& effects);
+    bool settleEditDrafts();
     bool flushDocumentCommands(bool commit, bool allowFault = false);
     void sampleNavigation(bool trackChanges);
     std::weak_ptr<bg2e::scene::OrbitCameraComponent> _observedOrbit;
@@ -290,11 +303,10 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     SceneImporter _imports;
     ImportServer _importServer;
     ImportSettings _importSettings;
-    struct ImportedEntry {
-        std::weak_ptr<bg2e::scene::Node> node;
-        uint64_t generation = 0;
-    };
-    std::unordered_map<std::string, ImportedEntry> _imported;
+    std::unordered_map<std::string, std::shared_ptr<command::scene::ImportRecord>> _imported;
+    std::unordered_map<std::string, uint64_t> _latestImportTokens;
+    bool _importPublicationPending = false;
+    std::weak_ptr<SceneImporter::Job> _publishingImport;
     uint64_t _nextImportToken = 1;
     bool _importPaused = false;
     std::string _importStatus;
@@ -331,10 +343,9 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     size_t _bakeTargetIndex = 0;
     bg2e::bake::LightmapSettings _bakeSettings;
     uint64_t _bakeDocumentGeneration = 0;
+    uint64_t _bakeJobToken = 0;
+    bg2e::app::CommandDocumentState _bakeSourceState;
     uint64_t _bakeRendererGeneration = 0;
-    std::optional<bg2e::bake::LightmapResult> _completedLightmap;
-    std::vector<std::pair<std::weak_ptr<bg2e::scene::Node>, bg2e::bake::LightmapResult>> _completedLightmaps;
-    uint64_t _completedLightmapDocumentGeneration = 0;
     bool _bakeApplyQueued = false;
     bool _wasContinuousRendering = false;
 

@@ -8,4 +8,7 @@ The localhost server admits one HTTP import until completion; `/status` stays re
 
 Open Scene has a separate guarded document operation: MainLoop worker IO/JSON, document-generation checked completion, then one component realization per Loader frame before adoption. MainLoop joins its workers before normal/exceptional graphics cleanup and expires exit completion tokens. This worker lifecycle is shared infrastructure; Composer's scene/import/publication policies remain app-owned.
 
+Composer scene edits, import adoption and the user-visible Undo/Redo menu are
+described in the [command/memento architecture guide](../../architecture/command-memento/index.md).
+
 See [complete resource IO](../../api/db/DrawResourceIO.md), [safe updates](../../safe_update_scene.md) and [manual import checks](../../../tests/draw/composer_import/README.md). Backend/HTTP execution is lead-owned; no new execution result is asserted here.

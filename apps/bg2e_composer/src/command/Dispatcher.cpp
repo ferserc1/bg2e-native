@@ -134,6 +134,7 @@ class Envelope final : public Command {
 
 struct Dispatcher::Retirement final : bg2e::app::CommandReleaseSink {
     std::unique_ptr<bg2e::app::Command> head;
+    bool resourcesPending = false;
 
     void release(std::unique_ptr<bg2e::app::Command> command, bg2e::app::CommandMemory memory) noexcept override
     {
@@ -144,6 +145,7 @@ struct Dispatcher::Retirement final : bg2e::app::CommandReleaseSink {
             // interactions must already be at their caller-owned safe boundary.
             return;
         }
+        resourcesPending = resourcesPending || !memory.resources.empty();
         auto& envelope = *wrapped;
         envelope.retiredMemory = std::move(memory);
         envelope.retiredNext = std::move(head);
@@ -152,6 +154,7 @@ struct Dispatcher::Retirement final : bg2e::app::CommandReleaseSink {
 
     void drain() noexcept
     {
+        resourcesPending = false;
         while (head)
         {
             auto current = std::move(head);
@@ -205,21 +208,57 @@ Dispatcher::~Dispatcher()
 }
 
 bg2e::app::CommandResult Dispatcher::submit(std::unique_ptr<bg2e::app::Command> command,
-    Boundary boundary, Effects effects, std::function<bool()> valid)
+    Boundary boundary, Effects effects, std::function<bool()> valid, Completion completion, bg2e::app::CommandOrigin origin)
 {
+    const auto reject = [&](std::string_view message)
+    {
+        const bg2e::app::CommandResult result{bg2e::app::CommandStatus::Rejected, message};
+        try
+        {
+            if (_completion)
+            {
+                _completion(result);
+            }
+        }
+        catch (...)
+        {
+        }
+        if (completion)
+        {
+            completion(result);
+        }
+        return result;
+    };
     if (!command)
     {
-        return {bg2e::app::CommandStatus::Rejected, "Missing Composer command"};
+        return reject("Missing Composer command");
     }
     const auto [category, inserted] = _boundaries.try_emplace(command->info().category, boundary);
     if (!inserted && category->second != boundary)
     {
-        return {bg2e::app::CommandStatus::Rejected, "Command category has conflicting execution boundaries"};
+        return reject("Command category has conflicting execution boundaries");
     }
     const auto compatibility = command->info().impact == bg2e::app::CommandDocumentImpact::None
         ? bg2e::app::CommandCompatibility::Preserve : bg2e::app::CommandCompatibility::Unspecified;
     auto wrapped = std::make_unique<Envelope>(std::move(command), effects, _effects, std::move(valid));
-    return _queue->enqueue(std::move(wrapped), {_history->documentState().generation, bg2e::app::CommandOrigin::Editor, compatibility}, _completion);
+    return _queue->enqueue(std::move(wrapped), {_history->documentState().generation, origin, compatibility},
+        [notify = _completion, completion = std::move(completion)](auto result)
+        {
+            try
+            {
+                if (notify)
+                {
+                    notify(result);
+                }
+            }
+            catch (...)
+            {
+            }
+            if (completion)
+            {
+                completion(result);
+            }
+        });
 }
 
 bg2e::app::CommandResult Dispatcher::beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command)
@@ -289,6 +328,12 @@ bg2e::app::CommandResult Dispatcher::shutdown()
 {
     return _queue->shutdown();
 }
+
+bool Dispatcher::retiredResourcesPending() const
+{
+    return _retirement->resourcesPending;
+}
+
 
 void Dispatcher::releaseRetired()
 {

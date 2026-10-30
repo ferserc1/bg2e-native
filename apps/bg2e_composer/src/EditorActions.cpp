@@ -17,9 +17,12 @@
  */
 
 #include "AppDelegate.hpp"
+#include "command/material/MaterialCommands.hpp"
+#include "command/lighting/EnvironmentCommands.hpp"
 
 #include <bg2e/geo/modifiers.hpp>
 #include <bg2e/utils/MaterialModifier.hpp>
+#include <bg2e/reflection/Registry.hpp>
 #include <bg2e/json/JsonParser.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 
@@ -31,207 +34,192 @@
 
 namespace bg2e_composer {
 
-void AppDelegate::notifyEdited(bg2e::draw::Renderer& renderer)
+void AppDelegate::editGeometry(command::geometry::Operation operation)
 {
-    // Transitional edits have no memento yet. Invalidate incompatible history
-    // explicitly; do not infer a new command from this notification.
-    // Settle the explicit gesture before the transitional nonhistorical reset.
-    // This notification does not capture or manufacture a property memento.
-    finishTransformInteraction(true);
-    _stage->markModified();
-    command::Effects effects;
-    effects.lightmapSources = true;
-    effects.renderHistories = true;
-    effects.sceneReferences = true;
-    applyCommandEffects(renderer, effects);
-    sampleNavigation(false);
-}
-
-void AppDelegate::queueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
-    std::function<void(bg2e::scene::Node&)> operation, bool rebuild)
-{
-    enqueueNodeEdit(target, std::move(operation), rebuild, false);
-}
-
-
-void AppDelegate::queueNodeValueEdit(std::weak_ptr<bg2e::scene::Node> target,
-    std::function<void(bg2e::scene::Node&)> operation)
-{
-    enqueueNodeEdit(target, std::move(operation), false, true);
-}
-
-
-void AppDelegate::enqueueNodeEdit(std::weak_ptr<bg2e::scene::Node> target,
-    std::function<void(bg2e::scene::Node&)> operation, bool rebuild, bool cpuValuesOnly)
-{
-    if (!document() || !document()->root || commandFaulted())
+    if (!_selection || !document() || !document()->root || commandFaulted() || !settleEditDrafts())
     {
         return;
     }
-    if (document()->commands && document()->commands->history().transactionActive())
+    try
     {
-        _status = "Finish the active edit interaction first";
+        std::vector<bg2e::manipulation::SelectionItem> targets;
+        for (const auto& item : _selection->selectedItems())
+        {
+            if (item && item->lockMesh())
+            {
+                targets.push_back(*item);
+            }
+        }
+        if (targets.empty())
+        {
+            return;
+        }
+        command::Effects effects;
+        effects.lightmapSources = true;
+        effects.renderHistories = true;
+        effects.selection = true;
+        queueSceneCommand([weak = weak_from_this(), targets = std::move(targets), operation]
+        {
+            auto owner = weak.lock();
+            if (!owner)
+            {
+                throw std::logic_error("Geometry receiver expired");
+            }
+            auto stopProducers = [weak]
+            {
+                if (auto active = weak.lock())
+                {
+                    active->invalidateLightmapSources();
+                }
+            };
+            return std::make_unique<command::geometry::TransformGeometry>(owner->_stage, targets, operation, stopProducers);
+        }, effects);
+    }
+    catch (const std::exception& error)
+    {
+        _status = error.what();
+    }
+}
+
+
+void AppDelegate::copyMaterial()
+{
+    if (!_selection || !document() || !settleEditDrafts())
+    {
         return;
     }
-    _status.clear();
-    const auto generation = document()->generation;
-    const auto enqueue = cpuValuesOnly
-        ? &bg2e::draw::DefaultRenderLoopDelegate::enqueueCpuValueUpdate
-        : &bg2e::draw::DefaultRenderLoopDelegate::enqueueRendererUpdate;
-    (this->*enqueue)(rendererGeneration(), [this, weak = weak_from_this(), target, generation, operation = std::move(operation), rebuild](auto& renderer)
+    const auto item = _selection->selectedItem();
+    if (item)
     {
-        auto owner = weak.lock();
-        if (!owner)
+        _deferredReads.push_back({DeferredRead::Kind::CopyMaterial, document()->generation, *item, {}});
+        requestSceneFrame();
+    }
+}
+
+
+void AppDelegate::processReadActions()
+{
+    if (!document() || !document()->root || !document()->commands || (_pendingIo && !_settlingUiInteractions) || sceneLoading() || _imports.busy() || _importPublicationPending ||
+        commandFaulted() || document()->commands->pending() || document()->commands->history().transactionActive())
+    {
+        return;
+    }
+    auto actions = std::move(_deferredReads);
+    _deferredReads.clear();
+    for (const auto& action : actions)
+    {
+        if (action.generation != document()->generation)
         {
-            return;
+            continue;
         }
-        auto node = target.lock();
-        if (!node || !document() || commandFaulted() || document()->generation != generation ||
-            (!_stage->contains(node.get()) && node != _stage->fillLightNode()))
-        {
-            return;
-        }
-        if (document()->commands && document()->commands->history().transactionActive())
-        {
-            return; // A direct manipulation owns the authored state until settlement.
-        }
-        invalidateLightmapSources();
         try
         {
-            // The conservative queue owns the resource-update boundary.
-            operation(*node);
-            if (rebuild)
+            _engine->device()->waitIdleForResourceUpdate();
+            if (action.kind == DeferredRead::Kind::CopyMaterial)
             {
-                _stage->prepareTools();
-                _selection->refreshSelection();
+                auto node = action.target.node.lock();
+                auto mesh = action.target.lockMesh();
+                if (node && _stage->contains(node.get()) && mesh)
+                {
+                    auto prepared = mesh->drawMaterial(action.target.submesh)->clone();
+                    _clipboard = std::move(prepared);
+                    _status = "Material copied";
+                }
+            }
+            else
+            {
+                auto preset = _stage->environmentPreset();
+                _status = bg2e::db::saveScene(preset.get(), *_engine, action.path)
+                    ? "Environment preset saved" : "Environment preset save failed (see log)";
             }
         }
         catch (const std::exception& error)
         {
             _status = error.what();
         }
-        // Edits/texture callbacks can fail after modifying part of the target.
-        notifyEdited(renderer);
-    }, {});
+    }
 }
 
-void AppDelegate::editGeometry(unsigned operation)
+
+bool AppDelegate::materialEditIntent(bg2e::ui::EditPhase phase,
+    const bg2e::ui::MaterialEditTargets& targets, const bg2e::ui::MaterialEditIntent& intent)
 {
-    if (!_selection)
+    if (phase == bg2e::ui::EditPhase::Cancel)
+    {
+        return true; // The SDK session owns only buffered values until commit.
+    }
+    if (!document() || !document()->commands || commandFaulted() ||
+        document()->commands->history().transactionActive() || sceneLoading() || _imports.busy() ||
+        (_pendingIo && !_settlingUiInteractions) || targets.rendererGeneration != rendererGeneration())
+    {
+        return false;
+    }
+    if (phase == bg2e::ui::EditPhase::Commit)
+    {
+        try
+        {
+            queueMaterialEdit(targets, intent);
+        }
+        catch (...)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+
+void AppDelegate::queueMaterialEdit(bg2e::ui::MaterialEditTargets targets, bg2e::ui::MaterialEditIntent intent,
+    std::shared_ptr<bg2e::draw::MaterialBase> paste)
+{
+    if (!document() || !document()->root || targets.selection.empty() || commandFaulted())
     {
         return;
     }
-    std::set<bg2e::draw::Drawable*> visited;
-    for (const auto& item : _selection->selectedItems())
-    {
-        auto drawable = item->lockMesh();
-        if (!drawable || !visited.insert(drawable.get()).second)
+    const auto generation = document()->generation;
+    enqueueRendererUpdate(rendererGeneration(),
+        [weak = weak_from_this(), generation, targets = std::move(targets), intent = std::move(intent), paste = std::move(paste)](auto&)
         {
-            continue;
-        }
-        const auto identity = std::weak_ptr<bg2e::draw::Drawable>(drawable);
-        queueNodeEdit(item->node, [identity, operation](auto& node)
-        {
-            using namespace bg2e::geo;
-            auto drawable = identity.lock();
-            if (!drawable || !node.drawable() || node.drawable()->drawable() != drawable)
+            auto owner = weak.lock();
+            if (!owner || !owner->document() || owner->document()->generation != generation || owner->commandFaulted())
             {
                 return;
             }
-            // Modifiers are borrowed by Drawable::applyModifier, never transferred.
-            if (operation == 0)
-            {
-                ConvertAxisModifier<Mesh> modifier(ConvertAxisModifier<Mesh>::Mode::ZtoY);
-                drawable->applyModifier(&modifier);
-            }
-            else if (operation == 1)
-            {
-                CenterGeometryModifier<Mesh> modifier;
-                drawable->applyModifier(&modifier);
-            }
-            else if (operation == 2)
-            {
-                PutOnFloorGeometryModifier<Mesh> modifier;
-                drawable->applyModifier(&modifier);
-            }
-            else if (operation == 3)
-            {
-                ApplyTransformModifier<Mesh> modifier(glm::scale(glm::mat4(1), glm::vec3(0.01f)));
-                drawable->applyModifier(&modifier);
-            }
-            else if (operation == 4)
-            {
-                ApplyTransformModifier<Mesh> modifier(glm::scale(glm::mat4(1), glm::vec3(100.0f)));
-                drawable->applyModifier(&modifier);
-            }
-        }, true);
-    }
-}
-
-void AppDelegate::copyMaterial()
-{
-    const auto item = _selection ? _selection->selectedItem() : nullptr;
-    if (!item)
-    {
-        return;
-    }
-    const auto target = *item;
-    const auto generation = document()->generation;
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), target, generation](auto&)
-    {
-        auto owner = weak.lock();
-        if (!owner)
-        {
-            return;
-        }
-        auto node = target.node.lock();
-        auto mesh = target.lockMesh();
-        if (document()->generation == generation && node && _stage->contains(node.get()) && mesh)
-        {
             try
             {
-                _clipboard = mesh->drawMaterial(target.submesh)->clone();
-                _status = "Material copied";
+                auto action = std::make_unique<command::material::EditMaterials>(owner->_stage, targets, intent, paste);
+                command::Effects effects;
+                effects.lightmapSources = true;
+                effects.renderHistories = true;
+                owner->submitNodeCommand(targets.selection.front().node, std::move(action),
+                    command::Boundary::Conservative, effects);
             }
             catch (const std::exception& error)
             {
-                _status = error.what();
+                owner->_status = error.what();
             }
-        }
-    });
+        });
+    requestSceneFrame();
 }
+
 
 void AppDelegate::pasteMaterial()
 {
-    if (!_clipboard || !_selection)
+    if (!_clipboard || !_selection || !settleEditDrafts())
     {
         return;
     }
+    bg2e::ui::MaterialEditTargets targets;
     for (const auto& item : _selection->selectedItems())
     {
-        auto target = *item;
-        queueNodeEdit(target.node, [target, snapshot = _clipboard](auto&)
-        {
-            auto mesh = target.lockMesh();
-            if (!mesh)
-            {
-                return;
-            }
-            auto material = mesh->drawMaterial(target.submesh);
-            material->setMaterialAttributes(bg2e::draw::cloneMaterialAttributes(snapshot->materialAttributes()));
-            for (uint32_t slot = 0; slot < 6; ++slot)
-            {
-                const auto kind = static_cast<bg2e::draw::TextureSlot>(slot);
-                material->setTexture(kind, snapshot->texture(kind)->clone());
-            }
-            mesh->materialDefinition(target.submesh) = bg2e::draw::cloneMaterialAttributes(material->materialAttributes());
-        });
+        targets.selection.push_back(*item);
     }
+    queueMaterialEdit(std::move(targets), {}, _clipboard);
 }
 
 void AppDelegate::applyMaterialPatch(const std::filesystem::path& path)
 {
-    if (!_selection || path.empty())
+    if (!_selection || path.empty() || !settleEditDrafts())
     {
         return;
     }
@@ -248,19 +236,14 @@ void AppDelegate::applyMaterialPatch(const std::filesystem::path& path)
         {
             throw std::invalid_argument("Invalid material patch");
         }
+        bg2e::ui::MaterialEditTargets targets;
         for (const auto& item : _selection->selectedItems())
         {
-            const auto identity = item->mesh;
-            const auto submesh = item->submesh;
-            queueNodeEdit(item->node, [identity, submesh, patch](auto& node)
-            {
-                auto mesh = identity.lock();
-                if (mesh && node.drawable() && node.drawable()->drawable() == mesh && submesh < mesh->submeshesCount())
-                {
-                    patch.apply(*mesh, submesh);
-                }
-            });
+            targets.selection.push_back(*item);
         }
+        bg2e::ui::MaterialEditIntent intent;
+        intent.patch = patch;
+        queueMaterialEdit(std::move(targets), std::move(intent));
     }
     catch (const std::exception& error)
     {
@@ -268,91 +251,69 @@ void AppDelegate::applyMaterialPatch(const std::filesystem::path& path)
     }
 }
 
-void AppDelegate::setFillLight(bool enabled)
+void AppDelegate::queueEnvironmentEdit(std::weak_ptr<bg2e::scene::EnvironmentComponent> target,
+    bg2e::ui::ReflectionEditIntent intent)
 {
-    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), enabled](auto& renderer)
-    {
-        if (auto owner = weak.lock())
-        {
-            owner->_stage->setFillLight(enabled);
-            renderer.invalidateHistories();
-        }
-    });
-}
-
-void AppDelegate::setFloor(bool visible, float height)
-{
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), visible, height](auto& renderer)
-    {
-        auto owner = weak.lock();
-        if (!owner)
-        {
-            return;
-        }
-        _stage->setFloor(visible, height);
-        renderer.invalidateHistories();
-    });
-}
-
-void AppDelegate::editEnvironment(std::function<void(bg2e::scene::EnvironmentComponent&)> operation)
-{
-    if (!document() || !document()->root || commandFaulted())
+    if (!document() || !document()->commands || commandFaulted())
     {
         return;
     }
     const auto generation = document()->generation;
-    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), generation, operation = std::move(operation)](auto& renderer)
+    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), generation, target, intent = std::move(intent)](auto&)
     {
         auto owner = weak.lock();
-        if (!owner || !owner->document() || owner->commandFaulted() || owner->document()->generation != generation)
+        auto live = target.lock();
+        if (!owner || !live || !owner->document() || owner->document()->generation != generation ||
+            !owner->_stage->contains(live->ownerNode()) || owner->commandFaulted())
         {
             return;
         }
-        owner->finishTransformInteraction(true);
-        if (owner->commandFaulted())
-        {
-            return;
-        }
-        bool adopted = false;
         try
         {
-            auto candidate = owner->_stage->environmentPreset();
-            operation(*candidate->environment());
-            auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(&renderer);
-            if (!deferred || !deferred->environmentGenerator())
+            auto candidate = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(live->clone());
+            const auto* type = bg2e::reflection::TypeRegistry::get().type(candidate->typeName());
+            void* propertyOwner = nullptr;
+            const auto* property = type ? bg2e::ui::ReflectionWidget::resolveProperty(candidate.get(), *type, intent.path, propertyOwner) : nullptr;
+            if (!property || !property->setter || property->type != intent.type)
             {
-                throw std::logic_error("The renderer has no environment generation service");
+                throw std::invalid_argument("Environment property path changed");
             }
-            owner->invalidateLightmapSources();
-            // A failed generator preserves its previously published GPU snapshot.
-            deferred->environmentGenerator()->synchronize(candidate->environment());
-            owner->_stage->adoptEnvironment(candidate);
-            adopted = true;
-            owner->_stage->prepareTools();
-            owner->notifyEdited(renderer);
-            owner->_status.clear();
+            property->setter(propertyOwner, intent.proposed);
+            auto generator = [weak]() -> command::lighting::EditEnvironment::Generator*
+            {
+                auto active = weak.lock();
+                auto* deferred = active ? dynamic_cast<bg2e::draw::RendererDeferred*>(active->renderer()) : nullptr;
+                return deferred ? deferred->environmentGenerator() : nullptr;
+            };
+            auto action = std::make_unique<command::lighting::EditEnvironment>(owner->_stage, live, candidate, generator);
+            command::Effects effects;
+            effects.lightmapSources = true;
+            effects.renderHistories = true;
+            owner->submitNodeCommand(live->ownerNode()->shared_from_this(), std::move(action), command::Boundary::Conservative, effects);
         }
         catch (const std::exception& error)
         {
-            if (adopted)
-            {
-                owner->_stage->markModified();
-                renderer.invalidateHistories();
-                owner->requestSceneFrame();
-            }
             owner->_status = error.what();
         }
     });
+    requestSceneFrame();
 }
+
 
 void AppDelegate::environmentPreset(const std::filesystem::path& path, bool save)
 {
-    if (!document() || !document()->root || path.empty())
+    if (!document() || !document()->root || path.empty() || !settleEditDrafts())
     {
         return;
     }
+    if (save)
+    {
+        _deferredReads.push_back({DeferredRead::Kind::SaveEnvironmentPreset, document()->generation, {}, path});
+        requestSceneFrame();
+        return;
+    }
     const auto generation = document()->generation;
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), path, save, generation](auto& renderer)
+    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), path, generation](auto&)
     {
         auto owner = weak.lock();
         if (!owner || !document() || document()->generation != generation)
@@ -364,83 +325,31 @@ void AppDelegate::environmentPreset(const std::filesystem::path& path, bool save
         {
             return;
         }
-        bool adopted = false;
         try
         {
-            if (save)
+            auto loaded = bg2e::db::loadScene(path); // Parsing remains outside the command.
+            const auto& children = loaded->rootNode()->children();
+            if (children.size() != 1)
             {
-                auto preset = _stage->environmentPreset();
-                _status = bg2e::db::saveScene(preset.get(), *_engine, path) ?
-                    "Environment preset saved" : "Environment preset save failed (see log)";
+                throw std::invalid_argument("Environment preset requires exactly one root");
             }
-            else
+            auto generator = [weak]() -> command::lighting::EditEnvironment::Generator*
             {
-                auto loaded = bg2e::db::loadScene(path); // Graphics-free schema validation first.
-                const auto& children = loaded->rootNode()->children();
-                if (children.size() != 1)
-                {
-                    throw std::invalid_argument("Environment preset requires exactly one root");
-                }
-                _stage->validateEnvironmentPreset(children[0]);
-                auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(&renderer);
-                if (!deferred || !deferred->environmentGenerator())
-                {
-                    throw std::logic_error("The renderer has no environment generation service");
-                }
-                owner->invalidateLightmapSources();
-                deferred->environmentGenerator()->synchronize(children[0]->environment());
-                _stage->restoreEnvironment(children[0]);
-                adopted = true;
-                _stage->prepareTools();
-                _selection->refreshSelection();
-                notifyEdited(renderer);
-                _status = "Environment preset restored";
-            }
+                auto active = weak.lock();
+                auto* deferred = active ? dynamic_cast<bg2e::draw::RendererDeferred*>(active->renderer()) : nullptr;
+                return deferred ? deferred->environmentGenerator() : nullptr;
+            };
+            auto action = std::make_unique<command::lighting::AdoptEnvironmentPreset>(_stage, children[0], generator);
+            command::Effects effects;
+            effects.lightmapSources = true;
+            effects.renderHistories = true;
+            effects.selection = true;
+            submitNodeCommand(document()->root, std::move(action), command::Boundary::Conservative, effects);
         }
         catch (const std::exception& error)
         {
-            if (adopted)
-            {
-                _stage->markModified();
-                renderer.invalidateHistories();
-                requestSceneFrame();
-            }
             _status = error.what();
         }
-    });
-}
-
-void AppDelegate::setCameraIntrinsics(float fov, float nearPlane, float farPlane)
-{
-    enqueueCpuValueUpdate(rendererGeneration(), [this, weak = weak_from_this(), fov, nearPlane, farPlane](auto& renderer)
-    {
-        auto owner = weak.lock();
-        if (!owner || !std::isfinite(fov) || !std::isfinite(nearPlane) || !std::isfinite(farPlane) ||
-            fov <= 0 || fov >= 179 || nearPlane <= 0 || farPlane <= nearPlane)
-        {
-            return;
-        }
-        finishTransformInteraction(true);
-        if (commandFaulted())
-        {
-            return;
-        }
-        auto* camera = _stage->camera();
-        if (auto* projection = camera->projection<bg2e::math::PerspectiveProjection>())
-        {
-            projection->setFov(fov);
-        }
-        else if (auto* projection = camera->projection<bg2e::math::OpticalProjection>())
-        {
-            projection->setFocalLength(projection->frameSize() / (2.0f * std::tan(glm::radians(fov) * 0.5f)));
-        }
-        else
-        {
-            return;
-        }
-        camera->projection()->setNear(nearPlane);
-        camera->projection()->setFar(farPlane);
-        notifyEdited(renderer);
     });
 }
 

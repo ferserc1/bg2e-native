@@ -251,6 +251,47 @@ void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
     }
 }
 
+Drawable::PreparedGeometry Drawable::prepareGeometry(const Mesh& data) const
+{
+    if (!_loaded || !_engine || !_mesh || !_tracing.empty() || rayTracingEnabled())
+    {
+        throw std::logic_error("Prepared geometry requires a complete raster-only drawable");
+    }
+    validateMesh(data);
+    if (data.submeshes.size() != _attributes.size())
+    {
+        throw std::invalid_argument("Prepared geometry must preserve submesh membership");
+    }
+    PreparedGeometry prepared;
+    prepared.owner = this;
+    prepared.engine = _engine;
+    prepared.source = _mesh.get();
+    prepared.raster = std::make_shared<DrawMesh>();
+    prepared.raster->setMeshData(data);
+    prepared.raster->build(_engine->device());
+    return prepared;
+}
+
+
+bool Drawable::canExchangeGeometry(const PreparedGeometry& prepared) const noexcept
+{
+    return prepared.owner == this && prepared.engine == _engine && prepared.source == _mesh.get() &&
+        _loaded && _engine && _tracing.empty() && !rayTracingEnabled() && prepared.raster &&
+        prepared.raster->submeshCount() == _attributes.size();
+}
+
+
+bool Drawable::exchangeGeometry(PreparedGeometry& prepared) noexcept
+{
+    if (!canExchangeGeometry(prepared))
+    {
+        return false;
+    }
+    _drawMesh.swap(prepared.raster);
+    return true;
+}
+
+
 std::shared_ptr<Drawable> Drawable::clone() const
 {
     if (_engine && !isLoaded())

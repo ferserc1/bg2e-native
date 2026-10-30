@@ -34,8 +34,21 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
     _preferences = std::make_shared<bg2e::draw::RenderSettingsPreferences>(&store);
     _preferences->setAutomaticPersistence(true);
     _preferences->setExcludeSceneSettingsFromAutomaticPersistence(true);
+    _preferences->onSceneEdits([owner = std::weak_ptr<AppDelegate>(delegate), preferences = std::weak_ptr<bg2e::draw::RenderSettingsPreferences>(_preferences)]
+        (auto changes, auto completion)
+    {
+        if (auto active = owner.lock())
+        {
+            active->editSceneSettings(preferences.lock(), std::move(changes), std::move(completion));
+        }
+        else if (completion)
+        {
+            completion({false, {{"target_expired", "", "Composer is no longer available"}}});
+        }
+    });
     _preferences->connect(delegate); // Before the renderer's first attachment.
     _graphics.bind(_preferences);
+    _graphics.setSceneEditInteractionsEnabled(true);
     _graphics.setPosition(320, 80);
     _graphics.setSize(620, 740);
     _graphics.close();
@@ -116,20 +129,39 @@ void EditorUi::initEditMenu()
 {
     const auto weakDelegate = _delegate;
     bg2e::ui::MenuItem edit("Edit");
-    edit.addMenuItem({"Undo", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyZ, .handler = [weakDelegate]
+    const auto historyItem = [weakDelegate](bool redo)
     {
-        if (auto owner = weakDelegate.lock())
+        bg2e::app::Shortcuts::ShortcutData shortcut;
+        shortcut.cmdOrCtrlModifier = true;
+        shortcut.shiftModifier = redo;
+        shortcut.key = bg2e::app::KeyEvent::KeyZ;
+        shortcut.allowInTextInput = false;
+        shortcut.handler = [weakDelegate, redo]
         {
-            owner->undoEdit();
-        }
-    }}});
-    edit.addMenuItem({"Redo", {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyZ, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+            if (auto owner = weakDelegate.lock())
+            {
+                if (redo)
+                {
+                    owner->redoEdit();
+                }
+                else
+                {
+                    owner->undoEdit();
+                }
+            }
+        };
+        return bg2e::ui::MenuItem(redo ? "Redo" : "Undo", shortcut, [weakDelegate, redo]
         {
-            owner->redoEdit();
-        }
-    }}});
+            auto owner = weakDelegate.lock();
+            return owner ? owner->historyActionLabel(redo) : std::string(redo ? "Redo" : "Undo");
+        }, [weakDelegate, redo]
+        {
+            auto owner = weakDelegate.lock();
+            return owner && owner->historyActionAvailable(redo);
+        });
+    };
+    edit.addMenuItem(historyItem(false));
+    edit.addMenuItem(historyItem(true));
     edit.addMenuItem({"Record selection in undo history", {.handler = [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
@@ -161,21 +193,21 @@ void EditorUi::initEditMenu()
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(0);
+            owner->editGeometry(command::geometry::Operation::ZUpToYUp);
         }
     }}});
     edit.addMenuItem({"Center Geometry", {.handler = [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(1);
+            owner->editGeometry(command::geometry::Operation::Center);
         }
     }}});
     edit.addMenuItem({"Put on Floor", {.handler = [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(2);
+            owner->editGeometry(command::geometry::Operation::PutOnFloor);
         }
     }}});
     edit.addMenuItem({});
@@ -183,14 +215,14 @@ void EditorUi::initEditMenu()
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(3);
+            owner->editGeometry(command::geometry::Operation::CentimetersToMeters);
         }
     }}});
     edit.addMenuItem({"meters to centimeters", {.handler = [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(4);
+            owner->editGeometry(command::geometry::Operation::MetersToCentimeters);
         }
     }}});
     _toolbar.addMenuItem(edit);
@@ -361,28 +393,28 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(0);
+            owner->editGeometry(command::geometry::Operation::ZUpToYUp);
         }
     });
     addPanelButton("Center Geometry", [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(1);
+            owner->editGeometry(command::geometry::Operation::Center);
         }
     });
     addPanelButton("Put on Floor", [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(2);
+            owner->editGeometry(command::geometry::Operation::PutOnFloor);
         }
     });
     addPanelButton("cm to m", [weakDelegate]
     {
         if (auto owner = weakDelegate.lock())
         {
-            owner->editGeometry(3);
+            owner->editGeometry(command::geometry::Operation::CentimetersToMeters);
         }
     });
     addPanelButton("Frame", [weakDelegate]
@@ -436,7 +468,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             {
                 return (!ui->_nameEdit || ui->_nameEdit->commit()) &&
                     (!ui->_metadataEdit || ui->_metadataEdit->commit()) &&
-                    ui->_componentInspector.commitInteraction();
+                    ui->_componentInspector.commitInteraction() && ui->_material.commitInteraction() && ui->_graphics.commitInteraction();
             }
             if (ui->_nameEdit)
             {
@@ -447,6 +479,8 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                 ui->_metadataEdit->cancel();
             }
             ui->_componentInspector.cancelInteraction();
+            ui->_material.cancelInteraction();
+            ui->_graphics.cancelInteraction();
             return (!ui->_nameEdit || !ui->_nameEdit->active()) &&
                 (!ui->_metadataEdit || !ui->_metadataEdit->active());
         });

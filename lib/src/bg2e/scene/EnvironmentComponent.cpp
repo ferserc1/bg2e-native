@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/EnvironmentComponent.hpp>
+#include <utility>
 #include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/Node.hpp>
@@ -29,6 +30,19 @@
 #include <stdexcept>
 
 namespace bg2e::scene {
+
+void EnvironmentComponent::exchangeValues(EnvironmentComponent& other) noexcept
+{
+    using std::swap;
+    swap(_environmentImage, other._environmentImage);
+    swap(_imgHash, other._imgHash);
+    swap(_skyboxBlur, other._skyboxBlur);
+    swap(_skyboxVisible, other._skyboxVisible);
+    swap(_skyHorizonColor, other._skyHorizonColor);
+    swap(_skyZenithColor, other._skyZenithColor);
+    swap(_groundColor, other._groundColor);
+}
+
 
 EnvironmentComponent::EnvironmentComponent()
 {

@@ -20,6 +20,7 @@ GPU remains independent of UI and scene namespaces.
 - [Workspace](Workspace.md), [Window](Window.md), [menus](Menu.md)
 - [Toolbar/status](Toolbar_and_StatusBar.md), [Loader](Loader.md)
 - [DrawMaterialEditor and drawable editing](Material_Editors.md)
+- [Optional edit sessions and typed intents](EditInteraction.md)
 - [DrawTextureWidgets](DrawTextureWidgets.md), [TexturePreview](TexturePreview.md)
 - [Reflection](../reflection/index.md) and [live graphics settings](../draw/Settings.md)
 - [MainLoop architecture](../../architecture/MainLoop_render_draw_gpu.md)
@@ -28,3 +29,7 @@ GPU remains independent of UI and scene namespaces.
 Use GraphicsSettingsWindow for live renderer settings and application environment
 editors for scene lights/environment. Performance controls belong in the
 application's Performance view rather than serialized graphics settings.
+
+These interfaces do not require command history. See the
+[command/memento SDK integration guide](../../architecture/command-memento/sdk-integration.md)
+for opt-in use and migration from mutation notifications.

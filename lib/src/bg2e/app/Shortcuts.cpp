@@ -40,6 +40,15 @@ std::string Shortcuts::ShortcutData::getShortcutString() const
             ss << sep + "Shift";
             sep = "+";
         }
+        if (cmdOrCtrlModifier)
+        {
+#if defined(__APPLE__)
+            ss << sep << "Cmd";
+#else
+            ss << sep << "Ctrl";
+#endif
+            sep = "+";
+        }
         if (ctrlModifier)
         {
             ss << sep << "Ctrl";
@@ -65,6 +74,10 @@ void Shortcuts::keyDown(const KeyEvent& evt)
         case KeyEvent::KeyLeftAlt:
             _altModifier = true;
             break;
+        case KeyEvent::KeyLeftSuper:
+        case KeyEvent::KeyRightSuper:
+            _superModifier = true;
+            break;
         case KeyEvent::KeyRightControl:
         case KeyEvent::KeyLeftControl:
             _ctrlModifier = true;
@@ -89,6 +102,10 @@ void Shortcuts::keyUp(const KeyEvent& evt)
         case KeyEvent::KeyLeftAlt:
             _altModifier = false;
             break;
+        case KeyEvent::KeyLeftSuper:
+        case KeyEvent::KeyRightSuper:
+            _superModifier = false;
+            break;
         case KeyEvent::KeyRightControl:
         case KeyEvent::KeyLeftControl:
             _ctrlModifier = false;
@@ -109,6 +126,15 @@ void Shortcuts::keyUp(const KeyEvent& evt)
     }
 }
 
+void Shortcuts::resetModifiers()
+{
+    _altModifier = false;
+    _ctrlModifier = false;
+    _superModifier = false;
+    _shiftModifier = false;
+}
+
+
 void Shortcuts::addShortcutMapper(const ShortcutData& shortcut)
 {
     _shortcutData.push_back(shortcut);
@@ -116,10 +142,17 @@ void Shortcuts::addShortcutMapper(const ShortcutData& shortcut)
 
 bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData& sc) const
 {
+#if defined(__APPLE__)
+    const bool ctrl = sc.ctrlModifier;
+    const bool super = sc.cmdOrCtrlModifier;
+#else
+    const bool ctrl = sc.ctrlModifier || sc.cmdOrCtrlModifier;
+    const bool super = false;
+#endif
     return currentKey == sc.key &&
            _altModifier == sc.altModifier &&
            _shiftModifier == sc.shiftModifier &&
-           sc.ctrlModifier == _ctrlModifier;
+           ctrl == _ctrlModifier && super == _superModifier;
 }
 
 }

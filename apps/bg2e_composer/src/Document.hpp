@@ -44,9 +44,9 @@ struct Document {
         }
     }
 
-    // Transitional authored edits invalidate undo/redo until migrated. Persisted
-    // navigation explicitly opts into Preserve and only advances its revision.
-    void markModified(bg2e::app::CommandCompatibility compatibility = bg2e::app::CommandCompatibility::ResetHistory)
+    // Persisted nonhistorical changes require an explicit compatibility policy.
+    // Authored editor changes enter through commands, not this notification.
+    void markModified(bg2e::app::CommandCompatibility compatibility)
     {
         if (commands)
         {

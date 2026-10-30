@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/ui/Menu.hpp>
+#include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/app/MainLoop.hpp>
 
 #include <imgui.h>
@@ -25,10 +26,12 @@ namespace bg2e::ui {
 
 void MenuItem::draw() const
 {
+    const auto text = _labelFn ? _labelFn() : label;
+    const bool enabled = !_enabledFn || _enabledFn();
     switch (_type)
     {
     case MenuItemType::Submenu:
-        if (Menu::beginMenu(label))
+        if (Menu::beginMenu(text, enabled))
         {
             for (auto& subItem : _children)
             {
@@ -39,7 +42,7 @@ void MenuItem::draw() const
         break;
     case MenuItemType::Action: {
         std::string shortcut = _shortcut.getShortcutString();
-        if (Menu::menuItem(label, shortcut))
+        if (Menu::menuItem(text, shortcut, false, enabled))
         {
             _shortcut.handler();
         }
@@ -48,7 +51,7 @@ void MenuItem::draw() const
     case MenuItemType::CheckableAction: {
         std::string shortcut = _shortcut.getShortcutString();
         bool checked = _checkedFn ? _checkedFn() : false;
-        if (Menu::menuItem(label, shortcut, checked))
+        if (Menu::menuItem(text, shortcut, checked, enabled))
         {
             _shortcut.handler();
         }
@@ -74,14 +77,30 @@ void MenuItem::initShortcuts() const
         if (_shortcut.key != app::KeyEvent::KeyUnknown)
         {
             auto& shortcuts = app::MainLoop::current()->shortcuts();
-            shortcuts.addShortcutMapper(_shortcut);
+            auto shortcut = _shortcut;
+            shortcut.handler = [handler = _shortcut.handler, enabled = _enabledFn, allowText = _shortcut.allowInTextInput]
+            {
+                if ((!enabled || enabled()) && (allowText || !UserInterface::textInputActive()))
+                {
+                    handler();
+                }
+            };
+            shortcuts.addShortcutMapper(shortcut);
         }
         break;
     case MenuItemType::CheckableAction:
         if (_shortcut.key != app::KeyEvent::KeyUnknown)
         {
             auto& shortcuts = app::MainLoop::current()->shortcuts();
-            shortcuts.addShortcutMapper(_shortcut);
+            auto shortcut = _shortcut;
+            shortcut.handler = [handler = _shortcut.handler, enabled = _enabledFn, allowText = _shortcut.allowInTextInput]
+            {
+                if ((!enabled || enabled()) && (allowText || !UserInterface::textInputActive()))
+                {
+                    handler();
+                }
+            };
+            shortcuts.addShortcutMapper(shortcut);
         }
         break;
     case MenuItemType::Separator:

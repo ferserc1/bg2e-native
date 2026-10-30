@@ -275,6 +275,9 @@ class BG2E_API OrbitCameraComponent : public Component {
     void keyDown(const app::KeyEvent& keyEvent) override;
     void keyUp(const app::KeyEvent& keyEvent) override;
 
+    // Clear held input without replacing the controller or resetting its pose.
+    void cancelInput();
+
     void reset();
     void centerOnTarget(bg2e::scene::Node* target);
 

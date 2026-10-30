@@ -1,6 +1,6 @@
 # Command/memento implementation plan
 
-Status: steps 1–5 complete in source (including scene/component commands, retained structural identities and optional selection history); step 6 pending. Protected resource/custom cases reject editing until their explicit adapters exist. Compilation/runtime validation has not been performed by the agent. See [mutation-inventory.md](mutation-inventory.md) and [progress.md](progress.md). This plan does not authorize compilation or CMake changes.
+Status: steps 1–9 complete in source and documentation (including prepared import/UV2/lightmap adoption, authored graphics-setting commands, history menu/shortcut integration, public API references and the architecture guide). Protected resource/custom cases reject editing until their explicit adapters exist. Compilation/runtime validation has not been performed by the agent. See [mutation-inventory.md](mutation-inventory.md) and [progress.md](progress.md). This plan does not authorize compilation or CMake changes.
 
 ## Purpose
 

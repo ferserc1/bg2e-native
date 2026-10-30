@@ -37,12 +37,15 @@ class BG2E_API Shortcuts {
         bool shiftModifier = false;
         KeyEvent::Key key = KeyEvent::KeyUnknown;
         ShortcutHandler handler;
+        bool cmdOrCtrlModifier = false;
+        bool allowInTextInput = true;
 
         std::string getShortcutString() const;
     };
 
     void keyDown(const KeyEvent& evt);
     void keyUp(const KeyEvent& evt);
+    void resetModifiers();
 
     void addShortcutMapper(const ShortcutData& shortcut);
 
@@ -51,6 +54,7 @@ class BG2E_API Shortcuts {
 
     bool _altModifier = false;
     bool _ctrlModifier = false;
+    bool _superModifier = false;
     bool _shiftModifier = false;
 
     bool matchShortcut(KeyEvent::Key currentKey, const ShortcutData& sc) const;

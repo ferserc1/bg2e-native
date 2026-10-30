@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <utility>
 
 namespace bg2e {
 namespace ui {
@@ -55,6 +56,13 @@ class BG2E_API MenuItem {
     {
     }
 
+    MenuItem(const std::string& l, const app::Shortcuts::ShortcutData& sc,
+        std::function<std::string()> dynamicLabel, std::function<bool()> enabled)
+        : label(l), _type(MenuItemType::Action), _shortcut(sc),
+          _labelFn(std::move(dynamicLabel)), _enabledFn(std::move(enabled))
+    {
+    }
+
     std::string label;
 
     void addMenuItem(const MenuItem& item)
@@ -72,6 +80,8 @@ class BG2E_API MenuItem {
     MenuItemType _type = MenuItemType::Separator;
     app::Shortcuts::ShortcutData _shortcut{};
     std::function<bool()> _checkedFn = nullptr;
+    std::function<std::string()> _labelFn;
+    std::function<bool()> _enabledFn;
 
     bool _shortcutInitialized = false;
 };

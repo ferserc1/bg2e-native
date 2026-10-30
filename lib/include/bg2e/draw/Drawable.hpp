@@ -54,6 +54,23 @@ class BG2E_API Drawable {
         return _mesh;
     }
     void applyModifier(geo::Modifier<Mesh>* modifier);
+
+    // Geometry-only preparation at a stopped graphics boundary. CPU mesh,
+    // material identities and live bindings remain unchanged until publication.
+    // Raster-only: opaque acceleration payloads need a separate accounting seam.
+    class PreparedGeometry {
+        friend class Drawable;
+        const Drawable* owner = nullptr;
+        Engine* engine = nullptr;
+        const Mesh* source = nullptr;
+        std::shared_ptr<DrawMesh> raster;
+    };
+    PreparedGeometry prepareGeometry(const Mesh& data) const;
+    bool canExchangeGeometry(const PreparedGeometry& prepared) const noexcept;
+    // Exchange only raster bindings. Caller publishes CPU data once per shared
+    // Mesh and drains outstanding submissions (or retains displaced bindings
+    // until their completion) before discarding the exchanged state.
+    bool exchangeGeometry(PreparedGeometry& prepared) noexcept;
     void load(Engine* engine, std::function<void()> onTextureLoaded = nullptr);
     void reload();
     void updateMaterials(std::function<void()> onTextureLoaded = nullptr);

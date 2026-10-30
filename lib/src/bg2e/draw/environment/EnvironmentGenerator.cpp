@@ -337,6 +337,73 @@ bool EnvironmentGenerator::synchronize(const scene::EnvironmentComponent* compon
     }
     return changed;
 }
+EnvironmentGenerator::State EnvironmentGenerator::captureState() const
+{
+    State state{_resources, _sourcePath, _pathSource, _rebuildRequested};
+    if (_configuration.defaultSky)
+    {
+        const auto& settings = _configuration.defaultSky->settings();
+        state.horizon = settings.skyHorizonColor;
+        state.zenith = settings.skyZenithColor;
+        state.ground = settings.groundColor;
+    }
+    return state;
+}
+
+
+bool EnvironmentGenerator::acceptsState(const State& state) const noexcept
+{
+    try
+    {
+        if (!state.resources)
+        {
+            return false;
+        }
+        state.resources->validate(_engine->device());
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
+}
+
+
+void EnvironmentGenerator::exchangeState(State& state) noexcept
+{
+    using std::swap;
+    swap(_resources, state.resources);
+    swap(_sourcePath, state.sourcePath);
+    swap(_pathSource, state.pathSource);
+    swap(_rebuildRequested, state.rebuildRequested);
+    if (_configuration.defaultSky)
+    {
+        auto& settings = _configuration.defaultSky->settings();
+        swap(settings.skyHorizonColor, state.horizon);
+        swap(settings.skyZenithColor, state.zenith);
+        swap(settings.groundColor, state.ground);
+    }
+}
+
+
+EnvironmentGenerator::State EnvironmentGenerator::prepareState(const scene::EnvironmentComponent* component)
+{
+    auto previous = captureState();
+    try
+    {
+        synchronize(component);
+        auto prepared = captureState();
+        exchangeState(previous);
+        return prepared;
+    }
+    catch (...)
+    {
+        exchangeState(previous);
+        throw;
+    }
+}
+
+
 void EnvironmentGenerator::cleanup()
 {
     _rebuildRequested = false;

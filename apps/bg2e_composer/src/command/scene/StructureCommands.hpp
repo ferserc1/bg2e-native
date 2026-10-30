@@ -23,14 +23,15 @@
 
 namespace bg2e_composer::command::scene {
 
-enum class NodeEdit { Insert, Remove, Reparent };
+enum class NodeEdit { Insert, Remove, Reparent, Replace };
 
 class EditNodes final : public bg2e::app::Command {
   public:
     EditNodes(std::shared_ptr<StageScene> stage,
         std::shared_ptr<bg2e::manipulation::SelectionManager> selection, NodeEdit operation,
         const std::vector<std::shared_ptr<bg2e::scene::Node>>& targets,
-        std::weak_ptr<bg2e::scene::Node> destination = {}, std::string label = {});
+        std::weak_ptr<bg2e::scene::Node> destination = {}, std::string label = {},
+        std::shared_ptr<bg2e::scene::Node> replaced = {});
 
     const bg2e::app::CommandInfo& info() const noexcept override;
     bg2e::app::CommandMemory memory() const override;
@@ -48,6 +49,7 @@ class EditNodes final : public bg2e::app::Command {
     NodeEdit _operation;
     std::weak_ptr<bg2e::scene::Node> _destination;
     std::vector<std::shared_ptr<command::SceneRetention>> _targets;
+    std::shared_ptr<command::SceneRetention> _replaced;
     std::vector<Placement> _before, _after;
     StageScene::EditingState _beforeState, _afterState;
     bg2e::manipulation::SelectionState _beforeSelection, _afterSelection;

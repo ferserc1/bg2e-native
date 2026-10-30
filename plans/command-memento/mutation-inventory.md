@@ -167,3 +167,48 @@ Composer now consumes typed inspector intents. Property and metadata widgets buf
 Selection is now an identifiable command for hierarchy, submesh and viewport routes. Its `UserPreference` is frozen at admission (`draw.bg2e_composer.history` / `recordSelection`, default false), has no document impact and preserves redo when unrecorded. Preference changes do not filter old entries. Ordered weak identity snapshots prune stale geometry safely; replay does not recurse through the pick-intent callback. Navigation and automatic runtime updates remain outside history.
 
 Next dependency: step 6. Remaining legacy material/environment, geometry and prepared import/bake/UV2/settings paths retain their later-step classifications; do not remove their compatibility guards merely because structural commands exist. See [progress.md](progress.md) for actual APIs, unsupported cases and source-only checks.
+
+
+## Step 6 implementation checkpoint
+
+`material::EditMaterials` owns grouped material/property/texture edits, clipboard paste and prepared patches. Private snapshots prepare resources before publication; live `MaterialBase` identity and separate authored definitions are restored by retained exchanges. Redo does not read source paths. Shader-data validation, target revisions, native image tickets and CPU/source budgets precede publication. Custom/shared live material aliases and unresolved source states require an explicit adapter instead of unsafe mutation.
+
+`lighting::EditEnvironment` owns environment inspector properties. `AdoptEnvironmentPreset` consumes parsed preset data, prepares a retained rig and GPU state, and restores original component instances/order, stage floor/fill state and active scene references. Generation failures retain the last-good public snapshot; publication failures recover the model, with explicit history faulting if compensation fails. Environment commands reject replay after renderer-generation changes. General structural commands still protect file-backed environment branches; the prepared preset adapter is deliberately narrower.
+
+Material and reflected environment controls buffer drafts until commit, producing one entry per interaction and generating expensive environment resources only for the final accepted state. Cancel has no live mutation to undo. Save, undo, target rebind and cleanup settle material sessions. Clipboard copy, parsing and preset save remain outside history. Global texture cache semantics are unchanged. Resource-bearing envelope retirement now drains outstanding device submissions before destroying retained states; detached rigs use stage retirement.
+
+Next dependency: step 7 geometry commands. Prepared import/bake/UV2 and graphics-settings integration remain assigned to step 8; do not infer complete mutation coverage from material/environment migration. See [progress.md](progress.md) for APIs, budgets, protected cases and source-only checks.
+
+
+## Step 7 implementation checkpoint
+
+`geometry::TransformGeometry` now owns axis conversion, center/floor placement and unit conversion as a single selected-target batch. Menu/context/tool callers pass `geometry::Operation` names. Before values determine compact fixed forward/inverse operations once; undo/redo do not use current selection/bounds. All supported transforms preserve winding and UVs. Normal/tangent directions rotate for axis conversion while preserving magnitudes/zero vectors; positive uniform scale leaves directions unchanged. Floating-point accumulation is accepted, without a bitwise-restoration claim.
+
+Geometry CPU storage and raster owners are deduplicated separately. Every live document Drawable sharing an edited Mesh is rebuilt, while Mesh/Drawable/material/submesh identities stay stable. The new `Drawable::PreparedGeometry` seam builds all replacement buffers before any visible CPU/native publication. Local displaced data supports exact failure recovery without persistent snapshots for inverse commands. Checked budgets include transient preparation/recovery and reject external capacity growth. Acceleration-backed geometry remains protected until a supported memory adapter exists.
+
+`geometry::ReplaceGeometry` provides retained old/new CPU data for prepared information-losing results, allowing vertex/index/range changes with stable submesh membership. UV2 producer adoption, job revisions and import/bake integration remain step 8. Standalone SDK modifiers and external owners of shared mutable CPU meshes retain caller-managed synchronization; Composer only enumerates document owners.
+
+Next dependency: step 8 complete integration and mutation audit. See [progress.md](progress.md) for actual APIs, retirement/recovery constraints and source-only checks.
+
+
+## Step 8 final integration audit (source only)
+
+| Route | Implemented ownership/classification |
+| --- | --- |
+| Hierarchy/node/component/property/action/submesh metadata | Typed retained scene/component commands; unsupported custom/resource actions reject. Discrete preparation follows buffered draft settlement. |
+| Selection and navigation | Selection uses the frozen optional category preference, no document impact; navigation/runtime remain outside history, with explicit Preserve dirty revisions for persisted navigation. |
+| Material/texture/paste/patch | Typed material command and buffered intents; clipboard copy is a deferred read without a history entry. |
+| Environment properties/presets | Prepared retained component/resource commands, including stage state and native resources. Preset read/parse/save remain outside commands; save runs after settlement. |
+| Reversible geometry | Named fixed forward/inverse operations; all document raster aliases prepare before publication. |
+| UV2/information-losing geometry | Private CPU generation followed by retained `ReplaceGeometry`, initial token/state/raster guards and execution completion; UV previews follow native geometry identity. |
+| Imports/reimports | Parsing/realization remain services; `ApplyImport` and `NodeEdit::Replace` publish retained candidates and restore exact placement/reimport slots. Stale jobs/primary-file stamps/request tokens reject; redo performs no import IO. |
+| Baking | Computation/progress/cancellation stay outside history. A prepared material batch adopts completed images plus authored UV/mode/scale metadata atomically. Per-source leases retain generated files through live/CPU/history/clipboard ownership. Preview results derive from current bindings. |
+| Graphics Settings authored scene targets | Exclusive typed scene handler plus buffered light/environment sessions; scene file batches use policy-compatible composites. Mixed renderer/scene profiles reject; renderer-preferences export excludes authored scene settings in Composer. |
+| Renderer/backend/debug/performance/UI preferences | Existing explicit preference queues/persistence, no scene history or automatic scene dirtying. |
+| File open/new/save/export/close | Existing document lifecycle and saved-state baseline outside history; pending command/draft settlement precedes publication/writes. |
+| Stage startup/detached preparation/tools/runtime caches | Initialization/derived ownership, not editor history. Obsolete direct authored mutation methods and pending edit lambdas were removed. |
+| Native/custom unsupported cases | Explicit rejection without partial publication; no change to GPU/render namespaces or cache semantics. |
+
+`Dispatcher::submit` now reports per-job completion and accepts explicit prepared-result origin. Initial cancellation/source guards do not block later undo/redo. History UI shows names, busy/fault availability, platform shortcut modifiers and native text undo ownership. Selection preference persistence affects future admissions only. Resource replay checks device compatibility, while histories/source leases retire before dependent engine/plugin owners.
+
+Source audit limits: no compilation or Composer verification was performed. Primary-file size/mtime checks do not snapshot all external dependencies; already-prepared CPU/GPU content supplies deterministic redo. Acceleration allocation accounting, unknown/custom adapters and submesh-count replacement remain intentionally unsupported. See [progress.md](progress.md) for implemented API names and exact next action: step 9 documentation.

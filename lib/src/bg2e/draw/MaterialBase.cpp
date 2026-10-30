@@ -204,4 +204,43 @@ std::shared_ptr<MaterialBase> MaterialBase::clone() const
     }
     return result;
 }
+
+std::shared_ptr<MaterialBase> MaterialBase::snapshot() const
+{
+    auto result = std::make_shared<MaterialBase>(_engine);
+    result->_attributes = cloneMaterialAttributes(_attributes);
+    result->_textures = _textures;
+    result->_useTextureCache = false;
+    for (size_t i = 0; i < getters.size(); ++i)
+    {
+        const auto settings = (_attributes.*getters[i])();
+        if (settings == _realizedSettings[i] &&
+            (!settings || settings->revision() == _realizedSettingsRevisions[i]))
+        {
+            result->_realizedSettings[i] = (result->_attributes.*getters[i])();
+            result->_realizedSettingsRevisions[i] = result->_realizedSettings[i]
+                ? result->_realizedSettings[i]->revision() : 0;
+        }
+    }
+    return result;
+}
+
+
+bool MaterialBase::exchangeState(MaterialBase& prepared) noexcept
+{
+    if (_engine != prepared._engine)
+    {
+        return false;
+    }
+    using std::swap;
+    swap(_attributes, prepared._attributes);
+    swap(_textures, prepared._textures);
+    swap(_realizedSettings, prepared._realizedSettings);
+    swap(_realizedSettingsRevisions, prepared._realizedSettingsRevisions);
+    // Packing caches stay with their live object. They validate authored state
+    // and native binding identities on the next extraction; snapshots must not
+    // acquire obsolete cache-only image owners outside retained accounting.
+    return true;
+}
+
 }

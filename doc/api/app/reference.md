@@ -65,6 +65,18 @@ The internal graphics execution interface is not an application API.
 
 Access the active registry through `MainLoop::shortcuts()`.
 
+## Command history
+
+| Symbol | Header | Description |
+|--------|--------|-------------|
+| `Command`, `CommandInfo`, `CommandResult`, `CommandMemory` | `Command.hpp` | Operation, policy, status and retained-memory contract. |
+| `CommandHistory`, `CommandReservation`, `CommandHistoryLimits` | `CommandHistory.hpp` | Admission, undo/redo, saved-state identity, limits and recovery fault state. |
+| `CommandQueue` | `CommandQueue.hpp` | FIFO safe-boundary scheduling and interaction update transport. |
+| `CommandTransaction` | `CommandTransaction.hpp` | Preview, adoption and cancellation contract. |
+| `CompositeCommand` | `CompositeCommand.hpp` | One entry backed by compatible child commands. |
+
+See the [command history API](CommandHistory.md) for ownership and threading.
+
 ## Persistence and platform services
 
 | Symbol | Header | Description |
@@ -103,6 +115,11 @@ Access the active registry through `MainLoop::shortcuts()`.
 | `bg2e/app/Keyboard.hpp` | `Keyboard` |
 | `bg2e/app/Mouse.hpp` | `Mouse` |
 | `bg2e/app/Shortcuts.hpp` | `Shortcuts`, `ShortcutData` |
+| `bg2e/app/Command.hpp` | Command contract, result, policy, context and memory tickets |
+| `bg2e/app/CommandHistory.hpp` | History, limits, document state and reservation |
+| `bg2e/app/CommandQueue.hpp` | FIFO executor and queued transaction API |
+| `bg2e/app/CommandTransaction.hpp` | Continuous edit base class |
+| `bg2e/app/CompositeCommand.hpp` | Grouped command implementation |
 | `bg2e/app/Preferences.hpp` | `Preferences` |
 | `bg2e/app/PreferencesStore.hpp` | `PreferencesStore` |
 | `bg2e/app/FileDialog.hpp` | `FileDialog` |

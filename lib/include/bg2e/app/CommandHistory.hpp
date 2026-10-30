@@ -105,6 +105,8 @@ class BG2E_API CommandHistory {
     // Preserve recovery ownership and block unsafe replay until resetBaseline.
     CommandResult reportExternalFault();
     bool faulted() const;
+    std::string undoName() const;
+    std::string redoName() const;
     size_t undoCount() const;
     size_t redoCount() const;
     size_t retainedBytes() const;

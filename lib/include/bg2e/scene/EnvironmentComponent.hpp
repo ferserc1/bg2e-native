@@ -87,6 +87,10 @@ class BG2E_API EnvironmentComponent : public Component {
     }
     void setGroundColor(const base::Color& color);
 
+    // Exchange authored values while preserving component identity/membership.
+    // Both states must be validated/prepared at the caller's safe boundary.
+    void exchangeValues(EnvironmentComponent& other) noexcept;
+
     std::shared_ptr<Component> clone() const override;
 
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath) override;

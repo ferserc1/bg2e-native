@@ -49,7 +49,8 @@ class Dispatcher {
     ~Dispatcher();
 
     bg2e::app::CommandResult submit(std::unique_ptr<bg2e::app::Command> command,
-        Boundary boundary, Effects effects, std::function<bool()> valid);
+        Boundary boundary, Effects effects, std::function<bool()> valid, Completion completion = {},
+        bg2e::app::CommandOrigin origin = bg2e::app::CommandOrigin::Editor);
     // CPU-only supervised interactions begin at the input/graphics boundary.
     // The transaction owns validation, effects and recovery; it retains no native
     // resources. Pending commands prevent admission. History blocks execution of
@@ -66,6 +67,7 @@ class Dispatcher {
     bg2e::app::CommandResult settle(bool commit);
     bg2e::app::CommandResult shutdown();
     // Call only after render extraction/submissions no longer use retired data.
+    bool retiredResourcesPending() const;
     void releaseRetired();
 
     bg2e::app::CommandHistory& history();

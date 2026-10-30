@@ -702,6 +702,12 @@ void RenderSettingsPreferences::queueImport(const json::JsonNode& document, Unkn
     enqueue(SettingsCodec::validate(document, _catalog, policy), std::move(completion));
 }
 
+void RenderSettingsPreferences::onSceneEdits(SceneEdits handler)
+{
+    _sceneEdits = std::move(handler);
+}
+
+
 void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completion)
 {
     if (!plan.result().valid())
@@ -710,6 +716,23 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
         {
             completion(plan.result());
         }
+        return;
+    }
+    const auto sceneSetting = [](const auto& change)
+    {
+        return change.handle.component.starts_with("environment/") || change.handle.component.starts_with("light/");
+    };
+    if (_sceneEdits && std::any_of(plan.changes().begin(), plan.changes().end(), sceneSetting))
+    {
+        if (!std::all_of(plan.changes().begin(), plan.changes().end(), sceneSetting))
+        {
+            if (completion)
+            {
+                completion(failure("mixed_scene_preferences", "Import authored scene settings separately from renderer preferences"));
+            }
+            return;
+        }
+        _sceneEdits(plan.changes(), std::move(completion));
         return;
     }
     auto delegate = _delegate.lock();
@@ -828,7 +851,13 @@ SettingsResult RenderSettingsPreferences::restore(const json::JsonNode* explicit
     {
         if (explicitDocument)
         {
-            return SettingsCodec::validate(*explicitDocument, _catalog, policy).apply(_catalog);
+            auto plan = SettingsCodec::validate(*explicitDocument, _catalog, policy);
+            if (_sceneEdits && std::any_of(plan.changes().begin(), plan.changes().end(), [](const auto& change)
+                { return change.handle.component.starts_with("environment/") || change.handle.component.starts_with("light/"); }))
+            {
+                return failure("scene_edits_require_queue", "Apply authored scene settings through queued imports");
+            }
+            return plan.apply(_catalog);
         }
         if (!_persistence)
         {
@@ -841,6 +870,10 @@ SettingsResult RenderSettingsPreferences::restore(const json::JsonNode* explicit
         }
         auto document = SettingsCodec::parse(hexDecode(stored));
         if (_excludeSceneSettingsFromPersistence)
+        {
+            excludeSceneSettings(*document);
+        }
+        if (_sceneEdits)
         {
             excludeSceneSettings(*document);
         }

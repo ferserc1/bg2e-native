@@ -32,6 +32,10 @@ enum class UnknownSettingPolicy
 class BG2E_API SettingsImport {
   public:
     const SettingsResult& result() const;
+    const std::vector<SettingChange>& changes() const
+    {
+        return _changes;
+    }
     SettingsResult apply(SettingsCatalog& catalog) const;
   private:
     friend class SettingsCodec;
@@ -50,6 +54,6 @@ class BG2E_API SettingsCodec {
     static std::shared_ptr<json::JsonNode> parse(const std::string& text);
     static std::string stringify(const json::JsonNode& document);
     static std::shared_ptr<json::JsonNode> readFile(const std::filesystem::path& path);
-    static void exportFile(const SettingsCatalog& catalog, const std::filesystem::path& path);
+    static void exportFile(const SettingsCatalog& catalog, const std::filesystem::path& path, bool includeScene = true);
 };
 }

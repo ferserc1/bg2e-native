@@ -92,15 +92,16 @@ void EditorUi::bindDocument(const std::shared_ptr<AppDelegate>& delegate)
             owner->document()->commands && !owner->document()->commands->history().faulted() &&
             !owner->document()->commands->history().transactionActive();
     });
-    _material.onChanged([weak](auto& renderer)
+    _material.onEditRequested([weak, generation](auto phase, uint64_t, const auto& targets, const auto& intent)
     {
-        if (auto owner = weak.lock())
+        if (phase == bg2e::ui::EditPhase::Cancel)
         {
-            owner->notifyEdited(renderer);
+            return true;
         }
+        auto owner = weak.lock();
+        return owner && owner->document() && owner->document()->generation == generation &&
+            owner->materialEditIntent(phase, targets, intent);
     });
-    _material.setCpuValueEditsEnabled(true);
-    _material.setRetainedResourceEditsEnabled(true);
 }
 
 void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
@@ -185,12 +186,18 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
         drawMetadata(command::scene::MetadataField::Group, "Group", true);
         drawMetadata(command::scene::MetadataField::Visibility, "Visible", true);
         ui::Text::separator("Geometry (whole selected meshes)");
-        const char* operations[]{"Z up to Y up", "Center geometry", "Put on floor", "cm to m"};
-        for (unsigned i = 0; i < 4; ++i)
+        using GeometryOperation = command::geometry::Operation;
+        const std::pair<const char*, GeometryOperation> operations[]{
+            {"Z up to Y up", GeometryOperation::ZUpToYUp},
+            {"Center geometry", GeometryOperation::Center},
+            {"Put on floor", GeometryOperation::PutOnFloor},
+            {"cm to m", GeometryOperation::CentimetersToMeters}
+        };
+        for (const auto& [label, operation] : operations)
         {
-            if (ui::Button::button(operations[i]))
+            if (ui::Button::button(label))
             {
-                delegate->editGeometry(i);
+                delegate->editGeometry(operation);
             }
         }
         if (ui::Button::button("Copy material"))

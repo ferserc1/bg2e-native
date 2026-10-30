@@ -27,6 +27,7 @@
 #include <limits>
 #include <bg2e/plugin/PluginManager.hpp>
 #include <set>
+#include <array>
 #include <stdexcept>
 #include <typeinfo>
 
@@ -70,9 +71,22 @@ size_t drawableBytes(const std::shared_ptr<bg2e::draw::Drawable>& drawable)
         bytes = multiply(bytes, 3);
     }
     std::set<const bg2e::gpu::Image*> images;
+    std::set<const void*> sources;
+    using Attributes = bg2e::base::MaterialAttributes;
+    using Getter = std::shared_ptr<bg2e::base::Texture> (Attributes::*)() const;
+    const std::array<Getter, 6> getters{&Attributes::albedoTexture, &Attributes::metalnessTexture,
+        &Attributes::roughnessTexture, &Attributes::normalTexture, &Attributes::aoTexture, &Attributes::lightEmissionTexture};
     for (uint32_t sub = 0; sub < drawable->submeshesCount(); ++sub)
     {
         bytes = add(bytes, 65536 + drawable->submeshName(sub).capacity() + drawable->submeshGroupName(sub).capacity());
+        for (auto getter : getters)
+        {
+            const auto settings = (drawable->materialDefinition(sub).*getter)();
+            if (settings && settings->sourceOwner() && sources.insert(settings->sourceOwner().get()).second)
+            {
+                bytes = add(bytes, settings->sourceBytes());
+            }
+        }
         if (!drawable->isLoaded())
         {
             continue;
@@ -80,6 +94,10 @@ size_t drawableBytes(const std::shared_ptr<bg2e::draw::Drawable>& drawable)
         for (unsigned slot = 0; slot < 6; ++slot)
         {
             auto texture = drawable->drawMaterial(sub)->texture(static_cast<bg2e::draw::TextureSlot>(slot));
+            if (texture && texture->base()->sourceOwner() && sources.insert(texture->base()->sourceOwner().get()).second)
+            {
+                bytes = add(bytes, texture->base()->sourceBytes());
+            }
             auto* image = texture ? texture->image() : nullptr;
             if (image && images.insert(image).second)
             {
@@ -111,14 +129,14 @@ size_t drawableBytes(const std::shared_ptr<bg2e::draw::Drawable>& drawable)
     return bytes;
 }
 
-size_t componentBytes(const std::shared_ptr<bg2e::scene::Component>& component)
+size_t componentBytes(const std::shared_ptr<bg2e::scene::Component>& component, bool preparedEnvironment = false)
 {
     if (!supportedComponent(*component))
     {
         throw std::invalid_argument("This component requires an explicit lifetime/memory/undo adapter");
     }
     if (auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(component);
-        environment && !environment->environmentImage().empty())
+        environment && !environment->environmentImage().empty() && !preparedEnvironment)
     {
         throw std::invalid_argument("Environment images require the retained environment resource adapter");
     }
@@ -133,6 +151,10 @@ size_t componentBytes(const std::shared_ptr<bg2e::scene::Component>& component)
         }
     }
     size_t bytes = 65536; // Built-in component, authored strings, metadata and tool buffers.
+    if (auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(component))
+    {
+        bytes = add(bytes, environment->environmentImage().capacity());
+    }
     if (auto drawable = std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(component))
     {
         bytes = add(bytes, drawableBytes(drawable->drawable()));
@@ -147,16 +169,21 @@ size_t componentBytes(const std::shared_ptr<bg2e::scene::Component>& component)
     return bytes;
 }
 
-size_t nodeBytes(const std::shared_ptr<bg2e::scene::Node>& node)
+size_t nodeBytes(const std::shared_ptr<bg2e::scene::Node>& node, bool preparedEnvironment = false)
 {
+    const auto* instance = node.get();
+    if (typeid(*instance) != typeid(bg2e::scene::Node))
+    {
+        throw std::invalid_argument("Custom nodes require a retained lifetime adapter");
+    }
     size_t bytes = add(sizeof(*node), node->name().capacity() + node->identifier().capacity());
     for (const auto& component : node->orderedComponents())
     {
-        bytes = add(bytes, componentBytes(component));
+        bytes = add(bytes, componentBytes(component, preparedEnvironment));
     }
     for (const auto& child : node->children())
     {
-        bytes = add(bytes, nodeBytes(child));
+        bytes = add(bytes, nodeBytes(child, preparedEnvironment));
     }
     return bytes;
 }
@@ -197,14 +224,20 @@ void requireSupportedTree(const std::shared_ptr<bg2e::scene::Node>& node)
     }
 }
 
-SceneRetention::SceneRetention(std::shared_ptr<bg2e::scene::Node> value) : node(std::move(value))
+SceneRetention::SceneRetention(std::shared_ptr<bg2e::scene::Node> value, bool preparedEnvironment)
+    : _preparedEnvironment(preparedEnvironment), node(std::move(value))
 {
     auto& plugins = bg2e::plugin::PluginManager::get();
     if (!plugins.plugins().empty())
     {
         _registryLease = plugins.registryReadLease();
     }
-    requireSupportedTree(node);
+    if (!_preparedEnvironment)
+    {
+        requireSupportedTree(node);
+    }
+    // Prepared environment adoption separately accounts retained GPU snapshots.
+    // nodeBytes still rejects custom components and unsupported native payloads.
     refreshBudget();
 }
 
@@ -220,7 +253,7 @@ SceneRetention::SceneRetention(std::shared_ptr<bg2e::scene::Component> value) : 
 
 void SceneRetention::refreshBudget()
 {
-    bytes = node ? nodeBytes(node) : componentBytes(component);
+    bytes = node ? nodeBytes(node, _preparedEnvironment) : componentBytes(component);
 }
 
 bool SceneRetention::detached() const
