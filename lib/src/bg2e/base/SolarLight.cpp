@@ -20,7 +20,6 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numbers>
 #include <stdexcept>
 
 namespace bg2e::base {
@@ -32,23 +31,24 @@ SolarState evaluateSolarLight(const Light& light, const glm::vec3& rayDirection,
         return state;
     }
     const float length = glm::length(rayDirection);
-    const double distanceKm = double(light.solarDistanceMillionKm()) * 1.0e6;
-    const double radiusKm = light.solarRadiusKm();
+    const double distance = light.solarDistanceMillionKm();
+    const double size = light.solarSize();
     const auto& color = light.color();
-    if (!std::isfinite(length) || length < 1.0e-12f || !std::isfinite(distanceKm) ||
-        !std::isfinite(radiusKm) || radiusKm <= 0.0 || distanceKm <= radiusKm ||
+    if (!std::isfinite(length) || length < 1.0e-12f || !std::isfinite(distance) ||
+        !std::isfinite(size) || size <= 0.0 || distance <= 0.0 ||
         !std::isfinite(light.intensity()) || light.intensity() < 0.0f ||
         !std::isfinite(color.r) || !std::isfinite(color.g) || !std::isfinite(color.b) ||
         color.r < 0.0f || color.g < 0.0f || color.b < 0.0f)
     {
-        throw std::invalid_argument("Solar light requires a valid direction, nonnegative emission and distance greater than radius");
+        throw std::invalid_argument("Solar light requires a valid direction, nonnegative emission and positive size and distance");
     }
     state.enabled = true;
     state.direction = -rayDirection / length;
-    state.angularRadius = float(std::asin(radiusKm / distanceKm));
+    state.size = light.solarSize();
+    state.distanceMillionKm = light.solarDistanceMillionKm();
+    state.atmosphere = atmosphere;
     const double distanceScale = std::pow(149.6 / light.solarDistanceMillionKm(), 2.0);
     glm::vec3 transmission{1.0f};
-    float visibility = 1.0f;
     if (atmosphere)
     {
         // Bruneton terrestrial approximation: 6360 km planet, 60 km shell,
@@ -72,23 +72,10 @@ SolarState evaluateSolarLight(const Light& light, const glm::vec3& rayDirection,
         }
         const glm::vec3 opticalDepth = glm::vec3(0.0058f, 0.0136f, 0.0331f) * float(rayleigh) + glm::vec3(0.00444f * float(mie));
         transmission = glm::exp(-opticalDepth);
-        const float elevation = std::asin(std::clamp(state.direction.y, -1.0f, 1.0f));
-        const float fraction = std::clamp(elevation / state.angularRadius, -1.0f, 1.0f);
-        visibility = (std::acos(-fraction) + fraction * std::sqrt(std::max(1.0f - fraction * fraction, 0.0f))) / std::numbers::pi_v<float>;
     }
     state.color = glm::vec3(color.r, color.g, color.b) * transmission;
     state.skyIntensity = float(double(light.intensity()) * distanceScale);
-    state.intensity = state.skyIntensity * visibility;
-    // Uniform disk: irradiance on a plane normal to the sun is L * pi*sin(a)^2.
-    const double projectedSolidAngle = std::numbers::pi * std::pow(radiusKm / distanceKm, 2.0);
-    state.diskRadiance = state.color * float(double(state.skyIntensity) / projectedSolidAngle);
-    for (int i = 0; i < 3; ++i)
-    {
-        if (!std::isfinite(state.diskRadiance[i]))
-        {
-            throw std::invalid_argument("Solar radiance exceeds the supported floating point range");
-        }
-    }
+    state.intensity = state.skyIntensity;
     if (!std::isfinite(state.skyIntensity))
     {
         throw std::invalid_argument("Solar intensity exceeds the supported floating point range");

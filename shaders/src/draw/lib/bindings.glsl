@@ -43,6 +43,8 @@ struct DrawObjectData {
     DrawMaterialData material;
     uvec4 identity;
 };
+#include "solar.glsl"
+
 struct DrawLightData {
     vec4 positionIntensity;
     vec4 color;
@@ -50,6 +52,20 @@ struct DrawLightData {
     vec4 parameters;
     uvec4 flags;
 };
+DrawLightData resolveSolarLight(DrawLightData light)
+{
+    if (light.flags.x == 6u)
+    {
+        if (light.parameters.w > 0.5)
+        {
+            light.positionIntensity.w *= solarVisibility(-light.directionAngle.y, light.parameters.y, light.parameters.z);
+        }
+        light.parameters.y = solarAngularRadius(light.parameters.y, light.parameters.z) * 57.29577951308232;
+        light.flags.x = 4u;
+    }
+    return light;
+}
+
 struct DrawLightUniforms {
     uvec4 count;
     DrawLightData lights[8];

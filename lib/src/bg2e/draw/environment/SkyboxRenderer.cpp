@@ -29,10 +29,11 @@ namespace {
 struct SkyboxPush {
     glm::mat4 inverseViewProjection;
     glm::vec4 parameters; // width, height, specular LOD, exposure
-    glm::vec4 sunDirectionRadius;
-    glm::vec4 sunRadiance; // RGB radiance, analytic disk enabled
+    glm::vec4 sunDirectionSize;
+    glm::vec4 solarParameters;
+    glm::vec4 sunIrradiance; // RGB normal irradiance, analytic disk enabled
 };
-static_assert(sizeof(SkyboxPush) == 112);
+static_assert(sizeof(SkyboxPush) == 128);
 }
 
 float SkyboxRenderer::exposure() const
@@ -159,8 +160,9 @@ void SkyboxRenderer::draw(gpu::CommandBuffer& command, gpu::Size2D extent)
     SkyboxPush push{_inverseViewProjection, {float(extent.width), float(extent.height),
         blur * float(_environment->prefilteredSpecular->mipLevels() - 1), _settings.exposure}};
     const auto& solar = _environment->solar;
-    push.sunDirectionRadius = glm::vec4(solar.direction, solar.angularRadius);
-    push.sunRadiance = glm::vec4(solar.diskRadiance,
+    push.solarParameters = glm::vec4(0.0f, 0.0f, solar.distanceMillionKm, 0.0f);
+    push.sunDirectionSize = glm::vec4(solar.direction, solar.size);
+    push.sunIrradiance = glm::vec4(solar.color * solar.skyIntensity,
         blur == 0.0f && _environment->skyboxBackground && solar.enabled ? 1.0f : 0.0f);
     command.bindPipeline(_pipeline.get());
     command.bindResourceSet(_pipeline.get(), 0, blur > 0 ? _blurSet.get() : _skySet.get());

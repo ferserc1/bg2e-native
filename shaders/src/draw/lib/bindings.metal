@@ -45,6 +45,8 @@ struct DrawObjectData {
     DrawMaterialData material;
     uint4 identity;
 };
+#include "solar.metal"
+
 struct DrawLightData {
     float4 positionIntensity;
     float4 color;
@@ -52,6 +54,20 @@ struct DrawLightData {
     float4 parameters;
     uint4 flags;
 };
+DrawLightData resolveSolarLight(DrawLightData light)
+{
+    if (light.flags.x == 6u)
+    {
+        if (light.parameters.w > 0.5)
+        {
+            light.positionIntensity.w *= solarVisibility(-light.directionAngle.y, light.parameters.y, light.parameters.z);
+        }
+        light.parameters.y = solarAngularRadius(light.parameters.y, light.parameters.z) * 57.29577951308232;
+        light.flags.x = 4u;
+    }
+    return light;
+}
+
 struct DrawLightUniforms {
     uint4 count;
     DrawLightData lights[8];

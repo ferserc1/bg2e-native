@@ -44,8 +44,8 @@ struct GenerationPush {
     glm::vec4 skyHorizonColor;
     glm::vec4 skyZenithColor;
     glm::vec4 groundColor;
-    glm::vec4 sunDirectionRadius;
-    glm::vec4 sunRadiance;
+    glm::vec4 sunDirectionSize;
+    glm::vec4 sunIrradiance;
     glm::vec4 solarParameters;
 };
 static_assert(sizeof(GenerationPush) == 128);
@@ -169,16 +169,18 @@ void CubemapRenderer::initialize(Engine& engine, const pipeline::LayerConfigurat
         const auto& solar = _realized.solar;
         const float directionLength = glm::length(solar.direction);
         if (!std::isfinite(directionLength) || std::abs(directionLength - 1.0f) > 1.0e-4f ||
-            !std::isfinite(solar.angularRadius) || solar.angularRadius <= 0.0f || solar.angularRadius >= 1.570796327f ||
+            !std::isfinite(solar.size) || solar.size <= 0.0f || !std::isfinite(solar.distanceMillionKm) || solar.distanceMillionKm <= 0.0f ||
             !std::isfinite(solar.skyIntensity) || solar.skyIntensity < 0.0f)
         {
             throw std::invalid_argument("Invalid resolved procedural solar state");
         }
+        const auto irradiance = solar.color * solar.skyIntensity;
         for (int i = 0; i < 3; ++i)
         {
-            if (!std::isfinite(solar.diskRadiance[i]) || solar.diskRadiance[i] < 0.0f)
+            if (!std::isfinite(solar.color[i]) || solar.color[i] < 0.0f ||
+                !std::isfinite(irradiance[i]) || irradiance[i] < 0.0f)
             {
-                throw std::invalid_argument("Procedural solar radiance must be finite and nonnegative");
+                throw std::invalid_argument("Procedural solar irradiance must be finite and nonnegative");
             }
         }
     }
@@ -295,9 +297,9 @@ void CubemapRenderer::recordGeneration(gpu::CommandBuffer& command)
         push.skyHorizonColor = glm::vec4(_realized.skyHorizonColor.r, _realized.skyHorizonColor.g, _realized.skyHorizonColor.b, 1.0f);
         push.skyZenithColor = glm::vec4(_realized.skyZenithColor.r, _realized.skyZenithColor.g, _realized.skyZenithColor.b, 1.0f);
         push.groundColor = glm::vec4(_realized.groundColor.r, _realized.groundColor.g, _realized.groundColor.b, 1.0f);
-        push.sunDirectionRadius = glm::vec4(_realized.solar.direction, _realized.solar.angularRadius);
-        push.sunRadiance = glm::vec4(_realized.solar.diskRadiance, _realized.solar.enabled ? 1.0f : 0.0f);
-        push.solarParameters = glm::vec4(_realized.solar.skyIntensity, _realized.includeSolarDisk ? 1.0f : 0.0f, 0.0f, 0.0f);
+        push.sunDirectionSize = glm::vec4(_realized.solar.direction, _realized.solar.size);
+        push.sunIrradiance = glm::vec4(_realized.solar.color * _realized.solar.skyIntensity, _realized.solar.enabled ? 1.0f : 0.0f);
+        push.solarParameters = glm::vec4(_realized.solar.skyIntensity, _realized.includeSolarDisk ? 1.0f : 0.0f, _realized.solar.distanceMillionKm, 0.0f);
         command.pushConstants(gpu::ShaderStage::Fragment, 0, sizeof(push), &push);
         command.draw(3);
     };

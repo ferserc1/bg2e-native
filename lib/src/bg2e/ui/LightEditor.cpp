@@ -129,13 +129,13 @@ bool LightEditor::draw()
     if (light.type() == base::Light::TypeSun)
     {
         Text::separator("Sun");
-        float radius = light.solarRadiusKm();
+        float radius = light.solarSize();
         float distance = light.solarDistanceMillionKm();
-        bool solarChanged = Numeric::drag("Solar Radius (km)", &radius, 100.0f, 0.001f, 1.0e12f);
+        bool solarChanged = Numeric::drag("Solar Size", &radius, 0.01f, 0.001f, 1.0e12f);
         solarChanged = Numeric::drag("Solar Distance (million km)", &distance, 0.1f, 0.000001f, 1.0e12f) || solarChanged;
         if (solarChanged)
         {
-            light.setSolarRadiusKm(radius);
+            light.setSolarSize(radius);
             light.setSolarDistanceMillionKm(distance);
             changed = true;
             if (_onChangedFunction)

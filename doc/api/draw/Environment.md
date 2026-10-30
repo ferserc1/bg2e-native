@@ -105,7 +105,7 @@ Configure dimensions on `base::Light`, not the Environment:
 
 | Property | UI label | Default |
 | --- | --- | --- |
-| `solarRadiusKm` | Solar Radius (km) | 695700 |
+| `solarSize` | Solar Size (1 = one solar radius) | 1.0 |
 | `solarDistanceMillionKm` | Solar Distance (million km) | 149.6 |
 | `intensity` | Intensity | 1, existing engine units |
 | `color` | Color | White, linear RGB |
@@ -142,7 +142,8 @@ weather and configurable planetary parameters are not modeled yet. A future
 atmosphere profile can replace the internal terrestrial assumptions without
 changing the same-node association or persisted solar units.
 
-The solar disk uses physical angular radius instead of the legacy power lobe.
+The solar disk uses an angular radius calculated in the shader from `solarSize`,
+the fixed solar radius of 695700 km, and the configured distance.
 A uniform disk's radiance is derived from effective normal irradiance using
 `L = E / (pi * sin(angularRadius)^2)`. Disk radiance is filtered over the cubemap
 pixel footprint with an approximate energy correction, so a small sun is not
@@ -157,7 +158,7 @@ Detached component clones retain a runtime value snapshot, so queue extraction
 and prepared editor environment states do not retain scene pointers. The solar
 snapshot is not serialized. Adopting a clone into a node resolves that node's light.
 
-`GenerationSettings::solar` accepts a resolved `base::SolarState` for direct
+`GenerationSettings::solar` accepts a runtime `base::SolarState` for direct
 procedural-generation clients. Its default is disabled, preserving the old sky.
 `includeSolarDisk` defaults to true. Generation uses a 128-byte push-constant
 layout shared by C++, GLSL and Metal. Linked solar sky and IBL generation use

@@ -17,14 +17,17 @@
  */
 
 #version 450
+#extension GL_GOOGLE_include_directive : require
+#include "../lib/solar.glsl"
 layout(set = 0, binding = 0) uniform textureCube sky;
 layout(set = 0, binding = 1) uniform sampler skySampler;
 layout(push_constant) uniform Push
 {
     mat4 inverseViewProjection;
     vec4 parameters;
-    vec4 sunDirectionRadius;
-    vec4 sunRadiance;
+    vec4 sunDirectionSize;
+    vec4 solarParameters;
+    vec4 sunIrradiance;
 } params;
 layout(location = 0) out vec4 outColor;
 void main()
@@ -35,12 +38,12 @@ void main()
     vec3 color = textureLod(samplerCube(sky, skySampler), direction, params.parameters.z).rgb;
     // Chord distance is stable for the small physical solar angle. Evaluate
     // coverage at screen resolution rather than magnifying cubemap texels.
-    float chord = length(direction - params.sunDirectionRadius.xyz);
-    float radius = 2.0 * sin(0.5 * params.sunDirectionRadius.w);
+    float chord = length(direction - params.sunDirectionSize.xyz);
+    float radius = 2.0 * sin(0.5 * solarAngularRadius(params.sunDirectionSize.w, params.solarParameters.z));
     float edge = max(0.5 * (length(dFdx(direction)) + length(dFdy(direction))), 1e-7);
     float disk = 1.0 - smoothstep(max(radius - edge, 0.0), radius + edge, chord);
     float horizonEdge = max(0.5 * fwidth(direction.y), 1e-7);
     float horizon = smoothstep(-horizonEdge, horizonEdge, direction.y);
-    color += params.sunRadiance.rgb * disk * horizon * params.sunRadiance.w;
+    color += params.sunIrradiance.rgb * solarDiskNormalization(params.sunDirectionSize.w, params.solarParameters.z) * disk * horizon * params.sunIrradiance.w;
     outColor = vec4(color * exp2(params.parameters.w), 1.0);
 }

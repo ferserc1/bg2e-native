@@ -125,18 +125,19 @@ class Light {
         return _affectsReflections;
     }
 
-    // Solar dimensions are independent of scene units. Intensity retains engine units.
-    virtual float solarRadiusKm() const
+    // Solar size is a radius multiplier (1 = the Sun), independent of scene units.
+    // Distance is in millions of kilometers; intensity retains engine units.
+    virtual float solarSize() const
     {
-        return _solarRadiusKm;
+        return _solarSize;
     }
-    virtual void setSolarRadiusKm(float radius)
+    virtual void setSolarSize(float radius)
     {
         if (!std::isfinite(radius) || radius <= 0.0f)
         {
-            throw std::invalid_argument("Solar radius must be finite and positive (km)");
+            throw std::invalid_argument("Solar size must be finite and positive");
         }
-        _solarRadiusKm = radius;
+        _solarSize = radius;
     }
     virtual float solarDistanceMillionKm() const
     {
@@ -207,7 +208,7 @@ class Light {
                 _type = TypeDisabled;
             }
         }
-        setSolarRadiusKm(float(reader.getNumber("solarRadiusKm").value_or(695700.0)));
+        setSolarSize(float(reader.getNumber("solarSize").value_or(1.0)));
         setSolarDistanceMillionKm(float(reader.getNumber("solarDistanceMillionKm").value_or(149.6)));
         if (auto value = reader.getNumber("spotAngle"))
         {
@@ -242,7 +243,7 @@ class Light {
             {"color", JSON(_color)},
             {"intensity", JSON(_intensity)},
             {"type", JSON(typeString())},
-            {"solarRadiusKm", JSON(_solarRadiusKm)},
+            {"solarSize", JSON(_solarSize)},
             {"solarDistanceMillionKm", JSON(_solarDistanceMillionKm)},
             {"spotAngle", JSON(_spotAngle)},
             {"spotCutoff", JSON(_spotCutoff)},
@@ -257,7 +258,7 @@ class Light {
     Color _color{1.0f, 1.0f, 1.0f, 1.0f};
     float _intensity = 1.0f;
     LightType _type = TypeOmni;
-    float _solarRadiusKm = 695700.0f;
+    float _solarSize = 1.0f;
     float _solarDistanceMillionKm = 149.6f;
     float _spotAngle = 22.0f;
     float _spotCutoff = 14.0f;

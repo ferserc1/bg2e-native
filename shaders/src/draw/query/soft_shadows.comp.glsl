@@ -145,7 +145,7 @@ void main()
         vec3 origin = position + normal * bias;
         for (uint i = 0u; i < queryData.data.counts.x; ++i)
         {
-            DrawLightData light = queryData.data.lights.lights[i];
+            DrawLightData light = resolveSolarLight(queryData.data.lights.lights[i]);
             float visibility = 1.0;
             if (light.flags.y != 0u)
             {

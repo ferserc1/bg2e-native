@@ -145,8 +145,8 @@ void registerTypes()
             .enumValue("Omni", base::Light::TypeOmni).enumValue("Spot", base::Light::TypeSpot)
             .enumValue("Directional", base::Light::TypeDirectional).enumValue("Sun", base::Light::TypeSun)
             .enumValue("Disabled", base::Light::TypeDisabled);
-        light.property("solarRadiusKm", &base::Light::solarRadiusKm, &base::Light::setSolarRadiusKm)
-            .displayName("Solar Radius (km)").category("Sun").min(0.001).drag().step(100.0);
+        light.property("solarSize", &base::Light::solarSize, &base::Light::setSolarSize)
+            .displayName("Solar Size").category("Sun").min(0.001).drag().step(0.01);
         light.property("solarDistanceMillionKm", &base::Light::solarDistanceMillionKm, &base::Light::setSolarDistanceMillionKm)
             .displayName("Solar Distance (million km)").category("Sun").min(0.000001).drag().step(0.1);
         light.property("spotAngle", &base::Light::spotAngle, &base::Light::setSpotAngle).category("Spot").range(0, 90);

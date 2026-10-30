@@ -158,7 +158,7 @@ kernel void compMain(
         float3 origin = position + normal * bias;
         for (uint i = 0u; i < dataBlock.counts.x; ++i)
         {
-            DrawLightData light = dataBlock.lights.lights[i];
+            DrawLightData light = resolveSolarLight(dataBlock.lights.lights[i]);
             float visibility = 1.0;
             if (light.flags.y != 0u)
             {

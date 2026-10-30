@@ -66,7 +66,7 @@ struct alignas(16) LightData {
     glm::vec4 positionIntensity{0};
     glm::vec4 color{0};
     glm::vec4 directionAngle{0}; // normalized local +Z transformed to world; spot angle
-    glm::vec4 parameters{0}; // spot cutoff, source size, reserved, reserved
+    glm::vec4 parameters{0}; // spot cutoff, source size, reserved, reserved; Sun: unused, solar size, distance (million km), atmosphere
     glm::uvec4 flags{0}; // base::Light type, cast shadows, shadow samples, affects reflections
 };
 struct alignas(16) LightUniforms {

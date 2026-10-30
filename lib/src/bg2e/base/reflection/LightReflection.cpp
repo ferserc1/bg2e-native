@@ -50,11 +50,11 @@ reflection::TypeRegistration<base::Light> _lightReflection("bg2e::base::Light",
                                                                    .enumValue("Sun", base::Light::TypeSun)
                                                                    .enumValue("Disabled", base::Light::TypeDisabled);
 
-                                                               t.property("solarRadiusKm", &base::Light::solarRadiusKm, &base::Light::setSolarRadiusKm)
-                                                                   .displayName("Solar Radius (km)")
+                                                               t.property("solarSize", &base::Light::solarSize, &base::Light::setSolarSize)
+                                                                   .displayName("Solar Size")
                                                                    .category("Sun")
-                                                                   .min(0.001).drag().step(100.0)
-                                                                   .tooltip("Physical emitter radius in kilometers; used for disk and shadow angular radius.");
+                                                                   .min(0.001).drag().step(0.01)
+                                                                   .tooltip("Emitter radius relative to the Sun: 1 is one solar radius.");
 
                                                                t.property("solarDistanceMillionKm", &base::Light::solarDistanceMillionKm, &base::Light::setSolarDistanceMillionKm)
                                                                    .displayName("Solar Distance (million km)")

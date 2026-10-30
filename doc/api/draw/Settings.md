@@ -112,7 +112,7 @@ See [working tutorial](../../tutorials/draw/10_deferred_renderer.md).
 | temporal | enabled, freezeAtLimit, maxFrames, absolute/relativePositionThreshold, normalThreshold, adaptiveEnabled, minCurrentWeight, reactiveCurrentWeight, historyClipSigma |
 | denoise | enabled, kernelRadius, depthThreshold, normalThreshold, depthSigma, normalSigma, spatialSigma |
 | finalProcessor (when injected) | SMAA enabled, threshold, searchSteps; custom processor may provide different metadata |
-| light/<node identifier> | type (including Sun), color, intensity, solarRadiusKm, solarDistanceMillionKm, spotAngle/cutoff, castShadows, sourceSize, shadowSamples, affectsReflections |
+| light/<node identifier> | type (including Sun), color, intensity, solarSize, solarDistanceMillionKm, spotAngle/cutoff, castShadows, sourceSize, shadowSamples, affectsReflections |
 
 AO/GI/reflection and temporal objects expose virtual settingsType/settingsInstance;
 use both matching addresses when binding replacements, as for denoise/final processors.

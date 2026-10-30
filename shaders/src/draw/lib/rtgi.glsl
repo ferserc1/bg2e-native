@@ -118,7 +118,8 @@ void main()
             vec3 outgoing = albedo*emission;
             for (uint lightIndex = 0u; lightIndex < dataBlock.lights.count.x; ++lightIndex)
             {
-                DrawLightData light = dataBlock.lights.lights[lightIndex];
+                bool isSolar = dataBlock.lights.lights[lightIndex].flags.x == 6u;
+                DrawLightData light = resolveSolarLight(dataBlock.lights.lights[lightIndex]);
                 // Draw LightData's existing participation bit is shared with reflections.
                 if (light.flags.w == 0u)
                 {
@@ -135,7 +136,7 @@ void main()
                         sequence*4099u+lightIndex*67u+shadow+100000u);
                     float z = 2.0*jitter.x-1.0, angle = 6.28318530718*jitter.y;
                     vec3 offset = vec3(sqrt(max(0.0,1.0-z*z))*cos(angle),sqrt(max(0.0,1.0-z*z))*sin(angle),z);
-                    vec3 shadowVector = toLight+offset*max(light.parameters.y,0.0);
+                    vec3 shadowVector = toLight+offset*(isSolar ? sin(light.parameters.y*0.01745329251994) : max(light.parameters.y,0.0));
                     float distance = light.flags.x == 4u ? dataBlock.parameters.x : length(shadowVector);
                     vec3 shadowDirection = dot(shadowVector,shadowVector) > 1e-12 ? normalize(shadowVector) : bounceNormal;
                     if (dataBlock.parameters.w == 0.0 || light.flags.y == 0u || distance <= 2.0*dataBlock.parameters.y)

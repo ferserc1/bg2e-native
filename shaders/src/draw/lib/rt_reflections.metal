@@ -210,7 +210,8 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         float3 outgoing = albedo*emission+albedo*(environmentImage.sample(environmentSampler,bounceNormal,level(0.0)).rgb/3.14159265359);
         for (uint lightIndex = 0u; lightIndex < dataBlock.lights.count.x; ++lightIndex)
         {
-            DrawLightData light = dataBlock.lights.lights[lightIndex];
+            bool isSolar = dataBlock.lights.lights[lightIndex].flags.x == 6u;
+            DrawLightData light = resolveSolarLight(dataBlock.lights.lights[lightIndex]);
             // Draw LightData's existing participation bit is shared with reflections.
             if (light.flags.w == 0u)
             {
@@ -227,7 +228,7 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
                     sequence*4099u+lightIndex*67u+shadow+100000u);
                 float z = 2.0*jitter.x-1.0, angle = 6.28318530718*jitter.y;
                 float3 offset = float3(sqrt(max(0.0,1.0-z*z))*cos(angle),sqrt(max(0.0,1.0-z*z))*sin(angle),z);
-                float3 shadowVector = toLight+offset*max(light.parameters.y,0.0);
+                float3 shadowVector = toLight+offset*(isSolar ? sin(light.parameters.y*0.01745329251994) : max(light.parameters.y,0.0));
                 float distance = light.flags.x == 4u ? dataBlock.parameters.x : length(shadowVector);
                 float3 shadowDirection = dot(shadowVector,shadowVector) > 1e-12 ? normalize(shadowVector) : bounceNormal;
                 if (dataBlock.parameters.w == 0.0 || light.flags.y == 0u || distance <= 2.0*dataBlock.parameters.y)

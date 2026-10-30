@@ -22,14 +22,16 @@
 #include <bg2e/math/base.hpp>
 
 namespace bg2e::base {
-// Derived runtime values only; never written back to Light or scene JSON.
+// Runtime solar snapshot; size-dependent values are resolved in shaders.
+// Never written back to Light or scene JSON.
 struct SolarState {
     bool enabled = false;
     glm::vec3 direction{0.0f, 1.0f, 0.0f}; // Observer to sun, world space.
-    float angularRadius = 0.0f; // Radians.
+    float size = 1.0f; // Solar radius multiplier; resolved in shaders.
+    float distanceMillionKm = 149.6f;
+    bool atmosphere = false;
     glm::vec3 color{1.0f};
-    float intensity = 0.0f;
-    glm::vec3 diskRadiance{0.0f};
+    float intensity = 0.0f; // Distance-scaled; shaders apply horizon visibility.
     float skyIntensity = 0.0f;
 
     bool operator==(const SolarState&) const = default;

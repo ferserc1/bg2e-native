@@ -120,7 +120,7 @@ fragment float4 fragMain(float4 position [[position]],
         color = float3(0.0);
         for (uint i = 0u; i < drawLights.count.x; ++i)
         {
-            DrawLightData light = drawLights.lights[i];
+            DrawLightData light = resolveSolarLight(drawLights.lights[i]);
             float3 delta = light.positionIntensity.xyz - p;
             float d2 = max(dot(delta, delta), 0.0001);
             float3 l = light.flags.x == 4u ? normalize(-light.directionAngle.xyz) : delta * rsqrt(d2);

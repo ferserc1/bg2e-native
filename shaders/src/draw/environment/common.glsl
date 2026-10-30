@@ -29,8 +29,8 @@ struct GenerationPush {
     vec4 skyHorizonColor;
     vec4 skyZenithColor;
     vec4 groundColor;
-    vec4 sunDirectionRadius;
-    vec4 sunRadiance;
+    vec4 sunDirectionSize;
+    vec4 sunIrradiance;
     vec4 solarParameters;
 };
 vec3 cubeDirection(uint face, vec2 uv)

@@ -23,7 +23,6 @@
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/base/SolarLight.hpp>
-#include <numbers>
 #include <cmath>
 #include <stdexcept>
 #include <utility>
@@ -159,8 +158,9 @@ void RenderQueueVisitor::visit(scene::Node* node)
             const auto solar = linked ? _queue->environment()->solarState() : base::evaluateSolarLight(light, direction, false);
             data.positionIntensity.w = solar.intensity;
             data.color = glm::vec4(solar.color, color.a);
-            data.parameters.y = solar.angularRadius * 180.0f / std::numbers::pi_v<float>;
-            data.flags.x = uint32_t(base::Light::TypeDirectional);
+            data.parameters.y = solar.size;
+            data.parameters.z = solar.distanceMillionKm;
+            data.parameters.w = solar.atmosphere ? 1.0f : 0.0f;
         }
         for (const auto& vector : {data.positionIntensity, data.color, data.directionAngle, data.parameters})
         {

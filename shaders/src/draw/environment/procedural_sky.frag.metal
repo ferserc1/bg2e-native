@@ -19,6 +19,7 @@
 #include <metal_stdlib>
 using namespace metal;
 #include "common.metal"
+#include "../lib/solar.metal"
 fragment float4 fragMain(float4 position [[position]], constant GenerationPush& params [[buffer(0)]])
 {
     float2 pixel = position.xy;
@@ -27,9 +28,9 @@ fragment float4 fragMain(float4 position [[position]], constant GenerationPush& 
     float3 sky = mix(params.skyHorizonColor.rgb, params.skyZenithColor.rgb, sqrt(altitude));
     float3 ground = params.groundColor.rgb;
     float3 color = mix(ground, sky, smoothstep(-0.03, 0.03, n.y));
-    if (params.sunRadiance.w > 0.5)
+    if (params.sunIrradiance.w > 0.5)
     {
-        float3 sun = params.sunDirectionRadius.xyz;
+        float3 sun = params.sunDirectionSize.xyz;
         float elevation = asin(clamp(sun.y, -1.0, 1.0));
         float day = smoothstep(-0.12, 0.18, elevation);
         float dusk = (1.0 - smoothstep(0.0, 0.35, abs(elevation))) * smoothstep(-0.18, 0.0, elevation);
@@ -46,7 +47,7 @@ fragment float4 fragMain(float4 position [[position]], constant GenerationPush& 
         color = mix(ground, sky, smoothstep(-0.03, 0.03, n.y));
         if (params.solarParameters.y > 0.5)
         {
-            float radius = params.sunDirectionRadius.w;
+            float radius = solarAngularRadius(params.sunDirectionSize.w, params.solarParameters.z);
             // Equal-area broadened disk for subpixel cubemap footprints. The
             // energy correction keeps a real-size sun from flickering away.
             float footprint = 1.5 / float(params.size);
@@ -54,9 +55,11 @@ fragment float4 fragMain(float4 position [[position]], constant GenerationPush& 
             float angle = acos(clamp(dot(n, sun), -1.0, 1.0));
             float edge = max(footprint * 0.5, 1e-6);
             float disk = 1.0 - smoothstep(max(filteredRadius - edge, 0.0), filteredRadius + edge, angle);
-            float energy = (1.0 - cos(radius)) / max(1.0 - cos(filteredRadius), 1e-12);
+            float diskArea = sin(0.5 * radius);
+            float filteredArea = sin(0.5 * filteredRadius);
+            float energy = (diskArea * diskArea) / max(filteredArea * filteredArea, 1e-12);
             float horizonVisibility = smoothstep(-footprint * 0.5, footprint * 0.5, n.y);
-            color += params.sunRadiance.rgb * disk * energy * horizonVisibility;
+            color += params.sunIrradiance.rgb * solarDiskNormalization(params.sunDirectionSize.w, params.solarParameters.z) * disk * energy * horizonVisibility;
         }
     }
     else

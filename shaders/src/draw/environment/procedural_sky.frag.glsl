@@ -19,6 +19,7 @@
 #version 450
 #extension GL_GOOGLE_include_directive : require
 #include "common.glsl"
+#include "../lib/solar.glsl"
 layout(push_constant) uniform Push
 {
     GenerationPush params;
@@ -31,9 +32,9 @@ vec4 evaluate(vec2 pixel)
     vec3 sky = mix(params.skyHorizonColor.rgb, params.skyZenithColor.rgb, sqrt(altitude));
     vec3 ground = params.groundColor.rgb;
     vec3 color = mix(ground, sky, smoothstep(-0.03, 0.03, n.y));
-    if (params.sunRadiance.w > 0.5)
+    if (params.sunIrradiance.w > 0.5)
     {
-        vec3 sun = params.sunDirectionRadius.xyz;
+        vec3 sun = params.sunDirectionSize.xyz;
         float elevation = asin(clamp(sun.y, -1.0, 1.0));
         float day = smoothstep(-0.12, 0.18, elevation);
         float dusk = (1.0 - smoothstep(0.0, 0.35, abs(elevation))) * smoothstep(-0.18, 0.0, elevation);
@@ -50,7 +51,7 @@ vec4 evaluate(vec2 pixel)
         color = mix(ground, sky, smoothstep(-0.03, 0.03, n.y));
         if (params.solarParameters.y > 0.5)
         {
-            float radius = params.sunDirectionRadius.w;
+            float radius = solarAngularRadius(params.sunDirectionSize.w, params.solarParameters.z);
             // Equal-area broadened disk for subpixel cubemap footprints. The
             // energy correction keeps a real-size sun from flickering away.
             float footprint = 1.5 / float(params.size);
@@ -58,9 +59,11 @@ vec4 evaluate(vec2 pixel)
             float angle = acos(clamp(dot(n, sun), -1.0, 1.0));
             float edge = max(footprint * 0.5, 1e-6);
             float disk = 1.0 - smoothstep(max(filteredRadius - edge, 0.0), filteredRadius + edge, angle);
-            float energy = (1.0 - cos(radius)) / max(1.0 - cos(filteredRadius), 1e-12);
+            float diskArea = sin(0.5 * radius);
+            float filteredArea = sin(0.5 * filteredRadius);
+            float energy = (diskArea * diskArea) / max(filteredArea * filteredArea, 1e-12);
             float horizonVisibility = smoothstep(-footprint * 0.5, footprint * 0.5, n.y);
-            color += params.sunRadiance.rgb * disk * energy * horizonVisibility;
+            color += params.sunIrradiance.rgb * solarDiskNormalization(params.sunDirectionSize.w, params.solarParameters.z) * disk * energy * horizonVisibility;
         }
     }
     else
