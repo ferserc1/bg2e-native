@@ -298,6 +298,21 @@ void FinalLayer::setDebugView(FinalDebugView value)
     settings.display.x = static_cast<uint32_t>(value);
 }
 
+void FinalLayer::suppressBloom(bool value)
+{
+    _suppressBloom = value;
+}
+
+bool FinalLayer::bloomAvailable() const
+{
+    return _bloomAvailable;
+}
+
+const std::string& FinalLayer::bloomStatus() const
+{
+    return _bloomStatus;
+}
+
 const PassContract& FinalLayer::contract() const
 {
     return _contract;
@@ -310,9 +325,22 @@ void FinalLayer::initialize(Engine& engine, const LayerConfiguration& configurat
         configuration.contract.inputs[0].extent == ExtentDomain::Output);
     settings.display.y = format == gpu::PixelFormat::R8G8B8A8_SRGB || format == gpu::PixelFormat::B8G8R8A8_SRGB;
     gpu::PipelineLayoutDescription layout;
-    imageBindings(layout, 0, 8);
+    imageBindings(layout, 0, 9);
     layout.pushConstants.push_back({0, sizeof(FinalSettings), gpu::ShaderStage::Fragment});
-    _pass.initialize(engine, _shaderRoot, "draw/raster/final", engine.device()->createPipelineLayout(layout), format, slots(engine, _slots));
+    const auto count = slots(engine, _slots);
+    _pass.initialize(engine, _shaderRoot, "draw/raster/final", engine.device()->createPipelineLayout(layout), format, count);
+    try
+    {
+        _bloom.initialize(engine, _shaderRoot, count);
+        _bloomAvailable = true;
+        _bloomStatus = "Dual filtering; one RGBA16F pyramid per frame slot";
+    }
+    catch (const std::runtime_error& error)
+    {
+        _bloom.cleanup();
+        _bloomAvailable = false;
+        _bloomStatus = std::string("Bloom unavailable: ") + error.what();
+    }
 }
 
 void FinalLayer::attachScene(std::shared_ptr<scene::Node>)
@@ -348,12 +376,21 @@ void FinalLayer::record(const PassContext& context)
     }
     settings.display.y = context.outputs.at(0).image->pixelFormat() == gpu::PixelFormat::R8G8B8A8_SRGB ||
         context.outputs.at(0).image->pixelFormat() == gpu::PixelFormat::B8G8R8A8_SRGB;
-    settings.outputExtent = {float(context.frame.extent.width), float(context.frame.extent.height), 0, 0};
+    bloom.validate();
+    auto effectiveBloom = bloom;
+    effectiveBloom.enabled = bloom.enabled && !_suppressBloom && settings.display.x == uint32_t(FinalDebugView::Final);
+    gpu::Image* glow = _bloomAvailable ? _bloom.record(context.frame, *inputs.at(0), effectiveBloom) : nullptr;
+    // A valid fallback descriptor is required even when the shader branch is off.
+    inputs.push_back(glow ? glow : inputs.at(0));
+    settings.outputExtent = {float(context.frame.extent.width), float(context.frame.extent.height), glow ? bloom.intensity : 0.0f, 0};
     _pass.draw(context.frame, *context.outputs.at(0).image, inputs, 0, {}, &settings, sizeof(settings));
 }
 
 void FinalLayer::cleanup()
 {
-    _pass.cleanup();
+    _pass.cleanup(); // Drains GPU users before releasing bloom attachments/bindings.
+    _bloom.cleanup();
+    _bloomAvailable = false;
+    _bloomStatus = "Not initialized";
 }
 }

@@ -27,13 +27,15 @@ scene update and lighting/transparency
     -> GPU completion -> synchronous readback -> CPU double RGB sum
     -> repeat until exactly N successful scene contributions
     -> divide by N, alpha=1 -> one RGBA16F upload
-    -> final tone/color and optional SMAA -> GPU completion
+    -> bloom on the resolved mean -> final tone/color and optional SMAA -> GPU completion
     -> last didRenderFrame: hasResult=true -> encoded image
 ```
 
 Reconstruction occurs per sample. Final color and optional SMAA run once on the
 mean; their final-only submission and readback helpers add no scene sample. N=1
-still resolves and converts once. Each requested sample contributes, including
+still resolves and converts once. [HDR bloom](draw_bloom.md) is extracted once from
+the resolved mean, before tone mapping; individual linear samples contain no bloom.
+Each requested sample contributes, including
 sample zero; no hidden warm-up is discarded. AO/GI/reflection and FSR histories
 advance normally and can correlate the scene signals. Averaging them is distinct
 from independent raw ray samples, an effect's temporal history or UV coverage/counts

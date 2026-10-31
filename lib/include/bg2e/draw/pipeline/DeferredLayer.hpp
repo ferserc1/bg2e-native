@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/draw/pipeline/FullscreenPass.hpp>
+#include <bg2e/draw/pipeline/BloomPass.hpp>
 #include <bg2e/draw/pipeline/RasterFrame.hpp>
 
 namespace bg2e::draw::pipeline {
@@ -56,7 +57,7 @@ enum class FinalDebugView : uint32_t
 // debug: 0 final, 1 albedo, 2 normal, 3 material, 4 fresnel, 5 sheen, 6 baked, 7 depth, 8 raw reconstructed HDR.
 struct alignas(16) FinalSettings {
     glm::vec4 color{0, 1, 0, 2.2f}; // exposure stops, contrast, brightness, gamma
-    glm::vec4 outputExtent{0}; // Resolved by FinalLayer at record time.
+    glm::vec4 outputExtent{0}; // Output size, active bloom intensity, reserved; resolved at record time.
     glm::uvec4 display{0}; // debug view, hardware sRGB output, reserved, reserved
 };
 static_assert(sizeof(FinalSettings) == 48);
@@ -67,7 +68,15 @@ class BG2E_API FinalLayer : public RenderLayer {
     explicit FinalLayer(std::filesystem::path shaderRoot = {}, uint32_t slots = 0,
         gpu::PixelFormat output = gpu::PixelFormat::R8G8B8A8_UNORM, gpu::PixelFormat depth = gpu::PixelFormat::D32_SFLOAT,
         bool reconstructedColor = false);
+
     FinalSettings settings;
+    BloomSettings bloom;
+
+    // Renderer diagnostics can suppress bloom without changing saved preferences.
+    void suppressBloom(bool value);
+    bool bloomAvailable() const;
+    const std::string& bloomStatus() const;
+
     float exposure() const;
     void setExposure(float value);
     float contrast() const;
@@ -76,8 +85,10 @@ class BG2E_API FinalLayer : public RenderLayer {
     void setBrightness(float value);
     float gamma() const;
     void setGamma(float value);
+
     FinalDebugView debugView() const;
     void setDebugView(FinalDebugView value);
+
     const PassContract& contract() const override;
     void initialize(Engine& engine, const LayerConfiguration& configuration) override;
     void attachScene(std::shared_ptr<scene::Node>) override;
@@ -90,5 +101,8 @@ class BG2E_API FinalLayer : public RenderLayer {
     uint32_t _slots;
     PassContract _contract;
     FullscreenPass _pass;
+    BloomPass _bloom;
+    bool _suppressBloom = false, _bloomAvailable = false;
+    std::string _bloomStatus = "Not initialized";
 };
 }

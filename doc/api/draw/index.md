@@ -87,6 +87,7 @@ See [DenoiseFilter](DenoiseFilter.md) for reusable scalar/HDR bilateral filterin
 - [TracingSceneResources](TracingSceneResources.md): packed tables and retained snapshots.
 - [RTAmbientOcclusion](RTAmbientOcclusion.md), [RTGlobalIllumination](RTGlobalIllumination.md), [RTReflections](RTReflections.md).
 - [TemporalAccumulator](TemporalAccumulator.md), [MotionVectorGenerator](MotionVectorGenerator.md), [DenoiseFilter](DenoiseFilter.md).
+- [BloomPass and final HDR bloom](BloomPass.md): max-RGB threshold, dedicated pyramid and final-layer settings.
 - [FinalProcessor and SMAAProcessor](SMAAProcessor.md).
 - [Advanced lighting architecture](../../architecture/draw_advanced_lighting.md).
 

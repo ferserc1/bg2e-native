@@ -6,6 +6,8 @@
 - [Lightmaps](lightmaps/index.md): UV atlas construction, surface projection, lighting-pass integration, accumulation, execution contexts, previews and output/material limits.
 - [MainLoop, render, draw and gpu](MainLoop_render_draw_gpu.md): application lifecycle and graphics framework ownership.
 
+- [HDR bloom](draw_bloom.md): final HDR extraction, Dual filtering, dedicated pyramid ownership and temporal integration.
+
 - [Draw advanced lighting](draw_advanced_lighting.md): native capability split, public surfaces/signals, histories/filtering and ownership.
 
 - [Integrated draw/bake lightmaps](draw_integrated_lightmaps.md): sample/result

@@ -50,6 +50,68 @@ reflection::TypeInfo finalSettingsType()
     final.property("contrast", &Final::contrast, &Final::setContrast).category("Color").range(0, 10);
     final.property("brightness", &Final::brightness, &Final::setBrightness).category("Color").range(-1, 1);
     final.property("gamma", &Final::gamma, &Final::setGamma).category("Color").range(0.1, 8);
+    final.accessor<bool>("bloomEnabled", [](const Final& o)
+    {
+        return o.bloom.enabled;
+    }, [](Final& o, bool value)
+    {
+        auto proposed = o.bloom;
+        proposed.enabled = value;
+        proposed.validate();
+        o.bloom = proposed;
+    }).category("Bloom").displayName("Enabled");
+    final.accessor<float>("bloomIntensity", [](const Final& o)
+    {
+        return o.bloom.intensity;
+    }, [](Final& o, float value)
+    {
+        auto proposed = o.bloom;
+        proposed.intensity = value;
+        proposed.validate();
+        o.bloom = proposed;
+    }).category("Bloom").displayName("Intensity").range(0, 10);
+    final.accessor<float>("bloomThreshold", [](const Final& o)
+    {
+        return o.bloom.threshold;
+    }, [](Final& o, float value)
+    {
+        auto proposed = o.bloom;
+        proposed.threshold = value;
+        proposed.validate();
+        o.bloom = proposed;
+    }).category("Bloom").displayName("Threshold (max RGB, linear)").range(0, 65504);
+    final.accessor<float>("bloomScatter", [](const Final& o)
+    {
+        return o.bloom.scatter;
+    }, [](Final& o, float value)
+    {
+        auto proposed = o.bloom;
+        proposed.scatter = value;
+        proposed.validate();
+        o.bloom = proposed;
+    }).category("Bloom").displayName("Scatter").range(0, 1);
+    final.accessor<uint32_t>("bloomLevels", [](const Final& o)
+    {
+        return o.bloom.levels;
+    }, [](Final& o, uint32_t value)
+    {
+        auto proposed = o.bloom;
+        proposed.levels = value;
+        proposed.validate();
+        o.bloom = proposed;
+    }).category("Bloom").displayName("Pyramid levels").range(1, 8);
+    final.accessor<pipeline::BloomResolution>("bloomResolution", [](const Final& o)
+    {
+        return o.bloom.resolution;
+    }, [](Final& o, pipeline::BloomResolution value)
+    {
+        auto proposed = o.bloom;
+        proposed.resolution = value;
+        proposed.validate();
+        o.bloom = proposed;
+    }).category("Bloom").displayName("Initial resolution").enumValue("Half", pipeline::BloomResolution::Half).enumValue("Quarter", pipeline::BloomResolution::Quarter);
+    final.property("bloomAvailable", &Final::bloomAvailable).category("Capabilities");
+    final.property("bloomStatus", &Final::bloomStatus).category("Capabilities");
     auto debug = final.property("debugView", &Final::debugView, &Final::setDebugView).category("Debug");
     const char* labels[] = {"Final", "Albedo", "Normal and emission", "Material", "Fresnel flags",
         "Sheen and refraction", "Baked multiplier", "Depth", "Raw HDR (no color processing)"};
@@ -469,6 +531,11 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
                 if (auto final = std::dynamic_pointer_cast<Final>(selection.layer))
                 {
                     auto entry = target("final", "bg2e.draw.final.v1", final.get(), final);
+                    entry.available = [final](const std::string& property)
+                    {
+                        return !property.starts_with("bloom") || property == "bloomAvailable" ||
+                            property == "bloomStatus" || final->bloomAvailable();
+                    };
                     const auto* finalPointer = final.get();
                     if (!extensions && typeid(renderer) == typeid(RendererDeferred) &&
                         typeid(*finalPointer) == typeid(Final))
@@ -749,12 +816,24 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
         }
         return;
     }
+    // Built-in bloom settings affect only post-reconstruction CPU parameters.
+    // Pyramid replacements retire per slot; no device drain or history reset is needed.
+    const bool bloomOnly = !_boundedFinal.expired() && _boundedFinalCatalogGeneration == _catalog.generation() &&
+        !plan.changes().empty() && std::all_of(plan.changes().begin(), plan.changes().end(), [](const auto& change)
+    {
+        const auto& property = change.handle.property;
+        return change.handle.component == "final" && (property == "bloomEnabled" || property == "bloomIntensity" ||
+            property == "bloomThreshold" || property == "bloomScatter" || property == "bloomLevels" || property == "bloomResolution");
+    });
     const std::weak_ptr<RenderSettingsPreferences> self = shared_from_this();
-    delegate->enqueueRendererUpdate(_rendererGeneration, [self, plan, completion](Renderer& renderer)
+    auto apply = [self, plan, completion, bloomOnly](Renderer& renderer)
     {
         auto owner = self.lock();
         auto result = owner ? plan.apply(owner->_catalog) : failure("target_expired", "Settings facade no longer exists");
-        renderer.invalidateHistories(); // Includes reported partial application failures.
+        if (!bloomOnly)
+        {
+            renderer.invalidateHistories(); // Includes reported partial application failures.
+        }
         if (owner && owner->_automaticPersistence && result.valid())
         {
             try
@@ -770,14 +849,24 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
         {
             completion(std::move(result));
         }
-    }, [completion]
+    };
+    auto stale = [completion]
     {
         if (completion)
         {
             completion(failure("stale_renderer", "Renderer was replaced or rebound before the settings update"));
         }
-    });
+    };
+    if (bloomOnly)
+    {
+        delegate->enqueueCpuValueUpdate(_rendererGeneration, std::move(apply), std::move(stale));
+    }
+    else
+    {
+        delegate->enqueueRendererUpdate(_rendererGeneration, std::move(apply), std::move(stale));
+    }
 }
+
 bool RenderSettingsPreferences::hasPersistence() const
 {
     return _persistence != nullptr;

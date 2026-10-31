@@ -111,6 +111,7 @@ See [working tutorial](../../tutorials/draw/10_deferred_renderer.md).
 | reflections | enabled, quality, sampleCount, bias, maxDistance, maxRoughness, roughnessSpread, shadowSamples, useShadows, useBlueNoise |
 | temporal | enabled, freezeAtLimit, maxFrames, absolute/relativePositionThreshold, normalThreshold, adaptiveEnabled, minCurrentWeight, reactiveCurrentWeight, historyClipSigma |
 | denoise | enabled, kernelRadius, depthThreshold, normalThreshold, depthSigma, normalSigma, spatialSigma |
+| final | exposure, contrast, brightness, gamma; bloomEnabled, bloomIntensity, bloomThreshold, bloomScatter, bloomLevels, bloomResolution |
 | finalProcessor (when injected) | SMAA enabled, threshold, searchSteps; custom processor may provide different metadata |
 | light/<node identifier> | type (including Sun), color, intensity, solarSize, solarDistanceMillionKm, spotAngle/cutoff, castShadows, sourceSize, shadowSamples, affectsReflections |
 
@@ -147,10 +148,42 @@ when changed. Dedicated light-property controls also pause animation. These
 example-owned target IDs are not a general document/headless scene schema;
 other callers must supply explicit extensions/mapping or reject/skip unknown IDs.
 
-Queued changes invalidate engine/SDK histories even after reported partial failure.
+Queued changes generally invalidate engine/SDK histories even after reported partial
+failure. Bloom-only changes on the canonical built-in catalog are the exception
+described below; they preserve the upstream histories.
 Direct stopped-boundary imports/custom mutations must also notify/reset as needed.
 See [GraphicsSettingsWindow](../ui/GraphicsSettingsWindow.md),
 [histories](TemporalAccumulator.md) and [optional final SMAA](SMAAProcessor.md).
+
+## Bloom settings
+
+The default `final` target (`bg2e.draw.final.v1`) exposes these writable properties
+under the Graphics Settings **Final → Bloom** category:
+
+| Property ID | Type | Default | Range / enum |
+|---|---|---|---|
+| bloomEnabled | bool | true | Enabled/disabled |
+| bloomIntensity | float | 0.08 | 0..10 |
+| bloomThreshold | float | 1.0 | 0..65504; scene-linear max(R, G, B), before exposure |
+| bloomScatter | float | 0.7 | 0..1 |
+| bloomLevels | uint32_t | 6 | 1..8 |
+| bloomResolution | enum | Quarter=4 | Half=2, Quarter=4 |
+
+The existing codec persists these properties; there is no separate bloom target
+or settings schema. Absent properties retain the live defaults/current values.
+Read-only `bloomAvailable` and `bloomStatus` use the Capabilities category and are
+excluded from graphics preference serialization. Writable bloom properties are
+marked unavailable when bloom initialization failed; strict imports then reject
+those entries unless `SkipUnknownOrUnavailable` is selected.
+
+On the canonical built-in catalog without extensions, a queued batch containing
+only these six bloom properties uses `enqueueCpuValueUpdate`. It preserves
+engine/SDK temporal and denoiser histories and needs no device drain by itself.
+The next record replaces only acquired, completed slot resources if necessary.
+A batch mixed with other settings, or a custom/extended catalog, keeps conservative
+synchronization and history invalidation. Updates still request scene work and
+retain catalog/renderer generation checks and preference completion reporting.
+See [BloomPass](BloomPass.md) and [update synchronization](UpdateSynchronization.md).
 
 ## Serialized document identity
 
@@ -197,7 +230,7 @@ configuration and requires a fresh job after changes. See the
 ## Graphics settings view
 
 `GraphicsSettingsWindow` shows renderer quality, global shadows, indirect lighting,
-AO/GI, reflections, temporal accumulation, denoising, color processing, upscaling
+AO/GI, reflections, temporal accumulation, denoising, HDR bloom, color processing, upscaling
 and final processor settings. Show unavailable settings remains available.
 Scene environment and light controls belong to the application's environment editor.
 

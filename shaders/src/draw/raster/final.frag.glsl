@@ -18,21 +18,23 @@
 
 #version 450
 layout(set = 0, binding = 0) uniform texture2D image0;
-layout(set = 0, binding = 8) uniform sampler sample0;
+layout(set = 0, binding = 9) uniform sampler sample0;
 layout(set = 0, binding = 1) uniform texture2D image1;
-layout(set = 0, binding = 9) uniform sampler sample1;
+layout(set = 0, binding = 10) uniform sampler sample1;
 layout(set = 0, binding = 2) uniform texture2D image2;
-layout(set = 0, binding = 10) uniform sampler sample2;
+layout(set = 0, binding = 11) uniform sampler sample2;
 layout(set = 0, binding = 3) uniform texture2D image3;
-layout(set = 0, binding = 11) uniform sampler sample3;
+layout(set = 0, binding = 12) uniform sampler sample3;
 layout(set = 0, binding = 4) uniform texture2D image4;
-layout(set = 0, binding = 12) uniform sampler sample4;
+layout(set = 0, binding = 13) uniform sampler sample4;
 layout(set = 0, binding = 5) uniform texture2D image5;
-layout(set = 0, binding = 13) uniform sampler sample5;
+layout(set = 0, binding = 14) uniform sampler sample5;
 layout(set = 0, binding = 6) uniform texture2D image6;
-layout(set = 0, binding = 14) uniform sampler sample6;
+layout(set = 0, binding = 15) uniform sampler sample6;
 layout(set = 0, binding = 7) uniform texture2D image7;
-layout(set = 0, binding = 15) uniform sampler sample7;
+layout(set = 0, binding = 16) uniform sampler sample7;
+layout(set = 0, binding = 8) uniform texture2D bloomImage;
+layout(set = 0, binding = 17) uniform sampler bloomSampler;
 layout(push_constant) uniform FinalPush
 {
     vec4 color;
@@ -72,6 +74,18 @@ vec4 fetchSource(vec2 uv)
     }
     return textureLod(sampler2D(image7, sample7), uv, 0.0);
 }
+vec3 sampleBloom(vec2 uv)
+{
+    vec2 size = vec2(textureSize(sampler2D(bloomImage, bloomSampler), 0));
+    vec2 coordinate = uv * size - 0.5;
+    vec2 base = floor(coordinate);
+    vec2 weight = coordinate - base;
+    vec3 a = textureLod(sampler2D(bloomImage, bloomSampler), (base + 0.5) / size, 0.0).rgb;
+    vec3 b = textureLod(sampler2D(bloomImage, bloomSampler), (base + vec2(1.5, 0.5)) / size, 0.0).rgb;
+    vec3 c = textureLod(sampler2D(bloomImage, bloomSampler), (base + vec2(0.5, 1.5)) / size, 0.0).rgb;
+    vec3 d = textureLod(sampler2D(bloomImage, bloomSampler), (base + 1.5) / size, 0.0).rgb;
+    return mix(mix(a, b, weight.x), mix(c, d, weight.x), weight.y);
+}
 vec4 processColor()
 {
     vec2 uv = gl_FragCoord.xy / vec2(settings.outputExtent.xy);
@@ -88,6 +102,10 @@ vec4 processColor()
     vec4 result = mix(mix(fetchSource(uv00), fetchSource(uv10), weight.x), mix(fetchSource(uv01), fetchSource(uv11), weight.x), weight.y);
     if (settings.display.x == 0u)
     {
+        if (settings.outputExtent.z > 0.0)
+        {
+            result.rgb += settings.outputExtent.z * sampleBloom(uv);
+        }
         result.rgb = 1.0 - exp(-max(result.rgb, vec3(0.0)) * exp2(settings.color.x));
         result.rgb = pow(result.rgb, vec3(1.0 / settings.color.w));
         result.rgb = clamp((result.rgb + settings.color.z - 0.5) * settings.color.y + 0.5, vec3(0.0), vec3(1.0));

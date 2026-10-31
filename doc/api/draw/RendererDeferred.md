@@ -431,3 +431,25 @@ selected diagnostic view report which optional paths can execute. Current views
 include tokens, local history, motion, expected previous position/normal, current
 weight, reactivity, variance and effective count. See
 [TemporalAccumulator](TemporalAccumulator.md) for individual signal/history rules.
+
+## HDR bloom
+
+The default `pipeline::FinalLayer` owns a dedicated reduced RGBA16F bloom pyramid.
+It extracts texels whose scene-linear `max(R, G, B)` exceeds the configured threshold
+(default 1.0), after material/lighting/transparency composition and HDR
+reconstruction. Bloom is added in the existing final draw before exposure/tone
+mapping and overlays/UI. `recordLinear()` remains bloom-free; `recordFinal()` also
+accepts an externally accumulated HDR image and blooms that resolved input.
+
+Defaults are enabled, intensity 0.08, threshold 1.0, scatter 0.7, six levels and
+quarter width/height. A single chain per slot is reused during Dual upsampling;
+there is no full-resolution bloom intermediate or bloom history. The default
+4K chain uses about 5.273 MiB of texels per slot, excluding driver overhead.
+Final/lighting/temporal diagnostics suppress the effect without changing saved
+preferences. Successful temporal reconstruction does not suppress bloom.
+
+See [BloomPass and settings](BloomPass.md) for the complete API, capability fallback,
+slot lifetime and threshold semantics; [live settings](Settings.md#bloom-settings)
+for Graphics Settings and persistence; and [architecture](../../architecture/draw_bloom.md)
+for filter equations, memory costs and temporal/headless integration. Native GPU
+validation remains distinct from source/numerical-specification checks.

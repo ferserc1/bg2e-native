@@ -23,7 +23,19 @@ struct FinalPush {
     float4 outputExtent;
     uint4 display;
 };
-float4 processColor(float4 position, constant FinalPush& settings, texture2d<float> source, sampler sourceSampler)
+float3 sampleBloom(float2 uv, texture2d<float> bloomImage, sampler bloomSampler)
+{
+    float2 size = float2(uint2(bloomImage.get_width(), bloomImage.get_height()));
+    float2 coordinate = uv * size - 0.5;
+    float2 base = floor(coordinate);
+    float2 weight = coordinate - base;
+    float3 a = bloomImage.sample(bloomSampler, (base + 0.5) / size, level(0.0)).rgb;
+    float3 b = bloomImage.sample(bloomSampler, (base + float2(1.5, 0.5)) / size, level(0.0)).rgb;
+    float3 c = bloomImage.sample(bloomSampler, (base + float2(0.5, 1.5)) / size, level(0.0)).rgb;
+    float3 d = bloomImage.sample(bloomSampler, (base + 1.5) / size, level(0.0)).rgb;
+    return mix(mix(a, b, weight.x), mix(c, d, weight.x), weight.y);
+}
+float4 processColor(float4 position, constant FinalPush& settings, texture2d<float> source, sampler sourceSampler, texture2d<float> bloomImage, sampler bloomSampler)
 {
     float2 uv = position.xy / float2(settings.outputExtent.xy);
     float2 size = float2(source.get_width(), source.get_height());
@@ -37,6 +49,10 @@ float4 processColor(float4 position, constant FinalPush& settings, texture2d<flo
     float4 result = mix(mix(source.sample(sourceSampler, uv00, level(0.0)), source.sample(sourceSampler, uv10, level(0.0)), weight.x), mix(source.sample(sourceSampler, uv01, level(0.0)), source.sample(sourceSampler, uv11, level(0.0)), weight.x), weight.y);
     if (settings.display.x == 0u)
     {
+        if (settings.outputExtent.z > 0.0)
+        {
+            result.rgb += settings.outputExtent.z * sampleBloom(uv, bloomImage, bloomSampler);
+        }
         result.rgb = 1.0 - exp(-max(result.rgb, float3(0.0)) * exp2(settings.color.x));
         result.rgb = pow(result.rgb, float3(1.0 / settings.color.w));
         result.rgb = clamp((result.rgb + settings.color.z - 0.5) * settings.color.y + 0.5, float3(0.0), float3(1.0));
@@ -109,35 +125,36 @@ fragment float4 fragMain(float4 position [[position]], constant FinalPush& setti
     texture2d<float> image6 [[texture(6)]],
     sampler sample6 [[sampler(6)]],
     depth2d<float> image7 [[texture(7)]],
-    sampler sample7 [[sampler(7)]])
+    sampler sample7 [[sampler(7)]],
+    texture2d<float> bloomImage [[texture(8)]], sampler bloomSampler [[sampler(8)]])
 {
     if (settings.display.x == 0u || settings.display.x == 8u)
     {
-        return processColor(position, settings, image0, sample0);
+        return processColor(position, settings, image0, sample0, bloomImage, bloomSampler);
     }
     if (settings.display.x == 1u)
     {
-        return processColor(position, settings, image1, sample1);
+        return processColor(position, settings, image1, sample1, bloomImage, bloomSampler);
     }
     if (settings.display.x == 2u)
     {
-        return processColor(position, settings, image2, sample2);
+        return processColor(position, settings, image2, sample2, bloomImage, bloomSampler);
     }
     if (settings.display.x == 3u)
     {
-        return processColor(position, settings, image3, sample3);
+        return processColor(position, settings, image3, sample3, bloomImage, bloomSampler);
     }
     if (settings.display.x == 4u)
     {
-        return processColor(position, settings, image4, sample4);
+        return processColor(position, settings, image4, sample4, bloomImage, bloomSampler);
     }
     if (settings.display.x == 5u)
     {
-        return processColor(position, settings, image5, sample5);
+        return processColor(position, settings, image5, sample5, bloomImage, bloomSampler);
     }
     if (settings.display.x == 6u)
     {
-        return processColor(position, settings, image6, sample6);
+        return processColor(position, settings, image6, sample6, bloomImage, bloomSampler);
     }
     return processDepth(position, settings, image7, sample7);
 }

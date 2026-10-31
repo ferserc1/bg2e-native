@@ -6,7 +6,7 @@ flow; native bindings and effect contracts below remain explicit.
 
 The actual scene graph order is G-buffer/cutout-aware shadows, raw AO/GI/reflection
 signals, independent temporal histories, spatial denoise, lighting/composition,
-HDR reconstruction (resampling or optional FSR), final color, optional SMAA,
+HDR reconstruction (resampling or optional FSR/MetalFX), HDR bloom, final color, optional SMAA,
 overlays, then UI. No filtered signal replaces raw temporal history. Each effect
 invocation/view/layer has retained resources associated with a completed slot.
 
@@ -47,6 +47,7 @@ object. See [the transparent-layer contract](../api/draw/RendererDeferred.md#tra
 | GI / reflections on Vulkan | Native ray-tracing pipeline with raygen/miss/closest/any-hit, recursion depth one |
 | GI / reflections on Metal | Independently authored compute intersection-query kernels |
 | Advanced textured tracing | Nonuniform indexed resources, complete device-clamped tables up to 16384, v3 native effect shaders and required output formats |
+| Bloom | Filterable, blendable sampled/color-attachment RGBA16F and native raster shaders; RT not required |
 | Temporal / denoise / SMAA | Their own formats and native kernels; RT not required |
 | FSR | Supported Vulkan backend, SDK/runtime and camera requirements; primitive RT support is unrelated |
 
@@ -79,7 +80,12 @@ The display denoiser has no chart-ID guide. Exact UV bake averaging and chart-sa
 padding now belong to [bake](../api/bake/LightmapOutput.md); exact camera-image
 averaging and windowless execution remain separate pending products.
 
-Queued edits happen at a synchronized boundary and request scene work. Settings,
+[Bloom](draw_bloom.md) consumes the composed/reconstructed HDR after these effect
+stages and has no temporal history or denoiser guides of its own. Bloom-only queued
+edits on the canonical built-in catalog preserve upstream histories and defer
+pyramid replacement to completed-slot recording.
+
+Queued edits happen at a synchronized boundary and request scene work. Other settings,
 light, material, membership and lifecycle changes retain global SDK/engine resets;
 transform-only changes use the rolling window. Explicit general editor callbacks
 may still invalidate or reattach scenes and must be reviewed separately. Direct camera teleport,

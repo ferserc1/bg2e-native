@@ -51,3 +51,12 @@ See [live settings and target IDs](../draw/Settings.md),
 
 Graphics Settings contains no profiling controls. The draw composer exposes
 profiling separately through Window → Performance.
+
+The default final layer exposes a **Bloom** category in the **Final** section:
+Enabled, Intensity, Threshold (max RGB, linear), Scatter, Pyramid levels, and Initial
+resolution (Half/Quarter). These controls use the live settings catalog and the
+existing JSON preference import/export path. Defaults are enabled, 0.08 intensity,
+1.0 threshold, 0.7 scatter, six levels and Quarter resolution. Bloom-only edits on
+the standard renderer preserve temporal/denoiser histories and are queued as CPU
+value updates; pyramid changes retire safely per acquired frame slot. Unsupported
+bloom controls are marked unavailable; availability/status remain diagnostics.

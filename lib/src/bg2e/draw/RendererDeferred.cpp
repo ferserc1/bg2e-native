@@ -1658,6 +1658,12 @@ void RendererDeferred::recordFinal(const FrameContext& frame, gpu::Image& linear
     }
     std::vector<pipeline::ImageBinding> finalInputs{{"color", &linearColor}};
     finalInputs.insert(finalInputs.end(), gbuffer.begin(), gbuffer.end());
+    if (auto final = std::dynamic_pointer_cast<pipeline::FinalLayer>(_configuration.layers[2].layer))
+    {
+        const auto lighting = std::dynamic_pointer_cast<pipeline::DeferredLayer>(_configuration.layers[1].layer);
+        final->suppressBloom(slot.diagnosticView != pipeline::TemporalDiagnosticView::Off ||
+            (lighting && lighting->debugView() != pipeline::LightingDebugView::Final));
+    }
     dispatch(2, frame, finalInputs, {{"output", &frame.colorTarget}}, &raster);
     if (_configuration.finalProcessor && !slot.temporalUpscaleApplied)
     {
