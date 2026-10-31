@@ -261,13 +261,30 @@ bg2e::app::CommandResult Dispatcher::submit(std::unique_ptr<bg2e::app::Command> 
         });
 }
 
-bg2e::app::CommandResult Dispatcher::beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command)
+bg2e::app::CommandResult Dispatcher::beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command, bool reserved)
 {
-    if (_queue->pending())
+    if (reserved != _cpuInteractionReserved || (!reserved && _queue->pending()))
     {
         return {bg2e::app::CommandStatus::Rejected, "Wait for pending commands before manipulating"};
     }
     return _history->beginTransaction(std::move(command), {_history->documentState().generation});
+}
+
+
+bool Dispatcher::reserveCpuInteraction()
+{
+    if (_cpuInteractionReserved || _queue->pending() || _history->transactionActive() || _history->faulted())
+    {
+        return false;
+    }
+    _cpuInteractionReserved = true;
+    return true;
+}
+
+
+void Dispatcher::releaseCpuInteraction()
+{
+    _cpuInteractionReserved = false;
 }
 
 
@@ -298,7 +315,7 @@ void Dispatcher::pump()
     // CPU interactions are supervised outside the transport queue, at input
     // boundaries. Keep admitted commands ordered and reserved until adoption or
     // cancellation, rather than executing against an in-progress preview.
-    if (_history->transactionActive() && !_history->faulted())
+    if ((_cpuInteractionReserved || _history->transactionActive()) && !_history->faulted())
     {
         return;
     }

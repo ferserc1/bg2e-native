@@ -19,6 +19,7 @@
 #pragma once
 
 #include "../../StageScene.hpp"
+#include <bg2e/app/CommandTransaction.hpp>
 #include <bg2e/manipulation/SelectionManager.hpp>
 #include <bg2e/ui/ReflectionWidget.hpp>
 
@@ -55,13 +56,20 @@ class EditMembership final : public bg2e::app::Command {
 enum class Action { Property, TransformIdentity, ResetProjection, ResetOrbit };
 bool supportedProperty(bg2e::scene::Component& component, const bg2e::ui::ReflectionEditIntent& intent);
 
-class EditProperty final : public bg2e::app::Command {
+class EditProperty final : public bg2e::app::CommandTransaction {
   public:
     EditProperty(std::weak_ptr<StageScene> stage, std::weak_ptr<bg2e::scene::Component> component,
-        bg2e::ui::ReflectionEditIntent intent, Action action = Action::Property);
+        bg2e::ui::ReflectionEditIntent intent, Action action = Action::Property,
+        std::function<void()> effects = {});
 
     const bg2e::app::CommandInfo& info() const noexcept override;
     bg2e::app::CommandMemory memory() const override;
+
+    bg2e::app::CommandResult begin() noexcept override;
+    bg2e::app::CommandMemory memoryForUpdate(const std::any& value) const override;
+    bg2e::app::CommandResult update(const std::any& value) noexcept override;
+    bool changed() const noexcept override;
+
     bg2e::app::CommandResult execute() noexcept override;
     bg2e::app::CommandResult undo() noexcept override;
     bg2e::app::CommandResult redo() noexcept override;
@@ -85,8 +93,11 @@ class EditProperty final : public bg2e::app::Command {
     Value _before, _after;
     StageScene::EditingState _beforeState, _afterState;
     bool _captured = false;
+    bool _changed = false;
+    std::function<void()> _effects;
     bg2e::app::CommandInfo _info{"Edit component property", "component.property"};
 
+    static bool equal(const Value& a, const Value& b);
     Value capture(bg2e::scene::Component& component) const;
     void write(bg2e::scene::Component& component, const Value& value) const;
     void propose(bg2e::scene::Component& component) const;

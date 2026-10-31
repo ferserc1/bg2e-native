@@ -176,6 +176,12 @@ bool ComponentInspector::commitInteraction()
 }
 
 
+bool ComponentInspector::interactionActive() const
+{
+    return _editSession && _editSession->active();
+}
+
+
 void ComponentInspector::onEditRequested(EditIntentHandler handler)
 {
     cancelInteraction();

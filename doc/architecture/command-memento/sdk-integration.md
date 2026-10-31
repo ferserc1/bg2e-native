@@ -19,7 +19,13 @@ For command-owned edits install `DrawMaterialEditor::onEditRequested`. The
 handler receives target and intent before live mutation and owns safe scheduling,
 validation, snapshots and recovery. Typed mode does not run the editor's own
 queue or changed notification. Call `commitInteraction` or `cancelInteraction`
-as the host settles UI; cancel before rebind or cleanup. In default mode,
+as the host settles UI; cancel before rebind or cleanup. Both material editor
+and component inspector expose `interactionActive()` so a host can verify that
+cancellation has completed. An asynchronous owner returns false from Cancel
+until restoration finishes and retains the session for a subsequent retry.
+Composer queues CPU previews during the interaction and commits their already
+applied final values; merely buffering until Commit would not provide viewport
+feedback. In default mode,
 `queuePatch`, texture settings and changed notifications remain usable. The
 notification is not an undo request.
 

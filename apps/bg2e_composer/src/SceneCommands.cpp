@@ -180,23 +180,22 @@ bg2e::app::CommandResult AppDelegate::editSubmeshMetadata(command::scene::Metada
 
 
 bool AppDelegate::componentEditIntent(const std::shared_ptr<bg2e::scene::Component>& component,
-    bg2e::ui::EditPhase phase, const bg2e::ui::ReflectionEditIntent& intent)
+    bg2e::ui::EditPhase phase, uint64_t interaction, const bg2e::ui::ReflectionEditIntent& intent)
 {
     using namespace bg2e::ui;
-    if (phase == EditPhase::Cancel)
+    if (phase == EditPhase::Cancel && _valueEdit && _valueEdit->interaction == interaction)
     {
-        return true; // Drafts have not mutated the scene.
+        return valueEditIntent(phase, interaction, {}, {});
     }
-    if (auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(component))
+    if (auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(component);
+        environment && intent.path.size() == 1 && intent.path.front().property == "environmentImage")
     {
-        if (!document() || commandFaulted() || !_stage->contains(environment->ownerNode()) ||
-            !command::supportedComponent(*environment) || intent.path.size() != 1)
+        if (phase == EditPhase::Cancel)
         {
-            return false;
+            return true;
         }
-        const auto& key = intent.path.front().property;
-        if (key != "environmentImage" && key != "skyboxBlur" && key != "skyboxVisible" &&
-            key != "skyHorizonColor" && key != "skyZenithColor" && key != "groundColor")
+        if (!document() || commandFaulted() || !_stage->contains(environment->ownerNode()) ||
+            !command::supportedComponent(*environment))
         {
             return false;
         }
@@ -213,30 +212,24 @@ bool AppDelegate::componentEditIntent(const std::shared_ptr<bg2e::scene::Compone
         }
         return true;
     }
+    if (phase == EditPhase::Cancel)
+    {
+        return true;
+    }
     if (!document() || !component || (!_stage->contains(component->ownerNode()) && component->ownerNode() != _stage->fillLightNode().get()) ||
         !command::component::supportedProperty(*component, intent))
     {
         _status = "This property requires a dedicated reversible editor adapter";
         return false;
     }
-    if (phase == EditPhase::Commit)
-    {
-        try
+    return valueEditIntent(phase, interaction,
+        [stage = std::weak_ptr<StageScene>(_stage), target = std::weak_ptr<bg2e::scene::Component>(component),
+            intent, effects = valueEditEffects()]
         {
-            command::Effects effects;
-            effects.lightmapSources = true;
-            effects.renderHistories = true;
-            return submitSceneCommand(std::make_unique<command::component::EditProperty>(_stage, component, intent), effects).accepted();
-        }
-        catch (...)
-        {
-            _status = "Component property command admission failed";
-            return false;
-        }
-    }
-    return !commandFaulted();
+            return std::make_unique<command::component::EditProperty>(stage, target, intent,
+                command::component::Action::Property, effects);
+        }, intent);
 }
-
 
 void AppDelegate::componentAction(const std::shared_ptr<bg2e::scene::Component>& component,
     const bg2e::ui::ReflectionActionIntent& intent)

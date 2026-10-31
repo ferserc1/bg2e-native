@@ -2,6 +2,10 @@
 
 ## Materials and textures
 
+CPU-only continuous edits use fixed value snapshots in `materialInteraction()`;
+they update live attributes and stored definitions without retaining native
+material versions. Texture/resource edits instead use `EditMaterials`.
+
 `EditMaterials` retains authored before/after definitions and exchanges values
 on the same live `MaterialBase`, preserving submesh identity. Shared targets are
 deduplicated. Undo/redo reuses retained definitions and texture realizations;
@@ -16,9 +20,12 @@ the last owner releases it. This does not change global `TextureCache` policy.
 
 ## Environment and GPU-derived state
 
-Environment commands snapshot authored component values and canonical generator
-state. Replay prepares resources on the current compatible device and exchanges
-authored state while preserving component identity. Same-device rebind is
+Environment image and preset commands snapshot authored component values and
+canonical generator state. Continuous environment colors, blur and visibility
+use `EditProperty` transactions; the renderer rebuilds their derived environment
+data from the current authored values on preview and replay. Resource command
+replay prepares resources on the current compatible device and exchanges authored
+state while preserving component identity. Same-device rebind is
 allowed; incompatible resources reject. Inactive environment edits preserve the
 active publication. General structural edits to file-backed environments remain
 protected; prepared presets have a dedicated retained adapter.

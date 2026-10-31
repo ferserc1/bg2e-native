@@ -482,7 +482,8 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             ui->_material.cancelInteraction();
             ui->_graphics.cancelInteraction();
             return (!ui->_nameEdit || !ui->_nameEdit->active()) &&
-                (!ui->_metadataEdit || !ui->_metadataEdit->active());
+                (!ui->_metadataEdit || !ui->_metadataEdit->active()) &&
+                !ui->_componentInspector.interactionActive() && !ui->_material.interactionActive();
         });
         delegate->onToolsCleanup([weak]
         {

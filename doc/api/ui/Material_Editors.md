@@ -112,7 +112,16 @@ For an application-owned reversible edit, use the optional
 `onEditRequested(EditIntentHandler)` path documented in
 [`EditInteraction`](EditInteraction.md). In that mode the handler receives the
 intent before mutation and owns target validation, scheduling, capture and
-recovery. The existing `onChanged` callback remains post-mutation notification.
+recovery. `commitInteraction()` returns whether the host accepted the commit;
+`cancelInteraction()` requests restoration. Check `interactionActive()` before
+rebinding or cleanup: a pending/failed cancellation retains the session and must
+be retried after the host reaches its safe boundary. A guard must permit the
+owning transaction to continue.
+
+Composer previews CPU values during Update, changes live and stored material
+values together, and commits one entry with the last applied values. Returning
+to the baseline creates no entry. Texture/resource edits remain discrete.
+The existing `onChanged` callback remains post-mutation notification.
 It does not create an undo entry. Non-history applications can continue using
 the default queue and `queuePatch` APIs.
 

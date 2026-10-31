@@ -53,9 +53,15 @@ class Dispatcher {
         bg2e::app::CommandOrigin origin = bg2e::app::CommandOrigin::Editor);
     // CPU-only supervised interactions begin at the input/graphics boundary.
     // The transaction owns validation, effects and recovery; it retains no native
-    // resources. Pending commands prevent admission. History blocks execution of
-    // other commands until this interaction is settled.
-    bg2e::app::CommandResult beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command);
+    // resources. Pending commands prevent unreserved admission. A reservation
+    // holds FIFO successors until the deferred Begin and settlement complete.
+    // History blocks other commands while a preview is active.
+    bg2e::app::CommandResult beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command,
+        bool reserved = false);
+    // Hold discrete dispatch between UI admission and the deferred Begin. FIFO
+    // successors remain queued until the reserved interaction has settled.
+    bool reserveCpuInteraction();
+    void releaseCpuInteraction();
 
     void setSelectionHistoryEnabled(bool enabled);
     bool selectionHistoryEnabled() const;
@@ -75,6 +81,7 @@ class Dispatcher {
 
   private:
     bool _selectionHistory = false;
+    bool _cpuInteractionReserved = false;
     struct Retirement;
     std::shared_ptr<Retirement> _retirement;
     std::unique_ptr<bg2e::app::CommandHistory> _history;

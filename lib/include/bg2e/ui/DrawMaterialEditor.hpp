@@ -97,13 +97,15 @@ class BG2E_API DrawMaterialEditor {
     // live edit, with targets frozen on Begin. No internal edit queue or changed
     // notification runs in this mode. The handler owns validation, safe scheduling,
     // capture, recovery and any history policy. Callbacks must not throw, and
-    // rejected Begin must leave no transaction open. It must synchronously settle
-    // Cancel before a rebind/cleanup; false keeps the session open for recovery.
+    // rejected Begin must leave no transaction open. Complete and acknowledge
+    // Cancel before rebind/cleanup; false retains the session for retry/recovery.
     using EditIntentHandler = std::function<bool(EditPhase, uint64_t,
         const MaterialEditTargets&, const MaterialEditIntent&)>;
     void onEditRequested(EditIntentHandler handler);
     void cancelInteraction();
     bool commitInteraction();
+    // Includes ownership retained during pending or failed cancellation.
+    bool interactionActive() const;
 
     bool draw(UserInterface& ui);
     bool queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo = false);

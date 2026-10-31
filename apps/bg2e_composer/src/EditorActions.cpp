@@ -18,6 +18,7 @@
 
 #include "AppDelegate.hpp"
 #include "command/material/MaterialCommands.hpp"
+#include "command/material/MaterialInteraction.hpp"
 #include "command/lighting/EnvironmentCommands.hpp"
 
 #include <bg2e/geo/modifiers.hpp>
@@ -141,12 +142,35 @@ void AppDelegate::processReadActions()
 }
 
 
-bool AppDelegate::materialEditIntent(bg2e::ui::EditPhase phase,
+bool AppDelegate::materialEditIntent(bg2e::ui::EditPhase phase, uint64_t interaction,
     const bg2e::ui::MaterialEditTargets& targets, const bg2e::ui::MaterialEditIntent& intent)
 {
-    if (phase == bg2e::ui::EditPhase::Cancel)
+    using bg2e::ui::EditPhase;
+    if (phase == EditPhase::Cancel && _valueEdit && _valueEdit->interaction == interaction)
     {
-        return true; // The SDK session owns only buffered values until commit.
+        return valueEditIntent(phase, interaction, {}, {});
+    }
+    if (!document() || !document()->commands)
+    {
+        return phase == EditPhase::Cancel;
+    }
+    const bool values = intent.cpuValuesOnly && intent.patch && !intent.sampling && !intent.indirectMode &&
+        !intent.ordinaryAo && intent.linearSlot < 0 && intent.clearSlot < 0;
+    if (values)
+    {
+        if (phase != EditPhase::Cancel && targets.rendererGeneration != rendererGeneration())
+        {
+            return false;
+        }
+        return valueEditIntent(phase, interaction,
+            [stage = std::weak_ptr<StageScene>(_stage), targets, effects = valueEditEffects()]
+            {
+                return command::material::materialInteraction(stage, targets, effects);
+            }, intent);
+    }
+    if (phase == EditPhase::Cancel)
+    {
+        return true; // Resource drafts remain private until publication.
     }
     if (!document() || !document()->commands || commandFaulted() ||
         document()->commands->history().transactionActive() || sceneLoading() || _imports.busy() ||
@@ -154,7 +178,7 @@ bool AppDelegate::materialEditIntent(bg2e::ui::EditPhase phase,
     {
         return false;
     }
-    if (phase == bg2e::ui::EditPhase::Commit)
+    if (phase == EditPhase::Commit)
     {
         try
         {
@@ -167,7 +191,6 @@ bool AppDelegate::materialEditIntent(bg2e::ui::EditPhase phase,
     }
     return true;
 }
-
 
 void AppDelegate::queueMaterialEdit(bg2e::ui::MaterialEditTargets targets, bg2e::ui::MaterialEditIntent intent,
     std::shared_ptr<bg2e::draw::MaterialBase> paste)

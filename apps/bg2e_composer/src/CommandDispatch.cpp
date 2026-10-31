@@ -360,6 +360,227 @@ std::string AppDelegate::historyActionLabel(bool redo) const
 }
 
 
+bool AppDelegate::valueEditAvailable() const
+{
+    if (!document() || !document()->commands || commandFaulted())
+    {
+        return false;
+    }
+    const auto& history = document()->commands->history();
+    return !history.transactionActive() || (_valueEdit && !_valueEdit->failed && !_valueEdit->ending &&
+        _valueEdit->generation == document()->generation && _valueEdit->transaction == history.transactionId());
+}
+
+
+std::function<void()> AppDelegate::valueEditEffects()
+{
+    return [weak = weak_from_this(), generation = document()->generation]
+    {
+        auto owner = weak.lock();
+        if (!owner || !owner->document() || owner->document()->generation != generation || !owner->renderer())
+        {
+            throw std::logic_error("Value edit effects require the original document and renderer");
+        }
+        // A bake can have started after Begin. Its native cleanup needs the
+        // resource boundary even when this preview is a CPU-only update.
+        std::optional<bg2e::gpu::Device::ResourceUpdateScope> resourceUpdate;
+        if (owner->_baker || owner->_bakeContext)
+        {
+            resourceUpdate.emplace(*owner->_engine->device());
+        }
+        command::Effects effects;
+        effects.lightmapSources = true;
+        effects.renderHistories = true;
+        owner->applyCommandEffects(*owner->renderer(), effects);
+    };
+}
+
+
+bool AppDelegate::valueEditIntent(bg2e::ui::EditPhase phase, uint64_t interaction,
+    std::function<std::unique_ptr<bg2e::app::CommandTransaction>()> prepare, std::any value)
+{
+    using namespace bg2e::app;
+    using bg2e::ui::EditPhase;
+    if (!document() || !document()->commands)
+    {
+        return phase == EditPhase::Cancel && (!_valueEdit || _valueEdit->finished);
+    }
+    auto commands = document()->commands;
+    auto& history = commands->history();
+    if (phase == EditPhase::Begin)
+    {
+        if (!interaction || (_valueEdit && !_valueEdit->finished) || commands->pending() ||
+            history.transactionActive() || history.faulted() || sceneLoading() || _imports.busy() ||
+            (_pendingIo && !_settlingUiInteractions))
+        {
+            return false;
+        }
+        auto edit = std::make_shared<ValueEdit>();
+        if (!commands->reserveCpuInteraction())
+        {
+            return false;
+        }
+        _valueEdit = std::move(edit);
+        _valueEdit->interaction = interaction;
+        _valueEdit->generation = document()->generation;
+    }
+    auto edit = _valueEdit;
+    if (!edit || edit->interaction != interaction || edit->generation != document()->generation)
+    {
+        return phase == EditPhase::Cancel;
+    }
+    if (edit->finished)
+    {
+        return phase == EditPhase::Cancel || (phase == EditPhase::Commit && !edit->failed);
+    }
+    if (phase == EditPhase::Update && (edit->failed || edit->ending))
+    {
+        return false;
+    }
+    if (phase == EditPhase::Commit)
+    {
+        if (edit->failed)
+        {
+            return false;
+        }
+        if (edit->ending)
+        {
+            return !edit->cancelling;
+        }
+        edit->ending = true;
+    }
+    if (phase == EditPhase::Cancel)
+    {
+        if (edit->cancelling)
+        {
+            return false; // Retry only after restoration completes at the safe boundary.
+        }
+        edit->ending = true;
+        edit->cancelling = true;
+    }
+    try
+    {
+        auto operation = [weak = weak_from_this(), edit, commands, phase, prepare = std::move(prepare), value = std::move(value)](auto&)
+        {
+            auto owner = weak.lock();
+            if (!owner || !owner->document() || owner->document()->generation != edit->generation || edit->finished)
+            {
+                return;
+            }
+            if (phase == EditPhase::Update && edit->failed)
+            {
+                return;
+            }
+            auto& history = commands->history();
+            CommandResult result;
+            try
+            {
+                if (phase == EditPhase::Begin)
+                {
+                    // Stop asynchronous resource publication before capturing the baseline.
+                    owner->stopLightmapBake(true);
+                    result = commands->beginCpuInteraction(prepare(), true);
+                    if (result.accepted())
+                    {
+                        edit->transaction = history.transactionId();
+                    }
+                }
+                else if (!edit->transaction || history.transactionId() != edit->transaction)
+                {
+                    result = {CommandStatus::Cancelled, "Value interaction is no longer active"};
+                }
+                else if (phase == EditPhase::Update && !edit->failed)
+                {
+                    result = history.updateTransaction(value);
+                }
+                else if (phase == EditPhase::Cancel || edit->failed)
+                {
+                    result = history.cancelTransaction();
+                }
+                else if (phase == EditPhase::Commit)
+                {
+                    result = history.commitTransaction();
+                }
+            }
+            catch (...)
+            {
+                result = {CommandStatus::Rejected, "Value interaction preparation failed"};
+            }
+            if (!result.accepted())
+            {
+                owner->_status = std::string(result.message);
+                edit->failed = true;
+                // Failed admission owns no model state. Failed updates retain
+                // the previous preview until explicit cancellation succeeds.
+                if (!edit->transaction || history.transactionId() != edit->transaction)
+                {
+                    edit->finished = true;
+                }
+                edit->cancelling = false;
+            }
+            else if (phase == EditPhase::Commit || phase == EditPhase::Cancel)
+            {
+                edit->finished = true;
+            }
+            if (edit->finished)
+            {
+                commands->releaseCpuInteraction();
+            }
+            owner->_stage->synchronizeDirty();
+            owner->sampleNavigation(false);
+            commands->pump();
+            owner->requestSceneFrame();
+        };
+        auto stale = [weak = weak_from_this(), edit, commands]
+        {
+            edit->failed = true;
+            edit->cancelling = false;
+            commands->releaseCpuInteraction();
+            if (auto owner = weak.lock())
+            {
+                // Renderer replacement must not silently abandon an applied preview.
+                if (owner->document() && owner->document()->generation == edit->generation && edit->transaction)
+                {
+                    owner->document()->commands->history().reportExternalFault();
+                }
+                else
+                {
+                    edit->finished = true;
+                }
+                owner->_status = "The renderer changed during a value interaction";
+            }
+        };
+        // Begin may retire a running bake. Subsequent previews only change CPU
+        // values and use the renderer's normal value-update synchronization.
+        if (phase == EditPhase::Begin)
+        {
+            enqueueRendererUpdate(rendererGeneration(), std::move(operation), std::move(stale));
+        }
+        else
+        {
+            enqueueCpuValueUpdate(rendererGeneration(), std::move(operation), std::move(stale));
+        }
+    }
+    catch (...)
+    {
+        if (phase == EditPhase::Begin)
+        {
+            commands->releaseCpuInteraction();
+            _valueEdit.reset();
+        }
+        else
+        {
+            edit->ending = false;
+            edit->cancelling = false;
+        }
+        return false;
+    }
+    // Commit acknowledges FIFO admission. Cancel acknowledges actual restoration
+    // on a later callback, preserving the SDK's rebind/cleanup ownership contract.
+    return phase != EditPhase::Cancel;
+}
+
+
 bool AppDelegate::settleEditDrafts()
 {
     if (_settlingUiInteractions)
@@ -515,8 +736,14 @@ bool AppDelegate::flushDocumentCommands(bool commit, bool allowFault)
     {
         if (!_settleUiInteractions(commit && !commands->history().faulted()))
         {
-            _status = "The active UI edit could not be settled";
-            return false;
+            // Cancel acknowledges restoration, not just queue admission. This
+            // method runs at the stopped document IO/lifecycle boundary.
+            DefaultRenderLoopDelegate::prepareFrame();
+            if (!_settleUiInteractions(commit && !commands->history().faulted()))
+            {
+                _status = "The active UI edit could not be settled";
+                return false;
+            }
         }
     }
     finishTransformInteraction(commit);
@@ -532,13 +759,15 @@ bool AppDelegate::flushDocumentCommands(bool commit, bool allowFault)
     do
     {
         commands->pump();
+        const bool valueEditPending = _valueEdit && !_valueEdit->finished;
         DefaultRenderLoopDelegate::prepareFrame();
         const auto remaining = commands->pending();
         if (remaining == 0)
         {
             break;
         }
-        if (previous != 0 && remaining >= previous)
+        const bool valueEditSettled = valueEditPending && _valueEdit && _valueEdit->finished;
+        if (previous != 0 && remaining >= previous && !valueEditSettled)
         {
             _status = "Document commands could not reach a safe boundary";
             return false;

@@ -19,6 +19,13 @@ Custom/plugin components without a safe retention/unload adapter reject.
 `RenameNode`, `SetNodeEnabled`, metadata and reflected component-property
 commands retain typed before/after values. They resolve weak identity and current
 membership for each operation rather than holding a raw property pointer.
+Inspector property edits use `EditProperty` as a transaction: capture once at
+Begin, apply each Update, and adopt one final entry at Commit. The same adapter
+continues to support discrete property commands and reset actions. Continuous
+property paths are checked before every proposal; light and environment colors
+therefore update the viewport during editing. See
+[continuous interactions](continuous-interactions.md).
+
 Selection history uses `SetSelection`; its policy is `UserPreference`, impact
 `None`, and preference defaults off. Toggling preference changes future
 admission only. Existing entries remain, and selection does not mark the scene

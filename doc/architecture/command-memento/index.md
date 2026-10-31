@@ -38,7 +38,9 @@ Generic APIs live in `lib/include/bg2e/app/Command*.hpp` and implementations in
 `lib/include/bg2e/ui/{EditInteraction,ReflectionWidget,DrawMaterialEditor}.hpp`.
 Composer adapters are in `apps/bg2e_composer/src/command/`; dispatch, document
 and UI binding are in `AppDelegate`, `CommandDispatch`, `Document` and
-`EditorTools` sources. The public draw API remains the production rendering
+`EditorTools` sources. Live CPU material transactions are implemented in
+`command/material/MaterialInteraction.cpp`; reflected value transactions extend
+`command/component/ComponentCommands.cpp`. The public draw API remains the production rendering
 path; this work does not move rendering into `bg2e::gpu`.
 
 ## Implemented scope

@@ -2,34 +2,28 @@
 
 ## One scalar edit from intent to replay
 
-The following excerpt is from the actual typed-reflection handler. It shows that
-the widget draft does not mutate the scene and that a command is submitted only
-at Commit. The surrounding validation and error handling are omitted here.
+A reflected property edit enters `AppDelegate::componentEditIntent` with the
+widget's interaction ID and immutable `ReflectionEditIntent`. Supported values
+are passed to `valueEditIntent`, which schedules each phase at a renderer
+boundary. The UI widget does not call a live setter.
 
-```cpp
-if (phase == EditPhase::Commit)
-{
-    command::Effects effects;
-    effects.lightmapSources = true;
-    effects.renderHistories = true;
-    return submitSceneCommand(
-        std::make_unique<command::component::EditProperty>(_stage, component, intent), effects).accepted();
-}
-return !commandFaulted();
-```
+1. Begin reserves interaction dispatch and creates `EditProperty`; its
+   `begin()` captures the original authored value and stage state.
+2. Each Update resolves the frozen reflected path, validates and applies the
+   proposal, updates the final snapshot, invalidates derived histories and
+   requests a frame. The viewport therefore changes while the control is active.
+3. Commit follows all preceding updates and calls `commitTransaction()`. History
+   adopts the already-applied result as one entry without executing it again.
+4. Cancel restores the baseline. A return to the original values creates no
+   history entry. Undo and redo restore the captured initial/final values.
 
-Source: [`AppDelegate::componentEditIntent`](../../../apps/bg2e_composer/src/SceneCommands.cpp).
-`EditSession` supplies the phase and immutable `intent`; `EditProperty` resolves
-the reflected path at operation time. `submitSceneCommand` routes through
-`CommandDispatch` to the safe graphics boundary. The command captures the old
-authored value and applies the proposal; declared effects invalidate relevant
-render histories/lightmap sources. Undo resolves the target afresh and restores
-the old value. Redo restores the captured new value without consulting current
-selection or invoking the widget.
-
-The important capture moment is command execution, after FIFO predecessors have
-completed and immediately before publication. Continuous edits instead capture
-at Begin and adopt the live final preview at Commit.
+Sources: [`AppDelegate::componentEditIntent`](../../../apps/bg2e_composer/src/SceneCommands.cpp),
+[`valueEditIntent`](../../../apps/bg2e_composer/src/CommandDispatch.cpp), and
+[`EditProperty`](../../../apps/bg2e_composer/src/command/component/ComponentCommands.cpp).
+Material CPU values use the same scheduling with `materialInteraction()`;
+resource edits remain privately prepared discrete commands. See
+[continuous interactions](continuous-interactions.md) for cancellation
+acknowledgement and failure recovery.
 
 ## Prepared result path
 
@@ -43,7 +37,8 @@ not the expired UI token or mutable source files.
 ## Effects and menus
 
 Composer declares effects (lightmap sources, render histories, scene references,
-tools, selection) at dispatch. Commands do not directly call every UI subsystem.
+tools, selection) at dispatch. Live value transactions receive an application
+effects callback used for preview and replay.
 Menu labels use `CommandHistory::undoName/redoName`; availability includes busy
 IO/import/publication/queue and fault state. Cmd-Z on macOS, Ctrl-Z elsewhere;
 Shift adds redo. Text input owns its own undo handling. Selection recording is

@@ -135,3 +135,22 @@ use this hook to validate and load selected resources.
 value without invoking the original target setters or traversing raw object
 pointers. GraphicsSettingsWindow uses it before queueing live changes; see
 [draw settings](../draw/Settings.md).
+
+
+## Reversible live property edits
+
+`ComponentInspector::onEditRequested(EditIntentHandler)` connects typed
+Begin/Update/Commit/Cancel intents to an exclusive mutation owner. The handler
+receives the component, interaction ID and `ReflectionEditIntent`; the widget
+does not call the live property setter or `onChanged` in this mode.
+`commitInteraction()` asks the owner to adopt the final value;
+`cancelInteraction()` requests restoration. `interactionActive()` stays true
+until the session is settled, including pending or failed cancellation. Retain
+and retry cancellation before changing nodes, callbacks or destroying the editor.
+
+Composer captures the baseline once and applies each accepted Update at its
+renderer boundary. Supported scalar/vector/color edits, including environment
+colors and skybox blur, therefore appear during the gesture and produce one
+history entry at Commit. Environment image replacement retains its prepared
+resource command. Paths and subtypes are resolved and validated at operation
+time; custom components and competing transform writers still require adapters.

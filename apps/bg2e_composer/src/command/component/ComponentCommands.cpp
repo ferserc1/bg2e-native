@@ -120,6 +120,10 @@ bool finiteValue(const std::any& value)
     {
         return std::isfinite(*number);
     }
+    if (const auto* color = std::any_cast<bg2e::base::Color>(&value))
+    {
+        return std::isfinite(color->r) && std::isfinite(color->g) && std::isfinite(color->b) && std::isfinite(color->a);
+    }
     if (const auto* vector = std::any_cast<glm::vec2>(&value))
     {
         return std::isfinite(vector->x) && std::isfinite(vector->y);
@@ -370,9 +374,18 @@ bool supportedProperty(Component& component, const bg2e::ui::ReflectionEditInten
     using namespace bg2e::scene;
     using bg2e::reflection::PropertyType;
     if (!supportedComponent(component) || dynamic_cast<DrawableComponent*>(&component) ||
-        dynamic_cast<EnvironmentComponent*>(&component) || intent.path.empty() || !finiteValue(intent.proposed))
+        intent.path.empty() || !finiteValue(intent.proposed))
     {
         return false; // Resource/custom effects need their dedicated adapter.
+    }
+    if (dynamic_cast<EnvironmentComponent*>(&component))
+    {
+        const auto& key = intent.path.front().property;
+        if (intent.path.size() != 1 || (key != "skyboxBlur" && key != "skyboxVisible" &&
+            key != "skyHorizonColor" && key != "skyZenithColor" && key != "groundColor"))
+        {
+            return false; // Image replacement requires the retained-resource adapter.
+        }
     }
     if (auto* camera = dynamic_cast<CameraComponent*>(&component))
     {
@@ -428,8 +441,9 @@ bool supportedProperty(Component& component, const bg2e::ui::ReflectionEditInten
 }
 
 EditProperty::EditProperty(std::weak_ptr<StageScene> stage, std::weak_ptr<Component> component,
-    bg2e::ui::ReflectionEditIntent intent, Action action)
-    : _stage(std::move(stage)), _target(std::move(component)), _intent(std::move(intent)), _action(action)
+    bg2e::ui::ReflectionEditIntent intent, Action action, std::function<void()> effects)
+    : _stage(std::move(stage)), _target(std::move(component)), _intent(std::move(intent)), _action(action),
+      _effects(std::move(effects))
 {
 }
 
@@ -455,6 +469,125 @@ CommandMemory EditProperty::memory() const
     }
     return {bytes, {}};
 }
+
+bool EditProperty::equal(const Value& a, const Value& b)
+{
+    return a.matrix ? b.matrix && *a.matrix == *b.matrix :
+        a.pose ? b.pose && a.pose->rotation == b.pose->rotation && a.pose->center == b.pose->center &&
+            a.pose->distance == b.pose->distance :
+        a.projection ? a.projection == b.projection : equalScalar(a.scalar, b.scalar);
+}
+
+
+CommandResult EditProperty::begin() noexcept
+{
+    try
+    {
+        auto stage = _stage.lock();
+        auto target = _target.lock();
+        if (!stage || !target || (!stage->contains(target->ownerNode()) && target->ownerNode() != stage->fillLightNode().get()) ||
+            _action != Action::Property || !supportedProperty(*target, _intent))
+        {
+            return {CommandStatus::Rejected, "Property interaction target is stale or unsupported"};
+        }
+        _before = capture(*target);
+        _after = _before;
+        _beforeState = stage->editingState();
+        _afterState = _beforeState;
+        _captured = true;
+        return {};
+    }
+    catch (...)
+    {
+        return {CommandStatus::Rejected, "Cannot capture property interaction"};
+    }
+}
+
+
+CommandMemory EditProperty::memoryForUpdate(const std::any& value) const
+{
+    const auto& intent = std::any_cast<const bg2e::ui::ReflectionEditIntent&>(value);
+    if (intent.path.size() != _intent.path.size() || intent.type != _intent.type || !finiteValue(intent.proposed))
+    {
+        throw std::invalid_argument("Property interaction changed path or type");
+    }
+    for (size_t i = 0; i < intent.path.size(); ++i)
+    {
+        const auto& a = intent.path[i];
+        const auto& b = _intent.path[i];
+        if (a.ownerType != b.ownerType || a.property != b.property || a.subtypeKey != b.subtypeKey || a.subtypeObject != b.subtypeObject)
+        {
+            throw std::invalid_argument("Property interaction changed path");
+        }
+    }
+    if (const auto* text = std::any_cast<std::string>(&intent.proposed); text && text->size() > 4096)
+    {
+        throw std::length_error("Property draft exceeds the supported scalar budget");
+    }
+    // The temporary discrete adapter retains preceding-preview recovery as well
+    // as its candidate. Reserve both adapters before invoking any setter.
+    auto result = memory();
+    result.localBytes *= 2;
+    return result;
+}
+
+
+CommandResult EditProperty::update(const std::any& value) noexcept
+{
+    try
+    {
+        if (!_captured)
+        {
+            return {CommandStatus::Rejected, "Property interaction has not begun"};
+        }
+        const auto& intent = std::any_cast<const bg2e::ui::ReflectionEditIntent&>(value);
+        EditProperty preview(_stage, _target, intent);
+        const auto result = preview.execute();
+        if (result.status != CommandStatus::Applied)
+        {
+            return result;
+        }
+        try
+        {
+            if (_effects)
+            {
+                _effects();
+            }
+        }
+        catch (...)
+        {
+            const auto restored = preview.undo();
+            if (!restored.accepted())
+            {
+                return {CommandStatus::Faulted, "Property preview recovery failed"};
+            }
+            try
+            {
+                _effects();
+            }
+            catch (...)
+            {
+                return {CommandStatus::Faulted, "Property preview effects recovery failed"};
+            }
+            return {CommandStatus::Failed, "Property preview restored"};
+        }
+        _after = std::move(preview._after);
+        _afterState = std::move(preview._afterState);
+        _changed = !equal(_before, _after);
+        return result;
+    }
+    catch (...)
+    {
+        return {CommandStatus::Rejected, "Property preview preparation failed"};
+    }
+}
+
+
+bool EditProperty::changed() const noexcept
+{
+    return _changed;
+}
+
 
 EditProperty::Value EditProperty::capture(Component& component) const
 {
@@ -598,10 +731,7 @@ CommandResult EditProperty::execute() noexcept
         stage->refreshCamera(true);
         _after = capture(*target);
         _afterState = stage->editingState();
-        bool same = _before.matrix ? _after.matrix && *_before.matrix == *_after.matrix :
-            _before.pose ? _after.pose && _before.pose->rotation == _after.pose->rotation &&
-                _before.pose->center == _after.pose->center && _before.pose->distance == _after.pose->distance :
-            _before.projection ? _before.projection == _after.projection : equalScalar(_before.scalar, _after.scalar);
+        const bool same = equal(_before, _after);
         if (same)
         {
             write(*target, _before);
@@ -609,6 +739,7 @@ CommandResult EditProperty::execute() noexcept
             return {CommandStatus::NoOp, {}};
         }
         _captured = true;
+        _changed = true;
         return {CommandStatus::Applied, {}};
     }
     catch (...)
@@ -648,6 +779,10 @@ CommandResult EditProperty::restore(bool forward) noexcept
         write(*target, forward ? _after : _before);
         stage->validateEditingGraph(false);
         stage->restoreEditingState(forward ? _afterState : _beforeState);
+        if (_effects)
+        {
+            _effects();
+        }
         return {CommandStatus::Applied, {}};
     }
     catch (...)
@@ -658,6 +793,10 @@ CommandResult EditProperty::restore(bool forward) noexcept
             {
                 write(*target, recovery);
                 stage->restoreEditingState(recoveryState);
+                if (_effects)
+                {
+                    _effects();
+                }
             }
             catch (...)
             {

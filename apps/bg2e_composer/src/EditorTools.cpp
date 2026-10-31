@@ -41,15 +41,18 @@ void EditorUi::bindDocument(const std::shared_ptr<AppDelegate>& delegate)
     _boundGeneration = document->generation;
     const auto generation = _boundGeneration;
     const auto weak = _delegate;
-    _componentInspector.onEditRequested([weak, generation](const auto& component, auto phase, uint64_t, const auto& intent)
+    _componentInspector.onEditRequested([weak, generation](const auto& component, auto phase, uint64_t interaction, const auto& intent)
     {
-        if (phase == bg2e::ui::EditPhase::Cancel)
+        try
         {
-            return true;
+            auto owner = weak.lock();
+            return owner && owner->document() && owner->document()->generation == generation &&
+                owner->componentEditIntent(component, phase, interaction, intent);
         }
-        auto owner = weak.lock();
-        return owner && owner->document() && owner->document()->generation == generation &&
-            owner->componentEditIntent(component, phase, intent);
+        catch (...)
+        {
+            return false;
+        }
     });
     _componentInspector.onActionRequested([weak, generation](const auto& component, const auto& intent)
     {
@@ -90,17 +93,20 @@ void EditorUi::bindDocument(const std::shared_ptr<AppDelegate>& delegate)
         auto owner = weak.lock();
         return owner && owner->document() && owner->document()->generation == generation &&
             owner->document()->commands && !owner->document()->commands->history().faulted() &&
-            !owner->document()->commands->history().transactionActive();
+            owner->valueEditAvailable();
     });
-    _material.onEditRequested([weak, generation](auto phase, uint64_t, const auto& targets, const auto& intent)
+    _material.onEditRequested([weak, generation](auto phase, uint64_t interaction, const auto& targets, const auto& intent)
     {
-        if (phase == bg2e::ui::EditPhase::Cancel)
+        try
         {
-            return true;
+            auto owner = weak.lock();
+            return owner && owner->document() && owner->document()->generation == generation &&
+                owner->materialEditIntent(phase, interaction, targets, intent);
         }
-        auto owner = weak.lock();
-        return owner && owner->document() && owner->document()->generation == generation &&
-            owner->materialEditIntent(phase, targets, intent);
+        catch (...)
+        {
+            return false;
+        }
     });
 }
 

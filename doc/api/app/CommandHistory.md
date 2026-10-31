@@ -67,7 +67,18 @@ if that update fails, and `changed()` determines whether commit records an
 entry. `memoryForUpdate` must bound before, redo, preview and rollback state
 before each update. History exposes begin/update/commit/cancel methods; the
 queue exposes corresponding enqueue methods. Transaction ID checks prevent
-late updates from crossing interactions.
+late updates from crossing interactions. Commit adopts the already-applied final
+state and never calls `execute()` a second time. `changed()` must compare final
+values with the baseline, so an interaction that returns to its initial values
+creates no entry. `dirty()` includes an effective document preview even before
+Commit. Cancel invokes the transaction's `undo()`; failed restoration retains
+ownership for recovery.
+
+Composer connects CPU material values and reflected component/environment values
+to these transactions through renderer-boundary callbacks. Its deferred Commit
+acknowledges admission; Cancel acknowledges completed restoration. This host
+transport is separate from the generic `CommandQueue` transaction API; see
+[continuous interactions](../../architecture/command-memento/continuous-interactions.md).
 
 `CompositeCommand` is one history entry. Its immutable children must be
 undoable, share category and policy, and have compatible document impact. It

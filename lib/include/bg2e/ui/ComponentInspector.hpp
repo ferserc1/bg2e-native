@@ -71,6 +71,8 @@ class BG2E_API ComponentInspector {
     void onActionRequested(ActionIntentHandler handler);
     void cancelInteraction();
     bool commitInteraction();
+    // Includes ownership retained during pending or failed cancellation.
+    bool interactionActive() const;
 
     // Fired when any property changes or a component is removed
     void onChanged(std::function<void()> cb)

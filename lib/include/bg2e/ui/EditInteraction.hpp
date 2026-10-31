@@ -45,7 +45,8 @@ class BG2E_API EditInteraction {
 // A missing control cancels its preview. Callbacks own all live mutations and
 // return false on rejected admission/update; a rejected Begin receives no Cancel.
 // Handlers must not throw; a rejected Begin must leave the model unchanged.
-// Callback payloads are owning CPU values, never borrowed object pointers.
+// Pending/failed cancellation is retried on subsequent frames; updates and
+// commit cannot overtake it. Payloads own CPU values, never borrowed pointers.
 class BG2E_API EditSession {
   public:
     using Handler = std::function<bool(EditPhase, uint64_t, const std::string&, const std::any&)>;
@@ -68,6 +69,7 @@ class BG2E_API EditSession {
     std::any _value;
     uint64_t _interaction = 0;
     bool _active = false;
+    bool _cancelling = false;
     bool _seen = false;
 };
 

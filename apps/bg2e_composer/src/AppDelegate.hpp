@@ -144,7 +144,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         std::weak_ptr<bg2e::scene::Component> original,
         std::shared_ptr<bg2e::scene::Component> replacement);
     bool componentEditIntent(const std::shared_ptr<bg2e::scene::Component>& component,
-        bg2e::ui::EditPhase phase, const bg2e::ui::ReflectionEditIntent& intent);
+        bg2e::ui::EditPhase phase, uint64_t interaction, const bg2e::ui::ReflectionEditIntent& intent);
     void componentAction(const std::shared_ptr<bg2e::scene::Component>& component,
         const bg2e::ui::ReflectionActionIntent& intent);
     bg2e::app::CommandResult editSubmeshMetadata(command::scene::MetadataRequest request);
@@ -165,10 +165,12 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
 
     void editGeometry(command::geometry::Operation operation);
     void duplicateSelection();
-    bool materialEditIntent(bg2e::ui::EditPhase phase,
+    bool materialEditIntent(bg2e::ui::EditPhase phase, uint64_t interaction,
         const bg2e::ui::MaterialEditTargets& targets, const bg2e::ui::MaterialEditIntent& intent);
     void queueMaterialEdit(bg2e::ui::MaterialEditTargets targets, bg2e::ui::MaterialEditIntent intent,
         std::shared_ptr<bg2e::draw::MaterialBase> paste = {});
+    bool valueEditAvailable() const;
+
     void copyMaterial();
     void pasteMaterial();
     void removeSelection();
@@ -281,6 +283,20 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     bg2e::app::CommandResult submitNodeCommand(std::weak_ptr<bg2e::scene::Node> node,
         std::unique_ptr<bg2e::app::Command> action, command::Boundary boundary, command::Effects effects);
     void applyCommandEffects(bg2e::draw::Renderer& renderer, const command::Effects& effects);
+    struct ValueEdit {
+        uint64_t interaction = 0;
+        uint64_t generation = 0;
+        uint64_t transaction = 0;
+        bool ending = false;
+        bool finished = false;
+        bool failed = false;
+        bool cancelling = false;
+    };
+    std::shared_ptr<ValueEdit> _valueEdit;
+
+    bool valueEditIntent(bg2e::ui::EditPhase phase, uint64_t interaction,
+        std::function<std::unique_ptr<bg2e::app::CommandTransaction>()> prepare, std::any value);
+    std::function<void()> valueEditEffects();
     bool settleEditDrafts();
     bool flushDocumentCommands(bool commit, bool allowFault = false);
     void sampleNavigation(bool trackChanges);

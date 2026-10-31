@@ -269,6 +269,12 @@ bool DrawMaterialEditor::commitInteraction()
 }
 
 
+bool DrawMaterialEditor::interactionActive() const
+{
+    return _impl->session && _impl->session->active();
+}
+
+
 void DrawMaterialEditor::onEditRequested(EditIntentHandler handler)
 {
     cancelInteraction();

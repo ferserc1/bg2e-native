@@ -66,6 +66,10 @@ EditSession::EditSession(Handler handler) : _handler(std::move(handler))
 void EditSession::beginFrame()
 {
     _seen = false;
+    if (_cancelling)
+    {
+        cancel();
+    }
 }
 
 
@@ -82,6 +86,7 @@ void EditSession::cancel()
 {
     if (_active)
     {
+        _cancelling = true;
         // Keep ownership until the receiver accepts restoration. The host must
         // retain this session and retry settlement if cancellation fails.
         if (!_handler(EditPhase::Cancel, _interaction, _key, _value))
@@ -89,6 +94,7 @@ void EditSession::cancel()
             return;
         }
         _active = false;
+        _cancelling = false;
         _key.clear();
         _value.reset();
     }
@@ -97,6 +103,11 @@ void EditSession::cancel()
 
 bool EditSession::commit()
 {
+    if (_cancelling)
+    {
+        cancel();
+        return !_active;
+    }
     if (!_active)
     {
         return true;
@@ -126,6 +137,11 @@ std::any EditSession::value(const std::string& key, std::any current) const
 
 bool EditSession::submit(const std::string& key, std::any proposed, bool changed, EditInteractionState state)
 {
+    if (_cancelling)
+    {
+        cancel();
+        return false;
+    }
     if (_active && _key == key)
     {
         _seen = true;
