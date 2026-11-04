@@ -24,11 +24,141 @@
 #include <bg2e/scene/Node.hpp>
 #include <imgui.h>
 #include <array>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 
 namespace bg2e::ui {
 namespace {
+struct TextureEditorOptions {
+    draw::TextureSlot slot;
+    const char* label;
+    const char* textureKey;
+    const char* prefix;
+    uint32_t uv;
+    glm::vec2 scale;
+    std::optional<uint32_t> channel = std::nullopt;
+    std::optional<bool> inverted = std::nullopt;
+    bool defaultLinear = false;
+    bool forceUV1 = false;
+};
+
+void drawTextureEditor(UserInterface& ui, DrawTextureWidgets& widget, draw::MaterialBase& material,
+    TextureEditorOptions options, json::JsonObject& patch, MaterialEditIntent& intent,
+    bool& textureChanged, int& samplingSlot, TextureSamplingEdit& samplingEdit)
+{
+    ImGui::PushID(int(options.slot));
+    if (ImGui::CollapsingHeader(options.label))
+    {
+        const auto& style = ImGui::GetStyle();
+        const float padding = style.FramePadding.x * 2.0f;
+        ImGui::BeginGroup();
+        ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, style.FramePadding.y));
+        ImGui::Indent(padding);
+        const auto choice = widget.draw(ui, options.label, material.texture(options.slot));
+        if (choice.selected)
+        {
+            textureChanged = true;
+            patch[options.textureKey] = std::make_shared<json::JsonNode>(choice.path.string());
+            if (options.defaultLinear)
+            {
+                intent.linearSlot = int(options.slot);
+            }
+            if (options.slot == draw::TextureSlot::AmbientOcclusion)
+            {
+                intent.ordinaryAo = true;
+            }
+        }
+        if (choice.cleared)
+        {
+            intent.clearSlot = int(options.slot);
+        }
+        auto source = material.texture(options.slot);
+        if (source)
+        {
+            const auto* settings = source->base();
+            int color = settings->colorType() == base::Color::TypeLinear ? 1 : 0;
+            if (ImGui::Combo("Color interpretation", &color, "sRGB\0Linear\0"))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.colorType = color ? base::Color::TypeLinear : base::Color::TypeSRGB;
+            }
+            int mag = int(settings->magFilter());
+            int min = int(settings->minFilter());
+            if (ImGui::Combo("Magnification", &mag, "Linear\0Nearest\0"))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.magFilter = static_cast<base::Texture::Filter>(mag);
+            }
+            if (ImGui::Combo("Minification", &min, "Linear\0Nearest\0"))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.minFilter = static_cast<base::Texture::Filter>(min);
+            }
+            int u = int(settings->addressModeU());
+            int v = int(settings->addressModeV());
+            const char* addressing = "Repeat\0Mirror\0Clamp edge\0Clamp border\0";
+            if (ImGui::Combo("Address U", &u, addressing))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.addressU = static_cast<base::Texture::AddressMode>(u);
+            }
+            if (ImGui::Combo("Address V", &v, addressing))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.addressV = static_cast<base::Texture::AddressMode>(v);
+            }
+            bool mips = settings->useMipmaps();
+            if (ImGui::Checkbox("Sample mipmaps", &mips))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.mipmaps = mips;
+            }
+            float bias = settings->mipLodBias();
+            if (ImGui::DragFloat("Mip LOD bias", &bias, 0.05f, -16, 16))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.lodBias = bias;
+            }
+        }
+        int selectedUV = int(options.uv);
+        if (ImGui::Combo("UV", &selectedUV, "Set 0\0Set 1\0"))
+        {
+            if (options.forceUV1)
+            {
+                selectedUV = 1;
+            }
+            patch[std::string(options.prefix) + "UV"] = std::make_shared<json::JsonNode>(uint32_t(selectedUV));
+        }
+        if (ImGui::DragFloat2("Scale", &options.scale.x, 0.01f))
+        {
+            patch[std::string(options.prefix) + "Scale"] = std::make_shared<json::JsonNode>(options.scale);
+        }
+        if (options.channel.has_value())
+        {
+            int selectedChannel = int(*options.channel);
+            if (ImGui::Combo("Channel", &selectedChannel, "Red\0Green\0Blue\0Alpha\0"))
+            {
+                patch[std::string(options.prefix) + "Channel"] = std::make_shared<json::JsonNode>(uint32_t(selectedChannel));
+            }
+        }
+        if (options.inverted.has_value())
+        {
+            if (ImGui::Checkbox("Invert", &*options.inverted))
+            {
+                patch[std::string(options.prefix) + "Invert"] = std::make_shared<json::JsonNode>(*options.inverted);
+            }
+        }
+        ImGui::Unindent(padding);
+        ImGui::Dummy(ImVec2(0.0f, style.FramePadding.y));
+        ImGui::EndGroup();
+        ImGui::GetWindowDrawList()->AddRect(ImGui::GetItemRectMin(), ImGui::GetItemRectMax(),
+            ImGui::GetColorU32(ImGuiCol_Border), style.FrameRounding);
+        ImGui::Spacing();
+    }
+    ImGui::PopID();
+}
+
 void storeTextureSettings(draw::Drawable* drawable, uint32_t submesh, draw::TextureSlot slot,
     const std::shared_ptr<draw::Texture>& texture)
 {
@@ -682,14 +812,15 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     }
     ImGui::BeginDisabled(_state->pending);
     json::JsonObject patch;
-    int linearSelected = -1;
+    MaterialEditIntent textureIntent;
+    int& linearSelected = textureIntent.linearSlot;
     int samplingSlot = -1;
     TextureSamplingEdit samplingEdit;
-    bool ordinaryAo = false;
+    bool& ordinaryAo = textureIntent.ordinaryAo;
     bool textureChanged = false;
     bool modeChanged = false;
     uint32_t indirect = 0;
-    int clear = -1;
+    int& clear = textureIntent.clearSlot;
     _impl->drawing = true;
     const auto interactionState = EditInteraction::draw([&]
     {
@@ -715,13 +846,26 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
                 patch[key] = std::make_shared<json::JsonNode>(value);
             }
         };
+        const auto textureEditor = [&](TextureEditorOptions options)
+        {
+            drawTextureEditor(ui, _impl->textures.at(size_t(options.slot)), *material, options,
+                patch, textureIntent, textureChanged, samplingSlot, samplingEdit);
+        };
         auto color = attributes.albedo();
         if (Value::colorPicker("Albedo", color))
         {
             patch["albedo"] = std::make_shared<json::JsonNode>(color);
         }
+        textureEditor({draw::TextureSlot::Albedo, "Albedo texture", "albedoTexture", "albedo",
+            attributes.albedoUVSet(), attributes.albedoScale()});
         scalar("Metalness", "metalness", attributes.metalness());
+        textureEditor({draw::TextureSlot::Metalness, "Metalness texture", "metalnessTexture", "metalness",
+            attributes.metalnessUVSet(), attributes.metalnessScale(), attributes.metalnessChannel(),
+            attributes.metalnessInvert(), true});
         scalar("Roughness", "roughness", attributes.roughness());
+        textureEditor({draw::TextureSlot::Roughness, "Roughness texture", "roughnessTexture", "roughness",
+            attributes.roughnessUVSet(), attributes.roughnessScale(), attributes.roughnessChannel(),
+            attributes.roughnessInvert(), true});
         scalar("Alpha cutoff", "alphaCutoff", attributes.alphaCutoff());
         scalar("Sheen intensity", "sheenIntensity", attributes.sheenIntensity());
         float emission = attributes.lightEmission();
@@ -729,6 +873,19 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         {
             patch["lightEmission"] = std::make_shared<json::JsonNode>(emission);
         }
+        textureEditor({draw::TextureSlot::LightEmission, "Emission texture", "lightEmissionTexture", "lightEmission",
+            attributes.lightEmissionUVSet(), attributes.lightEmissionScale(), attributes.lightEmissionChannel(),
+            attributes.lightEmissionInvert()});
+        textureEditor({draw::TextureSlot::Normal, "Normal texture", "normalTexture", "normal",
+            attributes.normalUVSet(), attributes.normalScale(), std::nullopt, std::nullopt, true});
+        indirect = static_cast<uint32_t>(attributes.indirectTextureMode());
+        if (Value::comboBox("Indirect map interpretation", {"Ambient occlusion", "Baked AO (RGB UV2)", "Baked GI (RGB UV2)"}, indirect))
+        {
+            modeChanged = true;
+        }
+        textureEditor({draw::TextureSlot::AmbientOcclusion, "AO texture", "ambientOcclussion", "ambientOcclussion",
+            attributes.aoUVSet(), attributes.aoScale(), attributes.aoChannel(), std::nullopt, false,
+            attributes.indirectTextureMode() != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion});
         float refraction = attributes.refractionFactor();
         if (ImGui::DragFloat("Refraction", &refraction, 0.01f, 0, 4))
         {
@@ -746,120 +903,6 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         if (Value::colorPicker("Sheen", sheen))
         {
             patch["sheenColor"] = std::make_shared<json::JsonNode>(sheen);
-        }
-        const std::array<const char*, 6> names{"Albedo texture", "Metalness texture", "Roughness texture", "Normal texture", "AO texture", "Emission texture"};
-        const std::array<const char*, 6> textureKeys{"albedoTexture", "metalnessTexture", "roughnessTexture", "normalTexture", "ambientOcclussion", "lightEmissionTexture"};
-        const std::array<const char*, 6> prefixes{"albedo", "metalness", "roughness", "normal", "ambientOcclussion", "lightEmission"};
-        std::array<uint32_t, 6> uv{attributes.albedoUVSet(), attributes.metalnessUVSet(), attributes.roughnessUVSet(), attributes.normalUVSet(), attributes.aoUVSet(), attributes.lightEmissionUVSet()};
-        std::array<glm::vec2, 6> scale{attributes.albedoScale(), attributes.metalnessScale(), attributes.roughnessScale(), attributes.normalScale(), attributes.aoScale(), attributes.lightEmissionScale()};
-        std::array<uint32_t, 6> channel{0, attributes.metalnessChannel(), attributes.roughnessChannel(), 0, attributes.aoChannel(), attributes.lightEmissionChannel()};
-        std::array<bool, 6> inverted{false, attributes.metalnessInvert(), attributes.roughnessInvert(), false, false, attributes.lightEmissionInvert()};
-        indirect = static_cast<uint32_t>(attributes.indirectTextureMode());
-        if (Value::comboBox("Indirect map interpretation", {"Ambient occlusion", "Baked AO (RGB UV2)", "Baked GI (RGB UV2)"}, indirect))
-        {
-            modeChanged = true;
-        }
-        for (size_t i = 0; i < names.size(); ++i)
-        {
-            ImGui::PushID(int(i));
-            if (ImGui::CollapsingHeader(names[i]))
-            {
-                const auto choice = _impl->textures[i].draw(ui, names[i], material->texture(draw::TextureSlot(i)));
-                if (choice.selected)
-                {
-                    textureChanged = true;
-                    patch[textureKeys[i]] = std::make_shared<json::JsonNode>(choice.path.string());
-                    if (i == 1 || i == 2 || i == 3)
-                    {
-                        linearSelected = int(i);
-                    }
-                    if (i == 4)
-                    {
-                        ordinaryAo = true;
-                    }
-                }
-                if (choice.cleared)
-                {
-                    clear = int(i);
-                }
-                auto source = material->texture(draw::TextureSlot(i));
-                if (source)
-                {
-                    const auto* settings = source->base();
-                    int color = settings->colorType() == base::Color::TypeLinear ? 1 : 0;
-                    if (ImGui::Combo("Color interpretation", &color, "sRGB\0Linear\0"))
-                    {
-                        samplingSlot = int(i);
-                        samplingEdit.colorType = color ? base::Color::TypeLinear : base::Color::TypeSRGB;
-                    }
-                    int mag = int(settings->magFilter());
-                    int min = int(settings->minFilter());
-                    if (ImGui::Combo("Magnification", &mag, "Linear\0Nearest\0"))
-                    {
-                        samplingSlot = int(i);
-                        samplingEdit.magFilter = static_cast<base::Texture::Filter>(mag);
-                    }
-                    if (ImGui::Combo("Minification", &min, "Linear\0Nearest\0"))
-                    {
-                        samplingSlot = int(i);
-                        samplingEdit.minFilter = static_cast<base::Texture::Filter>(min);
-                    }
-                    int u = int(settings->addressModeU());
-                    int v = int(settings->addressModeV());
-                    const char* addressing = "Repeat\0Mirror\0Clamp edge\0Clamp border\0";
-                    if (ImGui::Combo("Address U", &u, addressing))
-                    {
-                        samplingSlot = int(i);
-                        samplingEdit.addressU = static_cast<base::Texture::AddressMode>(u);
-                    }
-                    if (ImGui::Combo("Address V", &v, addressing))
-                    {
-                        samplingSlot = int(i);
-                        samplingEdit.addressV = static_cast<base::Texture::AddressMode>(v);
-                    }
-                    bool mips = settings->useMipmaps();
-                    if (ImGui::Checkbox("Sample mipmaps", &mips))
-                    {
-                        samplingSlot = int(i);
-                        samplingEdit.mipmaps = mips;
-                    }
-                    float bias = settings->mipLodBias();
-                    if (ImGui::DragFloat("Mip LOD bias", &bias, 0.05f, -16, 16))
-                    {
-                        samplingSlot = int(i);
-                        samplingEdit.lodBias = bias;
-                    }
-                }
-                int selectedUV = int(uv[i]);
-                if (ImGui::Combo("UV", &selectedUV, "Set 0\0Set 1\0"))
-                {
-                    if (i == 4 && attributes.indirectTextureMode() != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
-                    {
-                        selectedUV = 1;
-                    }
-                    patch[std::string(prefixes[i]) + "UV"] = std::make_shared<json::JsonNode>(uint32_t(selectedUV));
-                }
-                if (ImGui::DragFloat2("Scale", &scale[i].x, 0.01f))
-                {
-                    patch[std::string(prefixes[i]) + "Scale"] = std::make_shared<json::JsonNode>(scale[i]);
-                }
-                if (i == 1 || i == 2 || i == 4 || i == 5)
-                {
-                    int selectedChannel = int(channel[i]);
-                    if (ImGui::Combo("Channel", &selectedChannel, "Red\0Green\0Blue\0Alpha\0"))
-                    {
-                        patch[std::string(prefixes[i]) + "Channel"] = std::make_shared<json::JsonNode>(uint32_t(selectedChannel));
-                    }
-                }
-                if (i == 1 || i == 2 || i == 5)
-                {
-                    if (ImGui::Checkbox("Invert", &inverted[i]))
-                    {
-                        patch[std::string(prefixes[i]) + "Invert"] = std::make_shared<json::JsonNode>(inverted[i]);
-                    }
-                }
-            }
-            ImGui::PopID();
         }
     });
     _impl->interactionState = interactionState;
