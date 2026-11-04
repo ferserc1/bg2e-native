@@ -24,6 +24,8 @@
 
 #include <functional>
 #include <bg2e/ui/TexturePreview.hpp>
+#include <bg2e/ui/IconManager.hpp>
+#include <bg2e/ui/ToolbarConfiguration.hpp>
 
 namespace bg2e {
 namespace draw {
@@ -56,6 +58,9 @@ class BG2E_API UserInterface {
 
     void cleanup();
 
+    // Available during delegate initialization; bound to this UI session.
+    IconManager& icons();
+
     // Draw sessions only. Preview snapshots survive texture reload and become
     // invalid on cleanup. Create/draw on the UI thread; no producer mutation.
     std::shared_ptr<TexturePreview> texturePreview(const std::shared_ptr<draw::Texture>& texture);
@@ -73,6 +78,12 @@ class BG2E_API UserInterface {
         return s_uiScale;
     }
     static void setScale(float scale);
+
+    // Defaults belong to the active UI session. Before a session, get returns
+    // IconsAndText/16; set requires an active session, including delegate initialization.
+    // Changes are persisted to ui preferences. Per-toolbar overrides are separate.
+    static ToolbarConfiguration getToolbarConfiguration();
+    static void setToolbarConfiguration(const ToolbarConfiguration& configuration);
 
   protected:
     struct Impl;

@@ -25,8 +25,7 @@
 
 namespace bg2e::ui {
 namespace detail {
-struct PreviewEntry;
-class PreviewRegistry;
+struct ImageEntry;
 }
 
 // Session-scoped opaque preview. Registration/resources survive submitted UI
@@ -38,9 +37,9 @@ class BG2E_API TexturePreview {
     bool imageButton(const std::string& id, uint32_t width, uint32_t height) const;
 
   private:
-    friend class detail::PreviewRegistry;
-    explicit TexturePreview(std::shared_ptr<detail::PreviewEntry> entry);
-    std::shared_ptr<detail::PreviewEntry> _entry;
+    friend class UserInterface;
+    explicit TexturePreview(std::shared_ptr<detail::ImageEntry> entry);
+    std::shared_ptr<detail::ImageEntry> _entry;
 };
 
 }

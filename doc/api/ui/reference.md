@@ -28,6 +28,7 @@ exported with `BG2E_API`.
    - [Text](#text)
    - [Group](#group)
    - [Button](#button)
+   - [Image, Icon and IconManager](#image-icon-and-iconmanager)
    - [Numeric](#numeric)
    - [Vector](#vector)
    - [Value](#value)
@@ -73,6 +74,10 @@ Owns the ImGui context and its SDL2 platform and Vulkan/Metal GPU adapters. One 
 | `void setDelegate(std::shared_ptr<UserInterfaceDelegate>)` | Installs the application UI delegate. |
 | `static float getScale()` | Current global UI scale factor (default `1.0`). |
 | `static void setScale(float)` | Sets the scale; style + font are rescaled on the next `newFrame()`. |
+| `IconManager& icons()` | Session-owned permanent PNG cache, available during delegate initialization. |
+| `std::shared_ptr<TexturePreview> texturePreview(const std::shared_ptr<draw::Texture>&)` | Retained image/sampler snapshot from this draw UI engine. |
+| `static ToolbarConfiguration getToolbarConfiguration()` | Current session defaults, or IconsAndText/16 without a session. |
+| `static void setToolbarConfiguration(const ToolbarConfiguration&)` | Validates live defaults and persists changes in ui preferences. |
 
 Static state: `s_uiScale`, `s_uiFontLoaded`, `s_uiScaleChanged`. The base
 style is captured once and re-scaled (never rebuilt), and the engine font
@@ -208,6 +213,7 @@ Data-driven menu entry (action, checkable action, separator or submenu).
 | `MenuItem(label, ShortcutData)` | Action; `ShortcutData` (from `app::Shortcuts`) carries modifiers, key and `handler`. |
 | `MenuItem(label, ShortcutData, std::function<bool()> isChecked)` | Checkable action polled every frame. |
 | `std::string label` | Displayed text. |
+| `std::filesystem::path iconPath` | Optional PNG; tree aligns sibling gutters automatically. |
 | `void addMenuItem(const MenuItem&)` | Turns the item into a **submenu** and appends the child. |
 | `void draw() const` | Renders the item (recursive for submenus). |
 | `void initShortcuts() const` | Registers keyboard shortcuts with `MainLoop::current()->shortcuts()` (recursive; called once by `Menu::draw`). |
@@ -223,6 +229,8 @@ plain (unscoped) enum; the type is inferred from the used constructor /
 | `bool beginMenuBar()` / `void endMenuBar()` | Window menu-bar scope. |
 | `bool beginMenu(label, enabled = true)` / `void endMenu()` | Submenu scope (true when open). |
 | `bool menuItem(label, shortcut = "", selected = false, enabled = true)` | One item; returns true on activation. `shortcut` is *display-only* text here. |
+| `bool beginIconMenu(id, label, path, enabled = true, reserveIconSpace = true)` | Explicit stable ID plus optional PNG; pair success with endMenu. |
+| `bool iconMenuItem(id, label, path, shortcut = "", selected = false, enabled = true, reserveIconSpace = true)` | Native menu row with path icon, preserving check/shortcut columns. |
 | `void separator()` | Horizontal separator. |
 
 | Instance | Description |
@@ -238,10 +246,12 @@ plain (unscoped) enum; the type is inferred from the used constructor /
 
 | Field | Description |
 |-------|-------------|
-| `int32_t id` | Toolbars-wide unique id; `< 0` on `addButton` ⇒ auto-generated. |
+| `int32_t id` | Unique within this toolbar; negative on addButton generates an ID, explicit duplicates throw. |
 | `std::string label` | Button caption, or plain text when `action == nullptr`. |
 | `std::function<void()> action` | Click handler. |
-| `bool disabled` | Greyed + non-interactive. |
+| `bool disabled` | Greyed + non-interactive when actionable. |
+| `std::filesystem::path iconPath` | Optional cached PNG, loaded when icon presentation uses it. |
+| `std::string tooltip` | Explicit hover text; icon-only mode otherwise uses visible label. |
 
 #### `Toolbar : public Window`
 
@@ -251,8 +261,12 @@ plain (unscoped) enum; the type is inferred from the used constructor /
 | `int32_t addButton(ToolbarButton&&, Alignment = AlignLeft)` | Move overload. |
 | `void draw() override` | Draws left-aligned buttons, then right-aligned buttons/text. |
 | `void updateButtonLabel(int32_t id, const std::string& / std::string&&)` | Live caption change. |
+| `void updateButtonIconPath(id, const std::filesystem::path&)` / `void updateButtonTooltip(id, const std::string&)` | Live source/tooltip changes. |
+| `ToolbarConfiguration configuration() const` / `void setConfiguration(const ToolbarConfiguration&)` | Effective defaults or a complete local override. |
+| `void setPresentation(ToolbarPresentation)` / `void setIconSize(float)` | Convenience whole-configuration overrides. |
+| `bool inheritsSessionDefaults() const` / `void useSessionDefaults()` | Inspect/reset inheritance from current session defaults. |
 | `void enableButton(int32_t id)` / `void disableButton(int32_t id)` | Live enable state. |
-| `ToolbarButton* findButton(int32_t id)` | Lookup (`nullptr` when absent). |
+| `ToolbarButton* findButton(int32_t id)` / const overload | Lookup on either side; nullptr if absent. Do not mutate IDs. |
 | `void addMenuItem(const MenuItem&)` | Forwards to the internal `Menu` (drawn in the window menu bar). |
 | `enum Alignment` | `AlignLeft` / `AlignRight`. |
 
@@ -340,6 +354,27 @@ Static-only button family.
 | `static bool button(const std::string& title, bool sameLine = false, bool disabled = false)` | Returns true on click. |
 | `static bool checkBox(const std::string& title, bool* value = nullptr, bool sameLine = false, bool disabled = false)` | Returns true on change; writes through `value`. |
 | `static bool radioButton(const std::string& label, int* value = nullptr, int id = 0, bool sameLine = false, bool disabled = false)` | Writes `id` into `*value` when clicked. |
+
+### `Image`, `Icon` and `IconManager`
+
+**Headers:** `<bg2e/ui/Image.hpp>`, `<bg2e/ui/Icon.hpp>`, `<bg2e/ui/IconManager.hpp>`,
+`<bg2e/ui/IconDrawOptions.hpp>` · **Guides:** [PNG icons](Icons.md), [Image](Image.md)
+
+| Operation | Contract |
+| --- | --- |
+| `Image::icon(pathOrSharedIcon, size = 20.0f, options = {})` | Noninteractive icon fitted to a logical square, interface scale applied once. |
+| `Button::iconButton(id, pathOrSharedIcon, size = 20.0f, options = {})` | One navigable icon button; ID is independent of the PNG. |
+| `Button::iconTextButton(id, label, pathOrSharedIcon, size = 20.0f, options = {})` | One button with icon plus literal visible label. |
+| `ui.icons().load(const std::filesystem::path&)` | Shared opaque Icon, synchronous loading and strong session cache; empty path returns nullptr. |
+| `Icon::valid()` / `isFallback()` / `source()` | Drawable live resource / failed source / normalized source identity. |
+
+pathOrSharedIcon means overloads for `const std::filesystem::path&` and
+`const std::shared_ptr<Icon>&`. IconDrawOptions contains white tint, optional
+tooltip, sameLine and disabled flags. Nonempty asset failures are cached and
+show a question mark. Stale image/button resources do not draw; GPU/session
+errors remain distinct from missing assets. Resource dimensions/tint are not
+cache keys. TexturePreview keeps its separate transient snapshot policy and
+existing integer-size drawing contract.
 
 ### `Numeric`
 
@@ -558,13 +593,18 @@ native file chooser using reflected resource filters and relative-path policy.
 
 **Header:** `<bg2e/ui/UISettingsWindow.hpp>` · **Guide:** [Settings windows](Settings_Windows.md)
 
-`Window` subclass, initially closed. `init(bool
-showBackgroundFrameRateSettings = false)` sets title/size and the draw body:
-interface-scale slider (1.0–2.0) + per-`GizmoType` visibility / opacity / scale
-controls (camera, point/spot/directional light, environment, transform +
-uniform/axis scale handles). Passing `true` adds controls for the active
-`app::MainLoop` background-frame-rate limiter and persists them in the `"app"`
-preferences context.
+`Window` subclass, initially closed. `init(bool showBackgroundFrameRateSettings = false,
+bool sceneFrameRateSettings = false)` configures interface scale, toolbar mode/size,
+optional application/scene FPS controls and gizmo controls. Initial size is
+400x450, or 400x550 when either optional performance section is enabled. Scene
+FPS controls take priority when both flags are true.
+
+Toolbar controls edit active-session defaults: Text / Icons with tooltips /
+Icons and text, plus a logical size slider from 12 to 32. Preferences use the
+ui keys toolbarPresentation (0/1/2) and toolbarIconSize (default 16); invalid
+stored values fall back independently. Changes save immediately and inheriting
+toolbars observe them on their next draw. Local whole-configuration overrides
+remain effective. See [toolbar preferences](Settings_Windows.md#toolbar-preferences).
 
 ### `RenderSettingsWindow`
 

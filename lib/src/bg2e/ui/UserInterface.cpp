@@ -18,21 +18,79 @@
 
 #include <bg2e/ui/UserInterface.hpp>
 #include <bg2e/draw/Engine.hpp>
+#include <bg2e/draw/Texture.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/SurfaceFrame.hpp>
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/app/PreferencesStore.hpp>
 #include "detail/ImGuiBackend.hpp"
-#include "detail/PreviewRegistry.hpp"
+#include "detail/ImageRegistry.hpp"
+#include "detail/ToolbarConfiguration.hpp"
 #include <imgui.h>
 #include <imgui_impl_sdl2.h>
 
+#include <cmath>
+#include <unordered_map>
 #include <exception>
 #include <stdexcept>
 #include <utility>
 
 namespace bg2e::ui {
+
+namespace {
+constexpr char uiPreferencesContext[] = "ui";
+constexpr char toolbarPresentationKey[] = "toolbarPresentation";
+constexpr char toolbarIconSizeKey[] = "toolbarIconSize";
+
+ToolbarConfiguration loadToolbarConfiguration(const app::Preferences& preferences)
+{
+    ToolbarConfiguration configuration;
+    const auto presentation = preferences.get<int32_t>(toolbarPresentationKey,
+        static_cast<int32_t>(configuration.presentation));
+    switch (static_cast<ToolbarPresentation>(presentation))
+    {
+    case ToolbarPresentation::Text:
+    case ToolbarPresentation::IconsWithTooltips:
+    case ToolbarPresentation::IconsAndText:
+        configuration.presentation = static_cast<ToolbarPresentation>(presentation);
+        break;
+    default:
+        // Invalid/malformed values must not prevent UI initialization.
+        break;
+    }
+    const auto size = preferences.get(toolbarIconSizeKey, configuration.iconSize);
+    if (std::isfinite(size) && size > 0.0f)
+    {
+        configuration.iconSize = size;
+    }
+    return configuration;
+}
+
+// Non-owning lookup; configuration storage belongs to UserInterface::Impl.
+std::unordered_map<ImGuiContext*, ToolbarConfiguration*>& toolbarConfigurations()
+{
+    static std::unordered_map<ImGuiContext*, ToolbarConfiguration*> configurations;
+    return configurations;
+}
+}
+
+void detail::validateToolbarConfiguration(const ToolbarConfiguration& configuration)
+{
+    switch (configuration.presentation)
+    {
+    case ToolbarPresentation::Text:
+    case ToolbarPresentation::IconsWithTooltips:
+    case ToolbarPresentation::IconsAndText:
+        break;
+    default:
+        throw std::invalid_argument("Unknown toolbar presentation");
+    }
+    if (!std::isfinite(configuration.iconSize) || configuration.iconSize <= 0.0f)
+    {
+        throw std::invalid_argument("Toolbar icon size must be finite and positive");
+    }
+}
 
 float UserInterface::s_uiScale = 1.0f;
 bool UserInterface::s_uiFontLoaded = false;
@@ -42,7 +100,9 @@ static ImGuiStyle s_baseStyle;
 
 struct UserInterface::Impl {
     std::unique_ptr<detail::ImGuiBackend> renderer;
-    std::shared_ptr<detail::PreviewRegistry> previews;
+    std::shared_ptr<detail::ImageRegistry> images;
+    std::unique_ptr<IconManager> icons;
+    ToolbarConfiguration toolbarConfiguration;
     ImGuiContext* context = nullptr;
     draw::Engine* drawEngine = nullptr;
     bool sdlStarted = false;
@@ -61,10 +121,16 @@ struct UserInterface::Impl {
         {
             ImGui::SetCurrentContext(context);
         }
-        if (previews)
+        const auto configuration = toolbarConfigurations().find(context);
+        if (configuration != toolbarConfigurations().end() && configuration->second == &toolbarConfiguration)
         {
-            previews->shutdown();
-            previews.reset();
+            toolbarConfigurations().erase(configuration);
+        }
+        icons.reset();
+        if (images)
+        {
+            images->shutdown();
+            images.reset();
         }
         if (renderer)
         {
@@ -128,7 +194,9 @@ void UserInterface::init(draw::Engine* engine)
     _impl->drawEngine = engine;
     try
     {
-        s_uiScale = app::PreferencesStore::instance().preferences("ui").get("uiScale", s_uiScale);
+        const auto& preferences = app::PreferencesStore::instance().preferences(uiPreferencesContext);
+        s_uiScale = preferences.get("uiScale", s_uiScale);
+        _impl->toolbarConfiguration = loadToolbarConfiguration(preferences);
         _impl->context = ImGui::CreateContext();
         if (!_impl->context)
         {
@@ -158,7 +226,9 @@ void UserInterface::init(draw::Engine* engine)
         }
         _impl->sdlStarted = true;
         _impl->renderer->initialize(*engine);
-        _impl->previews = std::make_shared<detail::PreviewRegistry>(*engine, *_impl->renderer);
+        _impl->images = std::make_shared<detail::ImageRegistry>(*engine, *_impl->renderer);
+        _impl->icons.reset(new IconManager(*engine, _impl->images));
+        toolbarConfigurations().emplace(_impl->context, &_impl->toolbarConfiguration);
         if (_delegate)
         {
             _delegate->init(engine, this);
@@ -190,6 +260,34 @@ void UserInterface::setScale(float scale)
 {
     s_uiScale = scale;
     s_uiScaleChanged = true;
+}
+
+ToolbarConfiguration UserInterface::getToolbarConfiguration()
+{
+    const auto& configurations = toolbarConfigurations();
+    const auto found = configurations.find(ImGui::GetCurrentContext());
+    return found != configurations.end() ? *found->second : ToolbarConfiguration{};
+}
+
+void UserInterface::setToolbarConfiguration(const ToolbarConfiguration& configuration)
+{
+    detail::validateToolbarConfiguration(configuration);
+    const auto& configurations = toolbarConfigurations();
+    const auto found = configurations.find(ImGui::GetCurrentContext());
+    if (found == configurations.end())
+    {
+        throw std::logic_error("Toolbar defaults require an active UI session");
+    }
+    const auto& previous = *found->second;
+    if (previous.presentation == configuration.presentation && previous.iconSize == configuration.iconSize)
+    {
+        return;
+    }
+    *found->second = configuration;
+    auto& preferences = app::PreferencesStore::instance().preferences(uiPreferencesContext);
+    preferences.set(toolbarPresentationKey, static_cast<int32_t>(configuration.presentation));
+    preferences.set(toolbarIconSizeKey, configuration.iconSize);
+    preferences.save();
 }
 
 void UserInterface::updateScale()
@@ -273,7 +371,7 @@ void UserInterface::newFrame(gpu::CommandBuffer& command, gpu::SurfaceFrame& fra
     ImGui::SetCurrentContext(_impl->context);
     _impl->prepared = false;
     _impl->renderer->prepareFrame(&command, &frame);
-    _impl->previews->beginFrame();
+    _impl->images->beginFrame();
     finishFrame();
     _impl->preparedCommand = &command;
     _impl->preparedFrame = &frame;
@@ -296,13 +394,27 @@ void UserInterface::draw(gpu::CommandBuffer& command, gpu::SurfaceFrame& frame)
     _impl->preparedFrame = nullptr;
 }
 
+IconManager& UserInterface::icons()
+{
+    if (!_impl->icons)
+    {
+        throw std::logic_error("Icons require an initialized UI session");
+    }
+    return *_impl->icons;
+}
+
 std::shared_ptr<TexturePreview> UserInterface::texturePreview(const std::shared_ptr<draw::Texture>& texture)
 {
-    if (!initialized() || !_impl->previews)
+    if (!initialized() || !_impl->images)
     {
         throw std::logic_error("Texture previews require an initialized draw UI session");
     }
-    return _impl->previews->create(texture);
+    if (!texture || texture->engine() != _impl->drawEngine)
+    {
+        throw std::invalid_argument("Preview needs a sampleable color texture from this draw UI engine");
+    }
+    auto entry = _impl->images->create(texture->imageResource(), texture->samplerResource());
+    return std::shared_ptr<TexturePreview>(new TexturePreview(std::move(entry)));
 }
 
 void UserInterface::cleanup()

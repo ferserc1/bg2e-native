@@ -7,7 +7,8 @@ Vulkan and Metal native rendering live in GPU. MainLoop drives the session.
 ## Lifecycle
 
 Register UserInterfaceDelegate through Application. Its init(draw::Engine*,
-UserInterface*) runs after session initialization; drawUI builds widgets. MainLoop
+UserInterface*) runs after backend setup and preference loading, before init
+returns; drawUI builds widgets. MainLoop
 routes events and passes gpu::CommandBuffer/SurfaceFrame to newFrame and draw.
 Application widget code uses bg2e::ui wrappers. Preview snapshots retain image
 owners and become invalid on cleanup. Release widgets/previews before UI and
@@ -19,6 +20,8 @@ GPU remains independent of UI and scene namespaces.
 - [UserInterface](UserInterface.md), [quick start](quick_start.md), [reference](reference.md)
 - [Workspace](Workspace.md), [Window](Window.md), [menus](Menu.md)
 - [Toolbar/status](Toolbar_and_StatusBar.md), [Loader](Loader.md)
+- [PNG icons, Icon and IconManager](Icons.md), [Image](Image.md), [icon buttons](Button.md#icon-buttons)
+- [UI settings and toolbar preferences](Settings_Windows.md#toolbar-preferences)
 - [DrawMaterialEditor and drawable editing](Material_Editors.md)
 - [Optional edit sessions and typed intents](EditInteraction.md)
 - [DrawTextureWidgets](DrawTextureWidgets.md), [TexturePreview](TexturePreview.md)

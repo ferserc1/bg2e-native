@@ -17,12 +17,15 @@
  */
 
 #include <bg2e/ui/Toolbar.hpp>
-#include <bg2e/ui/Layout.hpp>
-#include <bg2e/ui/Text.hpp>
-#include <bg2e/ui/Button.hpp>
+#include <bg2e/ui/UserInterface.hpp>
+#include "detail/IconWidgets.hpp"
+#include "detail/ToolbarConfiguration.hpp"
+#include <imgui.h>
 
-#include <iostream>
 #include <algorithm>
+#include <limits>
+#include <stdexcept>
+#include <unordered_set>
 
 namespace bg2e::ui {
 
@@ -34,6 +37,10 @@ int32_t Toolbar::addButton(
     if (button.id < 0)
     {
         button.id = genId();
+    }
+    else if (findButton(button.id))
+    {
+        throw std::invalid_argument("Toolbar button ID is already in use");
     }
     vec.push_back(button);
     return button.id;
@@ -48,55 +55,168 @@ int32_t Toolbar::addButton(
     {
         button.id = genId();
     }
+    else if (findButton(button.id))
+    {
+        throw std::invalid_argument("Toolbar button ID is already in use");
+    }
     vec.push_back(std::move(button));
     return button.id;
 }
 
+namespace {
+class ToolbarIdentity {
+  public:
+    explicit ToolbarIdentity(const Toolbar* toolbar)
+    {
+        ImGui::PushID(toolbar);
+    }
+    ~ToolbarIdentity()
+    {
+        ImGui::PopID();
+    }
+};
+
+struct ToolbarEntry {
+    int32_t id;
+    std::string label;
+    std::shared_ptr<Icon> icon;
+    std::function<void()> action;
+    IconDrawOptions options;
+    detail::IconButtonMetrics metrics;
+};
+}
+
 void Toolbar::draw()
 {
-    draw([&]()
-         {
-             for (auto& btn : _leftButtons)
-             {
-                 if (btn.action != nullptr && Button::button(btn.label, true, btn.disabled))
-                 {
-                     btn.action();
-                 }
-                 else if (btn.action == nullptr)
-                 {
-                     Text::text(btn.label, true);
-                 }
-             }
+    draw([this]()
+    {
+        ToolbarIdentity identity(this);
+        const auto settings = configuration();
+        std::unordered_set<int32_t> ids;
+        const auto prepare = [&](const std::vector<ToolbarButton>& buttons)
+        {
+            std::vector<ToolbarEntry> entries;
+            entries.reserve(buttons.size());
+            for (const auto& button : buttons)
+            {
+                if (button.id < 0 || !ids.insert(button.id).second)
+                {
+                    throw std::invalid_argument("Toolbar button IDs must be nonnegative and unique");
+                }
+                const bool withIcon = settings.presentation != ToolbarPresentation::Text && !button.iconPath.empty();
+                const bool iconOnly = withIcon && settings.presentation == ToolbarPresentation::IconsWithTooltips;
+                // Preserve the old button label's hidden suffix convention;
+                // actionless Text entries have always treated labels literally.
+                const auto text = button.action ? button.label.substr(0, button.label.find("##")) : button.label;
+                ToolbarEntry entry;
+                entry.id = button.id;
+                entry.label = iconOnly ? std::string{} : text;
+                entry.icon = withIcon ? detail::resolveIcon(button.iconPath) : nullptr;
+                entry.action = button.action;
+                entry.options.disabled = button.disabled;
+                entry.options.tooltip = !button.tooltip.empty() ? button.tooltip : (iconOnly ? text : std::string{});
+                entry.metrics = entry.action
+                    ? detail::measureIconButton(entry.label, bool(entry.icon), settings.iconSize)
+                    : detail::measureIconContent(entry.label, bool(entry.icon), settings.iconSize);
+                entries.push_back(std::move(entry));
+            }
+            return entries;
+        };
+        // Snapshot before callbacks run; actions may safely append/update the
+        // toolbar without invalidating the entries being rendered this frame.
+        const auto left = prepare(_leftButtons);
+        const auto right = prepare(_rightButtons);
+        const auto origin = ImGui::GetCursorScreenPos();
+        const auto available = ImGui::GetContentRegionAvail().x;
+        const auto spacing = ImGui::GetStyle().ItemSpacing.x;
+        float rowHeight = 0.0f;
+        const auto groupWidth = [&](const std::vector<ToolbarEntry>& entries)
+        {
+            float width = 0.0f;
+            for (const auto& entry : entries)
+            {
+                width += entry.metrics.width;
+                rowHeight = std::max(rowHeight, entry.metrics.height);
+            }
+            if (!entries.empty())
+            {
+                width += spacing * float(entries.size() - 1);
+            }
+            return width;
+        };
+        const auto leftWidth = groupWidth(left);
+        const auto rightWidth = groupWidth(right);
+        std::vector<std::function<void()>> actions;
+        const auto render = [&](const std::vector<ToolbarEntry>& entries, float x)
+        {
+            for (const auto& entry : entries)
+            {
+                ImGui::SetCursorScreenPos(ImVec2(x, origin.y + (rowHeight - entry.metrics.height) * 0.5f));
+                if (entry.action)
+                {
+                    if (detail::drawIconButton(std::to_string(entry.id), entry.label,
+                        entry.icon, settings.iconSize, entry.options))
+                    {
+                        actions.push_back(entry.action);
+                    }
+                }
+                else
+                {
+                    detail::drawIconContent(entry.label, entry.icon, settings.iconSize, entry.options);
+                }
+                x += entry.metrics.width + spacing;
+            }
+        };
+        render(left, origin.x);
+        // Keep right items against the content edge when they fit. In narrow
+        // windows prefer clipping to overlapping the left group or wrapping.
+        const auto minimumRight = origin.x + leftWidth + (left.empty() ? 0.0f : spacing);
+        render(right, std::max(minimumRight, origin.x + available - rightWidth));
+        if (!left.empty() || !right.empty())
+        {
+            ImGui::SetCursorScreenPos(origin);
+            ImGui::Dummy(ImVec2(std::max(0.0f, available), rowHeight));
+        }
+        for (const auto& action : actions)
+        {
+            action();
+        }
+    });
+}
 
-             auto rightButtonsSize = 0;
-             for (auto& btn : _rightButtons)
-             {
-                 if (btn.action != nullptr)
-                 {
-                     rightButtonsSize += Layout::calcButtonWidth(btn.label) +
-                                         Layout::getItemHorizontalSpacing();
-                 }
-                 else
-                 {
-                     rightButtonsSize += Layout::calcTextWidth(btn.label) +
-                                         Layout::getItemHorizontalSpacing();
-                 }
-             }
-             auto btnIndex = 0;
-             for (auto& btn : _rightButtons)
-             {
-                 btnIndex == 0 ? Layout::sameLine(-rightButtonsSize) : Layout::sameLine();
-                 if (btn.action != nullptr && Button::button(btn.label, false, btn.disabled))
-                 {
-                     btn.action();
-                 }
-                 else if (btn.action == nullptr)
-                 {
-                     Text::text(btn.label);
-                 }
-                 ++btnIndex;
-             }
-         });
+ToolbarConfiguration Toolbar::configuration() const
+{
+    return _configuration ? *_configuration : UserInterface::getToolbarConfiguration();
+}
+
+void Toolbar::setConfiguration(const ToolbarConfiguration& configuration)
+{
+    detail::validateToolbarConfiguration(configuration);
+    _configuration = configuration;
+}
+
+void Toolbar::setPresentation(ToolbarPresentation presentation)
+{
+    auto settings = configuration();
+    settings.presentation = presentation;
+    setConfiguration(settings);
+}
+
+void Toolbar::setIconSize(float size)
+{
+    auto settings = configuration();
+    settings.iconSize = size;
+    setConfiguration(settings);
+}
+
+bool Toolbar::inheritsSessionDefaults() const
+{
+    return !_configuration.has_value();
+}
+
+void Toolbar::useSessionDefaults()
+{
+    _configuration.reset();
 }
 
 void Toolbar::updateButtonLabel(int32_t buttonId, const std::string& newLabel)
@@ -113,7 +233,23 @@ void Toolbar::updateButtonLabel(int32_t buttonId, std::string&& newLabel)
     auto btn = findButton(buttonId);
     if (btn)
     {
-        btn->label = newLabel;
+        btn->label = std::move(newLabel);
+    }
+}
+
+void Toolbar::updateButtonIconPath(int32_t buttonId, const std::filesystem::path& path)
+{
+    if (auto* button = findButton(buttonId))
+    {
+        button->iconPath = path;
+    }
+}
+
+void Toolbar::updateButtonTooltip(int32_t buttonId, const std::string& tooltip)
+{
+    if (auto* button = findButton(buttonId))
+    {
+        button->tooltip = tooltip;
     }
 }
 
@@ -137,22 +273,26 @@ void Toolbar::disableButton(int32_t buttonId)
 
 ToolbarButton* Toolbar::findButton(int32_t buttonId)
 {
-    auto result = std::find_if(_leftButtons.begin(), _leftButtons.end(), [buttonId](const ToolbarButton& btn) -> bool
-                               {
-                                   return btn.id == buttonId;
-                               });
-    if (result == _leftButtons.end())
+    return const_cast<ToolbarButton*>(std::as_const(*this).findButton(buttonId));
+}
+
+const ToolbarButton* Toolbar::findButton(int32_t buttonId) const
+{
+    for (const auto& button : _leftButtons)
     {
-        result = std::find_if(_rightButtons.begin(), _rightButtons.end(), [buttonId](const ToolbarButton& btn) -> bool
-                              {
-                                  return btn.id == buttonId;
-                              });
+        if (button.id == buttonId)
+        {
+            return &button;
+        }
     }
-    if (result == _rightButtons.end())
+    for (const auto& button : _rightButtons)
     {
-        return nullptr;
+        if (button.id == buttonId)
+        {
+            return &button;
+        }
     }
-    return &(*result);
+    return nullptr;
 }
 
 void Toolbar::setDrawFunction(std::function<void()> /* drawFunction */)
@@ -200,6 +340,10 @@ int32_t Toolbar::genId()
     int32_t candidate = 0;
     while (idInUse(candidate))
     {
+        if (candidate == std::numeric_limits<int32_t>::max())
+        {
+            throw std::overflow_error("No toolbar button ID is available");
+        }
         ++candidate;
     }
     return candidate;

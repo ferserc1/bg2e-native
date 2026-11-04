@@ -38,6 +38,62 @@ if (Button::button("Export"))                     { exportScene(); }
 
 ---
 
+## Icon buttons
+
+Pass a PNG path and a stable control ID independently:
+
+```cpp
+const std::filesystem::path savePng = "assets/icons/save.png";
+if (bg2e::ui::Button::iconButton("save-document", savePng, 20.0f,
+    {.tooltip = "Save document"}))
+{
+    saveDocument();
+}
+if (bg2e::ui::Button::iconTextButton("save-copy", "Save copy", savePng, 20.0f))
+{
+    saveCopy();
+}
+```
+
+The same PNG shares one resource while the two IDs identify different actions.
+The additive static members are:
+
+```cpp
+// Members of ui::Button:
+static bool iconButton(const std::string& id, const std::filesystem::path& path,
+    float size = 20.0f, const IconDrawOptions& options = {});
+static bool iconButton(const std::string& id, const std::shared_ptr<Icon>& icon,
+    float size = 20.0f, const IconDrawOptions& options = {});
+static bool iconTextButton(const std::string& id, const std::string& label,
+    const std::filesystem::path& path, float size = 20.0f, const IconDrawOptions& options = {});
+static bool iconTextButton(const std::string& id, const std::string& label,
+    const std::shared_ptr<Icon>& icon, float size = 20.0f, const IconDrawOptions& options = {});
+```
+
+Both render one native interactive button: one hit rectangle, focus target,
+keyboard/gamepad activation and return value. `id` must be nonempty and unique
+in the current UI ID scope. Labels are literal visible text, including `##`;
+changes to visible text, PNG path or display size do not change identity.
+
+`size` is the logical icon square, not total button size. The shared measurement
+adds text, inner spacing and normal frame padding. The source fits proportionally
+inside the square; interface scale applies once. [IconDrawOptions](Image.md)
+provides tint, tooltip, same-line placement and disabled state. Button text keeps
+the current text color; image tint affects only the icon. Tooltips remain
+available for disabled controls.
+
+Empty paths/null resources omit the icon slot. iconTextButton then displays only
+the text; iconButton produces a blank ordinary button. A nonempty failing path
+keeps the icon box and shows the shared substitute. Without an active UI session,
+or with a stale/cross-session resource, return false without drawing. Empty IDs
+or nonpositive/nonfinite icon sizes raise invalid_argument when used in a live
+session. Original text-button/check/radio APIs are unchanged.
+
+See [PNG icons](Icons.md) for explicit resource loading, cache behavior and
+recoverable asset errors.
+
+---
+
 ## See also
 
 - [Layout](Layout.md) — placement and button measurement.

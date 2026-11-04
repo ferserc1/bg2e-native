@@ -383,9 +383,9 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
 
     initWindowMenu();
 
-    const auto addPanelButton = [this](const char* label, auto action, bg2e::ui::Toolbar::Alignment alignment = bg2e::ui::Toolbar::AlignLeft)
+    const auto addPanelButton = [this](const char* label, auto action, const std::filesystem::path & iconPath, bg2e::ui::Toolbar::Alignment alignment = bg2e::ui::Toolbar::AlignLeft)
     {
-        _toolbar.addButton({.label = label, .action = std::move(action)}, alignment);
+        _toolbar.addButton({.label = label, .action = std::move(action), .iconPath = iconPath }, alignment);
     };
 
     /*
@@ -445,14 +445,18 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         {
             owner->_workspace.toggleLeftPanel();
         }
-    }, bg2e::ui::Toolbar::AlignRight);
+    },
+    bg2e::base::PlatformTools::assetPath() / "material-editor-icon.png",
+    bg2e::ui::Toolbar::AlignRight);
     addPanelButton("Scene", [weakUi]
     {
         if (auto owner = weakUi.lock())
         {
             owner->_workspace.toggleRightPanel();
         }
-    }, bg2e::ui::Toolbar::AlignRight);
+    },
+    bg2e::base::PlatformTools::assetPath() / "scene-editor-icon.png",
+    bg2e::ui::Toolbar::AlignRight);
     if (auto delegate = _delegate.lock())
     {
         _material.init(engine, delegate);

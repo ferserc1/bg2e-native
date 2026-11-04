@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/ui/Window.hpp>
+#include <bg2e/ui/Menu.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
 #include <imgui.h>
@@ -65,7 +66,7 @@ void Window::draw(
         // Draw menu
         if (menuFunction || _menuFunction)
         {
-            if (ImGui::BeginMenuBar())
+            if (Menu::beginMenuBar())
             {
                 if (_menuFunction)
                 {
@@ -75,7 +76,7 @@ void Window::draw(
                 {
                     menuFunction();
                 }
-                ImGui::EndMenuBar();
+                Menu::endMenuBar();
             }
         }
         drawFunction();

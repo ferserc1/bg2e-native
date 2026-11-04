@@ -25,8 +25,11 @@
 #include <bg2e/ui/Group.hpp>
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Numeric.hpp>
+#include <bg2e/ui/Value.hpp>
 
+#include <algorithm>
 #include <cmath>
+#include <vector>
 #include <string>
 
 namespace bg2e::ui {
@@ -44,7 +47,9 @@ void UISettingsWindow::init(bool showBackgroundFrameRateSettings, bool sceneFram
     _showBackgroundFrameRateSettings = showBackgroundFrameRateSettings;
     _sceneFrameRateSettings = sceneFrameRateSettings;
     setTitle("UI Settings");
-    setSize(320, _showBackgroundFrameRateSettings ? 430 : 350);
+    // Leave room for toolbar preferences as well as the existing optional
+    // performance sections. Normal Window scrolling remains available.
+    setSize(400, (_showBackgroundFrameRateSettings || _sceneFrameRateSettings) ? 550 : 450);
     close();
 
     if (_sceneFrameRateSettings)
@@ -90,6 +95,8 @@ void UISettingsWindow::drawUI()
     {
         UserInterface::setScale(scale);
     }
+
+    drawToolbarSection();
 
     if (_sceneFrameRateSettings)
     {
@@ -172,6 +179,34 @@ void UISettingsWindow::drawUI()
         {
             GizmoComponent::setScaleAxisVisible(axisScale);
         }
+    }
+}
+
+void UISettingsWindow::drawToolbarSection()
+{
+    Text::separator("Toolbar");
+    static const std::vector<std::string> presentations = {
+        "Text", "Icons with tooltips", "Icons and text"
+    };
+    auto configuration = UserInterface::getToolbarConfiguration();
+    auto presentation = static_cast<uint32_t>(configuration.presentation);
+    const bool presentationChanged = Value::comboBox("Presentation", presentations, presentation);
+    configuration.presentation = static_cast<ToolbarPresentation>(presentation);
+
+    constexpr float minimumSize = 12.0f;
+    constexpr float maximumSize = 32.0f;
+    const bool sizeChanged = Numeric::sliderFloat("Icon Size", &configuration.iconSize, minimumSize, maximumSize);
+    Text::tooltip("Logical icon size before interface scaling.");
+    if (sizeChanged)
+    {
+        // Temporary slider text input can exceed its drag bounds or be invalid.
+        configuration.iconSize = std::isfinite(configuration.iconSize)
+            ? std::clamp(configuration.iconSize, minimumSize, maximumSize)
+            : ToolbarConfiguration{}.iconSize;
+    }
+    if (presentationChanged || sizeChanged)
+    {
+        UserInterface::setToolbarConfiguration(configuration);
     }
 }
 

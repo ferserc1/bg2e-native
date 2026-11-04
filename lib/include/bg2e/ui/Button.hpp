@@ -19,6 +19,10 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/ui/Icon.hpp>
+#include <bg2e/ui/IconDrawOptions.hpp>
+#include <filesystem>
+#include <memory>
 
 #include <string>
 
@@ -29,6 +33,22 @@ namespace ui {
 class BG2E_API Button {
   public:
     static bool button(const std::string& title, bool sameLine = false, bool disabled = false);
+
+    // Explicit stable ID, independent of path and label. Size is a positive,
+    // finite logical square, scaled once, with source aspect ratio preserved.
+    // Call inside a UI window/frame. Empty path/null icon omits the icon slot.
+    // No active session or stale/cross-session resource: false without drawing.
+    // A missing source uses a fallback, with the same size and widget identity.
+    // Labels are literal visible text (## has no special meaning).
+    static bool iconButton(const std::string& id, const std::filesystem::path& path,
+        float size = 20.0f, const IconDrawOptions& options = {});
+    static bool iconButton(const std::string& id, const std::shared_ptr<Icon>& icon,
+        float size = 20.0f, const IconDrawOptions& options = {});
+    static bool iconTextButton(const std::string& id, const std::string& label,
+        const std::filesystem::path& path, float size = 20.0f, const IconDrawOptions& options = {});
+    static bool iconTextButton(const std::string& id, const std::string& label,
+        const std::shared_ptr<Icon>& icon, float size = 20.0f, const IconDrawOptions& options = {});
+
     static bool checkBox(const std::string& title, bool* value = nullptr, bool sameLine = false, bool disabled = false);
     static bool radioButton(const std::string& label, int* value = nullptr, int id = 0, bool sameLine = false, bool disabled = false);
 };

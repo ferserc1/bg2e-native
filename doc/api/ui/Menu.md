@@ -34,6 +34,7 @@ public:
     MenuItem(label, ShortcutData, std::function<bool()> isChecked);  // checkable
 
     std::string label;
+    std::filesystem::path iconPath;  // optional PNG
     void addMenuItem(const MenuItem& item);           // -> Submenu, appends child
     void draw() const;
     void initShortcuts() const;
@@ -154,6 +155,84 @@ conventional "command" chord needs the engine's cmd/Ctrl abstraction (see
 `app::Shortcuts` / `KeyEvent`); the header comment explicitly flags that
 `ctrlModifier` is the right choice on Windows/Linux but to prefer a
 cmd-or-ctrl form on Apple platforms.
+
+---
+
+## PNG icons
+
+MenuItem accepts an optional path without changing existing constructors:
+
+```cpp
+bg2e::ui::MenuItem file("File");
+bg2e::ui::MenuItem save("Save", saveShortcut);
+save.iconPath = std::filesystem::path{"assets/icons/save.png"};
+file.addMenuItem(save);
+file.addMenuItem(bg2e::ui::MenuItem("Close", closeShortcut));
+menu.addMenuItem(file);
+```
+
+The tree reserves the same icon gutter for all siblings whenever any action or
+submenu has a path. Rows without icons stay aligned; separators do not influence
+the gutter. Actions, checkable rows and submenu headers support icons. Constructors,
+checked predicates, enabled callbacks and shortcut registration keep their prior
+contracts. A path/cache hit does not register a shortcut again.
+
+For manual menus, use explicit IDs and the new path-based primitives:
+
+```cpp
+// Members of ui::Menu:
+static bool beginIconMenu(const std::string& id, const std::string& label,
+    const std::filesystem::path& iconPath, bool enabled = true, bool reserveIconSpace = true);
+static bool iconMenuItem(const std::string& id, const std::string& label,
+    const std::filesystem::path& iconPath, const std::string& shortcut = "",
+    bool selected = false, bool enabled = true, bool reserveIconSpace = true);
+```
+
+```cpp
+if (bg2e::ui::Menu::beginMenuBar())
+{
+    if (bg2e::ui::Menu::beginIconMenu("file-menu", "File", std::filesystem::path{}))
+    {
+        if (bg2e::ui::Menu::iconMenuItem("save", "Save",
+            std::filesystem::path{"assets/icons/save.png"}, "Ctrl+S"))
+        {
+            saveDocument();
+        }
+        if (bg2e::ui::Menu::iconMenuItem("close", "Close", std::filesystem::path{}))
+        {
+            closeDocument();
+        }
+        bg2e::ui::Menu::endMenu();
+    }
+    bg2e::ui::Menu::endMenuBar();
+}
+```
+
+The shortcut string here is display-only. Use MenuItem/ShortcutData for actual
+hotkeys. Pair successful beginIconMenu with endMenu and use the UI menu-bar
+wrappers, including when composing a custom Window menu callback.
+
+Low-level icon wrappers reserve a gutter by default even with empty paths; use
+them for all sibling rows that should align. Set reserveIconSpace to false for a
+whole icon-free sibling group. A nonempty path always reserves space. Legacy
+beginMenu/menuItem do not reserve the extra gutter automatically.
+
+Size follows current text-line height, already scaled; menus do not use toolbar
+size preferences. A measured blank prefix contributes to the native label width,
+and the icon is overlaid on that single native row. Check marks, shortcut text,
+submenu arrows, popup closing and navigation remain native. Submenu icons draw on
+the parent menu's captured draw list even after entering the child popup.
+
+Explicit IDs must be nonempty and independent of the source path. Visible labels
+retain native `##` display semantics, unlike iconTextButton's literal label.
+Tree items use instance identity, stable across dynamic-label/path changes while
+the tree structure stays stable; moving/rebuilding the tree can change those IDs.
+Use manual explicit IDs when persistence across structural rebuilds is required.
+
+Missing PNGs share [the cached fallback](Icons.md). Without an ImGui context,
+the new static methods return false. In a bare ImGui context without UserInterface,
+native text/gutters can draw but no icon is resolved; normal use is within the
+owning initialized UI session.
 
 ---
 

@@ -29,6 +29,7 @@ class BG2E_API UISettingsWindow : public Window {
 
   private:
     void drawUI();
+    void drawToolbarSection();
     void drawBackgroundFrameRateSection();
     void drawSceneFrameRateSection();
 

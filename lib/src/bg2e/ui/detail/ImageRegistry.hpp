@@ -18,15 +18,22 @@
 
 #pragma once
 
-#include <bg2e/ui/TexturePreview.hpp>
-#include <bg2e/draw/Texture.hpp>
-#include "ImGuiBackend.hpp"
+#include <cstdint>
+#include <memory>
 #include <vector>
 
+namespace bg2e::draw { class Engine; }
+namespace bg2e::gpu { class Image; class Sampler; }
+
 namespace bg2e::ui::detail {
-class PreviewRegistry;
-struct PreviewEntry {
-    std::weak_ptr<PreviewRegistry> registry;
+
+class ImGuiBackend;
+class ImageRegistry;
+
+// Snapshot of the exact owners registered with the UI backend, independent of
+// the source texture and of any consumer's resource caching policy.
+struct ImageEntry {
+    std::weak_ptr<ImageRegistry> registry;
     std::shared_ptr<gpu::Image> image;
     std::shared_ptr<gpu::Sampler> sampler;
     uint64_t identifier = 0;
@@ -34,20 +41,25 @@ struct PreviewEntry {
     bool retirementScheduled = false;
 };
 
-class PreviewRegistry : public std::enable_shared_from_this<PreviewRegistry> {
+class ImageRegistry : public std::enable_shared_from_this<ImageRegistry> {
   public:
-    PreviewRegistry(draw::Engine& engine, ImGuiBackend& backend);
+    ImageRegistry(draw::Engine& engine, ImGuiBackend& backend);
 
-    std::shared_ptr<TexturePreview> create(const std::shared_ptr<draw::Texture>& texture);
+    std::shared_ptr<ImageEntry> create(
+        std::shared_ptr<gpu::Image> image, std::shared_ptr<gpu::Sampler> sampler);
+
+    // Called before UI composition: orphaned entries can only belong to older
+    // submitted frames. Never retire entries during composition or submission.
     void beginFrame();
     void shutdown();
-    uint64_t identifier(PreviewEntry& entry);
+
+    uint64_t identifier(ImageEntry& entry);
 
   private:
     void* _context;
     draw::Engine* _engine;
     ImGuiBackend* _backend;
-    std::vector<std::shared_ptr<PreviewEntry>> _entries;
+    std::vector<std::shared_ptr<ImageEntry>> _entries;
 };
 
 }

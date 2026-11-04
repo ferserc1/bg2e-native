@@ -42,6 +42,7 @@
 #include <bg2e/ui/SubmeshSelector.hpp>
 #include <bg2e/ui/FileHistoryWidget.hpp>
 #include <bg2e/ui/Toolbar.hpp>
+#include <bg2e/ui/ToolbarConfiguration.hpp>
 #include <bg2e/ui/Workspace.hpp>
 #include <bg2e/ui/SceneTree.hpp>
 #include <bg2e/ui/NodeEditor.hpp>
@@ -58,5 +59,9 @@
 #include <bg2e/ui/DrawTextureWidgets.hpp>
 
 #include <bg2e/ui/TexturePreview.hpp>
+#include <bg2e/ui/Icon.hpp>
+#include <bg2e/ui/IconDrawOptions.hpp>
+#include <bg2e/ui/Image.hpp>
+#include <bg2e/ui/IconManager.hpp>
 
 #include <bg2e/ui/EditInteraction.hpp>

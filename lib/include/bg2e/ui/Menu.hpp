@@ -21,6 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/app/Shortcuts.hpp>
 
+#include <filesystem>
 #include <string>
 #include <vector>
 #include <functional>
@@ -64,6 +65,8 @@ class BG2E_API MenuItem {
     }
 
     std::string label;
+    // Empty means no icon; sibling rows reserve a gutter if any has an icon.
+    std::filesystem::path iconPath;
 
     void addMenuItem(const MenuItem& item)
     {
@@ -74,6 +77,10 @@ class BG2E_API MenuItem {
     void draw() const;
 
     void initShortcuts() const;
+
+  private:
+    friend class Menu;
+    void draw(bool reserveIconSpace) const;
 
   protected:
     std::vector<MenuItem> _children;
@@ -99,6 +106,17 @@ class BG2E_API Menu {
         const std::string& shortcut = "",
         bool selected = false,
         bool enabled = true);
+
+    // Explicit identity is independent of path and dynamic label. Labels retain
+    // normal ImGui ## display semantics. Draw within a UI menu/window frame.
+    // Icon size follows the current text line height (already scaled).
+    // Empty paths reserve an aligned gutter by default. Use the same setting
+    // for sibling rows; a nonempty path always reserves its icon space.
+    static bool beginIconMenu(const std::string& id, const std::string& label,
+        const std::filesystem::path& iconPath, bool enabled = true, bool reserveIconSpace = true);
+    static bool iconMenuItem(const std::string& id, const std::string& label,
+        const std::filesystem::path& iconPath, const std::string& shortcut = "",
+        bool selected = false, bool enabled = true, bool reserveIconSpace = true);
 
     static void separator();
 

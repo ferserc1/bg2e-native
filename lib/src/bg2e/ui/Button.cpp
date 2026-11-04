@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/ui/Button.hpp>
+#include "detail/IconWidgets.hpp"
 
 #include <imgui.h>
 
@@ -39,6 +40,30 @@ bool Button::button(const std::string& title, bool sameLine, bool disabled)
         ImGui::EndDisabled();
     }
     return result;
+}
+
+bool Button::iconButton(const std::string& id, const std::filesystem::path& path,
+    float size, const IconDrawOptions& options)
+{
+    return iconButton(id, detail::resolveIcon(path), size, options);
+}
+
+bool Button::iconButton(const std::string& id, const std::shared_ptr<Icon>& icon,
+    float size, const IconDrawOptions& options)
+{
+    return detail::drawIconButton(id, {}, icon, size, options);
+}
+
+bool Button::iconTextButton(const std::string& id, const std::string& label,
+    const std::filesystem::path& path, float size, const IconDrawOptions& options)
+{
+    return iconTextButton(id, label, detail::resolveIcon(path), size, options);
+}
+
+bool Button::iconTextButton(const std::string& id, const std::string& label,
+    const std::shared_ptr<Icon>& icon, float size, const IconDrawOptions& options)
+{
+    return detail::drawIconButton(id, label, icon, size, options);
 }
 
 bool Button::checkBox(const std::string& title, bool* value, bool sameLine, bool disabled)

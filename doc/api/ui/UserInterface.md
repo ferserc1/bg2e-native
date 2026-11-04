@@ -20,6 +20,11 @@ public:
     void draw(gpu::CommandBuffer&, gpu::SurfaceFrame&);
     void cleanup();
 
+    IconManager& icons();
+    std::shared_ptr<TexturePreview> texturePreview(const std::shared_ptr<draw::Texture>& texture);
+    static ToolbarConfiguration getToolbarConfiguration();
+    static void setToolbarConfiguration(const ToolbarConfiguration& configuration);
+
     void setFrameOverride(std::function<void()> fn);
     void clearFrameOverride();
 
@@ -57,7 +62,8 @@ void drawUI() override        // called between NewFrame() and Render()
 }
 ```
 
-- `init(engine, ui)` runs once after `UserInterface::init()`;
+- `init(engine, ui)` runs during `UserInterface::init()` after backend/resource
+  setup and preference restoration, before `initialized()` becomes true;
   `uiWidth()`/`uiHeight()` already report the current viewport (updated by
   `MainLoop` on resize, so the resize callback can drive `Workspace::resize`).
 - The **default** `drawUI()` shows `DemoWindow` — always override it in real
@@ -112,6 +118,35 @@ between frames (never inside `drawUI()`).
 
 ---
 
+## Icons and toolbar defaults
+
+`icons()` returns the session-owned [IconManager](Icons.md#explicit-resources).
+It is available during delegate initialization and until cleanup; explicit load
+calls use the owning active context and UI thread. Path-based [Image](Image.md),
+[Button](Button.md#icon-buttons), [Menu](Menu.md#png-icons) and
+[Toolbar](Toolbar_and_StatusBar.md#toolbar-icons-and-configuration) calls resolve
+that manager automatically. Successful and failed-path records stay cached until
+session cleanup. This is separate from transient texture-preview ownership.
+
+`texturePreview(texture)` creates an opaque snapshot of an existing draw texture;
+see [TexturePreview](TexturePreview.md). Its initialized-session requirement and
+unscaled integer dimensions are unchanged.
+
+The static getToolbarConfiguration/setToolbarConfiguration methods resolve the
+active UI context, while storage belongs to this session's Impl. Reads without
+an active session return IconsAndText/16; writes require an active session, including
+delegate initialization. Writes validate the presentation and finite positive
+size, update live defaults, and save `toolbarPresentation` / `toolbarIconSize`
+in the `ui` preference context when values change. Startup restores validated
+preferences before the delegate runs; cleanup removes the context lookup.
+
+Toolbars read current defaults each draw unless they have a local complete
+override. See [toolbar inheritance](Toolbar_and_StatusBar.md#runtime-api) and
+[UI Settings](Settings_Windows.md#toolbar-preferences) for mode values, editing
+ranges and persistence. No Toolbar pointers are stored in the settings window.
+
+---
+
 ## Event routing
 
 `MainLoop` processes each SDL event in this order:
@@ -162,7 +197,8 @@ window units.
 ## Context ownership and shutdown
 
 Stop producers and call cleanup() before destroying Engine. It persists preferences,
-drains the live device, unregisters previews, shuts down started renderer/SDL stages
+drains the live device, invalidates icons and previews, unregisters shared images,
+shuts down started renderer/SDL stages
 and destroys the ImGui context. Partial failures preserve the original exception.
 
 Context destruction resets static style/font bookkeeping. Initialization

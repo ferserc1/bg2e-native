@@ -21,6 +21,9 @@
 #include <bg2e/common.hpp>
 #include <bg2e/ui/Window.hpp>
 #include <bg2e/ui/Menu.hpp>
+#include <bg2e/ui/ToolbarConfiguration.hpp>
+#include <filesystem>
+#include <optional>
 
 #include <string>
 #include <functional>
@@ -35,6 +38,8 @@ struct ToolbarButton {
     std::string label;
     std::function<void()> action = nullptr;
     bool disabled = false;
+    std::filesystem::path iconPath;
+    std::string tooltip;
 };
 
 class BG2E_API Toolbar : public Window {
@@ -49,7 +54,7 @@ class BG2E_API Toolbar : public Window {
      * Adds a button to the toolbar.
      * - If button.id < 0, a unique ID will be generated for this Toolbar.
      * - The button will be inserted on the side specified by 'align'.
-     * - The ID will be unique among all buttons in this Toolbar (left and right).
+     * - An explicit duplicate ID throws std::invalid_argument (both sides).
      *
      * @param button Button to add (reference). The id attribute in button can be changed if button.id < 0
      * @param align Button alignment (AlignLeft or AlignRight). Defaults to AlignLeft.
@@ -63,7 +68,7 @@ class BG2E_API Toolbar : public Window {
      * Move-enabled overload of 'addButton'.
      * - If button.id < 0, a unique ID will be generated for this Toolbar.
      * - The button will be inserted on the side specified by 'align'.
-     * - The ID will be unique among all buttons in this Toolbar (left and right).
+     * - An explicit duplicate ID throws std::invalid_argument (both sides).
      *
      * @param button Button to add (will be moved into the Toolbar).
      * @param align Button alignment (AlignLeft or AlignRight). Defaults to AlignLeft.
@@ -75,12 +80,26 @@ class BG2E_API Toolbar : public Window {
 
     void draw() override;
 
+    // Configuration is resolved each draw. Either setter creates a complete
+    // per-toolbar override; useSessionDefaults restores session inheritance.
+    ToolbarConfiguration configuration() const;
+    void setConfiguration(const ToolbarConfiguration& configuration);
+    void setPresentation(ToolbarPresentation presentation);
+    void setIconSize(float size);
+    bool inheritsSessionDefaults() const;
+    void useSessionDefaults();
+
     void updateButtonLabel(int32_t buttonId, const std::string& newLabel);
     void updateButtonLabel(int32_t buttonId, std::string&& newLabel);
+    void updateButtonIconPath(int32_t buttonId, const std::filesystem::path& path);
+    void updateButtonTooltip(int32_t buttonId, const std::string& tooltip);
     void enableButton(int32_t buttonId);
     void disableButton(int32_t buttonId);
 
+    // Returned pointers can be invalidated by addButton. Do not mutate IDs;
+    // draw rejects negative/duplicate IDs introduced through mutable access.
     ToolbarButton* findButton(int32_t buttonId);
+    const ToolbarButton* findButton(int32_t buttonId) const;
 
     void addMenuItem(const MenuItem& menuItem)
     {
@@ -88,6 +107,7 @@ class BG2E_API Toolbar : public Window {
     }
 
   protected:
+    std::optional<ToolbarConfiguration> _configuration;
     std::vector<ToolbarButton> _leftButtons;
     std::vector<ToolbarButton> _rightButtons;
     Menu _menu;
