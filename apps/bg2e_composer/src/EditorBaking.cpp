@@ -27,6 +27,8 @@
 #include <bg2e/db/image.hpp>
 #include <bg2e/geo/UvAtlasValidator.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include <cstdio>
 
 #include <atomic>
 #include <chrono>
@@ -262,6 +264,12 @@ std::shared_ptr<bg2e::app::SafeUpdateToken> AppDelegate::regenerateUv2(std::weak
         try
         {
             auto node = target.lock();
+            if (node->getComponent<bg2e::scene::TextComponent>())
+            {
+                std::fprintf(stderr, "Text owns both quad UV sets; atlas regeneration is unavailable.\n");
+                report({false, "Text owns its procedural quad UVs; edit material UV scale/sampling instead"});
+                return;
+            }
             auto drawable = node->drawable()->drawable();
             auto prepared = *drawable->mesh();
             bg2e::geo::GenerateUv2AtlasModifier modifier(&prepared, options);

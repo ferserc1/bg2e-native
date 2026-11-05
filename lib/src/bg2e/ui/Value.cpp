@@ -19,11 +19,26 @@
 #include <bg2e/ui/Value.hpp>
 
 #include <cstring>
+#include <algorithm>
 
 #include <imgui.h>
 
 namespace bg2e {
 namespace ui {
+
+bool Value::multilineText(const std::string& label, std::string& value, int capacity, float height)
+{
+    const auto size = std::max(value.size() + 1, static_cast<size_t>(std::max(1, capacity)));
+    std::vector<char> buffer(size, 0);
+    std::memcpy(buffer.data(), value.c_str(), value.size() + 1);
+    if (ImGui::InputTextMultiline(label.c_str(), buffer.data(), buffer.size(), ImVec2(-1, height)))
+    {
+        value.assign(buffer.data());
+        return true;
+    }
+    return false;
+}
+
 
 bool Value::text(const std::string& label, std::string& value, int maxLength, bool sameLine, bool disabled)
 {

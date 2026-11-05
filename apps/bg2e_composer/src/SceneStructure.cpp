@@ -22,7 +22,10 @@
 
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <stdexcept>
+#include <cstdio>
 #include <bg2e/app/CompositeCommand.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/scene/TextFontComponent.hpp>
 
 namespace bg2e_composer {
 namespace {
@@ -114,16 +117,16 @@ void AppDelegate::reparentNode(std::weak_ptr<bg2e::scene::Node> node, std::weak_
 
 void AppDelegate::addSceneItem(unsigned kind)
 {
-    if (!document() || kind > 3)
+    if (!document() || kind > 4)
     {
         return;
     }
     auto* selected = _selection->selectedNode();
     const auto parent = std::weak_ptr<bg2e::scene::Node>(selected ? selected->shared_from_this() : document()->root);
-    queueSceneCommand([this, parent, kind]
+    queueSceneCommand([this, parent, kind]() -> std::unique_ptr<bg2e::app::Command>
     {
         using namespace bg2e::scene;
-        auto child = std::make_shared<Node>(kind == 1 ? "Camera" : kind == 2 ? "Light" : kind == 3 ? "Environment" : "Group");
+        auto child = std::make_shared<Node>(kind == 1 ? "Camera" : kind == 2 ? "Light" : kind == 3 ? "Environment" : kind == 4 ? "Text" : "Group");
         child->addComponent(std::make_shared<TransformComponent>());
         if (kind == 1)
         {
@@ -139,6 +142,12 @@ void AppDelegate::addSceneItem(unsigned kind)
         {
             child->addComponent(std::make_shared<EnvironmentComponent>());
         }
+        else if (kind == 4)
+        {
+            auto text = std::make_shared<TextComponent>();
+            text->text().setContent("Hello World");
+            child->addComponent(text);
+        }
         try
         {
             _stage->prepareCommandCandidate(child);
@@ -150,7 +159,8 @@ void AppDelegate::addSceneItem(unsigned kind)
             throw;
         }
         return std::make_unique<command::scene::EditNodes>(_stage, _selection,
-            command::scene::NodeEdit::Insert, std::vector{child}, parent, "Create scene node");
+            command::scene::NodeEdit::Insert, std::vector{child}, parent, kind == 4 ? "Create text" : "Create scene node",
+            std::shared_ptr<Node>{}, kind == 4);
     });
 }
 
@@ -229,7 +239,7 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
 
 void AppDelegate::addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName)
 {
-    queueSceneCommand([this, node, typeName]
+    queueSceneCommand([this, node, typeName]() -> std::unique_ptr<bg2e::app::Command>
     {
         auto& registry = bg2e::scene::ComponentFactoryRegistry::get();
         if (registry.owner(typeName) != 0)
@@ -240,6 +250,16 @@ void AppDelegate::addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const
         if (!component || !command::supportedComponent(*component) || component->typeName() != typeName || component->ownerNode())
         {
             throw std::invalid_argument("The component needs a supported reversible editor adapter");
+        }
+        auto target = node.lock();
+        if (std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(component) && target && target->drawable())
+        {
+            std::fprintf(stderr, "A node can own only one drawable. Create a child Text node instead.\n");
+            return std::unique_ptr<bg2e::app::Command>{};
+        }
+        if (auto text = std::dynamic_pointer_cast<bg2e::scene::TextComponent>(component))
+        {
+            text->text().setContent("Hello World");
         }
         if (auto camera = std::dynamic_pointer_cast<bg2e::scene::CameraComponent>(component); camera && !camera->projection())
         {

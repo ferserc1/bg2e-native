@@ -22,6 +22,8 @@
 #include <bg2e/draw/MaterialBase.hpp>
 #include <bg2e/scene/ChainJoint.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/utils/utils.hpp>
 #include "../base/TextDiagnostics.hpp"
@@ -107,6 +109,21 @@ class Publication {
         return target;
     }
 
+    // Unlike legacy model-image filename sharing, embedded resources use full
+    // normalized source identity. Equal basenames never alias unrelated files.
+    std::filesystem::path externalResource(const std::filesystem::path& source)
+    {
+        const auto key = std::filesystem::weakly_canonical(source);
+        if (const auto found = external.find(key); found != external.end())
+        {
+            return found->second;
+        }
+        auto target = resource(source.extension().string());
+        std::filesystem::copy_file(source, target);
+        external.emplace(key, target);
+        return target;
+    }
+
     void commit(const std::filesystem::path& main)
     {
         // Collect before modifying the directory iterator's directory.
@@ -178,13 +195,20 @@ class Publication {
     bool committed = false;
     std::vector<std::filesystem::path> published;
     std::set<std::filesystem::path> reusedNames;
+    std::map<std::filesystem::path, std::filesystem::path> external;
 };
 
 struct ReferenceRestore {
     std::vector<std::pair<scene::DrawableComponent*, std::filesystem::path>> paths;
+    std::vector<std::pair<base::MaterialAttributes*, base::MaterialAttributes>> materials;
 
     ~ReferenceRestore()
     {
+        for (auto& [material, attributes] : materials)
+        {
+            using std::swap;
+            swap(*material, attributes);
+        }
         for (auto& [component, path] : paths)
         {
             component->swapResourcePath(path);
@@ -302,16 +326,51 @@ bool stageGraph(scene::Node& node, draw::Engine& engine, Publication& publicatio
 {
     if (auto component = node.getComponent<scene::DrawableComponent>(); component && !component->ignoreSerialization())
     {
-        if (!component->requiresBg2Export())
+        if (component->requiresBg2Export())
         {
-            base::detail::textWarning("Procedural text must not be exported as BG2; scene save deferred until embedded persistence.");
-            return false;
+            auto model = snapshot(node, engine, publication);
+            auto path = publication.resource(".bg2");
+            storeMeshBg2(path, &model);
+            restore.paths.emplace_back(component, std::move(path));
+            component->swapResourcePath(restore.paths.back().second);
         }
-        auto model = snapshot(node, engine, publication);
-        auto path = publication.resource(".bg2");
-        storeMeshBg2(path, &model);
-        restore.paths.emplace_back(component, std::move(path));
-        component->swapResourcePath(restore.paths.back().second);
+        else if (auto* text = dynamic_cast<scene::TextComponent*>(component))
+        {
+            auto attributes = text->material();
+            // Albedo is never inspected, cloned, evaluated or exported here.
+            for (uint32_t slot = 1; slot < 6; ++slot)
+            {
+                const auto source = (attributes.*Getters[slot])();
+                if (!source || source->ignoreSerialization())
+                {
+                    continue;
+                }
+                auto settings = std::make_shared<base::Texture>(*source);
+                std::filesystem::path path;
+                if (source->type() == base::Texture::TypeFilesystem && !source->imageFilePath().empty())
+                {
+                    path = publication.externalResource(source->imageFilePath());
+                }
+                else
+                {
+                    std::unique_ptr<base::Image> pixels(settings->generateImage());
+                    if (!pixels || !pixels->isValid())
+                    {
+                        base::detail::textWarning("Cannot export an embedded text material image; scene save refused.");
+                        return false;
+                    }
+                    path = publication.resource(".png");
+                    saveImage(path, pixels->data(), pixels->width(), pixels->height(), pixels->channels());
+                }
+                settings->setImageFilePath(path.string());
+                (attributes.*Setters[slot])(settings);
+            }
+            // Install only at this stopped IO boundary. RAII restores the exact
+            // authored material (including revisions) on success and failure.
+            restore.materials.emplace_back(&text->material(), std::move(attributes));
+            using std::swap;
+            swap(text->material(), restore.materials.back().second);
+        }
     }
     for (const auto& child : node.children())
     {
@@ -323,10 +382,14 @@ bool stageGraph(scene::Node& node, draw::Engine& engine, Publication& publicatio
     return true;
 }
 
-// Environment images remain encoded in their original format. Custom component
-// resource types must implement their own explicit resource export contract.
-void stageEnvironments(const std::shared_ptr<json::JsonNode>& value, Publication& publication)
+// External font/notice/environment files keep their original bytes/extensions.
+// Custom components still require their own explicit export contract.
+bool stageExternalReferences(const std::shared_ptr<json::JsonNode>& value, Publication& publication)
 {
+    if (!value)
+    {
+        return true;
+    }
     if (value->isObject())
     {
         auto& object = value->objectValue();
@@ -340,20 +403,131 @@ void stageEnvironments(const std::shared_ptr<json::JsonNode>& value, Publication
             std::filesystem::copy_file(source, path);
             found->second = json::JSON(path.filename().string());
         }
+        if (type != object.end() && type->second->isString() && type->second->stringValue() == "TextFonts")
+        {
+            auto fonts = object.find("fonts");
+            if (fonts != object.end() && fonts->second && fonts->second->isList())
+            {
+                for (const auto& font : fonts->second->listValue())
+                {
+                    json::ObjectReader reader(font);
+                    auto path = reader.getString("path");
+                    if (!path || path->empty())
+                    {
+                        base::detail::textWarning("Cannot package a font without its authored path; save refused.");
+                        return false;
+                    }
+                    const auto source = publication.directory / *path;
+                    std::set<std::filesystem::path> notices;
+                    if (auto supplied = reader.getArray("notices"))
+                    {
+                        for (size_t i = 0; i < supplied->size(); ++i)
+                        {
+                            auto notice = supplied->getString(i);
+                            if (!notice || notice->empty())
+                            {
+                                base::detail::textWarning("Invalid supplied font notice path; save refused.");
+                                return false;
+                            }
+                            notices.insert(publication.directory / *notice);
+                        }
+                    }
+                    // Bundled tutorial font notices are adjacent. Recognize
+                    // common supplied licenses without claiming legal rights.
+                    if (notices.empty())
+                    {
+                        for (const char* name : {"OFL.txt", "LICENSE", "LICENSE.txt", "LICENSE.md",
+                            "COPYING", "NOTICE", "NOTICE.txt", "README.md"})
+                        {
+                            const auto notice = source.parent_path() / name;
+                            if (std::filesystem::is_regular_file(notice))
+                            {
+                                notices.insert(notice);
+                            }
+                        }
+                    }
+                    json::JsonList packaged;
+                    if (notices.empty())
+                    {
+                        base::detail::textWarning("No supplied/adjacent font notices found for ", source.string(),
+                            "; verify redistribution rights and provide required notices.");
+                    }
+                    for (const auto& notice : notices)
+                    {
+                        packaged.push_back(json::JSON(publication.externalResource(notice).filename().generic_string()));
+                    }
+                    const auto target = publication.externalResource(source);
+                    font->objectValue()["path"] = json::JSON(target.filename().generic_string());
+                    font->objectValue()["notices"] = json::JSON(packaged);
+                }
+            }
+        }
         for (auto& [key, child] : object)
         {
-            stageEnvironments(child, publication);
+            if (!stageExternalReferences(child, publication))
+            {
+                return false;
+            }
         }
     }
     else if (value->isList())
     {
         for (auto& child : value->listValue())
         {
-            stageEnvironments(child, publication);
+            if (!stageExternalReferences(child, publication))
+            {
+                return false;
+            }
         }
     }
+    return true;
 }
 }
+
+bool saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
+    scene::SceneProgressCallback onProgress) noexcept
+try
+{
+    if (!root || filePath.empty())
+    {
+        base::detail::textWarning("Scene reference save requires a root and path; save refused.");
+        return false;
+    }
+    Publication publication(filePath);
+    scene::SceneSaveProgress progress;
+    progress.callback = onProgress;
+    const auto count = [](auto&& self, const scene::Node* node) -> int
+    {
+        int result = 1;
+        for (const auto& child : node->children())
+        {
+            result += self(self, child.get());
+        }
+        return result;
+    };
+    progress.total = count(count, root);
+    auto representation = root->serializeReferences(publication.destination.parent_path(), onProgress ? &progress : nullptr);
+    if (!representation)
+    {
+        base::detail::textWarning("Scene representation unavailable; destination unchanged.");
+        return false;
+    }
+    using namespace json;
+    auto document = JSON(JsonObject{
+        {"fileType", JSON("bg2e::scene")},
+        {"version", JSON(JsonObject{{"major", JSON(1)}, {"minor", JSON(0)}, {"rev", JSON(0)}})},
+        {"scene", JSON(JsonList{representation})}});
+    const auto main = publication.directory / publication.destination.filename();
+    writeSceneDocument(document, main);
+    publication.commit(main);
+    return true;
+}
+catch (...)
+{
+    base::detail::textWarning("Scene reference serialization/write failed; destination unchanged.");
+    return false;
+}
+
 
 bool saveScene(scene::Node* root, draw::Engine& engine, const std::filesystem::path& path,
     scene::SceneProgressCallback progress) noexcept
@@ -380,7 +554,10 @@ try
         return false;
     }
     auto document = readSceneDocument(main);
-    stageEnvironments(document, publication);
+    if (!stageExternalReferences(document, publication))
+    {
+        return false;
+    }
     writeSceneDocument(document, main);
     publication.commit(main);
     return true;

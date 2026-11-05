@@ -31,6 +31,10 @@ namespace ui {
 // Non-numeric value editors (text fields, color picker and combo boxes)
 class BG2E_API Value {
   public:
+    // UTF-8 multiline editor. Capacity includes the terminating NUL.
+    static bool multilineText(const std::string& label, std::string& value,
+        int capacity = 65537, float height = 110);
+
     static bool text(
         const std::string& label,
         std::string& value,

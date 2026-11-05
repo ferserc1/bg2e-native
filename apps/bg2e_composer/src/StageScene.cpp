@@ -51,6 +51,7 @@
 #include <utility>
 #include <algorithm>
 #include <cctype>
+#include <cstdio>
 
 namespace bg2e_composer {
 namespace {
@@ -937,6 +938,11 @@ bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Nod
             throw std::invalid_argument("Model export target is no longer in the document");
         }
         auto component = node->drawable();
+        if (component && !component->requiresBg2Export())
+        {
+            std::fprintf(stderr, "Procedural text is editable scene content, not an exportable BG2 model.\n");
+            return false;
+        }
         if (!component || !component->drawable())
         {
             if (!batch)

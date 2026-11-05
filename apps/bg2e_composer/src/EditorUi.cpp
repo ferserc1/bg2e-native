@@ -273,8 +273,8 @@ void EditorUi::initCreateNodeMenu()
 {
     const auto weakDelegate = _delegate;
     bg2e::ui::MenuItem create("Create Node");
-    const char* nodeTypes[]{"Group", "Camera", "Light", "Environment"};
-    for (unsigned kind = 0; kind < 4; ++kind)
+    const char* nodeTypes[]{"Group", "Camera", "Light", "Environment", "Text"};
+    for (unsigned kind = 0; kind < 5; ++kind)
     {
         create.addMenuItem({nodeTypes[kind], {.handler = [weakDelegate, kind]
         {
@@ -472,6 +472,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             {
                 return (!ui->_nameEdit || ui->_nameEdit->commit()) &&
                     (!ui->_metadataEdit || ui->_metadataEdit->commit()) &&
+                    (!ui->_textEdit || ui->_textEdit->commit()) &&
                     ui->_componentInspector.commitInteraction() && ui->_material.commitInteraction() && ui->_graphics.commitInteraction();
             }
             if (ui->_nameEdit)
@@ -483,10 +484,15 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                 ui->_metadataEdit->cancel();
             }
             ui->_componentInspector.cancelInteraction();
+            if (ui->_textEdit)
+            {
+                ui->_textEdit->cancel();
+            }
             ui->_material.cancelInteraction();
             ui->_graphics.cancelInteraction();
             return (!ui->_nameEdit || !ui->_nameEdit->active()) &&
                 (!ui->_metadataEdit || !ui->_metadataEdit->active()) &&
+                (!ui->_textEdit || !ui->_textEdit->active()) &&
                 !ui->_componentInspector.interactionActive() && !ui->_material.interactionActive();
         });
         delegate->onToolsCleanup([weak]
@@ -506,6 +512,10 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                     ui->_metadataEdit.reset();
                 }
                 ui->_componentInspector.cancelInteraction();
+                if (ui->_textEdit)
+                {
+                    ui->_textEdit->cancel();
+                }
                 ui->_componentInspector.onEditRequested({});
                 ui->_componentInspector.onActionRequested({});
                 ui->_graphics.clear();
@@ -611,6 +621,10 @@ void EditorUi::drawUI()
     {
         _metadataEdit->beginFrame();
     }
+    if (_textEdit)
+    {
+        _textEdit->beginFrame();
+    }
     struct SettleMissingControls {
         EditorUi& ui;
         ~SettleMissingControls()
@@ -622,6 +636,10 @@ void EditorUi::drawUI()
             if (ui._metadataEdit)
             {
                 ui._metadataEdit->endFrame();
+            }
+            if (ui._textEdit)
+            {
+                ui._textEdit->endFrame();
             }
             if (!ui._componentInspectorDrawn)
             {

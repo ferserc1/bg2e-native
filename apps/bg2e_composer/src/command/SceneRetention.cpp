@@ -22,6 +22,8 @@
 #include <bg2e/scene/PolarTransformController.hpp>
 #include <bg2e/scene/FixedScaleTransformController.hpp>
 #include <bg2e/scene/ChainJoint.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/scene/TextFontComponent.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <limits>
@@ -161,6 +163,21 @@ size_t componentBytes(const std::shared_ptr<bg2e::scene::Component>& component, 
         }
     }
     size_t bytes = 65536; // Built-in component, authored strings, metadata and tool buffers.
+    if (auto text = std::dynamic_pointer_cast<bg2e::scene::TextComponent>(component))
+    {
+        bytes = add(bytes, text->retainedCpuBytes());
+    }
+    if (auto fonts = std::dynamic_pointer_cast<bg2e::scene::TextFontComponent>(component))
+    {
+        for (const auto& font : fonts->declarations())
+        {
+            bytes = add(bytes, font.identifier.capacity() + font.path.native().capacity() * sizeof(std::filesystem::path::value_type));
+            for (const auto& notice : font.notices)
+            {
+                bytes = add(bytes, notice.native().capacity() * sizeof(std::filesystem::path::value_type));
+            }
+        }
+    }
     if (auto environment = std::dynamic_pointer_cast<bg2e::scene::EnvironmentComponent>(component))
     {
         bytes = add(bytes, environment->environmentImage().capacity());
@@ -204,6 +221,7 @@ bool supportedComponent(const bg2e::scene::Component& component)
     using namespace bg2e::scene;
     const auto& type = typeid(component);
     return type == typeid(TransformComponent) || type == typeid(DrawableComponent) ||
+        type == typeid(TextComponent) || type == typeid(TextFontComponent) ||
         type == typeid(CameraComponent) || type == typeid(LightComponent) ||
         type == typeid(EnvironmentComponent) || type == typeid(OrbitCameraComponent) ||
         type == typeid(PolarTransformControllerComponent) || type == typeid(FixedScaleTransformControllerComponent) ||

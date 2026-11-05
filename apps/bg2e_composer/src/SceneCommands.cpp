@@ -20,13 +20,63 @@
 #include "command/scene/StructureCommands.hpp"
 #include "command/scene/SelectionCommands.hpp"
 #include "command/component/ComponentCommands.hpp"
+#include "command/component/TextCommands.hpp"
 
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <stdexcept>
+#include <cstdio>
 #include <bg2e/manipulation/SelectableComponent.hpp>
 
 namespace bg2e_composer {
+
+bool AppDelegate::textEditIntent(const std::shared_ptr<bg2e::scene::Component>& component,
+    bg2e::ui::EditPhase phase, uint64_t interaction, const std::any& value)
+try
+{
+    if (phase == bg2e::ui::EditPhase::Cancel)
+    {
+        return valueEditIntent(phase, interaction, {}, {});
+    }
+    if (!component || !document() || !_stage->contains(component->ownerNode()))
+    {
+        return false;
+    }
+    return valueEditIntent(phase, interaction,
+        [stage = std::weak_ptr<StageScene>(_stage), target = std::weak_ptr<bg2e::scene::Component>(component),
+            effects = valueEditEffects()]
+        {
+            return std::make_unique<command::component::EditText>(stage, target, effects);
+        }, value);
+}
+catch (...)
+{
+    std::fprintf(stderr, "Text/font edit could not be queued; previous state retained.\n");
+    return false;
+}
+
+
+void AppDelegate::reloadTextFonts()
+{
+    if (!document() || !settleEditDrafts())
+    {
+        return;
+    }
+    const auto generation = document()->generation;
+    enqueueRendererUpdate(rendererGeneration(), [weak = weak_from_this(), generation](auto&)
+    {
+        if (auto owner = weak.lock(); owner && owner->document() && owner->document()->generation == generation)
+        {
+            if (auto* scene = owner->document()->root->scene())
+            {
+                scene->reloadTextFonts();
+            }
+            owner->requestSceneFrame();
+        }
+    });
+    requestSceneFrame();
+}
+
 
 bg2e::app::CommandResult AppDelegate::submitSceneCommand(std::unique_ptr<bg2e::app::Command> action,
     command::Effects effects, command::Boundary boundary)
@@ -171,6 +221,15 @@ void AppDelegate::selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t sub
 
 bg2e::app::CommandResult AppDelegate::editSubmeshMetadata(command::scene::MetadataRequest request)
 {
+    for (const auto& target : request.targets)
+    {
+        auto node = target.node.lock();
+        if (node && node->getComponent<bg2e::scene::TextComponent>())
+        {
+            std::fprintf(stderr, "Text owns its procedural submesh metadata; use node name/Enabled and material properties.\n");
+            return {bg2e::app::CommandStatus::Rejected, "Text submesh metadata is component-owned"};
+        }
+    }
     command::Effects effects;
     effects.renderHistories = true;
     effects.lightmapSources = request.field == command::scene::MetadataField::Visibility;

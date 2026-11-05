@@ -35,6 +35,9 @@ class BG2E_API TextFontComponent final : public Component {
         std::string identifier;
         std::filesystem::path path;
         uint32_t faceIndex = 0;
+        // Optional supplied license/provenance files; no redistribution rights
+        // are inferred. Complete scene saves copy these alongside the font.
+        std::vector<std::filesystem::path> notices{};
         bool operator==(const Declaration&) const = default;
     };
     static constexpr size_t MaxDeclarations = 128;

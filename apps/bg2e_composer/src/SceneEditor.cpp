@@ -160,6 +160,7 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
     _componentInspector.onDrawComponent({});
     _componentInspectorDrawn = true;
     _componentInspector.draw();
+    drawTextEditors(delegate, *target);
     ui::Layout::endChild();
 }
 

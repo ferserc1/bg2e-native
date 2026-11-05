@@ -160,6 +160,9 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void redoEdit();
     void setNodeEnabled(std::weak_ptr<bg2e::scene::Node> node, bool enabled);
     void addSceneItem(unsigned kind);
+    bool textEditIntent(const std::shared_ptr<bg2e::scene::Component>& component,
+        bg2e::ui::EditPhase phase, uint64_t interaction, const std::any& value);
+    void reloadTextFonts();
     void addPrimitive(unsigned kind);
     void addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName);
 

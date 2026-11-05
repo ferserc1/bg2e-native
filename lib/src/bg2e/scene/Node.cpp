@@ -548,6 +548,11 @@ std::shared_ptr<json::JsonNode> Node::serializeReferences(const std::filesystem:
         auto compData = comp.second->serializeReferences(basePath);
         if (!compData || !json::ObjectReader(compData).isValid())
         {
+            if (comp.second->typeName() == "Text" || comp.second->typeName() == "TextFonts")
+            {
+                bg2e_log_warning << "Cannot preserve editable text/font data in node " << _name << bg2e_log_end;
+                return nullptr;
+            }
             bg2e_log_warning << "Skipping empty component serialization for " << comp.second->typeName()
                 << " in node " << _name << bg2e_log_end;
             continue;
@@ -561,6 +566,10 @@ std::shared_ptr<json::JsonNode> Node::serializeReferences(const std::filesystem:
     for (auto& child : _children)
     {
         auto childData = child->serializeReferences(basePath, progress);
+        if (!childData)
+        {
+            return nullptr;
+        }
         children->listValue().push_back(childData);
     }
     obj["children"] = children;

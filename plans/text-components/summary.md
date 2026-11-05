@@ -1,6 +1,6 @@
 # Text components implementation plan
 
-Status: steps 1–5 implemented and user accepted; steps 6–8 not started. Read [progress.md](progress.md) before doing any work.
+Status: steps 1–6 implemented and user accepted; step 7 implemented awaiting user acceptance; step 8 not started. Read [progress.md](progress.md) before doing any work.
 
 ## Agreed architecture
 

@@ -57,6 +57,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void chooseImport(const std::shared_ptr<AppDelegate>& delegate);
 
     void drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate);
+    void drawTextEditors(const std::shared_ptr<AppDelegate>& delegate, bg2e::scene::Node& node);
     void drawTools(const std::shared_ptr<AppDelegate>& delegate);
     void bindDocument(const std::shared_ptr<AppDelegate>& delegate);
 
@@ -66,6 +67,9 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     bg2e::ui::ComponentInspector _componentInspector;
     std::unique_ptr<bg2e::ui::EditSession> _nameEdit;
     std::unique_ptr<bg2e::ui::EditSession> _metadataEdit;
+    std::unique_ptr<bg2e::ui::EditSession> _textEdit;
+    uint64_t _textEditGeneration = UINT64_MAX;
+    bool _textUiWarning = false;
     bool _componentInspectorDrawn = false;
     std::weak_ptr<bg2e::scene::Node> _nameEditNode;
     uint64_t _nameEditGeneration = 0;

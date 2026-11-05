@@ -33,8 +33,9 @@ namespace db {
 extern BG2E_API std::shared_ptr<json::JsonNode> readSceneDocument(const std::filesystem::path& filePath);
 extern BG2E_API void writeSceneDocument(std::shared_ptr<json::JsonNode> document,
     const std::filesystem::path& filePath);
-// Returns false without writing when authored procedural text persistence is
-// unavailable; do not treat an unsupported representation as a successful save.
+// Atomic representation-only save; rewrites relative paths but copies no assets.
+// Text stays editable and its generated albedo is omitted. Non-albedo procedural
+// images require a complete save. False leaves any existing document unchanged.
 extern BG2E_API bool saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
     scene::SceneProgressCallback onProgress = nullptr) noexcept;
 
@@ -51,6 +52,8 @@ extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::p
 
 // Complete resource snapshot. Call at a stopped submission boundary. Unique
 // sidecars are published first and the main document is replaced atomically last.
+// Text is embedded, never baked to BG2. Fonts, supplied/adjacent license notices
+// and other material images are copied; authored live references are restored.
 // Returns false and logs the error on failure; never propagates exceptions.
 extern BG2E_API bool saveScene(scene::Node* root, draw::Engine& engine,
     const std::filesystem::path& path, scene::SceneProgressCallback progress = nullptr) noexcept;

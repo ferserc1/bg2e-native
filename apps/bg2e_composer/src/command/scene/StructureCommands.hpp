@@ -31,7 +31,7 @@ class EditNodes final : public bg2e::app::Command {
         std::shared_ptr<bg2e::manipulation::SelectionManager> selection, NodeEdit operation,
         const std::vector<std::shared_ptr<bg2e::scene::Node>>& targets,
         std::weak_ptr<bg2e::scene::Node> destination = {}, std::string label = {},
-        std::shared_ptr<bg2e::scene::Node> replaced = {});
+        std::shared_ptr<bg2e::scene::Node> replaced = {}, bool selectInserted = false);
 
     const bg2e::app::CommandInfo& info() const noexcept override;
     bg2e::app::CommandMemory memory() const override;
@@ -54,6 +54,7 @@ class EditNodes final : public bg2e::app::Command {
     StageScene::EditingState _beforeState, _afterState;
     bg2e::manipulation::SelectionState _beforeSelection, _afterSelection;
     bool _captured = false;
+    bool _selectInserted = false;
     bg2e::app::CommandInfo _info;
 
     void publish(const std::vector<Placement>& placements);

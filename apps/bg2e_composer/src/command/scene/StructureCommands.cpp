@@ -28,9 +28,10 @@ using Node = bg2e::scene::Node;
 
 EditNodes::EditNodes(std::shared_ptr<StageScene> stage,
     std::shared_ptr<bg2e::manipulation::SelectionManager> selection, NodeEdit operation,
-    const std::vector<std::shared_ptr<Node>>& targets, std::weak_ptr<Node> destination, std::string label, std::shared_ptr<Node> replaced)
+    const std::vector<std::shared_ptr<Node>>& targets, std::weak_ptr<Node> destination, std::string label,
+    std::shared_ptr<Node> replaced, bool selectInserted)
     : _stage(stage), _selection(selection), _operation(operation), _destination(std::move(destination)),
-      _info{label.empty() ? "Edit scene structure" : std::move(label), "scene.structure"}
+      _selectInserted(selectInserted), _info{label.empty() ? "Edit scene structure" : std::move(label), "scene.structure"}
 {
     if (operation == NodeEdit::Replace)
     {
@@ -268,7 +269,13 @@ CommandResult EditNodes::execute() noexcept
         stage->validateEditingGraph(false);
         stage->refreshCamera(true);
         _afterState = stage->editingState();
-        selection->restoreSelection(_beforeSelection, [stage](auto* node)
+        auto nextSelection = _beforeSelection;
+        if (_selectInserted && _operation == NodeEdit::Insert)
+        {
+            nextSelection.items.clear();
+            nextSelection.nodes = {_targets.front()->node};
+        }
+        selection->restoreSelection(nextSelection, [stage](auto* node)
         {
             return stage->contains(node) || node == stage->fillLightNode().get();
         });

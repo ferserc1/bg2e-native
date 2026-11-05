@@ -98,6 +98,15 @@ try
             continue;
         }
         declaration.path = path.lexically_normal();
+        if (declaration.notices.size() > 32)
+        {
+            base::detail::textWarning("Too many font notices; extra entries ignored.");
+            declaration.notices.resize(32);
+        }
+        for (auto& notice : declaration.notices)
+        {
+            notice = std::filesystem::absolute(notice).lexically_normal();
+        }
         if (!identifiers.insert(declaration.identifier).second)
         {
             base::detail::textWarning("Duplicate font identifier in collection: ", declaration.identifier,
@@ -125,7 +134,7 @@ void TextFontComponent::addFont(std::string identifier, std::filesystem::path pa
 try
 {
     auto next = _declarations;
-    next.push_back({std::move(identifier), std::move(path), faceIndex});
+    next.push_back({std::move(identifier), std::move(path), faceIndex, {}});
     setDeclarations(std::move(next));
 }
 catch (...)
@@ -206,7 +215,23 @@ try
         {
             resolved = basePath / resolved;
         }
-        declarations.push_back({*id, std::move(resolved), face});
+        Declaration declaration{*id, std::move(resolved), face, {}};
+        if (auto notices = font->getArray("notices"))
+        {
+            for (size_t n = 0; n < std::min(notices->size(), size_t(32)); ++n)
+            {
+                const auto& value = notices->node()->listValue()[n];
+                if (value && value->isString() && !value->stringValue().empty())
+                {
+                    declaration.notices.push_back(basePath / value->stringValue());
+                }
+                else
+                {
+                    base::detail::textWarning("Invalid font notice path ignored.");
+                }
+            }
+        }
+        declarations.push_back(std::move(declaration));
     }
     setDeclarations(std::move(declarations));
     deserializeCommon(data);
@@ -228,10 +253,17 @@ try
     {
         auto relative = declaration.path.lexically_relative(directory);
         const auto path = relative.empty() ? declaration.path : relative;
+        json::JsonList notices;
+        for (const auto& notice : declaration.notices)
+        {
+            auto relativeNotice = notice.lexically_relative(directory);
+            notices.push_back(json::JSON((relativeNotice.empty() ? notice : relativeNotice).generic_string()));
+        }
         fonts.push_back(json::JSON(json::JsonObject{
             {"identifier", json::JSON(declaration.identifier)},
             {"path", json::JSON(path.generic_string())},
-            {"faceIndex", json::JSON(declaration.faceIndex)}}));
+            {"faceIndex", json::JSON(declaration.faceIndex)},
+            {"notices", json::JSON(notices)}}));
     }
     result->objectValue()["fonts"] = json::JSON(fonts);
     return result;

@@ -22,6 +22,7 @@
 #include <bg2e/scene/PolarTransformController.hpp>
 #include <bg2e/scene/FixedScaleTransformController.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
+#include <cstdio>
 #include <algorithm>
 #include <stdexcept>
 #include <typeinfo>
@@ -257,6 +258,12 @@ CommandResult EditMembership::execute() noexcept
             if (component != old && next && component->typeName() == next->typeName())
             {
                 return {CommandStatus::Rejected, "The component type is already attached"};
+            }
+            if (component != old && next && dynamic_cast<bg2e::scene::DrawableComponent*>(component.get()) &&
+                dynamic_cast<bg2e::scene::DrawableComponent*>(next.get()))
+            {
+                std::fprintf(stderr, "A node can own only one drawable; create a child Text/model node.\n");
+                return {CommandStatus::Rejected, "Create a child node for another drawable"};
             }
         }
         _after = _before;

@@ -34,6 +34,8 @@ class BG2E_API TextTextureGenerator final : public ProceduralTextureGenerator {
     const Text& text() const;
     const std::shared_ptr<const TextFont>& font() const;
     uint64_t fontVersion() const;
+    // Conservative CPU ownership accounting for editor resource retention.
+    size_t retainedBytes() const noexcept;
 
     // The caller resolves text.fontIdentifier() externally. No scene or file
     // lookup occurs here. Identical values/font/version keep the pixel revision.

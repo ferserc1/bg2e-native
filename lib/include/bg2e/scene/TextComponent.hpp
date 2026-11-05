@@ -23,7 +23,7 @@
 
 namespace bg2e::scene {
 
-// One XY quad, facing -Z, +X tangent, +Y up. Both UV sets run top-left to
+// One XY quad, facing +Z, +X tangent, +Y up. Both UV sets run top-left to
 // bottom-right. Ordinary material appearance is independent of paragraph data.
 class BG2E_API TextComponent final : public DrawableComponent {
   public:
@@ -39,6 +39,12 @@ class BG2E_API TextComponent final : public DrawableComponent {
     // World units: height=1 by default; width follows logical paragraph aspect.
     // setSize selects manual dimensions. Resolution never changes world size.
     glm::vec2 size() const noexcept;
+    // Unmodified authored pair, including the dormant manual width in aspect mode.
+    glm::vec2 authoredSize() const noexcept
+    {
+        return _size;
+    }
+
     void setSize(const glm::vec2& value) noexcept;
     void setHeight(float value) noexcept;
     bool preserveAspect() const noexcept;
@@ -53,6 +59,7 @@ class BG2E_API TextComponent final : public DrawableComponent {
     void setMaterial(const base::MaterialAttributes& value) noexcept;
 
     bool resourcesDirty() const noexcept;
+    size_t retainedCpuBytes() const noexcept;
     bool hasQuadResources() const noexcept;
     bool canRender() const noexcept;
     void retryResources() noexcept;
@@ -68,7 +75,8 @@ class BG2E_API TextComponent final : public DrawableComponent {
     void update(float delta) override;
     void loadResources(draw::Engine& engine, SceneLoadProgress* progress = nullptr) noexcept override;
     std::shared_ptr<Component> clone() const noexcept override;
-    // Full embedded persistence is deliberately deferred to the next milestone.
+    // Representation only: embedded paragraph and conventional material object.
+    // Albedo source references are ignored; only its UV/sampling data is restored.
     void deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath) noexcept override;
     std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath) noexcept override;
     std::shared_ptr<json::JsonNode> serialize(const std::filesystem::path& basePath) noexcept override;

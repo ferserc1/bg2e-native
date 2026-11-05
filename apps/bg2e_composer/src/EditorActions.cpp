@@ -26,6 +26,8 @@
 #include <bg2e/reflection/Registry.hpp>
 #include <bg2e/json/JsonParser.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include <cstdio>
 
 #include <fstream>
 #include <bg2e/db/scene.hpp>
@@ -59,12 +61,21 @@ void AppDelegate::editGeometry(command::geometry::Operation operation)
         effects.lightmapSources = true;
         effects.renderHistories = true;
         effects.selection = true;
-        queueSceneCommand([weak = weak_from_this(), targets = std::move(targets), operation]
+        queueSceneCommand([weak = weak_from_this(), targets = std::move(targets), operation]() -> std::unique_ptr<bg2e::app::Command>
         {
             auto owner = weak.lock();
             if (!owner)
             {
                 throw std::logic_error("Geometry receiver expired");
+            }
+            for (const auto& target : targets)
+            {
+                auto node = target.node.lock();
+                if (node && node->getComponent<bg2e::scene::TextComponent>())
+                {
+                    std::fprintf(stderr, "Text quad geometry is procedural; edit its rectangle or node transform instead.\n");
+                    return {};
+                }
             }
             auto stopProducers = [weak]
             {

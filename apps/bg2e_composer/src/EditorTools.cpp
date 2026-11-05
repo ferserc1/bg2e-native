@@ -17,6 +17,7 @@
  */
 
 #include "EditorUi.hpp"
+#include <bg2e/scene/TextComponent.hpp>
 
 #include <bg2e/app/FileDialog.hpp>
 #include <bg2e/app/Keyboard.hpp>
@@ -188,22 +189,29 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
             });
             _metadataEdit->submit(key, std::move(request), changed, state);
         };
-        drawMetadata(command::scene::MetadataField::Name, "Submesh name", false);
-        drawMetadata(command::scene::MetadataField::Group, "Group", true);
-        drawMetadata(command::scene::MetadataField::Visibility, "Visible", true);
-        ui::Text::separator("Geometry (whole selected meshes)");
-        using GeometryOperation = command::geometry::Operation;
-        const std::pair<const char*, GeometryOperation> operations[]{
-            {"Z up to Y up", GeometryOperation::ZUpToYUp},
-            {"Center geometry", GeometryOperation::Center},
-            {"Put on floor", GeometryOperation::PutOnFloor},
-            {"cm to m", GeometryOperation::CentimetersToMeters}
-        };
-        for (const auto& [label, operation] : operations)
+        if (target->getComponent<scene::TextComponent>())
         {
-            if (ui::Button::button(label))
+            ui::Text::text("Procedural Text quad: use Scene > Text rectangle or the node transform. Hide with node Enabled.");
+        }
+        else
+        {
+            drawMetadata(command::scene::MetadataField::Name, "Submesh name", false);
+            drawMetadata(command::scene::MetadataField::Group, "Group", true);
+            drawMetadata(command::scene::MetadataField::Visibility, "Visible", true);
+            ui::Text::separator("Geometry (whole selected meshes)");
+            using GeometryOperation = command::geometry::Operation;
+            const std::pair<const char*, GeometryOperation> operations[]{
+                {"Z up to Y up", GeometryOperation::ZUpToYUp},
+                {"Center geometry", GeometryOperation::Center},
+                {"Put on floor", GeometryOperation::PutOnFloor},
+                {"cm to m", GeometryOperation::CentimetersToMeters}
+            };
+            for (const auto& [label, operation] : operations)
             {
-                delegate->editGeometry(operation);
+                if (ui::Button::button(label))
+                {
+                    delegate->editGeometry(operation);
+                }
             }
         }
         if (ui::Button::button("Copy material"))

@@ -25,6 +25,8 @@
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/json/NodeReader.hpp>
+#include <bg2e/json/JsonParser.hpp>
+#include <bg2e/utils/MaterialSerializer.hpp>
 #include "../base/TextDiagnostics.hpp"
 #include <algorithm>
 #include <cmath>
@@ -92,6 +94,21 @@ TextComponent::TextComponent()
 bool TextComponent::requiresBg2Export() const
 {
     return false;
+}
+
+
+size_t TextComponent::retainedCpuBytes() const noexcept
+{
+    size_t bytes = sizeof(*this) + _text.content().capacity() + _text.fontIdentifier().capacity();
+    if (_generator)
+    {
+        bytes += _generator->retainedBytes();
+    }
+    if (_font && (!_generator || _font != _generator->font()))
+    {
+        bytes += _font->byteSize();
+    }
+    return bytes;
 }
 
 
@@ -207,13 +224,15 @@ std::shared_ptr<draw::Drawable::Mesh> TextComponent::makeQuad() const
     const auto dimensions = size();
     const float left = -_pivot.x * dimensions.x, right = left + dimensions.x;
     const float bottom = -_pivot.y * dimensions.y, top = bottom + dimensions.y;
-    const glm::vec3 normal{0, 0, -1}, tangent{1, 0, 0};
+    // Readable front is +Z: viewed from that side, +X is screen-right and
+    // +Y is screen-up. Keep both top-left UV sets unchanged, not mirrored.
+    const glm::vec3 normal{0, 0, 1}, tangent{1, 0, 0};
     mesh->vertices = {
         {{left, top, 0}, normal, {0, 0}, {0, 0}, tangent},
         {{right, top, 0}, normal, {1, 0}, {1, 0}, tangent},
         {{right, bottom, 0}, normal, {1, 1}, {1, 1}, tangent},
         {{left, bottom, 0}, normal, {0, 1}, {0, 1}, tangent}};
-    mesh->indices = {0, 1, 2, 0, 2, 3};
+    mesh->indices = {0, 2, 1, 0, 3, 2};
     mesh->submeshes = {{0, 6}};
     return mesh;
 }
@@ -628,7 +647,7 @@ catch (...)
 }
 
 
-void TextComponent::deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path&) noexcept
+void TextComponent::deserialize(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath) noexcept
 try
 {
     deserializeCommon(data);
@@ -642,14 +661,81 @@ try
     {
         _text.deserialize(text->node());
     }
+    const bool aspect = reader.getBool("preserveAspect").value_or(_preserveAspect);
     if (auto size = reader.getVec2("size"))
     {
         setSize({(*size)[0], (*size)[1]});
     }
-    setPreserveAspect(reader.getBool("preserveAspect").value_or(_preserveAspect));
+    setPreserveAspect(aspect);
     if (auto pivot = reader.getVec2("pivot"))
     {
         setPivot({(*pivot)[0], (*pivot)[1]});
+    }
+    if (auto embedded = reader.getObject("material"))
+    {
+        // Copy only the representation. Drop an untrusted albedo reference
+        // before the conventional parser can construct or resolve that source.
+        auto object = embedded->node()->objectValue();
+        object.erase("albedoTexture");
+        const auto mode = embedded->getString("indirectTextureMode");
+        if (mode && *mode != "ao" && *mode != "bakedAO" && *mode != "bakedGI")
+        {
+            object.erase("indirectTextureMode");
+            base::detail::textWarning("Invalid text material indirect mode; using previous/default value.");
+        }
+        for (const char* key : {"albedoTextureSettings", "metalnessTextureSettings", "roughnessTextureSettings",
+            "normalTextureSettings", "ambientOcclussionSettings", "lightEmissionTextureSettings"})
+        {
+            if (auto settings = embedded->getObject(key))
+            {
+                auto repaired = settings->node()->objectValue();
+                for (const char* field : {"mag", "min", "u", "v", "w", "color"})
+                {
+                    if (settings->isUndefined(field))
+                    {
+                        continue;
+                    }
+                    auto value = settings->getInteger<uint32_t>(field);
+                    const std::string name(field);
+                    const uint32_t maximum = name == "mag" || name == "min" ? 1 : name == "color" ? 2 : 3;
+                    if (!value || *value > maximum || (name == "color" && *value == 0))
+                    {
+                        repaired.erase(field);
+                        base::detail::textWarning("Invalid text material sampler enum; using previous/default value.");
+                    }
+                }
+                object[key] = json::JSON(repaired);
+            }
+        }
+        auto attributes = material();
+        auto generator = std::make_shared<base::TextTextureGenerator>(_text, nullptr);
+        auto source = base::createTextTexture(generator);
+        if (!source)
+        {
+            base::detail::textWarning("Cannot restore text material source; previous material retained.");
+        }
+        else
+        {
+            source->setSourceEditable(false);
+            source->setIgnoreSerialization(true);
+            attributes.setAlbedoTexture(source);
+            try
+            {
+                utils::MaterialSerializer serializer;
+                if (!serializer.deserializeMaterial(json::JSON(object)->serialize(), basePath, attributes))
+                {
+                    base::detail::textWarning("Invalid embedded text material; defaults retained.");
+                }
+            }
+            catch (...)
+            {
+                // Keep fields already recovered by the conventional parser;
+                // a malformed optional material must not discard the paragraph.
+                base::detail::textWarning("Malformed text material; retaining recovered/default fields.");
+            }
+            _pendingMaterial = std::move(attributes);
+            _generator = std::move(generator);
+        }
     }
     retryResources();
 }
@@ -659,9 +745,66 @@ catch (...)
 }
 
 
-std::shared_ptr<json::JsonNode> TextComponent::serializeReferences(const std::filesystem::path&) noexcept
+std::shared_ptr<json::JsonNode> TextComponent::serializeReferences(const std::filesystem::path& basePath) noexcept
+try
 {
-    base::detail::textWarning("Editable text persistence is not available until the next milestone; save must be refused.");
+    auto result = Component::serialize(basePath);
+    auto paragraph = _text.serialize();
+    if (!result || !paragraph)
+    {
+        base::detail::textWarning("Cannot serialize editable text; save refused.");
+        return nullptr;
+    }
+    auto attributes = material();
+    // Ownership is component logic, never trust a replaced source's export flag.
+    auto source = attributes.albedoTexture() ?
+        std::make_shared<base::Texture>(*attributes.albedoTexture()) : base::createTextTexture(_generator);
+    if (!source)
+    {
+        base::detail::textWarning("Cannot serialize text sampling; save refused.");
+        return nullptr;
+    }
+    source->setIgnoreSerialization(true);
+    attributes.setAlbedoTexture(source);
+    for (const auto& texture : {attributes.metalnessTexture(), attributes.roughnessTexture(),
+        attributes.normalTexture(), attributes.aoTexture(), attributes.lightEmissionTexture()})
+    {
+        if (texture && !texture->ignoreSerialization() && texture->type() != base::Texture::TypeFilesystem)
+        {
+            base::detail::textWarning("Text material has a procedural image; use a complete scene save.");
+            return nullptr;
+        }
+    }
+    utils::MaterialSerializer serializer;
+    std::vector<std::shared_ptr<base::Texture>> textures;
+    auto embedded = json::JsonParser(serializer.serializeMaterial(attributes, textures, false)).parse();
+    const auto directory = std::filesystem::absolute(basePath.empty() ? "." : basePath).lexically_normal();
+    for (auto& [key, value] : embedded->objectValue())
+    {
+        if (key == "metalnessTexture" || key == "roughnessTexture" || key == "normalTexture" ||
+            key == "ambientOcclussion" || key == "lightEmissionTexture")
+        {
+            if (!value || !value->isString() || value->stringValue().empty())
+            {
+                base::detail::textWarning("Text material has an unexported image; use a complete scene save.");
+                return nullptr;
+            }
+            auto path = std::filesystem::absolute(value->stringValue()).lexically_normal();
+            auto relative = path.lexically_relative(directory);
+            value = json::JSON((relative.empty() ? path : relative).generic_string());
+        }
+    }
+    auto& object = result->objectValue();
+    object["text"] = paragraph;
+    object["material"] = embedded;
+    object["size"] = json::JSON(std::array<float, 2>{_size.x, _size.y});
+    object["preserveAspect"] = json::JSON(_preserveAspect);
+    object["pivot"] = json::JSON(std::array<float, 2>{_pivot.x, _pivot.y});
+    return result;
+}
+catch (...)
+{
+    base::detail::textWarning("Cannot serialize editable text/material; save refused.");
     return nullptr;
 }
 

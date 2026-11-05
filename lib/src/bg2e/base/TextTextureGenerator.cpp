@@ -25,6 +25,23 @@
 #include <utility>
 
 namespace bg2e::base {
+
+size_t TextTextureGenerator::retainedBytes() const noexcept
+{
+    size_t bytes = sizeof(*this) + _text.content().capacity() + _text.fontIdentifier().capacity();
+    if (_font)
+    {
+        bytes += _font->byteSize();
+    }
+    if (_cache)
+    {
+        bytes += sizeof(*_cache) + _cache->rgba.capacity() +
+            _cache->layout.glyphs.capacity() * sizeof(TextLayout::Glyph) +
+            _cache->layout.lines.capacity() * sizeof(TextLayout::Line);
+    }
+    return bytes;
+}
+
 namespace {
 uint64_t nextGeneratorIdentity()
 {
