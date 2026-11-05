@@ -273,8 +273,8 @@ void EditorUi::initCreateNodeMenu()
 {
     const auto weakDelegate = _delegate;
     bg2e::ui::MenuItem create("Create Node");
-    const char* nodeTypes[]{"Group", "Camera", "Light", "Environment", "Text"};
-    for (unsigned kind = 0; kind < 5; ++kind)
+    std::array<const char*, 4> nodeTypes{"Group", "Camera", "Light", "Environment" };
+    for (unsigned kind = 0; kind < nodeTypes.size(); ++kind)
     {
         create.addMenuItem({nodeTypes[kind], {.handler = [weakDelegate, kind]
         {
@@ -285,8 +285,8 @@ void EditorUi::initCreateNodeMenu()
         }}});
     }
     create.addMenuItem({});
-    const char* primitiveTypes[]{"Cube", "Sphere", "Plane"};
-    for (unsigned kind = 0; kind < 3; ++kind)
+    std::array<const char*, 4> primitiveTypes{"Cube", "Sphere", "Plane", "Text" };
+    for (unsigned kind = 0; kind < primitiveTypes.size(); ++kind)
     {
         create.addMenuItem({std::string("Create ") + primitiveTypes[kind], {.handler = [weakDelegate, kind]
         {
