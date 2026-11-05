@@ -102,6 +102,36 @@ does not mutate the selected target inline. `queuePatch()` and
 `queueClearTexture()` enqueue intent; weak target, renderer generation and
 binding revision checks protect the later safe-boundary application.
 
+Generic controls include **Double sided**. Texture source policy comes from
+authored Texture descriptions, not stale realized settings. For a TextComponent's
+generated albedo, preview stays visible, replace/clear/picker/history/drop source
+changes are unavailable, and UV set/scale plus filtering/addressing/mipmap/color/
+LOD controls remain editable. Recheck locks when commands execute; a source-changing
+mixed selection must reject as a whole. Whole-material paste/replacement preserves
+the receiver's locked source and flags while applying other material/sampling
+data. Rejected locks warn and return no-op/rejected status, not a recoverable text
+exception. See [texture metadata](../base/Texture.md#source-ownership-and-export-policy)
+and [Composer controls](../../apps/draw_composer.md#text-and-font-authoring).
+
+Public source-policy helpers in `bg2e::ui` are:
+
+```cpp
+bool materialTextureSourceEditable(const base::MaterialAttributes& material,
+    draw::TextureSlot slot) noexcept;
+bool validateMaterialSourceEdit(const base::MaterialAttributes& material,
+    const MaterialEditIntent& intent) noexcept;
+```
+
+They inspect authored settings; the validator warns/returns false before mutation
+for locked source edits or malformed slots. `TextureSamplingEdit` is an all-optional
+partial CPU edit (`void apply(base::Texture&) const`) with colorType, magFilter,
+minFilter, addressU/V/W, mipmaps, lodBias, minLod and maxLod. Empty fields preserve
+each receiver's value. `MaterialEditIntent::sampling` carries that typed edit and
+samplingSlot selects the slot; it never transports a source mutation callback.
+The callback-taking `queueTextureSettings(slot, edit)` remains sampling-only:
+opaque source/ownership changes are not published through it. Source changes use
+an explicit patch/clear intent, whose lock is revalidated at execution.
+
 ```cpp
 _drawMaterialEditor.init(engine, delegate);
 _drawMaterialEditor.setSelectionManager(selection);

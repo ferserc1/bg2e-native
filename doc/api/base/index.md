@@ -23,6 +23,10 @@ objects describe resources; rendering consumers realize the corresponding GPU da
 | `Texture, ProceduralTextureGenerator` | [Texture](Texture.md) | Texture descriptions and procedural sources. |
 | `MaterialAttributes` | [MaterialAttributes](MaterialAttributes.md) | Material parameters, textures, and revision tracking. |
 | `Light, LightData` | [Light](Light.md) | Illumination settings and transport data. |
+| `Text` | [Text](Text.md) | CPU UTF-8 paragraph/layout/resolution parameters; no appearance. |
+| `TextFont` | [TextFont](TextFont.md) | Immutable trusted font bytes, metrics and glyph coverage. |
+| `TextRasterizer, TextLayout, TextRasterization` | [TextRasterizer](TextRasterizer.md) | Bounded logical layout and white-RGB/coverage-alpha pixels. |
+| `TextTextureGenerator, createTextTexture` | [TextTextureGenerator](TextTextureGenerator.md) | Independent cached procedural text source. |
 | `Joint, LinkJoint` | [Joint](Joint.md) | Serializable articulated transforms. |
 | `PlatformTools` | [PlatformTools](PlatformTools.md) | Platform and application resource paths. |
 | `Log` | [Log](Log.md) | Stream-based diagnostic output. |

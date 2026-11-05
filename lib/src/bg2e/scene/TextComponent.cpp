@@ -393,6 +393,9 @@ bool TextComponent::prepareResources(draw::Engine& engine) noexcept
             source->setSourceEditable(false);
             source->setIgnoreSerialization(true);
             std::unique_ptr<base::Image> pixels(source->generateImage());
+            // generateImage records the generator's native encoding. Sampling
+            // interpretation is authored material data and must survive typing.
+            source->setColorType(colorType);
             if (!pixels || !pixels->isValid())
             {
                 base::detail::textWarning("Text bitmap unavailable; text omitted.");

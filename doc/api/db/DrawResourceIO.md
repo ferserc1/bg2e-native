@@ -59,19 +59,19 @@ Uploads/mipmap generation are still synchronous; GPU batching is future work.
 ```cpp
 if (!bg2e::db::saveScene(root.get(), engine, outputDirectory / "model.json"))
 {
-    throw std::runtime_error("Complete scene export failed");
+    std::cerr << "Complete scene export failed; existing document retained.\n";
 }
 if (!bg2e::db::storeDrawableBg2(outputDirectory / "model.bg2", engine, modelNode.get()))
 {
-    throw std::runtime_error("Complete model export failed");
+    std::cerr << "Complete model export failed.\n";
 }
 ```
 
 These engine-aware save functions return bool and are noexcept: false reports a
 logged failure. Check the result before declaring document/batch success; a
 try/catch alone cannot detect it. The example fragment assumes live root/engine/
-modelNode and includes `<stdexcept>`. Destination parents are created by export.
-Export requires realized drawables owned by the supplied Engine and no unresolved
+modelNode and includes `<iostream>`. Destination parents are created by export.
+Ordinary model export requires realized drawables owned by the supplied Engine and no unresolved
 pending texture updates. It snapshots live material attributes. Only explicitly
 assigned textures are persisted: missing slots remain absent and the renderer
 recreates its neutral placeholders. Filesystem images retain their filenames and
@@ -97,7 +97,9 @@ components with external resource types must provide their own resource export
 contract. Environment source images are copied without re-encoding. Runtime
 editor fixtures should set `ignoreSerialization`; ignored Drawables are not
 exported. Temporary Drawable paths are exchanged and restored without allocation,
-including on a serialization failure. Live texture settings are not modified.
+including on a serialization failure. Embedded text material descriptions may be
+temporarily exchanged at the stopped IO boundary; exact authored descriptions,
+source paths, policy and revisions are restored on success and failure.
 
 Ignored runtime editor helpers do not block single-model export. BG2 alone
 accepts one enabled, non-steady model node with an identity Node
@@ -129,6 +131,51 @@ GPU-only HDR mip-zero export, placeholder exclusion, filename reuse, metadata
 round-trip and rollback. Compilation, backend execution
 and editor interaction validation are project-lead tasks; no execution evidence
 is implied by these source contracts.
+
+## Editable text and font assets
+
+`DrawableComponent::requiresBg2Export() const` defaults true. Export checks it
+**before** model snapshot/texture collection/BG2 allocation/resourcePath changes.
+TextComponent returns false but still runs its virtual serializer, embedding
+`text` and conventional `material` objects plus size/aspect/pivot. Entire-component
+ignoreSerialization instead omits the component. `storeDrawableBg2` and Composer
+model export refuse Text rather than wrapping/baking it as an ordinary drawable.
+
+The generated albedo source is omitted from both references and assets. Its
+sampling/UV/scale metadata survives through settings-only material records;
+TextComponent creates its procedural source before restoring those settings and
+ignores any incoming albedo source reference before it can be opened. Other
+material textures/settings remain conventional. Ignored texture sources are
+skipped before image cloning/readback/export, not only hidden in JSON.
+
+Complete saving copies TextFontComponent font files and notices byte-for-byte,
+retaining extensions. Explicit declaration `notices` persist in JSON; when absent,
+the exporter recognizes adjacent OFL.txt, LICENSE/LICENSE.txt/LICENSE.md, COPYING,
+NOTICE/NOTICE.txt and README.md. This includes canonical Didact Gothic's full OFL
+and pinned provenance record. No discovered notices emits a warning to supply
+required notices/verify redistribution rights, not an invented license. Missing
+fonts, required images or explicitly supplied notices fail complete saving with
+false/status/rollback; reference-only saving can retain missing filesystem paths.
+Loading such a font later warns and omits dependent text, not the rest of a scene.
+
+Font/notice/embedded filesystem-image copies use full canonical source-path
+identity and unique generation/sequence filenames, preserving extensions, so
+equal basenames do not alias. Embedded non-albedo procedural images are encoded
+from CPU pixels as PNG. These rules are distinct from the **unchanged legacy
+model-image basename reuse** described above. Old generations remain on disk.
+
+Save, Save As and copying a complete scene to another directory serialize relative
+to the private resource generation, rewrite references for publication beside the
+destination document, and publish the main file last. Authored live paths are
+restored even on success; the reopened destination uses its packaged copies.
+Schema-only save rewrites lexical relative references to its target directory but
+copies no assets. Failed/null Text/TextFonts serialization propagates through
+Node to prevent silent data loss. Unavailable text GPU realization alone does
+not discard the editable paragraph/material; complete saving still requires the
+referenced external files to be copyable.
+
+See [TextComponent](../scene/TextComponent.md), [font declarations](../scene/TextFontComponent.md)
+and [font licensing](../base/TextFont.md#security-and-licensing).
 
 ## Model editor bake integration
 

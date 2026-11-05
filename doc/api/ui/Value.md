@@ -11,6 +11,7 @@ value argument **in place** and returns `true` on the frame the value changed
 ```cpp
 class BG2E_API Value {
 public:
+    static bool multilineText(const std::string& label, std::string& value, int capacity = 65537, float height = 110);
     static bool text(const std::string& label, std::string& value, int maxLength = 200, bool sameLine = false, bool disabled = false);
     static bool textWithHint(const std::string& label, const std::string& hint, std::string& value, int maxLength = 200, bool sameLine = false);
 
@@ -26,6 +27,14 @@ public:
 ---
 
 ## Text fields
+
+- `multilineText()` is the UTF-8 multiline wrapper used by Composer and the
+  [text tutorial](../../tutorials/text/README.md). Capacity includes the NUL;
+  default capacity accommodates Text's 64 KiB content budget. Height is UI units.
+  It edits a transient string and returns true on change, not a queued scene
+  mutation. The buffer accommodates existing text even if longer than capacity;
+  Text normalization/limits remain the data owner's responsibility. UI buffer/
+  argument allocation can fail; contain that at the editor callback boundary.
 
 - `text()` copies the `std::string` into a fixed `char` buffer of `maxLength`;
   typing past `maxLength` is truncated. Only writes back to the string when

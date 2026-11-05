@@ -11,6 +11,7 @@ low-level backend abstraction. Root `<bg2e/all.hpp>` exports the current modules
 - [Application](app/index.md), [scene](scene/index.md), [DB](db/index.md).
 - [Manipulation](manipulation/index.md), [utilities](utils/index.md), [UI](ui/index.md).
 - [Reflection](reflection/index.md), [geometry](geo/index.md), [JSON](json/index.md).
+- [Editable text](scene/TextComponent.md): [CPU data](base/Text.md), [font resources](scene/TextFontComponent.md), [paragraph rasterization](base/TextRasterizer.md) and the [runnable beginner tutorial](../tutorials/text/README.md).
 
 See [migration](../migration_to_draw.md), [draw tutorials](../tutorials/draw/index.md)
 and [build/distribution](../architecture/build_and_distribution.md).

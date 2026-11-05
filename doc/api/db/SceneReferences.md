@@ -7,6 +7,14 @@ Headers: `<bg2e/db/scene.hpp>`, `<bg2e/db/mesh_obj.hpp>`,
 fields/components, without constructing a graph or opening referenced assets.
 `loadScene(path)` builds typed CPU attributes and unresolved references;
 `saveSceneReferences(root, path)` serializes references without GPU export.
+
+Its signature is `bool saveSceneReferences(scene::Node* root,
+const std::filesystem::path& filePath, scene::SceneProgressCallback onProgress = nullptr) noexcept`.
+Check false before reporting success. It writes a private staged representation
+relative to the final target directory and replaces the document atomically last;
+serialization/callback/write failure leaves an existing document unchanged. It
+copies no assets. This transactional graph save is separate from the lower-level
+raw `writeSceneDocument`, which writes the supplied representation directly.
 Unregistered component types warn and are skipped; loading continues with later
 components and child nodes. The draw-engine factory also returns null for such
 types without attempting resource loading. Typed saves do not preserve skipped
@@ -16,6 +24,21 @@ Registered constructor contract violations, parser and resource failures remain
 errors rather than silently loading production resources. Components implement graphics-free `deserialize(data, path)`
 and `serializeReferences(path)`; `loadResources(draw::Engine&, progress)` is the
 separate realization stage.
+
+Text and font components have explicit recovery boundaries: missing fonts,
+malformed text/layout parameters and text backend failures warn/use defaults or
+transparent output without aborting the rest of a scene. Graphics-free parsing
+constructs all declarations/paragraphs first. Node::loadResources prepares the
+owning Scene's complete font registry before any text, regardless of declaration
+node order; Composer's incremental loader likewise retains a private resource
+Scene. Detached font-bearing subtrees need an owning Scene before realization.
+See [registry](../scene/Scene.md#text-font-registry).
+
+Text embeds its paragraph and conventional material as JSON objects. Generated
+albedo source references are never read/exported; sampling-only metadata remains.
+Nonignored non-albedo procedural images require complete saving rather than empty
+filesystem references. Null Text/TextFonts serializers fail the graph save rather
+than silently dropping authored data. See [editable resource packaging](DrawResourceIO.md#editable-text-and-font-assets).
 
 `loadScene(path, drawEngine)` realizes supported references synchronously using
 that context. Production Engine overloads are removed. `loadDrawableObj(path,
@@ -52,5 +75,5 @@ Camera component clones now independently copy their projections through virtual
 projection subclasses must return their own concrete type. Perspective schema IO
 retains FOV/near/far. Unsupported serialized base Camera projection types fail
 explicitly; a custom Camera component needs its own parser for custom formats.
-See the [Composer IO handoff](../../../docs/render_to_draw/plan/milestone_07_bg2e_composer/scene-io-cloning.md)
+See [Composer document IO](../../apps/draw_composer.md#documents-and-imports)
 and [manual checks](../../../tests/draw/composer_io/README.md).

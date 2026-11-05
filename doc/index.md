@@ -5,6 +5,7 @@ Draw is the production scene renderer over Vulkan or Metal. Start with the
 [applications](apps/index.md). GPU tutorials cover lower-level resources.
 
 - [Plugin tutorials](tutorials/plugins/index.md): [automatic component plugins](tutorials/plugins/plugin.md) and the [raw dynamic-library example](tutorials/plugins/dynamic_library.md)
+- [Editable Hello World text](tutorials/text/README.md): beginner walkthrough, complete windowed source, font resources and directional glyph shadows.
 - [Architecture](architecture/index.md) and [window configuration](window_api.md)
 - [Migration and breaking changes](migration_to_draw.md)
 - [Build, native shaders and distribution](architecture/build_and_distribution.md)

@@ -28,6 +28,14 @@ an owning drawable.
 successfully selected/applied submeshes (including valid no-op patches), or
 zero for an invalid patch/no matches.
 
+`bool changesTextureSource(uint32_t slot) const noexcept` is read-only patch
+inspection for supported editor source locks. Slots 0–5 are albedo, metalness,
+roughness, normal, AO and emission. An invalid patch returns false; an invalid
+slot warns/returns false. It reports source assignment intent, not sampling/UV
+changes. Generic direct `apply` does not enforce procedural ownership; editor
+mutation owners preflight all receivers and reject locked source changes before
+publishing anything. `doubleSided` is part of ordinary partial material patches.
+
 For draw targets, call at a stopped scene/GPU boundary. Texture load/update
 exceptions propagate, and a multi-submesh patch is not transactional: earlier
 patches may have applied. The caller should request redraw and reset relevant

@@ -64,7 +64,7 @@ class BG2E_API TextTextureGenerator final : public ProceduralTextureGenerator {
 };
 
 // Initial sampling defaults only. Subsequent configure() calls never overwrite
-// user sampling. Ownership/edit/export metadata belongs to the future component.
+// user sampling. Ownership/edit/export metadata belongs to scene::TextComponent.
 BG2E_API std::shared_ptr<Texture> createTextTexture(std::shared_ptr<TextTextureGenerator> generator) noexcept;
 
 }

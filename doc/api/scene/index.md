@@ -10,6 +10,20 @@ Custom schema factories construct detached instances with the registered typeNam
 
 Applications own dirty state, history/bake invalidation and document/job identities. Queue mutations at stopped boundaries and validate membership when they execute. Graph primitives do not supply Composer's camera restrictions, worker services or batch transactions. See [safe updates](../../safe_update_scene.md) and [Composer](../../apps/draw_composer.md).
 
+## Editable text
+
+- [TextFontComponent](TextFontComponent.md): scene-wide declaration collections, source paths and notices.
+- [Scene font registry](Scene.md#text-font-registry): gather all declarations before loading any text; nullable cached availability.
+- [TextComponent](TextComponent.md): one procedural quad/conventional material, stopped regeneration, +Z readable front, clone/recovery/persistence.
+- [DrawableComponent export query](DrawableComponent.md): skip BG2 export without skipping component data.
+- [Beginner tutorial](../../tutorials/text/README.md): complete window/floor/live Hello World with directional glyph shadows.
+
+Text/font parsers/resource boundaries warn and recover instead of propagating
+recoverable errors. One unavailable font/text does not abort the rest of the
+scene. Null Text/TextFonts serializers propagate a save failure rather than being
+silently dropped. These specific recovery contracts do not turn arbitrary custom
+registered component failures into nonthrowing operations.
+
 DrawableComponent stores only draw::Drawable. `drawable()` returns a shared owner
 (const component access returns const Drawable); `setDrawable`/`clearDrawable`
 coordinate existing GPU users and reject a cross-engine replacement until cleared.

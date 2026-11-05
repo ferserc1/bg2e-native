@@ -13,6 +13,10 @@ Each documentation page uses the same filename as its public header.
 | `Texture, ProceduralTextureGenerator` | [Texture](Texture.md) | Texture descriptions and procedural sources. |
 | `MaterialAttributes` | [MaterialAttributes](MaterialAttributes.md) | Material parameters, textures, and revision tracking. |
 | `Light, LightData, SolarState` | [Light](Light.md) | Illumination settings, solar evaluation and transport data. |
+| `Text` | [Text](Text.md) | Validated CPU paragraph data and JSON representation. |
+| `TextFont` | [TextFont](TextFont.md) | Trusted immutable font loading and glyph rasterization. |
+| `TextRasterizer, TextLayout, TextRasterization` | [TextRasterizer](TextRasterizer.md) | Logical layout and bounded RGBA coverage. |
+| `TextTextureGenerator, createTextTexture` | [TextTextureGenerator](TextTextureGenerator.md) | Cached independent procedural source. |
 | `Joint, LinkJoint` | [Joint](Joint.md) | Serializable articulated transforms. |
 | `PlatformTools` | [PlatformTools](PlatformTools.md) | Platform and application resource paths. |
 | `Log` | [Log](Log.md) | Stream-based diagnostic output. |
@@ -28,6 +32,8 @@ Each documentation page uses the same filename as its public header.
 | `Light.hpp` | `Light::LightType`. |
 | `Joint.hpp` | `LinkTransformOrder`. |
 | `Texture.hpp` | `Texture::TextureType`, `Filter`, `AddressMode`. |
+| `Text.hpp` | `Text::Parameters`, `Size`, `Resolution`, `Margins`, `Alignment`, `VerticalAlignment`, `WrapMode`, `OverflowPolicy`. |
+| `TextFont.hpp` | `TextFont::Metrics`, `GlyphMetrics`, `GlyphBitmap`. |
 | `MaterialAttributes.hpp` | `MaterialAttributes::IndirectTextureMode`. |
 | `PlatformTools.hpp` | `Platform`. |
 | `Log.hpp` | `Log::Level` and `bg2e_log_*` macros. |

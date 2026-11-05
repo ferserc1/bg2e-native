@@ -60,3 +60,11 @@ paused; commit lifecycle changes there with no active command scope.
 Protected `requestSceneFrame()` invalidates subsequent scene work.
 [DefaultRenderLoopDelegate](RendererDeferred.md) implements runtime renderer/scene
 ownership, queued replacement and generation-checked updates above this base.
+
+DefaultRenderLoopDelegate also prepares [TextComponent](../scene/TextComponent.md#resource-lifecycle)
+subtrees after queued changes/reconfiguration, before renderer preparation and
+frame acquisition. It requests scene work and invalidates renderer histories on
+text publication. CPU typing can use `enqueueCpuValueUpdate(rendererGeneration(), callback)`;
+only the stopped preparation phase rasterizes/uploads. Custom delegates must call
+`TextComponent::prepareResources(root, engine)` at an equivalent boundary, with
+frame/background producers stopped. See the [minimal example](../../tutorials/text/README.md#10-live-edits-without-gpu-work-in-the-ui).

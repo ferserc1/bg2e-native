@@ -29,7 +29,7 @@ namespace bg2e::base {
 
 // CPU paragraph data only. Logical units determine layout; bitmap dimensions
 // only determine sampling density. World-space quad dimensions belong to the
-// future component, not to this data or the rasterizer. No appearance is stored.
+// scene TextComponent, not to this data or the rasterizer. No appearance is stored.
 class BG2E_API Text {
   public:
     enum class Alignment

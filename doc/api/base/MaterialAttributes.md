@@ -16,6 +16,7 @@ setter (for example, `albedo()` / `setAlbedo(...)`).
 | `isTransparent` | false; transparency selection. Setter: `setIsTransparent`. |
 | `isSolid` | true. Setter: `setIsSolid`. |
 | `isUnlit` | false. Setter: `setIsUnlit`. |
+| `doubleSided` | false. `bool doubleSided() const` / `void setDoubleSided(bool)`. |
 | `refractionFactor` | 0.017; screen-space refraction strength for transparent materials. |
 | `alphaCutoff` | 0; discard below final albedo alpha threshold. |
 | `albedo` | White; setters accept `Color` or float arrays of length 3/4. |
@@ -27,6 +28,27 @@ setter (for example, `albedo()` / `setAlbedo(...)`).
 | `name`, `groupName`, `visible` | Empty names and true; metadata retained for mesh serialization. |
 
 ## Texture slots
+
+Double sided is generic material state, not a text feature: it selects no-cull
+raster/picking variants and allows traced backfaces. The authored tangent frame
+is normal-mapped first, then the resulting normal is reversed once on a double-sided
+backface. Single-sided ray visibility rejects backfaces before alpha testing,
+including mirrored transforms. Materials previously relying on invisible backfaces
+as ray blockers must explicitly enable it. Clones, material JSON, glTF's
+doubleSided import and Composer undo/redo retain the value.
+
+Alpha cutoff tests the sampled albedo alpha times the material scalar alpha.
+The public draw helper `float effectiveAlphaTestCutoff(float authoredCutoff)` in
+`<bg2e/draw/ShaderData.hpp>` validates finite `[0,1]` input, then returns zero for
+values below `AlphaTestCutoffThreshold = 0.02f` (equality enables the test).
+Invalid generic material cutoffs throw at packing; TextComponent contains those
+lower-level failures and omits the text. Use 0.1 as the text/tutorial default,
+not merely an arbitrarily small positive cutoff. Packing derives the public
+`MaterialDoubleSided = 128` flag from the material value; applications should
+edit the material rather than patching packed GPU flags.
+Text's generated coverage therefore cuts out real glyph silhouettes in raster,
+shadows and traced visibility; picking intentionally retains its whole rectangle.
+See [TextComponent](../scene/TextComponent.md).
 
 Slots are `albedoTexture`, `metalnessTexture`, `roughnessTexture`,
 `normalTexture`, `aoTexture`, and `lightEmissionTexture`. Each getter returns

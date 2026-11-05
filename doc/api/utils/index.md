@@ -10,6 +10,7 @@ implemented utilities for draw workflows and graphics-independent CPU data; the 
 | [`TextureCache`](TextureCache.md) | `<bg2e/utils/TextureCache.hpp>` | Weak draw texture realization reuse validated against its Engine/device. |
 | [`BlueNoise`](BlueNoise.md) | `<bg2e/utils/BlueNoise.hpp>` | CPU rank tiles, deterministic sampling and explicitly shared GPU noise atlas. |
 | [`MaterialModifier`](MaterialModifier.md) | `<bg2e/utils/MaterialModifier.hpp>` | Reusable partial material patches for CPU attributes and draw materials/drawables. |
+| [`MaterialSerializer`](MaterialSerializer.md) | `<bg2e/utils/MaterialSerializer.hpp>` | Conventional PBR JSON, including source-less procedural sampler metadata. |
 | [`ViewpointAnalyzer`](ViewpointAnalyzer.md) | `<bg2e/utils/ViewpointAnalyzer.hpp>` | Synchronous candidate-view analysis for the draw scene API. |
 | [`SceneCameraUtils`](SceneCameraUtils.md) | `<bg2e/utils/SceneCameraUtils.hpp>` | Camera FOV query and projection-preserving orbit viewpoint application. |
 

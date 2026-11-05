@@ -3,12 +3,12 @@
 ## Resume here
 
 - Planning: complete.
-- Implementation: steps 1–6 implemented and accepted; step 7 implemented awaiting user acceptance; step 8 not started.
-- Current milestone: **7 — Composer authoring and integrated interaction**, implemented with user-reported quad/gizmo fixes; awaiting confirmation of those fixes.
-- Next milestone: **8 — API documentation and runnable tutorial**, not started.
-- Next action: await user confirmation that single-sided text is readable from its +Z front and gizmo translate/rotate/scale plus undo/redo work for Text and font-bearing nodes. Fix further reports within step 7 before advancing. Step 8 is not authorized by this bug report.
-- Blockers: the user reported mirrored single-sided text and gizmo admission refusal; targeted source fixes are implemented but not yet user-confirmed. Other step-7 manual checks passed according to the user. Preceding uncommitted work is preserved.
-- Builds/application checks: no agent execution. The user ran the step-7 Composer checks and reports success except for the two issues recorded in the follow-up below.
+- Implementation: complete; all eight milestones implemented and user accepted.
+- Current milestone: **8 — Final API documentation and interactive tutorial**, accepted by the user.
+- Next milestone: none; no implementation steps remain in this plan.
+- Next action: create the user-requested final commit and stop. Further feature work requires a separate request.
+- Blockers: none reported for the accepted plan. The concurrent user-owned Composer EditorUi.cpp menu edit is preserved outside the final milestone commit; it is not a remaining plan step.
+- Builds/application checks: no agent execution. Final acceptance is the user's explicit report that everything is correct; no particular platform/build/runtime coverage is inferred beyond that report.
 - Canonical font: `assets/fonts/didact-gothic/DidactGothic-Regular.ttf`, OFL 1.1; verified against pinned upstream in step 3. The differing pre-existing root-level asset is preserved.
 - Mandatory user correction: no recoverable text/font/layout/source-edit exceptions. Warn and repair parameters, return transparent/unavailable text or safe rejected status, contain lower-level exceptions, preserve the running scene. The [recovery policy](recovery-policy.md) supersedes historical exception/rejection decisions below.
 
@@ -22,8 +22,8 @@
 | 4 | Text data and procedural rasterization | Implemented | Accepted by continuation |
 | 5 | TextComponent | Implemented | Accepted after user compilation |
 | 6 | Scene persistence and packaging | Implemented | Accepted by continuation |
-| 7 | Composer integration | Implemented | Pending |
-| 8 | API docs and interactive tutorial | Not started | Pending |
+| 7 | Composer integration | Implemented | Accepted by continuation |
+| 8 | API docs and interactive tutorial | Implemented | Accepted by user |
 
 ## Mandatory handoff record
 
@@ -454,3 +454,58 @@ Do not mark implementation or acceptance complete based on this template. No bui
 - No additional build/runtime confirmation was supplied with the commit request. Step 7 remains implemented awaiting confirmation of those two fixes; the user's other manual observations remain recorded above. Committing does not authorize step 8.
 - Verification for this commit is source/diff review and `git diff --check` only. No builds, application launches, automated checks or push are requested/performed.
 - Next action: stop after committing and await user feedback or a separate continuation request. Fix outstanding step-7 reports before advancing to the final documentation/tutorial milestone.
+
+### Step 8 — Final API documentation and interactive Hello World tutorial
+
+- Status: implemented, awaiting final user compilation/manual acceptance. The user requested continuation after commit a4c77eda, accepting step 7 and its reported front-face/gizmo corrections by continuation; no extra native validation result is inferred.
+- Changed implementation/build files:
+  - `examples/tutorials/text/src/main.cpp` (new complete learning application, not a test executable)
+  - `examples/tutorials/text/CMakeLists.txt` (new tutorial_text target using bundle_app_sdl)
+  - `examples/CMakeLists.txt` (one target registration)
+  - `lib/src/bg2e/scene/TextComponent.cpp` (narrow authored color-interpretation preservation fix)
+  - `lib/include/bg2e/base/Text.hpp`, `lib/include/bg2e/base/TextTextureGenerator.hpp` (documentation comments only, removing obsolete future-component wording)
+- New documentation:
+  - `examples/tutorials/text/README.md`
+  - `doc/tutorials/text/README.md`
+  - `doc/api/base/Text.md`, `TextFont.md`, `TextRasterizer.md`, `TextTextureGenerator.md`
+  - `doc/api/scene/TextComponent.md`, `TextFontComponent.md`, `Scene.md`, `DrawableComponent.md`
+  - `doc/api/utils/MaterialSerializer.md`
+- Updated documentation/navigation:
+  - `doc/index.md`, `doc/api/index.md`, `doc/tutorials/draw/index.md`
+  - `doc/api/base/index.md`, `reference.md`, `MaterialAttributes.md`, `Texture.md`
+  - `doc/api/scene/index.md`, `doc/api/draw/RenderLoopDelegate.md`
+  - `doc/api/db/SceneReferences.md`, `DrawResourceIO.md`
+  - `doc/api/ui/Value.md`, `DrawTextureWidgets.md`, `Material_Editors.md`
+  - `doc/api/utils/index.md`, `MaterialModifier.md`
+  - `doc/apps/draw_composer.md`
+  - `assets/fonts/didact-gothic/README.md` (tutorial link only; font bytes/OFL untouched)
+  - `plans/text-components/summary.md`, `plans/text-components/progress.md`
+- Tutorial decisions and complete scene:
+  - Target `tutorial_text`, directory `examples/tutorials/text`, source `src/main.cpp`. Uses only current public app/draw/scene/UI APIs; no Composer infrastructure, input navigation, selection, custom shaders, HDR model/environment, unrelated textures/lights, verification CLI or test/harness mode.
+  - MainLoop/Application create a 1100x760 window, a default native-backend Engine, DefaultRenderLoopDelegate with RendererDeferred, basic InputDelegate and one small UiDelegate window. A fixed right-handed zero-to-one CameraProjection and inverse lookAtRH view place the camera at (0,7,10), looking at (0,0.5,0.6); default scene viewport propagation handles resize.
+  - A 10x8 XZ gray procedural floor at y=0, and a blue lit TextComponent at y=1.2, rotated -90 degrees around X so its corrected +Z front points up. Initial content is exactly Hello World. Logical paragraph 1024x256, font height 160, margins 24, center/center; bitmap 2048x512; world height 1.4, aspect-derived width 5.6. Appearance stays in the conventional material (roughness 0.9, metalness 0, unlit=false, doubleSided=true, alphaCutoff=0.1).
+  - One Directional light, intensity 2.5, CastShadows=true, sourceSize=0, one sample, local +Z rotated +45 degrees about X. It sends rays down/toward +Z, offsetting the floor glyph shadow from the elevated text. An enabled SoftShadowPass uses bias 0.002, range 50, maxSamples=1; optional default GI/reflections are disabled and indirect mode is IBL. No special rectangular shadow fallback or new renderer behavior was introduced.
+  - Root TextFontComponent declares identifier tutorial, face 0, canonical PlatformTools::assetPath()/fonts/didact-gothic/DidactGothic-Regular.ttf and explicit OFL.txt/README.md notices. A retained Scene establishes registry ownership, prepares all declarations and then Node::loadResources realizes components. Missing fonts retain floor/UI and transparent text; lower text realization failures remain contained.
+  - The multiline UI string starts at Hello World. Edits enqueue CPU values under the renderer generation/weak delegate; only prepareFrame's existing TextComponent lifecycle rasterizes/uploads and resets histories. Reload font / retry text queues one explicit resource-boundary reload/retry. Read-only font/shadow availability labels explain missing resources/capabilities without a diagnostic console or per-frame file I/O/retry loop. Text/UI allocation/queue failures are contained with bounded warnings.
+  - Cleanup releases renderer snapshots first, then text/floor resources and retained Scene while Engine is alive. The outer main catch is for fatal application startup/shutdown, not the normal text recovery mechanism.
+- Asset/build integration: reused bundle_app_sdl's existing recursive shader/asset/runtime deployment, including the canonical font, its OFL/provenance and the separate stb MIT notice. No new font copy/duplicate/system font/network dependency was added. The only CMake edits register this authorized tutorial target; no build tree was generated/configured. The normal app packaging scripts exclude examples, so the guide explicitly explains separate tutorial runtime-tree/bundle redistribution.
+- Final API coverage: exact delivered signatures/defaults/units and recovery for Text, immutable TextFont/glyph outcomes, logical TextRasterizer results/limits, cached generator/clone/retained bytes/helper, scene registry preparation/lookup/version/reload, collection notices, TextComponent ownership/geometry/stopped publication/clone/retry/cleanup, export query and embedded persistence. Existing material/texture/editor/serializer/modifier references include double-sided behavior, the 0.02 alpha-test enable threshold, source/edit/export flags, sampling-only restore, typed sampler edits and source-policy validation. Navigation links the API, beginner guide, canonical complete source/CMake and license/provenance. A pre-existing dead Composer plan link was replaced with the current document-IO reference.
+- Source-review correction: Texture::generateImage records the generator's native encoding. During TextComponent pixel regeneration this could overwrite a user's albedo colorType sampling interpretation before snapshot/publication. The text owner now restores its previously captured authored colorType immediately after generation. Native pixels remain unchanged; white RGB/coverage alpha and every other sampling field are untouched. This is narrowly scoped to the agreed text sampling contract, not a generic texture/backend refactor. User check: change albedo color interpretation, type/reload a font, save/reopen and confirm the chosen interpretation remains selected.
+- Source review performed (not a build): checked public signatures against headers/implementations, API recovery/nullability, current default delegate preparation/cleanup order, explicit camera/view depth conventions, +Z text winding/orientation, directional local +Z light direction and shadow configuration/coverage, font-first ownership, optional effect disabling, source-edit metadata and bundle output/asset rules. Static Markdown local-path review found no missing targets (anchors were reviewed manually); git diff --check passed. No CMake configuration, compilation, shader compilation, application launch, automated runtime checks, tests, fixtures, harnesses or verification executables were run/added. `skills.md` remains absent.
+- Concurrent user work: EditorUi.cpp changed externally during this milestone to move Text from node types to the primitive-labelled group. The agent did not edit/revert that file. Initial array/count mismatch was reported to the user; a later source read showed std::array/size-based loops. At that read the primitive handler still called addPrimitive(kind), whose existing guard supports only kinds 0–2, so the new Text entry (kind 3) still needs the user's corresponding dispatch adjustment if not completed subsequently. This is separate from tutorial_text; do not overwrite the user's work or claim it was validated. Composer docs refer generically to the Text creation entry within Create Node rather than assuming its old label/group.
+- User handoff — tutorial (user-run):
+  1. Follow `doc/tutorials/text/README.md` for prerequisites/submodules and platform commands: Ninja on Linux; Xcode on macOS; Visual Studio 17 2022 on Windows; set VULKAN_SDK, BG2E_BUILD_EXAMPLES=ON and build target tutorial_text. Default debug products are bin/linux/tutorial_text, bin/macos/Debug/tutorial_text.app/Contents/MacOS/tutorial_text and bin/windows/Debug/tutorial_text.exe respectively; customized product/config output paths override these.
+  2. Observe the fixed-camera floor, elevated readable Hello World, offset glyph shadow on a query-capable device and the live UI field. Edit short text/Spanish precomposed characters, multiline and empty content; text/shadows must update without a solid rectangle. Unsupported shadow devices report availability rather than promising shadows. These observations are separate from Composer checks and have not been run by the agent.
+  3. Missing fonts: restore the canonical runtime asset and press Reload font / retry text. The window/floor/UI must stay usable, with no per-frame retry/warning flood. Preserve the executable's shader/assets/libraries tree or macOS bundle; assetPath is executable/bundle-relative, not cwd-relative.
+- User handoff — Composer reminder: existing text/font inspectors, conventional material controls (locked albedo source but editable UV/sampling), rectangular/backface picking, transform/history/duplication and complete save/reopen should remain intact. Verify the narrow albedo color-interpretation preservation correction. No new Composer authoring UI is added in this milestone; the complete minimal tutorial application and its fixed camera are not embedded into Composer.
+- Known limits: source-only verification; no native compilation/rendering/packaging evidence. Query shadows depend on backend/device/driver support; no unsupported-feature emulation is added. Fonts remain trusted-project assets with simple LTR layout, no shaping/bidi/fallback discovery/SDF/rich text. The tutorial deliberately omits editor history/picking/saving/navigation and uses an application-specific projection only for its fixed view. Concurrent Composer menu dispatch work is user-owned and may need completion before that application's check.
+- User-reported result/final acceptance: pending for step 8. Implementation alone does not complete/accept the plan.
+- Next milestone: **none**. All eight deliverables are implemented; wait for final user acceptance before marking the plan complete. Fix reported build/runtime/documentation failures within step 8 first. No commit or further feature work is requested.
+- Exact next action/file to resume: await user compilation/manual observations; for tutorial failures begin with `examples/tutorials/text/src/main.cpp` and `doc/tutorials/text/README.md`; for sampling feedback begin with `lib/src/bg2e/scene/TextComponent.cpp`. Preserve the concurrent Composer menu changes. After explicit final acceptance, update this ledger/summary to complete and stop.
+
+### Final acceptance and commit handoff
+
+- The user explicitly reported "Está todo correcto", requested a commit and asked whether implementation steps remain. This accepts step 8 and completes the eight-milestone plan. No implementation step remains; deferred shaping/bidi, font discovery, Fontstash, SDF/MSDF, rich text and asynchronous rendering are outside the agreed scope, not unfinished milestones.
+- The requested commit contains the final API documentation, tutorial source/target/guide, asset provenance link, authored albedo color-interpretation correction and completed plan records. The concurrent user-owned `apps/bg2e_composer/src/EditorUi.cpp` menu edit is deliberately left unstaged/unmodified rather than mixed into the milestone commit.
+- Verification is source/diff review, static documentation-path review and `git diff --check` only. No configuration, compilation, application launch, automated runtime checks or push were requested/performed by the agent.
+- Status: all eight milestones implemented and accepted. Create the authorized commit, report its identifier and the separate unstaged user file, then stop. Further changes require a separate request.

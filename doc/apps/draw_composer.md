@@ -30,6 +30,56 @@ Shift-click extends selection in the hierarchy, viewport and submesh list. Struc
 
 On fresh Open, the first enabled depth-first Environment is selected. Later additions cannot replace a valid active component. Removing it restores renderer defaults without promoting previously ignored components; a newly eligible component can fill an empty selection. Select the active node to edit procedural RGB, assign floating-point `.hdr`/`.exr`, or Clear its HDR reference. Stored colors survive HDR assignment and become visible after clearing. Browse cancellation preserves the path. Errors remain visible in status/inspector and retain last-good GPU resources. See [Environment selection and generation](../api/draw/Environment.md).
 
+## Text and font authoring
+
+Select the document root in **Window > Scene**, choose **Text Fonts** beside
+**Add Component**, then use **Font declarations > Add bundled Didact Gothic font**
+below Components. It declares canonical Didact Gothic as `default` when free;
+additional rows use available fontN identifiers. Each row offers identifier,
+typed source path, **Choose font file...**, face index, availability, notice
+add/remove and font removal. Any scene node may hold a collection; root placement
+is recommended, not required. Identifiers resolve scene-wide without shadowing.
+Use only trusted project fonts and supply necessary redistribution notices.
+
+The Text creation entry in **Create Node** creates/selects Hello World below the selected node/root.
+The **Text paragraph** section exposes multiline UTF-8 content, font identifier/
+declared-font list, logical box/font/spacing/margins/wrapping/alignment/overflow
+and bitmap resolution. **Text rectangle** exposes world height, aspect/manual
+width and pivot. Logical dimensions change layout, bitmap dimensions change
+sampling quality, world dimensions change the quad. The readable front is +Z.
+
+**Select text material** selects its one submesh for **Window > Model Properties**.
+Use the ordinary material controls for color, Unlit, alpha cutoff and Double
+sided; the generated albedo preview remains visible. Its replace/clear source
+controls are unavailable, while UV set/scale and sampling remain editable through
+regeneration, material paste, history and reopening. Mixed source-changing
+selections reject atomically. Gizmos and component-transform editing support Text
+and nodes carrying Text Fonts. Picking includes the entire transparent/empty
+rectangle and the back when double sided.
+
+Typing/dragging uses the existing queued CPU value transactions and coalesces one
+history gesture. Duplicate/delete/reparent, component membership and undo/redo
+retain independent text data/materials/generators. The one-drawable-per-node
+limitation remains: create child text nodes instead of adding Text to a model
+node. Model-only geometry/submesh metadata/UV2 regeneration operations are not
+offered for procedural text; use node name/Enabled/transform and text rectangle.
+
+Invalid paragraph values recover with warnings; incomplete declaration drafts
+keep the preceding valid row. Same-collection duplicate drafts are no-ops;
+duplicates across nodes disable the ambiguous identifier, leaving other text
+usable. Missing/unreadable fonts retain editable paths but omit dependent text.
+Correct the source or use **Reload fonts / retry text**; unchanged failures are
+cached, not retried/logged per frame. This does not catch arbitrary custom
+component/native failures or make stb safe for untrusted files.
+
+Save/Save As embeds editable text/material data and packages fonts, notices and
+other material images. Text produces neither a BG2 nor generated albedo PNG;
+ordinary model nodes still legitimately produce BG2 resources. Required external
+copy/serialization failure refuses publication instead of reporting an incomplete
+save. The destination reopens independently of original source paths. See
+[resource IO](../api/db/DrawResourceIO.md#editable-text-and-font-assets),
+[API](../api/scene/TextComponent.md) and the separate [programming tutorial](../tutorials/text/README.md).
+
 ## Documents and imports
 
 File Open replaces the document; New/Close creates an empty camera-bearing scene. Save/Discard/Cancel protects dirty replacements and quit. Open Scene reads JSON on a worker, validates/deserializes on the main thread, then realizes one component per frame under a visible Loader. Individual image/model uploads and environment generation can still stall a frame. Publication waits for a complete valid candidate; ordinary failures preserve the old document and show an error.
@@ -48,7 +98,7 @@ The UV/Lightmap window targets its preview drawable, selected hierarchy subtrees
 
 Select a completed target for its own map preview. Applied maps use linear RGB UV2 with explicit baked AO/GI metadata. RGB8 uses temporary PNG sources; float output uses standard Radiance HDR with RGBE quantization. The default is RGB8 PNG; GI exposure applies to RGB8 only. Applied images and temporary sources remain available for complete Save. Interactive adoption rejects values outside finite half-float range. A failure after material mutation can leave partial dirty edits and retained sources; this is separate from complete DB publication and does not provide the [standalone batch](../api/bake/StandaloneBakeBatch.md)'s protected whole-generation publication guarantees.
 
-Tracing tables use exact device budgets up to 16384, including sampler limits. Excess image/sampler pairs warn and use neutral texture fallback while keeping geometry and raster materials. Direct query shadows also retain the scene on overflow. Materials remain independently owned. See [tracing resources](../api/draw/TracingSceneResources.md) and [query shadows](../api/draw/RendererDeferred.md).
+Tracing tables use exact device budgets up to 16384, including sampler limits. Excess image/sampler pairs warn and use neutral texture fallback while keeping geometry and raster materials. Direct query shadows also retain the scene on overflow. Essential procedural text masks are an exception to neutral/rectangular visibility fallback: if their alpha descriptor cannot be represented, traced text/shadow contribution is omitted rather than becoming a rectangular blocker. Materials remain independently owned. See [tracing resources](../api/draw/TracingSceneResources.md) and [query shadows](../api/draw/RendererDeferred.md).
 
 ## Implementation and validation
 

@@ -10,7 +10,7 @@
 - License: **SIL Open Font License 1.1**, reproduced in full in `OFL.txt`.
 - Original notice: Copyright (c) 2009, 2010, 2011 Daniel Johnson.
 
-Use this path for text-component examples and the future tutorial:
+Use this path for text-component examples and the [text tutorial](../../../examples/tutorials/text/README.md):
 `fonts/didact-gothic/DidactGothic-Regular.ttf`, relative to the engine assets root.
 The asset-tree copy/install rules include the font, this record and its license.
 

@@ -34,6 +34,11 @@ The numbering follows the corresponding directories in `examples/draw/`.
 
 ## Application workflow
 
+[Editable Hello World text](../text/README.md) is a separate minimal application
+in `examples/tutorials/text`, target `tutorial_text`. It teaches font declarations,
+logical/world/bitmap units, one conventional text material, safe live UI edits
+and a directional glyph shadow without importing the manipulation/editor systems.
+
 [Editing, lighting and baking a model](model_edit.md) walks through the delivered
 `apps/model_edit` application. It is an application tutorial, not an additional
 numbered example target. It covers complete resource saving and focused component

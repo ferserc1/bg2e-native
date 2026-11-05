@@ -1,6 +1,6 @@
 # Text components implementation plan
 
-Status: steps 1–6 implemented and user accepted; step 7 implemented awaiting user acceptance; step 8 not started. Read [progress.md](progress.md) before doing any work.
+Status: complete. All eight milestones are implemented and user accepted. No implementation steps remain. Read [progress.md](progress.md) for the final handoff and acceptance record.
 
 ## Agreed architecture
 
