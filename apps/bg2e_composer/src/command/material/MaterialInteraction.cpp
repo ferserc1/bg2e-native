@@ -33,6 +33,7 @@ struct Values {
     bool isTransparent;
     bool isSolid;
     bool isUnlit;
+    bool doubleSided;
     float refractionFactor;
     float alphaCutoff;
     base::Color albedo;
@@ -66,6 +67,7 @@ struct Values {
     {
         return {
             attributes.isTransparent(), attributes.isSolid(), attributes.isUnlit(),
+            attributes.doubleSided(),
             attributes.refractionFactor(), attributes.alphaCutoff(), attributes.albedo(),
             attributes.albedoScale(), attributes.albedoUVSet(), attributes.metalness(),
             attributes.metalnessScale(), attributes.metalnessChannel(), attributes.metalnessInvert(),
@@ -83,6 +85,7 @@ struct Values {
         attributes.setIsTransparent(isTransparent);
         attributes.setIsSolid(isSolid);
         attributes.setIsUnlit(isUnlit);
+        attributes.setDoubleSided(doubleSided);
         attributes.setRefractionFactor(refractionFactor);
         attributes.setAlphaCutoff(alphaCutoff);
         attributes.setAlbedo(albedo);
@@ -122,6 +125,7 @@ struct Values {
         return isTransparent == other.isTransparent &&
             isSolid == other.isSolid &&
             isUnlit == other.isUnlit &&
+            doubleSided == other.doubleSided &&
             refractionFactor == other.refractionFactor &&
             alphaCutoff == other.alphaCutoff &&
             colorEqual(albedo, other.albedo) &&

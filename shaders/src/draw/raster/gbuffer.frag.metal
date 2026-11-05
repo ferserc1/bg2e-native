@@ -25,7 +25,7 @@ struct GBufferOut {
     float4 sheen [[color(4)]];
     float4 baked [[color(5)]];
 };
-fragment GBufferOut fragMain(RasterVaryings in [[stage_in]], constant DrawObjectData& drawObject [[buffer(7)]], DRAW_MATERIAL_TEXTURE_ARGUMENTS)
+fragment GBufferOut fragMain(RasterVaryings in [[stage_in]], bool frontFacing [[front_facing]], constant DrawObjectData& drawObject [[buffer(7)]], DRAW_MATERIAL_TEXTURE_ARGUMENTS)
 {
     GBufferOut out;
     DrawMaterialData m = drawObject.material;
@@ -40,6 +40,11 @@ fragment GBufferOut fragMain(RasterVaryings in [[stage_in]], constant DrawObject
     float3 mapped = drawSampleMaterial(drawNormal, drawNormalSampler, m, 3u, in.uv0, in.uv1).xyz * 2.0 - 1.0;
     mapped = t * mapped.x + cross(n, t) * mapped.y * in.tangentSign + n * mapped.z;
     n = dot(mapped, mapped) > 1e-8 ? normalize(mapped) : n;
+    // Keep the authored tangent frame; reverse the entire mapped normal once.
+    if ((flags & 128u) != 0u && !frontFacing)
+    {
+        n = -n;
+    }
     float metallic = clamp(drawScalarSample(drawSampleMaterial(drawMetalness, drawMetalnessSampler, m, 1u, in.uv0, in.uv1), m.channels.x, m.invert.x) * m.factors.x, 0.0, 1.0);
     float roughness = clamp(drawScalarSample(drawSampleMaterial(drawRoughness, drawRoughnessSampler, m, 2u, in.uv0, in.uv1), m.channels.y, m.invert.y) * m.factors.y, 0.04, 1.0);
     float4 indirectMap = drawSampleMaterial(drawAO, drawAOSampler, m, 4u, in.uv0, in.uv1);

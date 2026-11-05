@@ -91,6 +91,10 @@ bool parseMaterial(
     {
         result.setAlphaCutoff(*value);
     }
+    if (auto value = reader.getBool("doubleSided"))
+    {
+        result.setDoubleSided(*value);
+    }
     if (auto value = reader.getBool("isSolid"))
     {
         result.setIsSolid(*value);
@@ -303,6 +307,7 @@ std::string MaterialSerializer::serializeMaterial(
         {"isSolid", JSON(mat.isSolid())},
         {"visible", JSON(mat.visible())},
         {"isUnlit", JSON(mat.isUnlit())},
+        {"doubleSided", JSON(mat.doubleSided())},
     });
     auto& obj = matJson->objectValue();
 

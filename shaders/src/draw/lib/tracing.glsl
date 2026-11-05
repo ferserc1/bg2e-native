@@ -66,13 +66,27 @@ vec4 traceSample(uint materialIndex, uint slot, vec4 uv)
     return drawDecodeSample(material.values,slot,
         textureLod(sampler2D(traceImages[nonuniformEXT(imageIndex)],traceSamplers[nonuniformEXT(samplerIndex)]),selected,0.0));
 }
-bool traceAccept(uint instance, uint primitive, vec2 bary, uint instanceCount)
+bool traceBackFace(uint instance, uint primitive, vec3 direction)
+{
+    TraceInstance record = traceInstances[instance];
+    uint first = record.ranges.x + primitive * 3u;
+    vec3 a = traceVertices[record.ranges.y + traceIndices[first]].position.xyz;
+    vec3 b = traceVertices[record.ranges.y + traceIndices[first + 1u]].position.xyz;
+    vec3 c = traceVertices[record.ranges.y + traceIndices[first + 2u]].position.xyz;
+    // Transformed edges preserve raster winding, including mirrored transforms.
+    return dot(cross(mat3(record.model) * (b-a), mat3(record.model) * (c-a)), direction) > 0.0;
+}
+bool traceAccept(uint instance, uint primitive, vec2 bary, uint instanceCount, vec3 direction)
 {
     if (instance >= instanceCount || primitive >= traceInstances[instance].ranges.z)
     {
         return false;
     }
     uint material = traceInstances[instance].ranges.w;
+    if ((traceMaterials[material].values.uvSets[1].z & 128u) == 0u && traceBackFace(instance,primitive,direction))
+    {
+        return false;
+    }
     if ((traceMaterials[material].values.uvSets[1].z & 2u) == 0u)
     {
         return true;
@@ -89,7 +103,9 @@ vec3 traceGeometricNormal(uint instance, uint primitive, vec3 direction)
     vec3 c = traceVertices[record.ranges.y+traceIndices[first+2u]].position.xyz;
     vec3 n = mat3(record.normal)*cross(b-a,c-a);
     n = dot(n,n) > 1e-16 ? normalize(n) : -direction;
-    return dot(n,direction) > 0.0 ? -n : n;
+    bool reverse = (traceMaterials[record.ranges.w].values.uvSets[1].z & 128u) != 0u &&
+        traceBackFace(instance,primitive,direction);
+    return reverse ? -n : n;
 }
 #if defined(DRAW_TRACE_QUERIES)
 struct TraceHit { bool hit; float distance; vec3 normal; };
@@ -101,7 +117,7 @@ TraceHit traceNearest(vec3 origin, vec3 direction, float minimum, float maximum,
     {
         if (rayQueryGetIntersectionTypeEXT(query,false) == gl_RayQueryCandidateIntersectionTriangleEXT &&
             traceAccept(rayQueryGetIntersectionInstanceIdEXT(query,false),rayQueryGetIntersectionPrimitiveIndexEXT(query,false),
-                rayQueryGetIntersectionBarycentricsEXT(query,false),instanceCount))
+                rayQueryGetIntersectionBarycentricsEXT(query,false),instanceCount,direction))
         {
             rayQueryConfirmIntersectionEXT(query);
         }

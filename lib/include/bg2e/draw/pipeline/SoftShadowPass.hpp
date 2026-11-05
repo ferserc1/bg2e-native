@@ -46,6 +46,7 @@ struct alignas(16) ShadowInstanceData {
     glm::uvec4 ranges{0}; // first index, triangle count, alpha slot or UINT_MAX, objectId
     glm::vec4 alpha{1}; // scale.xy, cutoff, albedo alpha multiplier
     glm::uvec4 options{0}; // albedo UV set, material flags, vertex base, reserved
+    glm::mat4 model{1}; // Winding classification matches transformed raster geometry.
 };
 struct ShadowQueryTable {
     std::vector<ShadowInstanceData> instances;
@@ -60,8 +61,9 @@ BG2E_API ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTrac
     uint32_t capacity);
 BG2E_API PassContract softShadowContract(gpu::PixelFormat depth);
 BG2E_API gpu::PipelineLayoutDescription softShadowBindingLayout(uint32_t capacity = MaxShadowAlphaTextures);
-static_assert(sizeof(ShadowInstanceData) == 48);
+static_assert(sizeof(ShadowInstanceData) == 112);
 static_assert(offsetof(ShadowInstanceData, alpha) == 16 && offsetof(ShadowInstanceData, options) == 32);
+static_assert(offsetof(ShadowInstanceData, model) == 48);
 
 // Public compute-based visibility pass. No render-stage query capability or RT
 // pipeline/SBT is needed. Unsupported creation reports status and allocates no TLAS.

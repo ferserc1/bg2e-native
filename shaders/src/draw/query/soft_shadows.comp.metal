@@ -25,6 +25,7 @@ struct ShadowInstanceData {
     uint4 ranges;
     float4 alpha;
     uint4 options;
+    float4x4 model;
 };
 // Matches the immutable TracingVertex buffer shared by all tracing consumers.
 struct ShadowVertex {
@@ -46,7 +47,7 @@ float sampleAlpha(uint index, float2 uv, constant ShadowImageArgument* images,
 {
     return images[index].image.sample(samplers[index].state, uv, level(0.0)).a;
 }
-bool acceptsCandidate(uint instance, uint primitive, float2 bary,
+bool acceptsCandidate(uint instance, uint primitive, float2 bary, float3 direction,
     constant ShadowUniforms& dataBlock, const device ShadowInstanceData* instances,
     const device ShadowVertex* vertices, const device uint* indices, constant ShadowImageArgument* images,
     constant ShadowSamplerArgument* samplers)
@@ -56,9 +57,26 @@ bool acceptsCandidate(uint instance, uint primitive, float2 bary,
         return false;
     }
     ShadowInstanceData data = instances[instance];
+    if (primitive >= data.ranges.y)
+    {
+        return false;
+    }
+    if ((data.options.y & 128u) == 0u)
+    {
+        uint first = data.ranges.x + primitive * 3u;
+        float3 a = vertices[data.options.z + indices[first]].position.xyz;
+        float3 b = vertices[data.options.z + indices[first + 1u]].position.xyz;
+        float3 c = vertices[data.options.z + indices[first + 2u]].position.xyz;
+        float3 ab = (data.model * float4(b-a,0)).xyz;
+        float3 ac = (data.model * float4(c-a,0)).xyz;
+        if (dot(cross(ab,ac),direction) > 0.0)
+        {
+            return false;
+        }
+    }
     if ((data.options.y & 2u) == 0u)
     {
-        // CPU-packed classification: skip UV/index fetches and alpha sampling.
+        // Sidedness is resolved; skip UV fetches and alpha sampling.
         return true;
     }
     if (data.ranges.z == 0xffffffffu)
@@ -91,13 +109,13 @@ bool visible(float3 origin, float3 direction, float distance,
     intersection_params params;
     params.assume_geometry_type(geometry_type::triangle);
     params.accept_any_intersection(true);
-    // Instance opacity preserves fast opaque hits and exposes cutout candidates.
+    // Instance opacity exposes single-sided and cutout candidates for rejection.
     intersection_query<instancing, triangle_data> query(shadowRay, topLevel, 0xffu, params);
     while (query.next())
     {
         if (query.get_candidate_intersection_type() == intersection_type::triangle &&
             acceptsCandidate(query.get_candidate_instance_id(), query.get_candidate_primitive_id(),
-                query.get_candidate_triangle_barycentric_coord(), dataBlock, instances, vertices, indices,
+                query.get_candidate_triangle_barycentric_coord(), direction, dataBlock, instances, vertices, indices,
                 images, samplers))
         {
             query.commit_triangle_intersection();

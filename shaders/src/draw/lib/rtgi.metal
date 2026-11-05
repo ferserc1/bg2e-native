@@ -43,7 +43,7 @@ GIHit giTrace(float3 origin, float3 direction, float maximum, float bias, uint c
     {
         if (query.get_candidate_intersection_type() == intersection_type::triangle &&
             traceAccept(query.get_candidate_instance_id(),query.get_candidate_primitive_id(),
-                query.get_candidate_triangle_barycentric_coord(),count,data))
+                query.get_candidate_triangle_barycentric_coord(),count,direction,data))
         {
             query.commit_triangle_intersection();
         }

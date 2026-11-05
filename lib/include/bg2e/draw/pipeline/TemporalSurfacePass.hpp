@@ -92,6 +92,7 @@ class BG2E_API TemporalSurfacePass {
     gpu::PixelFormat _depthFormat = gpu::PixelFormat::Undefined;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::shared_ptr<gpu::GraphicsPipeline> _pipeline, _transparentPipeline;
+    std::shared_ptr<gpu::GraphicsPipeline> _doubleSidedPipeline, _doubleSidedTransparentPipeline;
     std::shared_ptr<gpu::ShaderModule> _vertex, _fragment;
     std::shared_ptr<TemporaryResourcePool> _pool;
     std::vector<Slot> _slots;

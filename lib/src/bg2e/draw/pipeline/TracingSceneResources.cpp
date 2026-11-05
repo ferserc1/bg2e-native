@@ -445,6 +445,7 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
             key.ranges = {geometry->bases[meshIndices[i]].y + submesh.firstIndex, submesh.indexCount / 3, 0, item.objectId};
             key.alpha = {m.uvScale[0].x, m.uvScale[0].y, m.emissionAlpha.y, m.albedo.a};
             key.options = {m.uvSets[0].x, m.uvSets[1].z, geometry->bases[meshIndices[i]].x, 0};
+            key.model = item.worldMatrix;
             if ((key.options.y & MaterialAlphaTest) != 0)
             {
                 key.image = {item.textureImages[0], item.imageGenerations[0]};

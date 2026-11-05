@@ -145,6 +145,7 @@ class BG2E_API ViewpointAnalyzer {
     std::shared_ptr<gpu::Image> _depthImage;
     std::shared_ptr<gpu::PipelineLayout> _pipelineLayout;
     std::shared_ptr<gpu::GraphicsPipeline> _pipeline;
+    std::shared_ptr<gpu::GraphicsPipeline> _doubleSidedPipeline;
     std::vector<AnalyzedSubmesh> _analyzedSubmeshes;
     uint32_t _resourceWidth = 0;
     uint32_t _resourceHeight = 0;

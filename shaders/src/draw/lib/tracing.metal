@@ -59,13 +59,29 @@ float4 traceSample(uint materialIndex, uint slot, float4 uv, thread const TraceD
     return drawDecodeSample(material.values,slot,
         data.images[imageIndex].image.sample(data.samplers[samplerIndex].state,selected,level(0.0)));
 }
-bool traceAccept(uint instance, uint primitive, float2 bary, uint instanceCount, thread const TraceData& data)
+bool traceBackFace(uint instance, uint primitive, float3 direction, thread const TraceData& data)
+{
+    TraceInstance record = data.instances[instance];
+    uint first = record.ranges.x + primitive * 3u;
+    float3 a = data.vertices[record.ranges.y + data.indices[first]].position.xyz;
+    float3 b = data.vertices[record.ranges.y + data.indices[first + 1u]].position.xyz;
+    float3 c = data.vertices[record.ranges.y + data.indices[first + 2u]].position.xyz;
+    // Transformed edges preserve raster winding, including mirrored transforms.
+    float3 ab = (record.model * float4(b-a,0)).xyz;
+    float3 ac = (record.model * float4(c-a,0)).xyz;
+    return dot(cross(ab,ac),direction) > 0.0;
+}
+bool traceAccept(uint instance, uint primitive, float2 bary, uint instanceCount, float3 direction, thread const TraceData& data)
 {
     if (instance >= instanceCount || primitive >= data.instances[instance].ranges.z)
     {
         return false;
     }
     uint material = data.instances[instance].ranges.w;
+    if ((data.materials[material].values.uvSets[1].z & 128u) == 0u && traceBackFace(instance,primitive,direction,data))
+    {
+        return false;
+    }
     if ((data.materials[material].values.uvSets[1].z & 2u) == 0u)
     {
         return true;
@@ -82,7 +98,9 @@ float3 traceGeometricNormal(uint instance, uint primitive, float3 direction, thr
     float3 c = data.vertices[record.ranges.y+data.indices[first+2u]].position.xyz;
     float3 n = (record.normal*float4(cross(b-a,c-a),0)).xyz;
     n = dot(n,n) > 1e-16 ? normalize(n) : -direction;
-    return dot(n,direction) > 0.0 ? -n : n;
+    bool reverse = (data.materials[record.ranges.w].values.uvSets[1].z & 128u) != 0u &&
+        traceBackFace(instance,primitive,direction,data);
+    return reverse ? -n : n;
 }
 struct TraceHit { bool hit; float distance; float3 normal; };
 TraceHit traceNearest(float3 origin, float3 direction, float minimum, float maximum, uint instanceCount,
@@ -101,7 +119,7 @@ TraceHit traceNearest(float3 origin, float3 direction, float minimum, float maxi
     {
         if (query.get_candidate_intersection_type() == intersection_type::triangle &&
             traceAccept(query.get_candidate_instance_id(),query.get_candidate_primitive_id(),
-                query.get_candidate_triangle_barycentric_coord(),instanceCount,data))
+                query.get_candidate_triangle_barycentric_coord(),instanceCount,direction,data))
         {
             query.commit_triangle_intersection();
         }

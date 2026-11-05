@@ -92,6 +92,7 @@ struct MaterialModifier::Data {
     std::optional<bool> isTransparent;
     std::optional<bool> isSolid;
     std::optional<bool> unlit;
+    std::optional<bool> doubleSided;
     std::optional<bool> metalnessInvert;
     std::optional<bool> roughnessInvert;
     std::optional<bool> lightEmissionInvert;
@@ -158,6 +159,7 @@ MaterialModifier::MaterialModifier(const std::shared_ptr<json::JsonNode>& node,
     data->isTransparent = field<bool>(reader, "isTransparent");
     data->isSolid = field<bool>(reader, "isSolid");
     data->unlit = field<bool>(reader, "unlit");
+    data->doubleSided = field<bool>(reader, "doubleSided");
     data->metalnessInvert = field<bool>(reader, "metalnessInvert");
     data->roughnessInvert = field<bool>(reader, "roughnessInvert");
     data->lightEmissionInvert = field<bool>(reader, "lightEmissionInvert");
@@ -273,6 +275,10 @@ bool MaterialModifier::apply(base::MaterialAttributes& material) const
     if (data.isSolid)
     {
         material.setIsSolid(*data.isSolid);
+    }
+    if (data.doubleSided)
+    {
+        material.setDoubleSided(*data.doubleSided);
     }
     if (data.unlit)
     {

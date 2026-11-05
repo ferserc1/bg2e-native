@@ -68,6 +68,11 @@ void main()
     vec3 mapped = drawDecodeSample(m, 3u, texture(sampler2D(drawNormal, drawNormalSampler), drawSelectUV(m, 3u, uv0, uv1))).xyz * 2.0 - 1.0;
     mapped = t * mapped.x + cross(n, t) * mapped.y * tangentSign + n * mapped.z;
     n = dot(mapped, mapped) > 1e-8 ? normalize(mapped) : n;
+    // Same authored-frame policy as GBuffer, before previous-normal transport.
+    if ((flags & 128u) != 0u && !gl_FrontFacing)
+    {
+        n = -n;
+    }
     vec3 previousNormal = mat3(temporalSurface.previousNormalFromCurrent) * n;
     float normalLength = length(previousNormal);
     surfaceToken = 0u;

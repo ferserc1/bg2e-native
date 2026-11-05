@@ -92,7 +92,7 @@ static MaterialData packMaterialUncached(const MaterialBase& material)
     result.uvScale = {glm::vec4(a.albedoScale(), a.normalScale()), glm::vec4(a.metalnessScale(), a.roughnessScale()), glm::vec4(a.aoScale(), a.lightEmissionScale())};
     uint32_t flags = (a.isUnlit() ? MaterialUnlit : 0u) | (cutoff > 0 ? MaterialAlphaTest : 0u) |
         (a.isTransparent() ? MaterialTransparent : 0u) | (a.isSolid() ? MaterialSolid : 0u) |
-        (a.aoTexture() ? MaterialHasAOTexture : 0u);
+        (a.aoTexture() ? MaterialHasAOTexture : 0u) | (a.doubleSided() ? MaterialDoubleSided : 0u);
     using IndirectMode = base::MaterialAttributes::IndirectTextureMode;
     const auto indirectMode = a.indirectTextureMode();
     if (indirectMode != IndirectMode::AmbientOcclusion)
@@ -212,7 +212,7 @@ MaterialData packMaterial(const MaterialBase& material, MaterialRevisions* consu
     {
         ++revisions.values;
     }
-    constexpr uint32_t classification = MaterialAlphaTest | MaterialTransparent | MaterialSolid;
+    constexpr uint32_t classification = MaterialAlphaTest | MaterialTransparent | MaterialSolid | MaterialDoubleSided;
     if (!previous || ((previous->data.uvSets[1].z ^ data.uvSets[1].z) & classification) != 0)
     {
         ++revisions.classification;

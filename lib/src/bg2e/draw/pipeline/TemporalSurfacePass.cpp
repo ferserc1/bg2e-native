@@ -158,12 +158,20 @@ void TemporalSurfacePass::initialize(Engine& engine, const RenderLayer& receiver
         description.depthState->writeEnabled = false;
         description.debugName = "draw temporal transparent tokens with read-only opaque depth";
         _transparentPipeline = engine.device()->createGraphicsPipeline(description);
+        description.cullMode = gpu::CullMode::None;
+        description.debugName = "draw temporal double-sided transparent tokens";
+        _doubleSidedTransparentPipeline = engine.device()->createGraphicsPipeline(description);
+        description.depthState->writeEnabled = true;
+        description.debugName = "draw temporal double-sided surface tokens";
+        _doubleSidedPipeline = engine.device()->createGraphicsPipeline(description);
         _pool = std::make_shared<TemporaryResourcePool>(*engine.device(),_limits);
         _slots.resize(count);
         _status = "Available: built-in receiver replay, private opaque depth and shared read-only transparent depth";
     }
     catch (const std::exception& error)
     {
+        _doubleSidedTransparentPipeline.reset();
+        _doubleSidedPipeline.reset();
         _transparentPipeline.reset();
         _pipeline.reset();
         _layout.reset();
@@ -387,12 +395,20 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
         .load = opaqueDepth ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::Clear,
         .store = gpu::AttachmentStoreOperation::Store,.clearDepth = 1.0f};
     command.beginRendering(rendering); // Full viewport/clear; deliberately no regional scissor.
-    auto* pipeline = opaqueDepth ? _transparentPipeline.get() : _pipeline.get();
-    command.bindPipeline(pipeline);
-    command.bindResourceSet(pipeline,0,frameSet);
+    gpu::GraphicsPipeline* boundPipeline = nullptr;
     for (size_t i = 0; i < invocation->items.size(); ++i)
     {
         const auto& item = invocation->items[i];
+        const bool doubleSided = (item.materialData.uvSets[1].z & MaterialDoubleSided) != 0;
+        auto* pipeline = doubleSided ?
+            (opaqueDepth ? _doubleSidedTransparentPipeline.get() : _doubleSidedPipeline.get()) :
+            (opaqueDepth ? _transparentPipeline.get() : _pipeline.get());
+        if (pipeline != boundPipeline)
+        {
+            command.bindPipeline(pipeline);
+            command.bindResourceSet(pipeline,0,frameSet);
+            boundPipeline = pipeline;
+        }
         command.bindResourceSet(pipeline,1,objectSets[i]);
         command.bindResourceSet(pipeline,2,invocation->bindings[i]->resources().get());
         command.bindVertexBuffer(0,item.drawMesh->vertexBuffer());
@@ -411,7 +427,8 @@ TemporalSurfaceResult TemporalSurfacePass::record(const FrameContext& frame, con
 
 bool TemporalSurfacePass::available() const
 {
-    return bool(_pipeline) && bool(_transparentPipeline) && bool(_pool) && !_slots.empty();
+    return bool(_pipeline) && bool(_transparentPipeline) && bool(_doubleSidedPipeline) &&
+        bool(_doubleSidedTransparentPipeline) && bool(_pool) && !_slots.empty();
 }
 
 const std::string& TemporalSurfacePass::status() const
@@ -427,6 +444,8 @@ void TemporalSurfacePass::cleanup()
     }
     _slots.clear();
     _pool.reset();
+    _doubleSidedTransparentPipeline.reset();
+    _doubleSidedPipeline.reset();
     _transparentPipeline.reset();
     _pipeline.reset();
     _layout.reset();

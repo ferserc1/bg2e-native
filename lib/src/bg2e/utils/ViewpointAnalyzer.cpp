@@ -98,6 +98,7 @@ struct ViewpointAnalyzer::DrawItem {
     glm::mat4 world{1.0f};
     uint32_t submesh = 0;
     uint32_t identifier = 0;
+    bool doubleSided = false;
 };
 
 ViewpointAnalyzer::ViewpointAnalyzer(draw::Engine* engine)
@@ -122,6 +123,7 @@ void ViewpointAnalyzer::init()
 
 void ViewpointAnalyzer::cleanup()
 {
+    _doubleSidedPipeline.reset();
     _pipeline.reset();
     _pipelineLayout.reset();
     _identifierImage.reset();
@@ -271,7 +273,8 @@ std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node* rootNode)
         }
         const uint32_t id = static_cast<uint32_t>(drawItems.size() + 1);
         _analyzedSubmeshes.push_back({id, node, drawable, item.submeshIndex});
-        drawItems.push_back({item.drawMesh, item.worldMatrix, item.submeshIndex, id});
+        drawItems.push_back({item.drawMesh, item.worldMatrix, item.submeshIndex, id,
+            (item.materialData.uvSets[1].z & draw::MaterialDoubleSided) != 0});
     }
     if (drawItems.empty())
     {
@@ -302,9 +305,9 @@ std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node* rootNode)
             command->beginRendering(rendering);
             command->clearColor(0, {0.0f, 0.0f, 0.0f, 0.0f});
             command->clearDepth(1.0f);
-            command->bindPipeline(_pipeline.get());
             for (const auto& item : drawItems)
             {
+                command->bindPipeline(item.doubleSided ? _doubleSidedPipeline.get() : _pipeline.get());
                 const PushConstants push{candidate.projectionMatrix * candidate.viewMatrix * item.world, {item.identifier, 0, 0, 0}};
                 command->pushConstants(gpu::ShaderStage::Vertex, 0, sizeof(push), &push);
                 command->bindVertexBuffer(0, item.mesh->vertexBuffer());
@@ -412,7 +415,7 @@ void ViewpointAnalyzer::ensureResources()
     {
         throw std::logic_error("ViewpointAnalyzer::init requires an initialized draw engine");
     }
-    if (_identifierImage && _depthImage && _pipelineLayout && _pipeline &&
+    if (_identifierImage && _depthImage && _pipelineLayout && _pipeline && _doubleSidedPipeline &&
         _resourceWidth == _config.width && _resourceHeight == _config.height)
     {
         return;
@@ -444,10 +447,12 @@ void ViewpointAnalyzer::createResources()
     description.layout = _pipelineLayout.get();
     description.colorFormat = gpu::PixelFormat::R8G8B8A8_UNORM;
     description.depthFormat = gpu::PixelFormat::D32_SFLOAT;
-    description.cullMode = gpu::CullMode::None;
+    description.cullMode = gpu::CullMode::Back;
     description.depthState = gpu::DepthState{true, true, gpu::CompareOperation::LessOrEqual};
     description.addVertexBufferDescription(draw::Drawable::DrawMesh::vertexBufferDescription());
     _pipeline = device->createGraphicsPipeline(description);
+    description.cullMode = gpu::CullMode::None;
+    _doubleSidedPipeline = device->createGraphicsPipeline(description);
     _resourceWidth = _config.width;
     _resourceHeight = _config.height;
 }

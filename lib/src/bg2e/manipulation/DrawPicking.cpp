@@ -103,6 +103,7 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
         glm::mat4 world{1};
         uint32_t id = 0;
         std::weak_ptr<GizmoComponent> gizmo;
+        bool doubleSided = false;
     };
     std::vector<Entry> entries;
     for (const auto& item : queue.items())
@@ -121,7 +122,8 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
         selection.mesh = component->drawable();
         selection.submesh = item.submeshIndex;
         selection.selectionIdentifier = selectable->identifier(item.submeshIndex);
-        entries.push_back({selection, item.drawMesh, item.worldMatrix, item.objectId, {}});
+        entries.push_back({selection, item.drawMesh, item.worldMatrix, item.objectId, {},
+            (item.materialData.uvSets[1].z & draw::MaterialDoubleSided) != 0});
     }
     const size_t geometryEnd = entries.size();
     // A local visitor only collects tool owners; scene geometry uses the shared extractor.
@@ -227,6 +229,9 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
     pipelineDescription.depthState = gpu::DepthState{true, true, gpu::CompareOperation::LessOrEqual};
     pipelineDescription.addVertexBufferDescription(draw::Drawable::DrawMesh::vertexBufferDescription());
     auto pipeline = device->createGraphicsPipeline(pipelineDescription);
+    pipelineDescription.cullMode = gpu::CullMode::None;
+    auto doubleSidedPipeline = device->createGraphicsPipeline(pipelineDescription);
+    pipelineDescription.cullMode = gpu::CullMode::Back;
     pipelineDescription.depthState = gpu::DepthState{false, false, gpu::CompareOperation::Always};
     auto topPipeline = device->createGraphicsPipeline(pipelineDescription);
     device->immediateSubmit([&](gpu::CommandBuffer* command)
@@ -255,7 +260,8 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
                 command->beginRendering(rendering);
             }
             auto& entry = entries[i];
-            command->bindPipeline(i >= geometryEnd && i < toolsEnd ? topPipeline.get() : pipeline.get());
+            command->bindPipeline(i >= geometryEnd && i < toolsEnd ? topPipeline.get() :
+                (entry.doubleSided ? doubleSidedPipeline.get() : pipeline.get()));
             Push push{projection * view * entry.world, {entry.id, 0, 0, 0}};
             command->pushConstants(gpu::ShaderStage::Vertex, 0, sizeof(push), &push);
             command->bindVertexBuffer(0, entry.mesh->vertexBuffer());

@@ -42,6 +42,7 @@ class BG2E_API GBuffer : public RenderLayer {
     PassContract _contract;
     std::shared_ptr<gpu::PipelineLayout> _layout;
     std::shared_ptr<gpu::GraphicsPipeline> _pipeline, _transparentPipeline;
+    std::shared_ptr<gpu::GraphicsPipeline> _doubleSidedPipeline, _doubleSidedTransparentPipeline;
     std::shared_ptr<gpu::ShaderModule> _vertex, _fragment;
 };
 }

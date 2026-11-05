@@ -54,7 +54,8 @@ void CollectRayTracingInstancesVisitor::collect(const RenderQueue& queue, RayTra
             {
                 throw std::length_error("Ray instance capacity exceeded; extraction does not silently truncate");
             }
-            const auto opacity = (flags & MaterialAlphaTest) != 0 ?
+            // Single-sided candidates need shader rejection even without alpha testing.
+            const auto opacity = (flags & MaterialAlphaTest) != 0 || (flags & MaterialDoubleSided) == 0 ?
                 gpu::RayTracingOpacity::ForceNonOpaque : gpu::RayTracingOpacity::ForceOpaque;
             next.push_back({item, {item.tracingMesh.get(), item.worldMatrix, item.objectId, 0xff, opacity}});
         }

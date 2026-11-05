@@ -32,6 +32,7 @@ MaterialAttributes& MaterialAttributes::operator=(const MaterialAttributes& sour
         assign(_isTransparent, source._isTransparent);
         assign(_isSolid, source._isSolid);
         assign(_unlit, source._unlit);
+        assign(_doubleSided, source._doubleSided);
         assign(_refractionFactor, source._refractionFactor);
         assign(_alphaCutoff, source._alphaCutoff);
         assign(_albedo, source._albedo);

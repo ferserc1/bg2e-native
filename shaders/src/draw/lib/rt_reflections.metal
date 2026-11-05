@@ -45,7 +45,7 @@ GIHit giTrace(float3 origin, float3 direction, float maximum, float bias, uint c
     {
         if (query.get_candidate_intersection_type() == intersection_type::triangle &&
             traceAccept(query.get_candidate_instance_id(),query.get_candidate_primitive_id(),
-                query.get_candidate_triangle_barycentric_coord(),count,data))
+                query.get_candidate_triangle_barycentric_coord(),count,direction,data))
         {
             query.commit_triangle_intersection();
         }
@@ -92,7 +92,10 @@ float3 reflectionNormal(uint instance, uint primitive, float2 bary, float3 direc
     {
         n = normalize(candidate);
     }
-    return dot(n,direction) > 0.0 ? -n : n;
+    // Match raster: flip the complete mapped normal once, based on geometry.
+    bool reverse = (data.materials[record.ranges.w].values.uvSets[1].z & 128u) != 0u &&
+        traceBackFace(instance,primitive,direction,data);
+    return reverse ? -n : n;
 }
 float3 reflectionDirection(float2 xi, float3 direction, float roughness)
 {

@@ -66,6 +66,7 @@ struct ShadowIdentity {
     glm::uvec4 ranges{0}; // Rebased geometry range and canonical object ID; alpha slot reserved.
     glm::vec4 alpha{0};
     glm::uvec4 options{0};
+    glm::mat4 model{1};
     detail::ImageKey image;
     const gpu::Sampler* sampler = nullptr;
     const Texture* texture = nullptr;

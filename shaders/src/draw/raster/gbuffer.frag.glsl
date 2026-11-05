@@ -46,6 +46,11 @@ void main()
     vec3 mapped = drawSampleMaterial(3u, uv0, uv1).xyz * 2.0 - 1.0;
     mapped = t * mapped.x + cross(n, t) * mapped.y * tangentSign + n * mapped.z;
     n = dot(mapped, mapped) > 1e-8 ? normalize(mapped) : n;
+    // Keep the authored tangent frame; reverse the entire mapped normal once.
+    if ((flags & 128u) != 0u && !gl_FrontFacing)
+    {
+        n = -n;
+    }
     float metallic = clamp(drawScalarSample(drawSampleMaterial(1u, uv0, uv1), m.channels.x, m.invert.x) * m.factors.x, 0.0, 1.0);
     float roughness = clamp(drawScalarSample(drawSampleMaterial(2u, uv0, uv1), m.channels.y, m.invert.y) * m.factors.y, 0.04, 1.0);
     vec4 indirectMap = drawSampleMaterial(4u, uv0, uv1);

@@ -23,7 +23,7 @@ struct TemporalSurfaceOut {
     float4 previousPosition [[color(2)]];
     float4 previousNormal [[color(3)]];
 };
-fragment TemporalSurfaceOut fragMain(TemporalSurfaceVaryings in [[stage_in]], constant DrawObjectData& drawObject [[buffer(7)]],
+fragment TemporalSurfaceOut fragMain(TemporalSurfaceVaryings in [[stage_in]], bool frontFacing [[front_facing]], constant DrawObjectData& drawObject [[buffer(7)]],
     texture2d<float> drawAlbedo [[texture(0)]], sampler drawAlbedoSampler [[sampler(0)]],
     texture2d<float> drawNormal [[texture(3)]], sampler drawNormalSampler [[sampler(3)]],
     constant TemporalSurfaceUniforms& temporalSurface [[buffer(8)]])
@@ -40,6 +40,11 @@ fragment TemporalSurfaceOut fragMain(TemporalSurfaceVaryings in [[stage_in]], co
     float3 mapped = drawSampleMaterial(drawNormal, drawNormalSampler, m, 3u, in.uv0, in.uv1).xyz * 2.0 - 1.0;
     mapped = t * mapped.x + cross(n, t) * mapped.y * in.tangentSign + n * mapped.z;
     n = dot(mapped, mapped) > 1e-8 ? normalize(mapped) : n;
+    // Same authored-frame policy as GBuffer, before previous-normal transport.
+    if ((flags & 128u) != 0u && !frontFacing)
+    {
+        n = -n;
+    }
     float3 previousNormal = (temporalSurface.previousNormalFromCurrent * float4(n, 0.0)).xyz;
     float normalLength = length(previousNormal);
     TemporalSurfaceOut out;

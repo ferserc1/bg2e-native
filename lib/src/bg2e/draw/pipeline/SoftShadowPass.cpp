@@ -77,6 +77,7 @@ ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstan
         data.ranges = {submesh.firstIndex, submesh.indexCount / 3, std::numeric_limits<uint32_t>::max(), item.objectId};
         data.alpha = {material.uvScale[0].x, material.uvScale[0].y, material.emissionAlpha.y, material.albedo.a};
         data.options = {material.uvSets[0].x, material.uvSets[1].z, 0, 0};
+        data.model = item.worldMatrix;
         if ((data.options.y & MaterialAlphaTest) != 0)
         {
             ++alphaTestInstances;

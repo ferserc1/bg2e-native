@@ -78,6 +78,10 @@ void GBuffer::initialize(Engine& engine, const LayerConfiguration& configuration
     _pipeline = engine.device()->createGraphicsPipeline(description);
     description.depthState->writeEnabled = false;
     _transparentPipeline = engine.device()->createGraphicsPipeline(description);
+    description.cullMode = gpu::CullMode::None;
+    _doubleSidedTransparentPipeline = engine.device()->createGraphicsPipeline(description);
+    description.depthState->writeEnabled = true;
+    _doubleSidedPipeline = engine.device()->createGraphicsPipeline(description);
 }
 
 void GBuffer::attachScene(std::shared_ptr<scene::Node>)
@@ -95,7 +99,8 @@ void GBuffer::update(const FrameContext&)
 void GBuffer::record(const PassContext& context)
 {
     const auto* raster = context.raster;
-    if (!_pipeline || !_transparentPipeline || &context.frame.engine != _engine || !raster || !raster->queue || !raster->frame || !raster->object)
+    if (!_pipeline || !_transparentPipeline || !_doubleSidedPipeline || !_doubleSidedTransparentPipeline ||
+        &context.frame.engine != _engine || !raster || !raster->queue || !raster->frame || !raster->object)
     {
         throw std::invalid_argument("GBuffer needs the current draw queue and bindings");
     }
@@ -114,7 +119,7 @@ void GBuffer::record(const PassContext& context)
     const bool transparent = raster->item || !raster->transparentItems.empty();
     // Receiver capture writes only the renderer's reusable scratch depth.
     // Ordinary transparent callers retain the read-only attachment path.
-    auto* pipeline = transparent && !raster->captureReceiverDepth ? _transparentPipeline.get() : _pipeline.get();
+    const bool readOnlyDepth = transparent && !raster->captureReceiverDepth;
     auto& command = context.frame.commandBuffer;
     gpu::RenderingDescription rendering;
     for (size_t i = 0; i < 6; ++i)
@@ -133,10 +138,20 @@ void GBuffer::record(const PassContext& context)
         .load = transparent ? gpu::AttachmentLoadOperation::Load : gpu::AttachmentLoadOperation::Clear};
     rendering.scissor = raster->region;
     command.beginRendering(rendering);
-    command.bindPipeline(pipeline);
-    command.bindResourceSet(pipeline, 0, raster->frame->set(context.frame));
+    auto* frameSet = raster->frame->set(context.frame);
+    gpu::GraphicsPipeline* boundPipeline = nullptr;
     const auto draw = [&](const RenderQueue::Item& item)
     {
+        const bool doubleSided = (item.materialData.uvSets[1].z & MaterialDoubleSided) != 0;
+        auto* pipeline = doubleSided ?
+            (readOnlyDepth ? _doubleSidedTransparentPipeline.get() : _doubleSidedPipeline.get()) :
+            (readOnlyDepth ? _transparentPipeline.get() : _pipeline.get());
+        if (pipeline != boundPipeline)
+        {
+            command.bindPipeline(pipeline);
+            command.bindResourceSet(pipeline, 0, frameSet);
+            boundPipeline = pipeline;
+        }
         command.bindResourceSet(pipeline, 1, raster->object->set(context.frame, item.objectId));
         command.bindVertexBuffer(0, item.drawMesh->vertexBuffer());
         command.bindIndexBuffer(item.drawMesh->indexBuffer());
@@ -173,6 +188,8 @@ void GBuffer::cleanup()
     {
         _engine->device()->waitIdleForResourceUpdate();
     }
+    _doubleSidedTransparentPipeline.reset();
+    _doubleSidedPipeline.reset();
     _transparentPipeline.reset();
     _pipeline.reset();
     _layout.reset();

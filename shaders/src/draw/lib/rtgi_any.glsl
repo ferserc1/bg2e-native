@@ -20,7 +20,7 @@
 hitAttributeEXT vec2 bary;
 void main()
 {
-    if (!traceAccept(uint(gl_InstanceCustomIndexEXT),uint(gl_PrimitiveID),bary,uint(traceInstances.length())))
+    if (!traceAccept(uint(gl_InstanceCustomIndexEXT),uint(gl_PrimitiveID),bary,uint(traceInstances.length()),gl_WorldRayDirectionEXT))
     {
         ignoreIntersectionEXT;
     }

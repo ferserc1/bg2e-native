@@ -894,6 +894,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         boolean("Transparent", "isTransparent", attributes.isTransparent());
         boolean("Solid", "isSolid", attributes.isSolid());
         boolean("Unlit", "unlit", attributes.isUnlit());
+        boolean("Double sided", "doubleSided", attributes.doubleSided());
         auto fresnel = attributes.fresnelTint();
         auto sheen = attributes.sheenColor();
         if (Value::colorPicker("Fresnel", fresnel))

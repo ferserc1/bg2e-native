@@ -75,6 +75,16 @@ class BG2E_API MaterialAttributes {
         assign(_unlit, t);
     }
 
+    // Disable backface culling and reverse backface shading normals when enabled.
+    inline bool doubleSided() const
+    {
+        return _doubleSided;
+    }
+    inline void setDoubleSided(bool value)
+    {
+        assign(_doubleSided, value);
+    }
+
     // Screen-space refraction strength, only applied to transparent materials.
     inline float refractionFactor() const
     {
@@ -560,6 +570,7 @@ class BG2E_API MaterialAttributes {
     bool _isTransparent = false;
     bool _isSolid = true;
     bool _unlit = false;
+    bool _doubleSided = false;
     float _refractionFactor = 0.017f;
     float _alphaCutoff = 0.0f;
 

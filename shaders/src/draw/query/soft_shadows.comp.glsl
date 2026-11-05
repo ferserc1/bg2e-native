@@ -25,6 +25,7 @@ struct ShadowInstanceData {
     uvec4 ranges;
     vec4 alpha;
     uvec4 options;
+    mat4 model;
 };
 // Matches the immutable TracingVertex buffer shared by all tracing consumers.
 struct ShadowVertex {
@@ -59,16 +60,31 @@ float sampleAlpha(uint index, vec2 uv)
 {
     return textureLod(sampler2D(alphaImages[nonuniformEXT(index)], alphaSamplers[nonuniformEXT(index)]), uv, 0.0).a;
 }
-bool acceptsCandidate(uint instance, uint primitive, vec2 bary)
+bool acceptsCandidate(uint instance, uint primitive, vec2 bary, vec3 direction)
 {
     if (instance >= queryData.data.counts.y)
     {
         return false;
     }
     ShadowInstanceData data = instanceData.values[instance];
+    if (primitive >= data.ranges.y)
+    {
+        return false;
+    }
+    if ((data.options.y & 128u) == 0u)
+    {
+        uint first = data.ranges.x + primitive * 3u;
+        vec3 a = vertices.values[data.options.z + indices.values[first]].position.xyz;
+        vec3 b = vertices.values[data.options.z + indices.values[first + 1u]].position.xyz;
+        vec3 c = vertices.values[data.options.z + indices.values[first + 2u]].position.xyz;
+        if (dot(cross(mat3(data.model) * (b-a), mat3(data.model) * (c-a)), direction) > 0.0)
+        {
+            return false;
+        }
+    }
     if ((data.options.y & 2u) == 0u)
     {
-        // CPU-packed classification: skip UV/index fetches and alpha sampling.
+        // Sidedness is resolved; skip UV fetches and alpha sampling.
         return true;
     }
     if (data.ranges.z == 0xffffffffu)
@@ -98,7 +114,7 @@ bool visible(vec3 origin, vec3 direction, float distance)
     {
         if (rayQueryGetIntersectionTypeEXT(query, false) == gl_RayQueryCandidateIntersectionTriangleEXT &&
             acceptsCandidate(uint(rayQueryGetIntersectionInstanceIdEXT(query, false)),
-                uint(rayQueryGetIntersectionPrimitiveIndexEXT(query, false)), rayQueryGetIntersectionBarycentricsEXT(query, false)))
+                uint(rayQueryGetIntersectionPrimitiveIndexEXT(query, false)), rayQueryGetIntersectionBarycentricsEXT(query, false), direction))
         {
             rayQueryConfirmIntersectionEXT(query);
         }

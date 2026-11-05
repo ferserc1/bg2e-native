@@ -380,6 +380,7 @@ static base::MaterialAttributes materialAttributes(
     {
         result.setRefractionFactor(0.001f);
         result.setIsUnlit(material->unlit);
+        result.setDoubleSided(material->double_sided);
         if (auto texture = textureFromView(material->occlusion_texture, images, base::Color::TypeLinear))
         {
             result.setAoTexture(texture);

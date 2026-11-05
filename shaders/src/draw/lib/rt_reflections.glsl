@@ -85,7 +85,10 @@ vec3 reflectionNormal(uint instance, uint primitive, vec2 bary, vec3 direction)
     {
         n = normalize(candidate);
     }
-    return dot(n,direction) > 0.0 ? -n : n;
+    // Match raster: flip the complete mapped normal once, based on geometry.
+    bool reverse = (traceMaterials[record.ranges.w].values.uvSets[1].z & 128u) != 0u &&
+        traceBackFace(instance,primitive,direction);
+    return reverse ? -n : n;
 }
 vec3 reflectionDirection(vec2 xi, vec3 direction, float roughness)
 {
