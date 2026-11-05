@@ -293,6 +293,10 @@ void AppDelegate::processImports()
                     job->loader.setProgress(0.4f + 0.5f * (total > 0 ? float(processed) / float(total) : 0));
                 }, job->gltf.get(), job->schema, job->bg2.get(), job->obj.get());
             candidate->setName(job->request.fileName.empty() ? job->request.filePath.stem().string() : job->request.fileName);
+            if (!previous)
+            {
+                _stage->placeNewNode(*candidate, *parent);
+            }
             std::shared_ptr<command::scene::ImportRecord> record;
             if (job->request.id != 0)
             {

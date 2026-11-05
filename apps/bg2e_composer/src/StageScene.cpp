@@ -200,6 +200,71 @@ std::shared_ptr<bg2e::scene::Node> StageScene::createPrimitive(unsigned kind)
     return node;
 }
 
+void StageScene::placeNewNode(bg2e::scene::Node& node, bg2e::scene::Node& parent) const
+{
+    if (!camera() || !camera()->projection() || node.parent() || !contains(&parent) || !node.transform())
+    {
+        throw std::invalid_argument("Placement requires a detached node, a current parent and an active camera");
+    }
+
+    const auto parentWorld = parent.worldMatrix();
+    const auto determinant = glm::determinant(parentWorld);
+    if (!std::isfinite(determinant) || determinant == 0.0f)
+    {
+        throw std::invalid_argument("Cannot insert under a non-invertible parent transform");
+    }
+    const auto inverseParent = glm::inverse(parentWorld);
+    const auto cameraWorld = camera()->ownerNode()->worldMatrix();
+    // Camera view space looks down -Z; Node::forwardVector() uses +Z.
+    const auto forward = glm::normalize(-glm::vec3(cameraWorld[2]));
+
+    auto local = node.transform()->matrix();
+    const auto origin = glm::vec3(local[3]);
+    float radius = 0.0f;
+    const bg2e::scene::BoundingBox bounds(&node);
+    if (bounds.isValid())
+    {
+        // Bounds belong to the detached branch. Enclose them about its origin,
+        // then account for all inherited rotation, scale and shear.
+        const auto extent = glm::max(glm::abs(bounds.min() - origin), glm::abs(bounds.max() - origin));
+        const auto inheritedExtent = glm::abs(glm::vec3(parentWorld[0])) * extent.x +
+            glm::abs(glm::vec3(parentWorld[1])) * extent.y + glm::abs(glm::vec3(parentWorld[2])) * extent.z;
+        radius = glm::length(inheritedExtent);
+    }
+
+    const auto* projection = camera()->projection();
+    const auto viewport = projection->viewport();
+    const float aspect = viewport.width > 0 && viewport.height > 0 ? viewport.width / viewport.height : 1.0f;
+    const float verticalFov = glm::radians(bg2e::utils::cameraVerticalFieldOfView(camera()));
+    const float horizontalFov = 2.0f * std::atan(std::tan(verticalFov * 0.5f) * aspect);
+    const float fov = std::min(verticalFov, horizontalFov);
+    float distance = std::max(5.0f, radius / std::sin(fov * 0.5f) * 1.2f);
+    // Keep the origin inside the clip range even when the object cannot fit.
+    const float minimumDistance = std::max(projection->near() * 1.1f, 0.01f);
+    const float maximumDistance = projection->far() * 0.9f;
+    if (!std::isfinite(distance) || !std::isfinite(maximumDistance) || maximumDistance < minimumDistance)
+    {
+        throw std::invalid_argument("The active camera has an invalid insertion range");
+    }
+    distance = std::clamp(distance, minimumDistance, maximumDistance);
+
+    const auto position = glm::vec3(cameraWorld[3]) + forward * distance;
+    // Change only local translation: preserve the new node's rotation/scale,
+    // including unit and coordinate-system conversions on imported branches.
+    local[3] = inverseParent * glm::vec4(position, 1.0f);
+    for (int column = 0; column < 4; ++column)
+    {
+        for (int row = 0; row < 4; ++row)
+        {
+            if (!std::isfinite(local[column][row]))
+            {
+                throw std::invalid_argument("Insertion produced a non-finite local transform");
+            }
+        }
+    }
+    node.transform()->setMatrix(local);
+}
+
 void StageScene::resetCamera()
 {
     if (_camera)

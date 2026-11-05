@@ -96,6 +96,7 @@ class StageScene {
 
     void prepareTools(std::shared_ptr<bg2e::scene::Node> root = {});
     std::shared_ptr<bg2e::scene::Node> createPrimitive(unsigned kind);
+    void placeNewNode(bg2e::scene::Node& node, bg2e::scene::Node& parent) const;
     void prepareCommandCandidate(const std::shared_ptr<bg2e::scene::Node>& node);
     bool contains(bg2e::scene::Node* node) const;
     std::shared_ptr<bg2e::scene::Node> fillLightNode() const

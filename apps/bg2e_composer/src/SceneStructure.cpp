@@ -151,6 +151,12 @@ void AppDelegate::addSceneItem(unsigned kind)
         try
         {
             _stage->prepareCommandCandidate(child);
+            auto destination = parent.lock();
+            if (!destination)
+            {
+                throw std::invalid_argument("The insertion parent expired");
+            }
+            _stage->placeNewNode(*child, *destination);
             _stage->retainForCommand(child);
         }
         catch (...)
@@ -178,6 +184,12 @@ void AppDelegate::addPrimitive(unsigned kind)
         try
         {
             _stage->prepareCommandCandidate(child);
+            auto destination = parent.lock();
+            if (!destination)
+            {
+                throw std::invalid_argument("The insertion parent expired");
+            }
+            _stage->placeNewNode(*child, *destination);
             _stage->retainForCommand(child);
         }
         catch (...)
