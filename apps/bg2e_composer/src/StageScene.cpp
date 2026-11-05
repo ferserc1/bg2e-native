@@ -516,11 +516,14 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesyste
     resources.callback = std::move(progress);
     try
     {
+        loaded->setSceneRoot(candidate);
         candidate->loadResources(*_engine, &resources);
+        loaded->releaseSceneRoot();
         return candidate;
     }
     catch (...)
     {
+        loaded->releaseSceneRoot();
         discardCandidate(candidate);
         throw;
     }
@@ -816,6 +819,7 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
         }
         _model = candidate;
         _document = std::move(next);
+        _scene->prepareTextFonts();
         refreshEnvironment(true);
         if (totalLights == 8)
         {
@@ -842,6 +846,7 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
             }
             _model = previousModel;
             _document = std::move(previousDocument);
+            _scene->prepareTextFonts();
             restoreEditingState(previousState);
             if (rebind)
             {

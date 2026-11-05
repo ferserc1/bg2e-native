@@ -2,6 +2,8 @@
 
 Dependency: accepted step 6.
 
+Mandatory: [recovery-policy.md](recovery-policy.md). Recoverable authoring failures use defaults or rejected/no-op status and console warnings; never stop the application or lose editable text.
+
 ## Implementation
 
 1. Inspect current Composer commands, reflection/property UI, document mutation boundaries and resource ownership. Add text creation and font declaration editing using those mechanisms rather than a parallel editor state system.
@@ -23,6 +25,7 @@ Give exact menu/control locations and a concise manual checklist the user can pe
 - Use a floor and a directional light to observe glyph-shaped shadows rather than an opaque rectangle; note which existing renderer settings enable shadows.
 - Duplicate text, edit only the duplicate, and use undo/redo for text/font/material changes.
 - Save and Save As, reopen from the destination, and inspect packaged resources: text remains editable, fonts/other material images are present, and text produces neither a `.bg2` nor a generated albedo PNG. Existing model exports still work.
+- Check recoverable faults through normal controls: invalid size/spacing/margins/resolution, missing/unreadable fonts, duplicate identifiers and overflowing content. Expect defaults/clipping or transparent/omitted text plus console warnings, continued interaction/rendering, no exception interruption or per-frame warning/retry flood, and recovery after correction/explicit reload.
 
 These are user manual observations, not automated tests. Do not execute builds or launch Composer. Record user feedback, fix blockers within this milestone, and stop for acceptance.
 

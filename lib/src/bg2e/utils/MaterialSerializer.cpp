@@ -117,15 +117,19 @@ bool parseMaterial(
         result.setAlbedo(*value);
     }
 
-    const auto texture = [&](const char* key) -> base::Texture*
+    const auto texture = [&](const char* key, const std::shared_ptr<base::Texture>& existing) -> base::Texture*
     {
         auto file = reader.getString(key);
-        if (!file)
+        auto settings = reader.getObject(std::string(key) + "Settings");
+        if (!file && (!settings || !existing))
         {
             return nullptr;
         }
-        auto value = std::unique_ptr<base::Texture>(getTexture(basePath, *file));
-        if (auto settings = reader.getObject(std::string(key) + "Settings"))
+        // A procedural owner supplies the source. Restore sampling without
+        // inventing an empty file reference or deserializing ownership policy.
+        auto value = file ? std::unique_ptr<base::Texture>(getTexture(basePath, *file)) :
+            std::make_unique<base::Texture>(*existing);
+        if (settings)
         {
             const auto mag = settings->getInteger<uint32_t>("mag").value_or(value->magFilter());
             const auto min = settings->getInteger<uint32_t>("min").value_or(value->minFilter());
@@ -158,7 +162,7 @@ bool parseMaterial(
         return reader.getInteger<uint32_t>(key).value_or(fallback);
     };
 
-    if (auto value = texture("albedoTexture"))
+    if (auto value = texture("albedoTexture", result.albedoTexture()))
     {
         result.setAlbedoTexture(value);
         result.setAlbedoScale(scale("albedoScale"));
@@ -168,7 +172,7 @@ bool parseMaterial(
     {
         result.setMetalness(*value);
     }
-    if (auto value = texture("metalnessTexture"))
+    if (auto value = texture("metalnessTexture", result.metalnessTexture()))
     {
         result.setMetalnessTexture(value);
         result.setMetalnessChannel(index("metalnessChannel"));
@@ -179,14 +183,14 @@ bool parseMaterial(
     {
         result.setRoughness(*value);
     }
-    if (auto value = texture("roughnessTexture"))
+    if (auto value = texture("roughnessTexture", result.roughnessTexture()))
     {
         result.setRoughnessTexture(value);
         result.setRoughnessChannel(index("roughnessChannel"));
         result.setRoughnessScale(scale("roughnessScale"));
         result.setRoughnessUVSet(index("roughnessUV"));
     }
-    if (auto value = texture("normalTexture"))
+    if (auto value = texture("normalTexture", result.normalTexture()))
     {
         result.setNormalTexture(value);
         result.setNormalScale(scale("normalScale"));
@@ -212,7 +216,7 @@ bool parseMaterial(
     {
         result.setSheenColor(*value);
     }
-    if (auto value = texture("ambientOcclussion"))
+    if (auto value = texture("ambientOcclussion", result.aoTexture()))
     {
         if (result.indirectTextureMode() != base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
         {
@@ -227,7 +231,7 @@ bool parseMaterial(
     {
         result.setLightEmission(*value);
     }
-    if (auto value = texture("lightEmissionTexture"))
+    if (auto value = texture("lightEmissionTexture", result.lightEmissionTexture()))
     {
         result.setLightEmissionTexture(value);
     }
@@ -246,6 +250,60 @@ bool parseMaterial(
     if (auto value = reader.getInteger<uint32_t>("lightEmissionUV"))
     {
         result.setLightEmissionUVSet(*value);
+    }
+    // UV/scalar controls are material data even when a source is omitted. This
+    // also permits deserializing them before a procedural owner attaches pixels.
+    if (auto value = reader.getVec2("albedoScale"))
+    {
+        result.setAlbedoScale(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("albedoUV"))
+    {
+        result.setAlbedoUVSet(*value);
+    }
+    if (auto value = reader.getVec2("metalnessScale"))
+    {
+        result.setMetalnessScale(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("metalnessUV"))
+    {
+        result.setMetalnessUVSet(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("metalnessChannel"))
+    {
+        result.setMetalnessChannel(*value);
+    }
+    if (auto value = reader.getVec2("roughnessScale"))
+    {
+        result.setRoughnessScale(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("roughnessUV"))
+    {
+        result.setRoughnessUVSet(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("roughnessChannel"))
+    {
+        result.setRoughnessChannel(*value);
+    }
+    if (auto value = reader.getVec2("normalScale"))
+    {
+        result.setNormalScale(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("normalUV"))
+    {
+        result.setNormalUVSet(*value);
+    }
+    if (auto value = reader.getVec2("ambientOcclussionScale"))
+    {
+        result.setAoScale(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("ambientOcclussionUV"))
+    {
+        result.setAoUVSet(*value);
+    }
+    if (auto value = reader.getInteger<uint32_t>("ambientOcclussionChannel"))
+    {
+        result.setAoChannel(*value);
     }
     return true;
 }
@@ -310,16 +368,24 @@ std::string MaterialSerializer::serializeMaterial(
         {"doubleSided", JSON(mat.doubleSided())},
     });
     auto& obj = matJson->objectValue();
-
-    if (mat.albedoTexture().get())
+    const auto source = [&](const char* key, const std::shared_ptr<base::Texture>& texture)
     {
-        std::filesystem::path fileName = mat.albedoTexture()->imageFilePath();
+        if (!texture || texture->ignoreSerialization())
+        {
+            return;
+        }
+        std::filesystem::path fileName = texture->imageFilePath();
         if (relativePaths)
         {
             fileName = fileName.filename();
         }
-        obj["albedoTexture"] = JSON(fileName.string());
-        addUniqueTexture(mat.albedoTexture(), uniqueTextures);
+        obj[key] = JSON(fileName.string());
+        addUniqueTexture(texture, uniqueTextures);
+    };
+
+    if (mat.albedoTexture().get())
+    {
+        source("albedoTexture", mat.albedoTexture());
         obj["albedoScale"] = JSON(mat.albedoScale());
         obj["albedoUV"] = JSON(mat.albedoUVSet());
     }
@@ -328,45 +394,29 @@ std::string MaterialSerializer::serializeMaterial(
 
     if (mat.metalnessTexture().get())
     {
-        std::filesystem::path fileName = mat.metalnessTexture()->imageFilePath();
-        if (relativePaths)
-        {
-            fileName = fileName.filename();
-        }
-        obj["metalnessTexture"] = JSON(fileName.string());
-        addUniqueTexture(mat.metalnessTexture(), uniqueTextures);
+        source("metalnessTexture", mat.metalnessTexture());
         obj["metalnessChannel"] = JSON(mat.metalnessChannel());
         obj["metalnessScale"] = JSON(mat.metalnessScale());
         obj["metalnessUV"] = JSON(mat.metalnessUVSet());
     }
 
     obj["metalness"] = JSON(mat.metalness());
+    obj["metalnessInvert"] = JSON(mat.metalnessInvert());
 
     if (mat.roughnessTexture().get())
     {
-        std::filesystem::path fileName = mat.roughnessTexture()->imageFilePath();
-        if (relativePaths)
-        {
-            fileName = fileName.filename();
-        }
-        obj["roughnessTexture"] = JSON(fileName.string());
-        addUniqueTexture(mat.roughnessTexture(), uniqueTextures);
+        source("roughnessTexture", mat.roughnessTexture());
         obj["roughnessChannel"] = JSON(mat.roughnessChannel());
         obj["roughnessScale"] = JSON(mat.roughnessScale());
         obj["roughnessUV"] = JSON(mat.roughnessUVSet());
     }
 
     obj["roughness"] = JSON(mat.roughness());
+    obj["roughnessInvert"] = JSON(mat.roughnessInvert());
 
     if (mat.normalTexture().get())
     {
-        std::filesystem::path fileName = mat.normalTexture()->imageFilePath();
-        if (relativePaths)
-        {
-            fileName = fileName.filename();
-        }
-        obj["normalTexture"] = JSON(fileName.string());
-        addUniqueTexture(mat.normalTexture(), uniqueTextures);
+        source("normalTexture", mat.normalTexture());
         obj["normalScale"] = JSON(mat.normalScale());
         obj["normalUV"] = JSON(mat.normalUVSet());
     }
@@ -382,13 +432,7 @@ std::string MaterialSerializer::serializeMaterial(
 
     if (mat.aoTexture().get())
     {
-        std::filesystem::path fileName = mat.aoTexture()->imageFilePath();
-        if (relativePaths)
-        {
-            fileName = fileName.filename();
-        }
-        obj["ambientOcclussion"] = JSON(fileName.string());
-        addUniqueTexture(mat.aoTexture(), uniqueTextures);
+        source("ambientOcclussion", mat.aoTexture());
         obj["ambientOcclussionScale"] = JSON(mat.aoScale());
         obj["ambientOcclussionChannel"] = JSON(mat.aoChannel());
         obj["ambientOcclussionUV"] = JSON(mat.aoUVSet());
@@ -402,13 +446,7 @@ std::string MaterialSerializer::serializeMaterial(
 
     if (mat.lightEmissionTexture().get())
     {
-        std::filesystem::path fileName = mat.lightEmissionTexture()->imageFilePath();
-        if (relativePaths)
-        {
-            fileName = fileName.filename();
-        }
-        obj["lightEmissionTexture"] = JSON(fileName.string());
-        addUniqueTexture(mat.lightEmissionTexture(), uniqueTextures);
+        source("lightEmissionTexture", mat.lightEmissionTexture());
     }
 
     const auto settings = [&](const char* key, const std::shared_ptr<base::Texture>& texture)
@@ -457,7 +495,7 @@ void MaterialSerializer::addUniqueTexture(
     std::vector<std::shared_ptr<base::Texture>>& textures)
 {
     // Only add textures associated with a file
-    if (tex->imageFilePath() == "")
+    if (!tex || tex->ignoreSerialization() || tex->imageFilePath().empty())
     {
         return;
     }

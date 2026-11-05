@@ -444,7 +444,7 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
             ShadowIdentity key;
             key.ranges = {geometry->bases[meshIndices[i]].y + submesh.firstIndex, submesh.indexCount / 3, 0, item.objectId};
             key.alpha = {m.uvScale[0].x, m.uvScale[0].y, m.emissionAlpha.y, m.albedo.a};
-            key.options = {m.uvSets[0].x, m.uvSets[1].z, geometry->bases[meshIndices[i]].x, 0};
+            key.options = {m.uvSets[0].x, m.uvSets[1].z, geometry->bases[meshIndices[i]].x, m.emissionAlpha.z != 0 ? 1u : 0u};
             key.model = item.worldMatrix;
             if ((key.options.y & MaterialAlphaTest) != 0)
             {
@@ -753,7 +753,7 @@ std::shared_ptr<TracingSnapshot> TracingSceneResources::prepare(const RenderQueu
         bg2e_log_warning << "Tracing material capacity reached: images=" << next->images.size()
             << ", samplers=" << next->samplers.size() << ", capacity=" << _capacity
             << "; using neutral values for " << next->fallbackTextureSlots
-            << " texture slots (raster materials unchanged)" << bg2e_log_end;
+            << " texture slots (essential alpha geometry omitted; raster materials unchanged)" << bg2e_log_end;
     }
     _capacityWarningActive = next->fallbackTextureSlots != 0;
     return next;

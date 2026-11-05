@@ -81,7 +81,7 @@ bool acceptsCandidate(uint instance, uint primitive, float2 bary, float3 directi
     }
     if (data.ranges.z == 0xffffffffu)
     {
-        return data.alpha.w >= data.alpha.z;
+        return data.options.w == 0u && data.alpha.w >= data.alpha.z;
     }
     if (primitive >= data.ranges.y)
     {

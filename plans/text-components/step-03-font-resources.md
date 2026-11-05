@@ -2,6 +2,8 @@
 
 Dependency: accepted step 2.
 
+Mandatory: [recovery-policy.md](recovery-policy.md). Font/declaration/registry failures never interrupt scene loading; unavailable resources return null and warn.
+
 ## Dependency and asset
 
 1. Vendor an independently pinned `stb_truetype.h`, retaining its MIT license option and upstream notices. Compile its implementation exactly once with private symbols; do not use ImGui's copy or expose stb structs in public headers. Do not add Fontstash.
@@ -14,8 +16,8 @@ Dependency: accepted step 2.
 1. Implement `base::TextFont` as a CPU resource owning font bytes and private face state, index, metrics and rasterizer operations. Keep GPU/scene dependencies out of base. Stable bytes must outlive all stb references. No process-global mutable font registry.
 2. Implement `scene::TextFontComponent` with a collection of declarations `{identifier, path, faceIndex}`. One component can declare several fonts on a root node. Any node may declare fonts; all identifiers belong to one scene namespace.
 3. Separate representation-only deserialization from file loading. Serialize portable references; resolve relative paths at the component/scene resource boundary.
-4. Add a scene-owned registry and explicit font-first resource preparation phase before text realization, independent of traversal order. Duplicate identifiers fail clearly. Rebuild/invalidate the registry on declaration edits, removal and scene replacement without stale handles.
-5. Define missing-font behavior and reload notification/versioning so future texts regenerate when their font changes. Fail without publishing partially updated resources; avoid repeated per-frame file reads or retries.
+4. Add a scene-owned registry and explicit font-first resource preparation phase before text realization, independent of traversal order. Duplicate declarations warn: ignore later entries within one collection and disable ambiguous scene-wide identifiers, preserving other fonts. Rebuild/invalidate on declaration edits, removal and scene replacement without stale handles.
+5. Missing/failed fonts warn and resolve to unavailable/null so dependent text becomes transparent/omitted, not an exception. Publish complete availability outcomes, not partially prepared native state. Define reload/versioning; cache unavailable outcomes and avoid repeated per-frame file reads, retries or warnings.
 6. Implement registration/factory discovery, public module includes and detached independent cloning. Immutable font bytes may be internally reused only if that does not share editable declaration state; respect the repository's component clone contract.
 7. Validate identifiers, face indices, file I/O and sensible resource limits. State explicitly that basic checks do not make stb safe for malicious fonts: trusted project fonts only initially.
 

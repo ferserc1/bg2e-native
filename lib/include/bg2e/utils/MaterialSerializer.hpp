@@ -30,6 +30,9 @@ namespace utils {
 
 class BG2E_API MaterialSerializer {
   public:
+    // Sampling-only records without a source apply to an existing slot in result.
+    // Procedural owners seed regenerated textures before deserializing material
+    // data; no empty filesystem placeholder or ownership flags are synthesized.
     bool deserializeMaterial(
         const std::string& jsonString,
         const std::filesystem::path& basePath,

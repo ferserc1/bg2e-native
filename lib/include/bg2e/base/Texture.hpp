@@ -158,12 +158,20 @@ class Texture {
         : _type{TypeProcedural}
     {
         assign(_proceduralGenerator, std::shared_ptr<ProceduralTextureGenerator>(gen));
+        if (_proceduralGenerator)
+        {
+            _colorType = _proceduralGenerator->colorType();
+        }
     }
 
     Texture(std::shared_ptr<ProceduralTextureGenerator> gen)
         : _type{TypeProcedural}
     {
         assign(_proceduralGenerator, gen);
+        if (_proceduralGenerator)
+        {
+            _colorType = _proceduralGenerator->colorType();
+        }
     }
 
     Texture(const Texture&) = default;
@@ -184,6 +192,8 @@ class Texture {
             assign(_addressModeW, source._addressModeW);
             assign(_colorType, source._colorType);
             assign(_proceduralGenerator, source._proceduralGenerator);
+            _sourceEditable = source._sourceEditable;
+            _ignoreSerialization = source._ignoreSerialization;
             // Publish ownership after the only allocating field (the path) has
             // copied successfully; a failed path copy retains its old source.
             _sourceOwner = source._sourceOwner;
@@ -224,6 +234,26 @@ class Texture {
         return _type;
     }
 
+    // CPU ownership/export policy, not pixel or sampler state. These setters do
+    // not advance revision(): changing policy must not trigger image uploads.
+    bool sourceEditable() const
+    {
+        return _sourceEditable;
+    }
+    void setSourceEditable(bool value)
+    {
+        _sourceEditable = value;
+    }
+    // Omit the source reference/pixel asset, not material UV or sampling values.
+    bool ignoreSerialization() const
+    {
+        return _ignoreSerialization;
+    }
+    void setIgnoreSerialization(bool value)
+    {
+        _ignoreSerialization = value;
+    }
+
     inline void setProceduralGenerator(ProceduralTextureGenerator* gen)
     {
         setProceduralGenerator(std::shared_ptr<ProceduralTextureGenerator>(gen));
@@ -231,6 +261,10 @@ class Texture {
     inline void setProceduralGenerator(std::shared_ptr<ProceduralTextureGenerator> gen)
     {
         assign(_type, TypeProcedural);
+        if (gen)
+        {
+            assign(_colorType, gen->colorType());
+        }
         assign(_proceduralGenerator, gen);
     }
     ProceduralTextureGenerator* proceduralTextureGenerator()
@@ -244,17 +278,23 @@ class Texture {
         {
             throw std::runtime_error("base::Texture::generateImage(): Invalid procedural texture generator");
         }
-        auto result = new Image();
+        auto result = std::make_unique<Image>();
+        auto data = std::unique_ptr<uint8_t[]>(_proceduralGenerator->generate());
+        if (!data)
+        {
+            return nullptr; // A nonthrowing generator can report unavailable pixels.
+        }
+        // A recoverable generator may have selected a smaller transparent image.
         auto width = _proceduralGenerator->width();
         auto height = _proceduralGenerator->height();
         auto channels = _proceduralGenerator->bytesPerPixel();
-        auto data = _proceduralGenerator->generate();
         auto identifier = std::string("procedural-texture:") + _proceduralGenerator->imageIdentifier();
-        result->setData(data, width, height, channels);
+        result->setData(data.get(), width, height, channels);
+        data.release(); // Image now owns the new[] buffer, including on failure below.
         result->setPath(identifier);
         result->setColorType(_proceduralGenerator->colorType());
         assign(_colorType, _proceduralGenerator->colorType());
-        return result;
+        return result.release();
     }
 
     inline void setUseMipmaps(bool mipmaps)
@@ -384,6 +424,8 @@ class Texture {
     std::string _imageFilePath;
 
     TextureType _type = TypeFilesystem;
+    bool _sourceEditable = true;
+    bool _ignoreSerialization = false;
     bool _useMipmaps = true;
     Filter _magFilter = FilterLinear;
     Filter _minFilter = FilterNearest;

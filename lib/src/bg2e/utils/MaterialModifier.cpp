@@ -19,8 +19,10 @@
 #include <bg2e/utils/MaterialModifier.hpp>
 #include <bg2e/json/NodeReader.hpp>
 #include "MaterialModifierJson.hpp"
+#include "../base/TextDiagnostics.hpp"
 
 #include <cmath>
+#include <array>
 #include <limits>
 #include <optional>
 #include <utility>
@@ -398,6 +400,24 @@ bool MaterialModifier::apply(base::MaterialAttributes& material) const
     }
     return true;
 }
+
+bool MaterialModifier::changesTextureSource(uint32_t slot) const noexcept
+{
+    if (!_data)
+    {
+        return false;
+    }
+    const std::array<bool, 6> edits{bool(_data->albedoTexture), bool(_data->metalnessTexture),
+        bool(_data->roughnessTexture), bool(_data->normalTexture), bool(_data->ambientOcclussion),
+        bool(_data->lightEmissionTexture)};
+    if (slot >= edits.size())
+    {
+        base::detail::textWarning("Unknown texture slot in material patch inspection; edit ignored.");
+        return false;
+    }
+    return edits[slot];
+}
+
 
 bool MaterialModifier::apply(draw::MaterialBase& material, TextureLoadedCallback callback) const
 {

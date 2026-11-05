@@ -53,12 +53,23 @@ void Node::addChild(Node* node)
 
 void Node::addChild(std::shared_ptr<Node> node)
 {
+    auto* previousScene = node->scene();
     _children.push_back(node);
     node->_parent = this;
+    auto* owner = scene();
+    if (owner)
+    {
+        owner->invalidateTextFonts();
+    }
+    if (previousScene && previousScene != owner)
+    {
+        previousScene->invalidateTextFonts();
+    }
 }
 
 void Node::setChildLists(std::vector<ChildList> lists)
 {
+    std::unordered_set<Scene*> affectedScenes;
     std::unordered_set<Node*> parents;
     std::unordered_map<Node*, Node*> proposed;
     for (const auto& list : lists)
@@ -66,6 +77,10 @@ void Node::setChildLists(std::vector<ChildList> lists)
         if (!list.parent || !parents.insert(list.parent.get()).second)
         {
             throw std::invalid_argument("Child placement requires unique live parents");
+        }
+        if (auto* owner = list.parent->scene())
+        {
+            affectedScenes.insert(owner);
         }
     }
     for (const auto& list : lists)
@@ -115,6 +130,10 @@ void Node::setChildLists(std::vector<ChildList> lists)
         {
             child->_parent = list.parent.get();
         }
+    }
+    for (auto* owner : affectedScenes)
+    {
+        owner->invalidateTextFonts();
     }
 }
 
@@ -201,6 +220,7 @@ void Node::removeChild(const std::shared_ptr<Node>& node)
     auto root = sceneRoot();
     if (root && root->scene())
     {
+        root->scene()->invalidateTextFonts();
         root->scene()->updateLights();
     }
 }
@@ -246,6 +266,14 @@ std::shared_ptr<Node> Node::clone() const
 
 void Node::clearChildren()
 {
+    if (auto* owner = scene())
+    {
+        owner->invalidateTextFonts();
+    }
+    for (const auto& child : _children)
+    {
+        child->_parent = nullptr;
+    }
     _children.clear();
 }
 
@@ -471,6 +499,12 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
 
 void Node::loadResources(draw::Engine& engine, SceneLoadProgress* progress)
 {
+    if (auto* owner = scene())
+    {
+        // First pass covers all declarations in the owning scene, including
+        // later siblings. Only then may any component realize text or geometry.
+        owner->prepareTextFonts();
+    }
     for (const auto& entry : _components)
     {
         entry.second->loadResources(engine, progress);

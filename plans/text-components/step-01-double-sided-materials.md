@@ -2,6 +2,8 @@
 
 Dependency: none. This must be the first implementation milestone and work on existing Composer geometry without any text infrastructure.
 
+Follow the cross-cutting [recovery policy](recovery-policy.md); this does not request an unrelated graphics-backend exception refactor.
+
 ## Implementation
 
 1. Inspect MaterialAttributes, MaterialSerializer/MaterialModifier, packing/revisions, Composer material commands, render queues and raster/surface/shadow consumers in the current checkout.

@@ -24,6 +24,7 @@
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/utils/utils.hpp>
+#include "../base/TextDiagnostics.hpp"
 
 #include <cmath>
 #include <cstdio>
@@ -227,7 +228,7 @@ Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publicati
         for (uint32_t slot = 0; slot < 6; ++slot)
         {
             const auto authored = (material.*Getters[slot])();
-            if (!authored)
+            if (!authored || authored->ignoreSerialization())
             {
                 continue;
             }
@@ -297,10 +298,15 @@ Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publicati
     return model;
 }
 
-void stageGraph(scene::Node& node, draw::Engine& engine, Publication& publication, ReferenceRestore& restore)
+bool stageGraph(scene::Node& node, draw::Engine& engine, Publication& publication, ReferenceRestore& restore)
 {
     if (auto component = node.getComponent<scene::DrawableComponent>(); component && !component->ignoreSerialization())
     {
+        if (!component->requiresBg2Export())
+        {
+            base::detail::textWarning("Procedural text must not be exported as BG2; scene save deferred until embedded persistence.");
+            return false;
+        }
         auto model = snapshot(node, engine, publication);
         auto path = publication.resource(".bg2");
         storeMeshBg2(path, &model);
@@ -309,8 +315,12 @@ void stageGraph(scene::Node& node, draw::Engine& engine, Publication& publicatio
     }
     for (const auto& child : node.children())
     {
-        stageGraph(*child, engine, publication, restore);
+        if (!stageGraph(*child, engine, publication, restore))
+        {
+            return false;
+        }
     }
+    return true;
 }
 
 // Environment images remain encoded in their original format. Custom component
@@ -360,9 +370,15 @@ try
     engine.device()->waitIdle();
     Publication publication(path);
     ReferenceRestore restore;
-    stageGraph(*root, engine, publication, restore);
+    if (!stageGraph(*root, engine, publication, restore))
+    {
+        return false;
+    }
     const auto main = publication.directory / publication.destination.filename();
-    saveSceneReferences(root, main, progress); // Custom virtual serializers remain authoritative.
+    if (!saveSceneReferences(root, main, progress)) // Custom virtual serializers remain authoritative.
+    {
+        return false;
+    }
     auto document = readSceneDocument(main);
     stageEnvironments(document, publication);
     writeSceneDocument(document, main);
@@ -388,6 +404,11 @@ try
     if (!node || !node->children().empty() || !node->enabled() || node->steady())
     {
         throw std::invalid_argument("BG2 export requires a single model node; use a scene document for a hierarchy");
+    }
+    if (auto* component = node->drawable(); component && !component->requiresBg2Export())
+    {
+        base::detail::textWarning("Text cannot be baked into a BG2 model; export refused.");
+        return false;
     }
     for (const auto& [type, component] : node->components())
     {

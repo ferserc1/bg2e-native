@@ -51,6 +51,12 @@ class BG2E_API DrawableComponent : public Component {
         return true;
     }
 
+    // Procedural authored geometry serializes its own data, never a baked model.
+    virtual bool requiresBg2Export() const
+    {
+        return true;
+    }
+
     std::shared_ptr<bg2e::draw::Drawable> drawable();
     std::shared_ptr<const bg2e::draw::Drawable> drawable() const;
     void setDrawable(std::shared_ptr<bg2e::draw::Drawable> drw);

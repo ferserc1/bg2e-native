@@ -76,7 +76,7 @@ ShadowQueryTable buildShadowQueryTable(const std::vector<CollectRayTracingInstan
         }
         data.ranges = {submesh.firstIndex, submesh.indexCount / 3, std::numeric_limits<uint32_t>::max(), item.objectId};
         data.alpha = {material.uvScale[0].x, material.uvScale[0].y, material.emissionAlpha.y, material.albedo.a};
-        data.options = {material.uvSets[0].x, material.uvSets[1].z, 0, 0};
+        data.options = {material.uvSets[0].x, material.uvSets[1].z, 0, material.emissionAlpha.z != 0 ? 1u : 0u};
         data.model = item.worldMatrix;
         if ((data.options.y & MaterialAlphaTest) != 0)
         {
@@ -349,11 +349,11 @@ void SoftShadowPass::prepare(const FrameContext& frame, const RenderQueue& queue
         const auto& table = slot.snapshot->shadowTable;
         if (table.fallbackTextureSlots)
         {
-            _status = "Query shadows ready; neutral alpha for " + std::to_string(table.fallbackTextureSlots) +
+            _status = "Query shadows ready; fallback alpha for " + std::to_string(table.fallbackTextureSlots) +
                 " overflowed texture slots (capacity=" + std::to_string(_alphaCapacity) + ")";
             if (!_capacityWarningActive)
             {
-                bg2e_log_warning << _status << "; all occluder instances retained" << bg2e_log_end;
+                bg2e_log_warning << _status << "; essential procedural masks omitted rather than rectangular occlusion" << bg2e_log_end;
             }
         }
         _capacityWarningActive = table.fallbackTextureSlots != 0;

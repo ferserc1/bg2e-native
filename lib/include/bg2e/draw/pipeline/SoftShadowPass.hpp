@@ -45,7 +45,7 @@ struct SoftShadowSettings {
 struct alignas(16) ShadowInstanceData {
     glm::uvec4 ranges{0}; // first index, triangle count, alpha slot or UINT_MAX, objectId
     glm::vec4 alpha{1}; // scale.xy, cutoff, albedo alpha multiplier
-    glm::uvec4 options{0}; // albedo UV set, material flags, vertex base, reserved
+    glm::uvec4 options{0}; // albedo UV set, material flags, vertex base, required alpha source
     glm::mat4 model{1}; // Winding classification matches transformed raster geometry.
 };
 struct ShadowQueryTable {

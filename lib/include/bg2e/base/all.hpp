@@ -30,4 +30,8 @@
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/base/RegistrationOwner.hpp>
 #include <bg2e/base/Texture.hpp>
+#include <bg2e/base/TextFont.hpp>
+#include <bg2e/base/Text.hpp>
+#include <bg2e/base/TextRasterizer.hpp>
+#include <bg2e/base/TextTextureGenerator.hpp>
 #include <bg2e/base/Timeout.hpp>

@@ -35,6 +35,60 @@ using Setter = void (Attributes::*)(std::shared_ptr<base::Texture>);
 const std::array<Setter, 6> setters{&Attributes::setAlbedoTexture, &Attributes::setMetalnessTexture,
     &Attributes::setRoughnessTexture, &Attributes::setNormalTexture, &Attributes::setAoTexture,
     &Attributes::setLightEmissionTexture};
+using Getter = std::shared_ptr<base::Texture> (Attributes::*)() const;
+const std::array<Getter, 6> getters{&Attributes::albedoTexture, &Attributes::metalnessTexture,
+    &Attributes::roughnessTexture, &Attributes::normalTexture, &Attributes::aoTexture,
+    &Attributes::lightEmissionTexture};
+
+uint32_t sourcePolicy(const Attributes& live, const Attributes& definition)
+{
+    uint32_t result = 0;
+    for (size_t slot = 0; slot < getters.size(); ++slot)
+    {
+        const auto texture = (live.*getters[slot])();
+        const auto declared = (definition.*getters[slot])();
+        const uint32_t flags = (texture && !texture->sourceEditable() ? 1u : 0u) |
+            (texture && texture->ignoreSerialization() ? 2u : 0u) |
+            (declared && !declared->sourceEditable() ? 4u : 0u) |
+            (declared && declared->ignoreSerialization() ? 8u : 0u);
+        result |= flags << (slot * 4);
+    }
+    return result;
+}
+
+
+void preserveLockedSources(draw::MaterialBase& candidate, Attributes& definition,
+    const draw::MaterialBase& live, const Attributes& liveDefinition)
+{
+    for (size_t slot = 0; slot < getters.size(); ++slot)
+    {
+        const auto source = (live.materialAttributes().*getters[slot])();
+        const auto declared = (liveDefinition.*getters[slot])();
+        const auto locked = source && !source->sourceEditable() ? source :
+            declared && !declared->sourceEditable() ? declared : nullptr;
+        if (!locked)
+        {
+            continue;
+        }
+        auto settings = draw::cloneTextureSettings(*locked);
+        // Material paste may change sampling, but never the protected source.
+        if (auto sampling = (candidate.materialAttributes().*getters[slot])())
+        {
+            settings->setColorType(sampling->colorType());
+            settings->setMinFilter(sampling->minFilter());
+            settings->setMagFilter(sampling->magFilter());
+            settings->setUseMipmaps(sampling->useMipmaps());
+            settings->setAddressMode(sampling->addressModeU(), sampling->addressModeV(), sampling->addressModeW());
+            settings->setMinLod(sampling->minLod());
+            settings->setMaxLod(sampling->maxLod());
+            settings->setMipLodBias(sampling->mipLodBias());
+        }
+        auto texture = std::make_shared<draw::Texture>(live.engine());
+        texture->load(settings, live.texture(static_cast<draw::TextureSlot>(slot))->imageResource());
+        candidate.setTexture(static_cast<draw::TextureSlot>(slot), std::move(texture));
+        (definition.*setters[slot])(draw::cloneTextureSettings(*settings));
+    }
+}
 
 size_t add(size_t a, size_t b)
 {
@@ -132,6 +186,11 @@ void account(app::CommandMemory& memory, const std::shared_ptr<draw::MaterialBas
 
 bool apply(draw::MaterialBase& material, Attributes& definition, const ui::MaterialEditIntent& intent)
 {
+    if (!ui::validateMaterialSourceEdit(material.materialAttributes(), intent) ||
+        !ui::validateMaterialSourceEdit(definition, intent))
+    {
+        return false;
+    }
     bool changed = false;
     const auto initialLive = material.materialAttributes().revision();
     const auto initialDefinition = definition.revision();
@@ -150,7 +209,8 @@ bool apply(draw::MaterialBase& material, Attributes& definition, const ui::Mater
     auto replaceSettings = [&](draw::TextureSlot slot, bool linear)
     {
         auto source = material.texture(slot);
-        auto settings = draw::cloneTextureSettings(*source->base());
+        const auto authored = (material.materialAttributes().*getters.at(size_t(slot)))();
+        auto settings = draw::cloneTextureSettings(authored ? *authored : *source->base());
         const auto revision = settings->revision();
         if (intent.sampling)
         {
@@ -265,12 +325,25 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const bg2e::ui::Ma
         }
         target.expectedRevision = live->materialAttributes().revision();
         target.expectedDefinition = mesh->materialDefinition(item.submesh).revision();
+        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), mesh->materialDefinition(item.submesh));
+        // Validate the actual receivers before a paste can replace their policy.
+        if (!bg2e::ui::validateMaterialSourceEdit(live->materialAttributes(), intent) ||
+            !bg2e::ui::validateMaterialSourceEdit(mesh->materialDefinition(item.submesh), intent))
+        {
+            _targets.clear();
+            _effective = false;
+            return; // Recoverable rejected edit, no exception or partial publication.
+        }
         target.alternate = (paste ? paste : live)->snapshot();
         if (target.alternate->engine() != live->engine())
         {
             throw std::invalid_argument("Material clipboard belongs to another device");
         }
         target.definition = bg2e::draw::cloneMaterialAttributes(paste ? paste->materialAttributes() : mesh->materialDefinition(item.submesh));
+        if (paste)
+        {
+            preserveLockedSources(*target.alternate, target.definition, *live, mesh->materialDefinition(item.submesh));
+        }
         _effective = apply(*target.alternate, target.definition, intent) || paste || _effective;
         if (!target.alternate->texturesUpdated())
         {
@@ -329,8 +402,10 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const std::vector<
         target.live = live;
         target.expectedRevision = live->materialAttributes().revision();
         target.expectedDefinition = mesh->materialDefinition(value.target.submesh).revision();
+        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), mesh->materialDefinition(value.target.submesh));
         target.alternate = value.material->snapshot();
         target.definition = bg2e::draw::cloneMaterialAttributes(value.definition);
+        preserveLockedSources(*target.alternate, target.definition, *live, mesh->materialDefinition(value.target.submesh));
         (void)bg2e::draw::packMaterial(*target.alternate);
         accountDefinition(_memory, mesh->materialDefinition(target.item.submesh));
         accountDefinition(_memory, target.definition);
@@ -395,7 +470,8 @@ bg2e::app::CommandResult EditMaterials::exchange(bool applied) noexcept
         if (!stage || !node || !stage->contains(node.get()) || !mesh || !live ||
             mesh->drawMaterial(target.item.submesh) != live || live->engine() != target.alternate->engine() ||
             live->materialAttributes().revision() != target.expectedRevision ||
-            mesh->materialDefinition(target.item.submesh).revision() != target.expectedDefinition)
+            mesh->materialDefinition(target.item.submesh).revision() != target.expectedDefinition ||
+            sourcePolicy(live->materialAttributes(), mesh->materialDefinition(target.item.submesh)) != target.expectedSourcePolicy)
         {
             return {CommandStatus::Rejected, "Prepared material target changed"};
         }
@@ -409,6 +485,7 @@ bg2e::app::CommandResult EditMaterials::exchange(bool applied) noexcept
         swap(mesh->materialDefinition(target.item.submesh), target.definition);
         target.expectedRevision = live->materialAttributes().revision();
         target.expectedDefinition = mesh->materialDefinition(target.item.submesh).revision();
+        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), mesh->materialDefinition(target.item.submesh));
     }
     _applied = applied;
     return {CommandStatus::Applied, {}};

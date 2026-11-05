@@ -26,12 +26,15 @@ class BG2E_API RenderQueueVisitor : public scene::NodeVisitor {
   public:
     RenderQueueVisitor();
     // Publishes a complete snapshot or leaves the previous queue intact.
-    void enqueue(scene::Node* root, Engine& engine, RenderQueue& queue);
+    // Picking may retain a prepared empty/unavailable text's full rectangle;
+    // normal raster/tracing extraction omits text without usable glyph coverage.
+    void enqueue(scene::Node* root, Engine& engine, RenderQueue& queue, bool forPicking = false);
     void visit(scene::Node* node) override;
     void didVisit(scene::Node* node) override;
   private:
     RenderQueue* _queue = nullptr;
     bool _explicitEnvironment = false;
+    bool _forPicking = false;
     const scene::EnvironmentComponent* _activeEnvironment = nullptr;
     glm::mat4 _world{1};
     std::vector<glm::mat4> _stack;

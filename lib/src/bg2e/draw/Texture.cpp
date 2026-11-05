@@ -35,10 +35,10 @@ namespace {
 // state and no clone API; cloned settings must never share that state.
 class PixelSnapshot : public base::ProceduralTextureGenerator {
   public:
-    explicit PixelSnapshot(base::Image& image)
+    PixelSnapshot(base::Image& image, base::Color::Type colorType)
         : ProceduralTextureGenerator(image.width(), image.height(), image.channels()),
           _pixels(image.data(), image.data() + size_t(image.width()) * image.height() * image.channels()),
-          _colorType(image.colorType())
+          _colorType(colorType)
     {
     }
     uint8_t* generate() override
@@ -132,7 +132,10 @@ std::shared_ptr<base::Texture> cloneTextureSettings(const base::Texture& source)
         {
             throw std::invalid_argument("Invalid procedural texture snapshot");
         }
-        settings->setProceduralGenerator(std::make_shared<PixelSnapshot>(*pixels));
+        settings->setProceduralGenerator(std::make_shared<PixelSnapshot>(*pixels, source.colorType()));
+        // Rasterization reports its native encoding, not the user's sampling
+        // interpretation. Preserve the authored interpretation across snapshots.
+        settings->setColorType(source.colorType());
     }
     return settings;
 }

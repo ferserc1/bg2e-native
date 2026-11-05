@@ -267,6 +267,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         std::shared_ptr<bg2e::json::JsonNode> schema;
         bool replacementConfirmed = false;
         std::shared_ptr<bg2e::scene::Node> candidate;
+        std::shared_ptr<bg2e::scene::Scene> resourceScene;
         struct Resource {
             std::shared_ptr<bg2e::scene::Component> component;
             std::string nodeName;

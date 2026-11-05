@@ -123,6 +123,9 @@ void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
         _sceneRoot->_scene = nullptr;
     }
     _sceneRoot = sceneRoot;
+    _textFonts.clear();
+    _reloadTextFonts = false;
+    invalidateTextFonts();
     _mainEnvironment = nullptr;
     _mainCameraNode = nullptr;
     _explicitEnvironment = false;
@@ -134,6 +137,9 @@ void Scene::setSceneRoot(std::shared_ptr<Node> sceneRoot)
 
 std::shared_ptr<Node> Scene::releaseSceneRoot()
 {
+    _textFonts.clear();
+    _reloadTextFonts = false;
+    invalidateTextFonts();
     auto root = std::move(_sceneRoot);
     if (root)
     {

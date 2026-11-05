@@ -17,6 +17,8 @@
  */
 
 #include <bg2e/db/scene.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include "../base/TextDiagnostics.hpp"
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
@@ -116,12 +118,36 @@ void writeSceneDocument(std::shared_ptr<json::JsonNode> document, const std::fil
     }
 }
 
-void saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
-    scene::SceneProgressCallback onProgress)
+bool saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
+    scene::SceneProgressCallback onProgress) noexcept
+try
 {
     if (!root)
     {
-        throw std::invalid_argument("Scene reference serialization requires a root");
+        base::detail::textWarning("Scene reference save requires a root; save refused.");
+        return false;
+    }
+    // Temporary safety boundary until embedded text persistence is implemented:
+    // never silently drop an authored text because its serializer is unavailable.
+    const auto pendingText = [](auto&& self, scene::Node* node) -> bool
+    {
+        if (auto* text = node->getComponent<scene::TextComponent>(); text && !text->ignoreSerialization())
+        {
+            return true;
+        }
+        for (const auto& child : node->children())
+        {
+            if (self(self, child.get()))
+            {
+                return true;
+            }
+        }
+        return false;
+    };
+    if (pendingText(pendingText, root))
+    {
+        base::detail::textWarning("Scene save refused: embedded text persistence is pending; destination unchanged.");
+        return false;
     }
     scene::SceneSaveProgress progress;
     progress.callback = onProgress;
@@ -132,6 +158,12 @@ void saveSceneReferences(scene::Node* root, const std::filesystem::path& filePat
         {"version", JSON(JsonObject{{"major", JSON(1)}, {"minor", JSON(0)}, {"rev", JSON(0)}})},
         {"scene", JSON(JsonList{root->serializeReferences(filePath.parent_path(), onProgress ? &progress : nullptr)})}});
     writeSceneDocument(document, filePath);
+    return true;
+}
+catch (...)
+{
+    base::detail::textWarning("Scene reference serialization/write failed; save not reported as successful.");
+    return false;
 }
 
 static int countDrawTextures(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)

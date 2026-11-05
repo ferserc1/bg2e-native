@@ -43,7 +43,7 @@ struct alignas(16) MaterialData {
     glm::vec4 fresnelTint{0};
     glm::vec4 sheenColor{0};
     glm::vec4 factors{0}; // metalness, roughness, sheen intensity, refraction
-    glm::vec4 emissionAlpha{0}; // emission, effective alpha cutoff (zero disables testing), reserved, reserved
+    glm::vec4 emissionAlpha{0}; // emission, effective cutoff, required alpha source (queue annotation), reserved
     std::array<glm::vec4, 3> uvScale{glm::vec4{0}, glm::vec4{0}, glm::vec4{0}}; // albedo/normal, metalness/roughness, AO/emission
     std::array<glm::uvec4, 2> uvSets{glm::uvec4{0}, glm::uvec4{0}}; // albedo/metalness/roughness/normal; AO/emission/flags/sRGB mask
     glm::uvec4 channels{0}; // metalness, roughness, AO, emission

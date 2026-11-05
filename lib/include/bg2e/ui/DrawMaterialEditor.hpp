@@ -43,8 +43,11 @@ struct BG2E_API TextureSamplingEdit {
     std::optional<base::Texture::Filter> minFilter;
     std::optional<base::Texture::AddressMode> addressU;
     std::optional<base::Texture::AddressMode> addressV;
+    std::optional<base::Texture::AddressMode> addressW;
     std::optional<bool> mipmaps;
     std::optional<float> lodBias;
+    std::optional<float> minLod;
+    std::optional<float> maxLod;
 
     void apply(base::Texture& texture) const;
 };
@@ -66,6 +69,11 @@ struct MaterialEditTargets {
     uint64_t binding = 0;
     uint64_t rendererGeneration = 0;
 };
+
+// Editor policy reads authored settings, never a potentially shared realization.
+BG2E_API bool materialTextureSourceEditable(const base::MaterialAttributes& material, draw::TextureSlot slot) noexcept;
+// Warns/returns false before mutation when an intent targets a locked source.
+BG2E_API bool validateMaterialSourceEdit(const base::MaterialAttributes& material, const MaterialEditIntent& intent) noexcept;
 
 // Queued material controls never mutate live
 // targets during UI draw. Queued edits use weak targets and renderer generations.
@@ -110,6 +118,8 @@ class BG2E_API DrawMaterialEditor {
     bool draw(UserInterface& ui);
     bool queuePatch(const utils::MaterialModifier& modifier, bool ordinaryAo = false);
     bool queueIndirectMode(base::MaterialAttributes::IndirectTextureMode mode);
+    // Only sampler/color fields are taken from the callback's private settings;
+    // source/ownership changes must use an explicit patch or clear intent.
     bool queueTextureSettings(draw::TextureSlot slot, std::function<void(base::Texture&)> edit);
     bool queueTextureSettings(draw::TextureSlot slot, const TextureSamplingEdit& edit);
     bool queueClearTexture(draw::TextureSlot slot);
@@ -130,7 +140,8 @@ class BG2E_API DrawMaterialEditor {
     bool requestEdit(MaterialEditIntent intent);
 
     bool queueEdit(std::function<void(draw::Drawable*, draw::MaterialBase*, uint32_t)> operation,
-        bool cpuValuesOnly = false);
+        bool cpuValuesOnly = false,
+        std::function<bool(draw::Drawable*, draw::MaterialBase*, uint32_t)> validate = {});
 };
 
 }

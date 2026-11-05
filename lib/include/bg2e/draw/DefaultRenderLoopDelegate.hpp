@@ -138,6 +138,7 @@ class BG2E_API DefaultRenderLoopDelegate : public RenderLoopDelegate {
     std::vector<PendingUpdate> _updates;
     void initializeRenderer();
     void reconfigureRenderer();
+    void prepareTextResources();
     gpu::Size2D _fixedInternalExtent;
     void detachTargets();
     void attachTargets();

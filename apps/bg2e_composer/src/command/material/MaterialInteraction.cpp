@@ -223,8 +223,9 @@ class MaterialInteraction final : public CommandTransaction {
                     continue;
                 }
                 auto material = mesh && mesh->isLoaded() ? mesh->drawMaterial(item.submesh) : nullptr;
+                const auto* instance = material.get();
                 if (!node || !stage->contains(node.get()) || !material ||
-                    typeid(*material) != typeid(draw::MaterialBase) || !seen.insert(material.get()).second)
+                    typeid(*instance) != typeid(draw::MaterialBase) || !seen.insert(material.get()).second)
                 {
                     return {CommandStatus::Rejected, "Material target is stale, shared or custom"};
                 }

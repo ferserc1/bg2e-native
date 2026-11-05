@@ -86,6 +86,11 @@ bool traceAccept(uint instance, uint primitive, float2 bary, uint instanceCount,
     {
         return true;
     }
+    if (data.materials[material].values.emissionAlpha.z != 0.0 &&
+        (data.materials[material].images[0].x == 0xffffffffu || data.materials[material].samplers[0].x == 0xffffffffu))
+    {
+        return false; // No essential glyph mask: omit, never accept the rectangle.
+    }
     float alpha = traceSample(material,0u,traceUV(instance,primitive,bary,data),data).a * data.materials[material].values.albedo.a;
     return alpha >= data.materials[material].values.emissionAlpha.y;
 }

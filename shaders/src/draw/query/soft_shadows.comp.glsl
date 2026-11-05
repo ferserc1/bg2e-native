@@ -89,8 +89,8 @@ bool acceptsCandidate(uint instance, uint primitive, vec2 bary, vec3 direction)
     }
     if (data.ranges.z == 0xffffffffu)
     {
-        // A texture omitted at capacity still uses scalar alpha.
-        return data.alpha.w >= data.alpha.z;
+        // Essential procedural masks must never become rectangular blockers.
+        return data.options.w == 0u && data.alpha.w >= data.alpha.z;
     }
     if (primitive >= data.ranges.y)
     {

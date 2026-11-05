@@ -2,10 +2,12 @@
 
 Dependency: accepted step 3.
 
+Mandatory: [recovery-policy.md](recovery-policy.md). Invalid values recover to defaults/limits with warnings; unrenderable paragraphs produce transparent/unavailable output, never exceptions.
+
 ## Data contract
 
 1. Implement `base::Text` with UTF-8 content, font identifier, size, line spacing, additional character spacing, alignment, margins, wrapping/overflow policy and bitmap resolution. No color, unlit or other appearance fields.
-2. Match `base::Light`'s JSON method signatures and tolerant optional-field reading, while validating dimensions, finite positive sizes and allocation limits. Do not read files, query a scene or create GPU resources in deserialization.
+2. Match `base::Light`'s JSON signatures and tolerant optional-field reading. Repair invalid dimensions, positive sizes, enums and allocation limits with defaults/clamping and warnings; no recoverable validation exceptions. Do not read files, query a scene or create GPU resources in deserialization.
 3. Define units explicitly before coding: a logical paragraph box determines wrapping/layout; raster resolution scales that box without changing line breaks; physical quad dimensions are independently managed by the component, preserving aspect by default. Serialize the necessary geometry, and record defaults and overflow behavior in progress for the editor/tutorial.
 4. Add revisions or equivalent dirty tracking; unchanged setters must not regenerate pixels. Distinguish paragraph/font changes from material-only edits.
 
@@ -17,6 +19,8 @@ Dependency: accepted step 3.
 4. Adapt this service through a `base::ProceduralTextureGenerator` implementation, provisionally `TextTextureGenerator`. Expose no stb types publicly. Use RGBA8 with white RGB everywhere and coverage in alpha. Use an allocator compatible with the existing Image/generator ownership contract; inspect that contract first.
 5. Generator identifiers/revisions incorporate all pixel-producing state and font content/version so unrelated paragraphs do not alias. Reuse existing texture revision mechanisms. Mutable generators must not unintentionally be shared by cloned components.
 6. Start with sensible linear filtering/clamp defaults and an explicit mipmap policy; preserve later user sampling edits. No SDF/MSDF, atlas GPU, per-glyph scene meshes or automatic resolution changes.
+
+Validation-only resolution reduction to satisfy memory/glyph limits is permitted by the recovery policy; it must not affect logical wrapping/world size and is not per-frame adaptive resolution. Overflow policies are clip-with-warning or hide-with-warning; legacy `error` never throws. Check renderable/nullable outcomes, contain allocation/raster exceptions and propagate actual transparent fallback dimensions to Image.
 
 ## User handoff: Composer
 

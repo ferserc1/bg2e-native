@@ -18,6 +18,7 @@
 
 #include <bg2e/draw/RenderQueueVisitor.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/TextComponent.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/LightComponent.hpp>
@@ -33,13 +34,14 @@ RenderQueueVisitor::RenderQueueVisitor()
     _ignoreDisabled = true;
 }
 
-void RenderQueueVisitor::enqueue(scene::Node* root, Engine& engine, RenderQueue& queue)
+void RenderQueueVisitor::enqueue(scene::Node* root, Engine& engine, RenderQueue& queue, bool forPicking)
 {
     if (!root || _queue)
     {
         throw std::invalid_argument("Draw extraction needs a root and cannot be reentrant");
     }
     RenderQueue next;
+    _forPicking = forPicking;
     next.beginFrame(engine);
     for (auto* ancestor = root->parent(); ancestor; ancestor = ancestor->parent())
     {
@@ -99,18 +101,38 @@ void RenderQueueVisitor::visit(scene::Node* node)
     if (auto* component = node->drawable())
     {
         auto drawable = component->drawable();
-        if (drawable)
+        auto* text = dynamic_cast<scene::TextComponent*>(component);
+        const bool include = !text || (_forPicking ? text->hasQuadResources() : text->canRender());
+        if (drawable && include)
         {
-            if (!drawable->isLoaded())
+            const auto enqueue = [&]()
             {
-                throw std::logic_error("Load draw resources before extraction");
+                if (!drawable->isLoaded())
+                {
+                    throw std::logic_error("Load draw resources before extraction");
+                }
+                for (uint32_t i = 0; i < drawable->submeshesCount(); ++i)
+                {
+                    _queue->enqueue(*node, drawable, i, _world * drawable->submeshTransform(i));
+                }
+            };
+            if (text)
+            {
+                try
+                {
+                    enqueue();
+                }
+                catch (...)
+                {
+                    text->reportRenderFailure(); // No upload or repair in traversal.
+                }
             }
-            for (uint32_t i = 0; i < drawable->submeshesCount(); ++i)
+            else
             {
-                _queue->enqueue(*node, drawable, i, _world * drawable->submeshTransform(i));
+                enqueue();
             }
         }
-        else if (!component->resourcePath().empty())
+        else if (!text && !component->resourcePath().empty())
         {
             throw std::logic_error("Load unresolved draw resources before extraction");
         }

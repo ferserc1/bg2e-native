@@ -24,6 +24,7 @@
 #include <bg2e/draw/RenderQueue.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/TextComponent.hpp>
 #include <algorithm>
 #include <cmath>
 #include <stdexcept>
@@ -89,6 +90,10 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
     item.drawMesh = drawable->drawMesh();
     item.drawMaterial = material;
     item.materialData = packMaterial(*material, &item.materialRevisions);
+    // Text's alpha source is essential: descriptor-capacity fallback must omit
+    // its visibility contribution, never replace the glyph mask with a quad.
+    const auto* text = dynamic_cast<scene::TextComponent*>(node.drawable());
+    item.materialData.emissionAlpha.z = text && text->drawable().get() == drawable.get() ? 1.0f : 0.0f;
     item.worldMatrix = world;
     item.rayTracingEnabled = drawable->rayTracingEnabled();
     if (submesh < drawable->rayTracingMeshes().size())
@@ -116,17 +121,27 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
     }
     const auto& a = material->materialAttributes();
     _items.push_back(item);
-    if (a.isTransparent() && a.isSolid())
+    try
     {
-        _solidTransparent.push_back(std::move(item));
+        if (a.isTransparent() && a.isSolid())
+        {
+            _solidTransparent.push_back(std::move(item));
+        }
+        else if (a.isTransparent())
+        {
+            _transparent.push_back(std::move(item));
+        }
+        else
+        {
+            _opaque.push_back(std::move(item));
+        }
     }
-    else if (a.isTransparent())
+    catch (...)
     {
-        _transparent.push_back(std::move(item));
-    }
-    else
-    {
-        _opaque.push_back(std::move(item));
+        // Text extraction contains resource/allocation failures. Do not leave
+        // a ray-only phantom item when routing failed after the first append.
+        _items.pop_back();
+        throw; // The text boundary converts this lower-level failure to a warning.
     }
 }
 

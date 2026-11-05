@@ -22,6 +22,7 @@
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/scene/Node.hpp>
+#include "../base/TextDiagnostics.hpp"
 #include <imgui.h>
 #include <array>
 #include <optional>
@@ -30,6 +31,24 @@
 
 namespace bg2e::ui {
 namespace {
+using TextureGetter = std::shared_ptr<base::Texture> (base::MaterialAttributes::*)() const;
+const std::array<TextureGetter, 6> textureGetters{&base::MaterialAttributes::albedoTexture,
+    &base::MaterialAttributes::metalnessTexture, &base::MaterialAttributes::roughnessTexture,
+    &base::MaterialAttributes::normalTexture, &base::MaterialAttributes::aoTexture,
+    &base::MaterialAttributes::lightEmissionTexture};
+
+auto sourceEditValidator(MaterialEditIntent intent)
+{
+    return [intent = std::move(intent)](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
+    {
+        if (!validateMaterialSourceEdit(material->materialAttributes(), intent))
+        {
+            return false;
+        }
+        return !drawable || validateMaterialSourceEdit(drawable->materialDefinition(submesh), intent);
+    };
+}
+
 struct TextureEditorOptions {
     draw::TextureSlot slot;
     const char* label;
@@ -41,6 +60,7 @@ struct TextureEditorOptions {
     std::optional<bool> inverted = std::nullopt;
     bool defaultLinear = false;
     bool forceUV1 = false;
+    bool sourceEditable = true;
 };
 
 void drawTextureEditor(UserInterface& ui, DrawTextureWidgets& widget, draw::MaterialBase& material,
@@ -55,7 +75,7 @@ void drawTextureEditor(UserInterface& ui, DrawTextureWidgets& widget, draw::Mate
         ImGui::BeginGroup();
         ImGui::Dummy(ImVec2(ImGui::GetContentRegionAvail().x, style.FramePadding.y));
         ImGui::Indent(padding);
-        const auto choice = widget.draw(ui, options.label, material.texture(options.slot));
+        const auto choice = widget.draw(ui, options.label, material.texture(options.slot), options.sourceEditable);
         if (choice.selected)
         {
             textureChanged = true;
@@ -97,6 +117,7 @@ void drawTextureEditor(UserInterface& ui, DrawTextureWidgets& widget, draw::Mate
             }
             int u = int(settings->addressModeU());
             int v = int(settings->addressModeV());
+            int w = int(settings->addressModeW());
             const char* addressing = "Repeat\0Mirror\0Clamp edge\0Clamp border\0";
             if (ImGui::Combo("Address U", &u, addressing))
             {
@@ -107,6 +128,11 @@ void drawTextureEditor(UserInterface& ui, DrawTextureWidgets& widget, draw::Mate
             {
                 samplingSlot = int(options.slot);
                 samplingEdit.addressV = static_cast<base::Texture::AddressMode>(v);
+            }
+            if (ImGui::Combo("Address W", &w, addressing))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.addressW = static_cast<base::Texture::AddressMode>(w);
             }
             bool mips = settings->useMipmaps();
             if (ImGui::Checkbox("Sample mipmaps", &mips))
@@ -119,6 +145,18 @@ void drawTextureEditor(UserInterface& ui, DrawTextureWidgets& widget, draw::Mate
             {
                 samplingSlot = int(options.slot);
                 samplingEdit.lodBias = bias;
+            }
+            float minLod = settings->minLod();
+            float maxLod = settings->maxLod();
+            if (ImGui::DragFloat("Minimum LOD", &minLod, 0.05f, 0, 32))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.minLod = minLod;
+            }
+            if (ImGui::DragFloat("Maximum LOD (-1 = all)", &maxLod, 0.05f, -1, 32))
+            {
+                samplingSlot = int(options.slot);
+                samplingEdit.maxLod = maxLod;
             }
         }
         int selectedUV = int(options.uv);
@@ -175,9 +213,9 @@ void storeTextureSettings(draw::Drawable* drawable, uint32_t submesh, draw::Text
 }
 
 std::shared_ptr<draw::Texture> textureWithColorType(const std::shared_ptr<draw::Texture>& source,
-    base::Color::Type colorType)
+    base::Color::Type colorType, const std::shared_ptr<base::Texture>& authored)
 {
-    auto settings = draw::cloneTextureSettings(*source->base());
+    auto settings = draw::cloneTextureSettings(authored ? *authored : *source->base());
     settings->setColorType(colorType);
     auto replacement = std::make_shared<draw::Texture>(source->engine());
     replacement->load(std::move(settings), source->imageResource());
@@ -255,6 +293,10 @@ void TextureSamplingEdit::apply(base::Texture& texture) const
     {
         texture.setAddressModeV(*addressV);
     }
+    if (addressW)
+    {
+        texture.setAddressModeW(*addressW);
+    }
     if (mipmaps)
     {
         texture.setUseMipmaps(*mipmaps);
@@ -263,6 +305,49 @@ void TextureSamplingEdit::apply(base::Texture& texture) const
     {
         texture.setMipLodBias(*lodBias);
     }
+    if (minLod)
+    {
+        texture.setMinLod(*minLod);
+    }
+    if (maxLod)
+    {
+        texture.setMaxLod(*maxLod);
+    }
+}
+
+
+bool materialTextureSourceEditable(const base::MaterialAttributes& material, draw::TextureSlot slot) noexcept
+{
+    if (size_t(slot) >= textureGetters.size())
+    {
+        base::detail::textWarning("Unknown material texture slot; source edit ignored.");
+        return false;
+    }
+    const auto texture = (material.*textureGetters[size_t(slot)])();
+    return !texture || texture->sourceEditable();
+}
+
+
+bool validateMaterialSourceEdit(const base::MaterialAttributes& material, const MaterialEditIntent& intent) noexcept
+{
+    const std::array<const char*, 6> names{"albedo", "metalness", "roughness", "normal", "AO", "emission"};
+    if (intent.clearSlot < -1 || intent.clearSlot >= int(names.size()) || intent.linearSlot < -1 ||
+        intent.linearSlot >= int(names.size()) || (intent.sampling && size_t(intent.samplingSlot) >= names.size()))
+    {
+        base::detail::textWarning("Invalid texture slot in edit intent; complete edit ignored.");
+        return false;
+    }
+    for (uint32_t slot = 0; slot < names.size(); ++slot)
+    {
+        if ((intent.clearSlot == int(slot) || (intent.patch && intent.patch->changesTextureSource(slot))) &&
+            !materialTextureSourceEditable(material, static_cast<draw::TextureSlot>(slot)))
+        {
+            base::detail::textWarning("Cannot replace or remove ", names[slot],
+                " texture source: owned by its component. No selected sources were changed.");
+            return false;
+        }
+    }
+    return true;
 }
 
 
@@ -450,7 +535,40 @@ void DrawMaterialEditor::onEditRequested(EditIntentHandler handler)
                 {
                     return false;
                 }
-                return handler(phase, id, _impl->targets, std::any_cast<const MaterialEditIntent&>(payload));
+                const auto& intent = std::any_cast<const MaterialEditIntent&>(payload);
+                if (phase != EditPhase::Cancel)
+                {
+                    try
+                    {
+                        auto validate = sourceEditValidator(intent);
+                        for (const auto& item : _impl->targets.selection)
+                        {
+                            if (auto mesh = item.lockMesh(); mesh && mesh->isLoaded())
+                            {
+                                if (!validate(mesh.get(), mesh->drawMaterial(item.submesh).get(), item.submesh))
+                                {
+                                    _state->error = "Texture source is owned by its component; edit ignored.";
+                                    return false;
+                                }
+                            }
+                        }
+                        if (auto direct = _impl->targets.direct.lock())
+                        {
+                            if (!validate(nullptr, direct.get(), 0))
+                            {
+                                _state->error = "Texture source is owned by its component; edit ignored.";
+                                return false;
+                            }
+                        }
+                    }
+                    catch (const std::exception& error)
+                    {
+                        _state->error = error.what();
+                        return false;
+                    }
+                    _state->error.clear();
+                }
+                return handler(phase, id, _impl->targets, intent);
             });
     }
 }
@@ -479,6 +597,8 @@ bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier, boo
         intent.ordinaryAo = ordinaryAo;
         return requestEdit(std::move(intent));
     }
+    MaterialEditIntent intent;
+    intent.patch = modifier;
     return queueEdit([modifier, ordinaryAo](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
         if (drawable)
@@ -492,7 +612,8 @@ bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier, boo
         if (ordinaryAo)
         {
             const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
-            auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
+            auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear,
+                material->materialAttributes().aoTexture());
             material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
             material->materialAttributes().setIndirectTextureMode(mode);
             if (drawable)
@@ -501,7 +622,7 @@ bool DrawMaterialEditor::queuePatch(const utils::MaterialModifier& modifier, boo
                 drawable->materialDefinition(submesh).setIndirectTextureMode(mode);
             }
         }
-    });
+    }, false, sourceEditValidator(intent));
 }
 
 bool DrawMaterialEditor::queueIndirectMode(base::MaterialAttributes::IndirectTextureMode mode)
@@ -521,7 +642,8 @@ bool DrawMaterialEditor::queueIndirectMode(base::MaterialAttributes::IndirectTex
             {
                 throw std::invalid_argument("Assign an indirect map before choosing a baked interpretation");
             }
-            auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
+            auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear,
+                material->materialAttributes().aoTexture());
             material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
             material->materialAttributes().setAoUVSet(1);
             if (drawable)
@@ -548,8 +670,19 @@ bool DrawMaterialEditor::queueTextureSettings(draw::TextureSlot slot, std::funct
     return queueEdit([slot, edit = std::move(edit)](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
         auto source = material->texture(slot);
-        auto settings = draw::cloneTextureSettings(*source->base());
-        edit(*settings); // Only the edited sampler/color fields apply to other selected targets.
+        const auto authored = (material->materialAttributes().*textureGetters.at(size_t(slot)))();
+        auto settings = draw::cloneTextureSettings(authored ? *authored : *source->base());
+        auto edited = draw::cloneTextureSettings(*settings);
+        edit(*edited);
+        // This overload edits sampling only, never source ownership or metadata.
+        settings->setColorType(edited->colorType());
+        settings->setMagFilter(edited->magFilter());
+        settings->setMinFilter(edited->minFilter());
+        settings->setAddressMode(edited->addressModeU(), edited->addressModeV(), edited->addressModeW());
+        settings->setUseMipmaps(edited->useMipmaps());
+        settings->setMinLod(edited->minLod());
+        settings->setMaxLod(edited->maxLod());
+        settings->setMipLodBias(edited->mipLodBias());
         if (slot == draw::TextureSlot::AmbientOcclusion && material->materialAttributes().indirectTextureMode() !=
             base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion)
         {
@@ -602,14 +735,16 @@ bool DrawMaterialEditor::queueClearTexture(draw::TextureSlot slot)
         intent.clearSlot = int(slot);
         return requestEdit(std::move(intent));
     }
+    MaterialEditIntent intent;
+    intent.clearSlot = int(slot);
     return queueEdit([slot](draw::Drawable* drawable, draw::MaterialBase* material, uint32_t submesh)
     {
         clearTexture(drawable, material, submesh, slot);
-    });
+    }, false, sourceEditValidator(intent));
 }
 
 bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::MaterialBase*, uint32_t)> operation,
-    bool cpuValuesOnly)
+    bool cpuValuesOnly, std::function<bool(draw::Drawable*, draw::MaterialBase*, uint32_t)> validate)
 {
     auto delegate = _state->delegate.lock();
     if (!_state->engine || !delegate || _state->pending)
@@ -650,7 +785,8 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
             ? &draw::DefaultRenderLoopDelegate::enqueueRetainedResourceUpdate
             : &draw::DefaultRenderLoopDelegate::enqueueRendererUpdate;
     ((*delegate).*enqueue)(delegate->rendererGeneration(),
-        [weak, binding, targets = std::move(targets), direct, operation = std::move(operation)](draw::Renderer& renderer)
+        [weak, binding, targets = std::move(targets), direct, operation = std::move(operation),
+            validate = std::move(validate)](draw::Renderer& renderer)
     {
         auto state = weak.lock();
         if (!state || state->binding != binding)
@@ -668,6 +804,12 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
         {
             auto delegate = state->delegate.lock();
             auto root = delegate ? delegate->scene() : nullptr;
+            struct Receiver {
+                std::shared_ptr<draw::Drawable> drawable;
+                std::shared_ptr<draw::MaterialBase> material;
+                uint32_t submesh;
+            };
+            std::vector<Receiver> receivers;
             for (const auto& target : targets)
             {
                 auto node = target.node.lock();
@@ -682,13 +824,29 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
                     continue;
                 }
                 auto material = drawable->drawMaterial(target.submesh);
-                touched = true; // Partial failures still require invalidation.
-                operation(drawable.get(), material.get(), target.submesh);
+                receivers.push_back({drawable, material, target.submesh});
             }
             if (auto material = direct.lock(); material && material->engine() == state->engine)
             {
-                touched = true;
-                operation(nullptr, material.get(), 0);
+                receivers.push_back({nullptr, material, 0});
+            }
+            // Source policy is rechecked at execution for all receivers before
+            // publishing anything, including mixed selections and queued edits.
+            if (validate)
+            {
+                for (const auto& receiver : receivers)
+                {
+                    if (!validate(receiver.drawable.get(), receiver.material.get(), receiver.submesh))
+                    {
+                        state->error = "Texture source is owned by its component; edit ignored.";
+                        return;
+                    }
+                }
+            }
+            for (const auto& receiver : receivers)
+            {
+                touched = true; // Other failures still require invalidation.
+                operation(receiver.drawable.get(), receiver.material.get(), receiver.submesh);
             }
             if (!touched)
             {
@@ -770,6 +928,19 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         _impl->session->beginFrame();
     }
     auto material = _state->material.lock();
+    std::array<bool, 6> sourceEditable{true, true, true, true, true, true};
+    const auto includeSourcePolicy = [&](const base::MaterialAttributes& attributes)
+    {
+        for (uint32_t slot = 0; slot < sourceEditable.size(); ++slot)
+        {
+            sourceEditable[slot] = sourceEditable[slot] &&
+                materialTextureSourceEditable(attributes, static_cast<draw::TextureSlot>(slot));
+        }
+    };
+    if (material)
+    {
+        includeSourcePolicy(material->materialAttributes());
+    }
     size_t selectedCount = material ? 1 : 0;
     if (auto selection = _state->selection.lock())
     {
@@ -779,6 +950,8 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
             {
                 if (auto mesh = item->lockMesh(); mesh && mesh->isLoaded())
                 {
+                    includeSourcePolicy(mesh->drawMaterial(item->submesh)->materialAttributes());
+                    includeSourcePolicy(mesh->materialDefinition(item->submesh));
                     if (!material)
                     {
                         material = mesh->drawMaterial(item->submesh);
@@ -848,6 +1021,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         };
         const auto textureEditor = [&](TextureEditorOptions options)
         {
+            options.sourceEditable = sourceEditable.at(size_t(options.slot));
             drawTextureEditor(ui, _impl->textures.at(size_t(options.slot)), *material, options,
                 patch, textureIntent, textureChanged, samplingSlot, samplingEdit);
         };
@@ -913,6 +1087,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
     {
         const bool cpuValuesOnly = !textureChanged && clear < 0;
         const utils::MaterialModifier modifier(std::make_shared<json::JsonNode>(std::move(patch)));
+        textureIntent.patch = modifier;
         if (_impl->session)
         {
             MaterialEditIntent intent;
@@ -947,7 +1122,8 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
                 if (linearSelected >= 0)
                 {
                     const auto slot = static_cast<draw::TextureSlot>(linearSelected);
-                    auto replacement = textureWithColorType(material->texture(slot), base::Color::TypeLinear);
+                    auto replacement = textureWithColorType(material->texture(slot), base::Color::TypeLinear,
+                        (material->materialAttributes().*textureGetters.at(size_t(slot)))());
                     material->setTexture(slot, replacement);
                     if (drawable)
                     {
@@ -957,7 +1133,8 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
                 if (ordinaryAo)
                 {
                     const auto mode = base::MaterialAttributes::IndirectTextureMode::AmbientOcclusion;
-                    auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear);
+                    auto texture = textureWithColorType(material->aoTexture(), base::Color::TypeLinear,
+                        material->materialAttributes().aoTexture());
                     material->setTexture(draw::TextureSlot::AmbientOcclusion, texture);
                     if (drawable)
                     {
@@ -973,7 +1150,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
                 {
                     clearTexture(drawable, material, submesh, draw::TextureSlot(clear));
                 }
-            }, cpuValuesOnly);
+            }, cpuValuesOnly, sourceEditValidator(textureIntent));
         }
     }
     else if (samplingSlot >= 0)

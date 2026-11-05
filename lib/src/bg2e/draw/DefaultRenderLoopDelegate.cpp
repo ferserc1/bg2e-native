@@ -17,6 +17,8 @@
  */
 
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include "../base/TextDiagnostics.hpp"
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/draw/FsrUpscaler.hpp>
 #include <algorithm>
@@ -472,6 +474,7 @@ void DefaultRenderLoopDelegate::prepareFrame()
         base::CpuProfileScope stageProfile("delegate.applyQueuedUpdatesAndReconfigure");
         applyUpdates(std::move(updates));
         reconfigureRenderer();
+        prepareTextResources();
         stageProfile.next("delegate.rendererPrepareFrame");
         if (_rendererInitialized && _renderer->prepareFrame())
         {
@@ -527,6 +530,7 @@ void DefaultRenderLoopDelegate::prepareFrame()
     stageProfile.next("delegate.applyQueuedUpdates");
     applyUpdates(std::move(updates));
     reconfigureRenderer();
+    prepareTextResources();
     stageProfile.next("delegate.sceneVisitorUpdate");
     // The new scene/resources are attached at this safe boundary. Give its
     // update visitor one pass before asking the renderer to synchronize
@@ -543,6 +547,26 @@ void DefaultRenderLoopDelegate::prepareFrame()
     }
     requestSceneFrame();
 }
+
+void DefaultRenderLoopDelegate::prepareTextResources()
+{
+    if (scene::TextComponent::prepareResources(_scene.get(), *_engine))
+    {
+        try
+        {
+            if (_rendererInitialized)
+            {
+                _renderer->invalidateHistories();
+            }
+        }
+        catch (...)
+        {
+            base::detail::textWarning("Text changed but renderer history invalidation failed; continuing.");
+        }
+        requestSceneFrame();
+    }
+}
+
 
 void DefaultRenderLoopDelegate::setInternalExtent(gpu::Size2D extent)
 {

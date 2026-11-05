@@ -22,9 +22,12 @@
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
+#include <bg2e/base/TextFont.hpp>
 
 #include <vector>
 #include <memory>
+#include <map>
+#include <unordered_set>
 
 namespace bg2e {
 
@@ -82,6 +85,22 @@ class BG2E_API Scene {
     // Call this when you want to update all the scene object references (ligths, environment, camera)
     void updateAll();
 
+    // CPU resource boundary, before any text realization. No per-frame file I/O.
+    // Successful preparation publishes the complete scene-wide registry at once.
+    // Unchanged declarations reuse immutable resources; explicit reload rereads.
+    void prepareTextFonts() noexcept;
+    void reloadTextFonts() noexcept;
+    void invalidateTextFonts() noexcept;
+
+    // Dirty/failed/missing/ambiguous entries warn once per generation and return
+    // nullptr, never stale handles or exceptions. There is no fallback font.
+    // Existing shared handles are immutable snapshots, not live subscriptions.
+    // Text consumers must track BOTH scene identity and textFontVersion().
+    std::shared_ptr<const base::TextFont> textFont(const std::string& identifier) const noexcept;
+    // Preparation completed, not a promise that every font source is available.
+    bool textFontsReady() const;
+    uint64_t textFontVersion() const;
+
     [[nodiscard]] const std::vector<std::shared_ptr<LightComponent>>& lightComponents() const
     {
         return _lightComponents;
@@ -116,6 +135,20 @@ class BG2E_API Scene {
     std::vector<base::Light*> _lights;
 
     bool _lightsChanged = false;
+
+  private:
+    struct FontResource {
+        std::filesystem::path path;
+        uint32_t faceIndex = 0;
+        std::shared_ptr<const base::TextFont> font;
+        bool ambiguous = false;
+        bool retryOnChange = false;
+    };
+    std::map<std::string, FontResource> _textFonts;
+    uint64_t _textFontVersion = 1;
+    bool _textFontsDirty = true;
+    bool _reloadTextFonts = false;
+    mutable std::unordered_set<std::string> _textFontWarnings;
 };
 
 }

@@ -33,6 +33,8 @@
 #include <bg2e/scene/FindNodeByProperties.hpp>
 #include <bg2e/scene/InputVisitor.hpp>
 #include <bg2e/scene/LightComponent.hpp>
+#include <bg2e/scene/TextFontComponent.hpp>
+#include <bg2e/scene/TextComponent.hpp>
 #include <bg2e/scene/NodeVisitor.hpp>
 #include <bg2e/scene/OrbitCameraComponent.hpp>
 #include <bg2e/scene/FixedScaleTransformController.hpp>

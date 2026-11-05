@@ -49,6 +49,9 @@ set(NFD_INCLUDE "${THIRD_PARTY_PATH}/nativefiledialog/src/include")
 # stb_image
 set(STBIMAGE_INCLUDE "${THIRD_PARTY_PATH}/stb_image")
 
+# Independently vendored stb_truetype; implementation is private in TextFont.cpp.
+set(STBTRUETYPE_INCLUDE "${THIRD_PARTY_PATH}/stb_truetype")
+
 # tinyobj
 set(TINYOBJ_INCLUDE "${THIRD_PARTY_PATH}/tinyobj")
 
@@ -72,6 +75,7 @@ set(BG2E_THIRD_PARTY_INCLUDE_PATH
     "${IMGUI_INCLUDE}"
     "${NFD_INCLUDE}"
     "${STBIMAGE_INCLUDE}"
+    "${STBTRUETYPE_INCLUDE}"
     "${TINYOBJ_INCLUDE}"
     "${CGLTF_INCLUDE}"
     "${XATLAS_INCLUDE}"

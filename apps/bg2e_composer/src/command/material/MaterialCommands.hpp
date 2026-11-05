@@ -56,6 +56,7 @@ class EditMaterials final : public bg2e::app::Command {
         bg2e::base::MaterialAttributes definition;
         uint64_t expectedRevision = 0;
         uint64_t expectedDefinition = 0;
+        uint32_t expectedSourcePolicy = 0;
     };
     std::weak_ptr<StageScene> _stage;
     std::vector<Target> _targets;

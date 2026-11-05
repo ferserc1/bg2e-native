@@ -71,7 +71,8 @@ std::shared_ptr<draw::Texture> TextureCache::load(draw::Engine* engine, const ba
             std::to_string(value.useMipmaps()) + "|" + std::to_string(std::bit_cast<uint32_t>(value.minLod())) + "|" +
             std::to_string(std::bit_cast<uint32_t>(value.maxLod())) + "|" + std::to_string(std::bit_cast<uint32_t>(value.mipLodBias())) + "|" +
             std::to_string(value.addressModeU()) + "|" + std::to_string(value.addressModeV()) + "|" +
-            std::to_string(value.addressModeW()) + "|" + std::to_string(value.colorType());
+            std::to_string(value.addressModeW()) + "|" + std::to_string(value.colorType()) + "|" +
+            std::to_string(value.sourceEditable()) + "|" + std::to_string(value.ignoreSerialization());
     };
     const auto key = makeKey(settings);
     auto cached = _drawTextures[key].lock();

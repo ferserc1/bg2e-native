@@ -44,7 +44,8 @@ class BG2E_API DrawTextureWidgets {
     DrawTextureWidgets(const DrawTextureWidgets&) = delete;
     DrawTextureWidgets& operator=(const DrawTextureWidgets&) = delete;
 
-    Result draw(UserInterface& ui, const std::string& label, const std::shared_ptr<draw::Texture>& texture);
+    Result draw(UserInterface& ui, const std::string& label, const std::shared_ptr<draw::Texture>& texture,
+        bool sourceEditable = true);
     void cleanup();
 
   private:

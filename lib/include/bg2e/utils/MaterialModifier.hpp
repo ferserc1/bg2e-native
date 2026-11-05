@@ -43,6 +43,10 @@ class BG2E_API MaterialModifier {
 
     [[nodiscard]] bool isValid() const;
 
+    // Read-only patch inspection for editor-owned source-lock validation.
+    // Slot order: albedo, metalness, roughness, normal, AO, emission.
+    bool changesTextureSource(uint32_t slot) const noexcept;
+
     // CPU only: texture setters mark their slots dirty for subsequent loading.
     bool apply(base::MaterialAttributes& material) const;
 

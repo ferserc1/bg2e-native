@@ -2,6 +2,8 @@
 
 Dependency: accepted step 4.
 
+Mandatory: [recovery-policy.md](recovery-policy.md). One bad text must never interrupt scene loading, frame rendering or authoring.
+
 ## Implementation
 
 1. Add virtual read-only `DrawableComponent::requiresBg2Export() const`, default true. Override it in `TextComponent` to return false. Retain `isSceneGeometry() == true`; this is authored scene geometry, not an overlay.
@@ -13,6 +15,7 @@ Dependency: accepted step 4.
 7. Implement lifecycle hooks, factory registration, module includes and independent detached clone behavior. Handle unrealized/loaded clones, scene replacement, missing fonts, load failure and scene teardown safely. Reuse existing ownership/retirement patterns.
 8. Audit render extraction, selection/gizmos and picking for subclass support. Picking uses all six quad indices and does not discard by glyph alpha; backface selection follows doubleSided. Do not redesign multi-drawable nodes.
 9. Audit glyph alpha in visibility/shadow paths as well as raster display. Text must cast glyph-shaped, not rectangular, shadows, including the directional-light path used by the final tutorial. If a missing shared alpha-test path must be implemented, do so here for the relevant backends rather than hiding the problem in tutorial-only code. Normal material semantics remain consistent.
+10. Accept null fonts, failed clones/bitmaps and renderable=false. Apply defaults where possible; otherwise clear/hide the text and its shadow with a console warning, retaining editable paragraph/material data. Contain low-level backend/I/O/allocation exceptions at the TextComponent mutation boundary. Never rethrow a text failure, dereference unavailable resources, retain stale glyphs after font failure or retry/regenerate/log every frame. Read actual fallback dimensions after generation.
 
 Do not add a temporary example or Composer UI here. Embedded persistence is completed in step 6 before exposing authoring in step 7.
 

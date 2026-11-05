@@ -2,11 +2,13 @@
 
 Dependency: accepted step 1.
 
+Mandatory: [recovery-policy.md](recovery-policy.md). Protected-source and malformed edit intents warn and return safe rejected/no-op status, never an exception.
+
 ## Implementation
 
 1. Add independent `sourceEditable` (default true) and `ignoreSerialization` (default false) metadata to `base::Texture`, following existing accessor/setter conventions. Decide explicitly whether these metadata affect authored revisions without causing unnecessary pixel uploads.
 2. Preserve metadata through copy/assignment, texture-settings cloning, MaterialBase snapshots, drawable cloning and resource retirement/exchange paths. Do not depend on metadata being saved into scene JSON to restore text invariants.
-3. Update `DrawMaterialEditor` and Composer's mutation owner to consult source editability before offering or applying replacement/removal. Cover queued intents, drag/drop, clear operations, material patches and mixed selections. Reject the complete source edit if any target is locked, with a useful error; do not partially apply it.
+3. Update `DrawMaterialEditor` and Composer's mutation owner to consult source editability before offering or applying replacement/removal. Cover queued intents, drag/drop, clear operations, material patches and mixed selections. Reject the complete source edit if any target is locked, with a console warning and safe status (no exception); do not partially apply it.
 4. Keep UV set, UV scale, filtering, addressing, color interpretation, mipmap and LOD controls available. A source lock is not a general property-editing lock. Color, unlit and alpha cutoff remain ordinary material values.
 5. Preserve a locked source when applying/pasting an entire material through editor-supported paths. Do not add API-wide protection, frame-by-frame repair or a provider/override resource system.
 6. Extend MaterialSerializer and resource collection/export paths to omit an ignored texture's source and pixel asset. Keep independently editable UV/sampling settings serializable so a procedural owner can reapply them to a regenerated source. Inspect the current serialized schema before designing this distinction.

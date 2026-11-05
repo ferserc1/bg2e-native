@@ -280,6 +280,11 @@ void AppDelegate::processDocumentIo()
             {
                 candidate = _stage->load(operation.path, operation.schema, false);
                 operation.candidate = candidate;
+                // Own a registry across incremental component loads. All font
+                // declarations must be ready before the first text resource.
+                operation.resourceScene = std::make_shared<bg2e::scene::Scene>();
+                operation.resourceScene->setSceneRoot(candidate);
+                operation.resourceScene->prepareTextFonts();
                 std::function<void(const std::shared_ptr<bg2e::scene::Node>&)> collect;
                 collect = [&](const auto& node)
                 {
@@ -310,6 +315,11 @@ void AppDelegate::processDocumentIo()
         else
         {
             candidate = operation.kind == Kind::New ? _stage->newDocumentRoot() : _stage->load(operation.path);
+        }
+        if (operation.resourceScene)
+        {
+            operation.resourceScene->releaseSceneRoot();
+            operation.resourceScene.reset();
         }
         _stage->prepareTools(candidate);
         // Prepare all command ownership/callback storage before publication.

@@ -95,7 +95,7 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
     device->waitIdle();
     draw::RenderQueue queue;
     draw::RenderQueueVisitor extractor;
-    extractor.enqueue(root, *_drawEngine, queue);
+    extractor.enqueue(root, *_drawEngine, queue, true);
 
     struct Entry {
         SelectionItem selection;

@@ -39,7 +39,8 @@ DrawTextureWidgets::DrawTextureWidgets() : _impl(std::make_unique<Impl>())
 
 DrawTextureWidgets::~DrawTextureWidgets() = default;
 
-DrawTextureWidgets::Result DrawTextureWidgets::draw(UserInterface& ui, const std::string& label, const std::shared_ptr<draw::Texture>& texture)
+DrawTextureWidgets::Result DrawTextureWidgets::draw(UserInterface& ui, const std::string& label,
+    const std::shared_ptr<draw::Texture>& texture, bool sourceEditable)
 {
     ImGui::PushID(this);
     Result result;
@@ -66,6 +67,12 @@ DrawTextureWidgets::Result DrawTextureWidgets::draw(UserInterface& ui, const std
     {
         cleanup();
         ImGui::TextWrapped("%s", error.what());
+    }
+    if (!sourceEditable)
+    {
+        ImGui::TextWrapped("Texture source is owned by the component; replacement and removal are unavailable.");
+        ImGui::PopID();
+        return result;
     }
     result.selected = _impl->picker.draw(label, "Select texture...");
     if (result.selected)

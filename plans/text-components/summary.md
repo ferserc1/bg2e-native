@@ -1,6 +1,6 @@
 # Text components implementation plan
 
-Status: step 1 implemented, awaiting user build/manual acceptance; steps 2–8 not started. Read [progress.md](progress.md) before doing any work.
+Status: steps 1–5 implemented and user accepted; steps 6–8 not started. Read [progress.md](progress.md) before doing any work.
 
 ## Agreed architecture
 
@@ -8,6 +8,7 @@ Status: step 1 implemented, awaiting user build/manual acceptance; steps 2–8 n
 - `base::Text` is CPU data: UTF-8 content, scene-wide font identifier, font size, paragraph geometry/layout and bitmap resolution. It contains no color or other material appearance. Match `base::Light`'s `deserialize(shared_ptr<JsonNode>)` / `serialize()` contract.
 - `base::TextFont` owns loaded font bytes and private stb state. `scene::TextFontComponent` declares a collection of uniquely identified font files, preferably on the root, but legally on any scene node. A scene-owned registry resolves identifiers without ancestor shadowing. Collections allow multiple fonts on one node under the current component storage rules.
 - Load all font declarations before realizing any text, regardless of node order. Missing identifiers and duplicate declarations have explicit diagnostics. Fonts and material images are copied as external files when saving a self-contained scene.
+- **Mandatory recovery policy:** [recovery-policy.md](recovery-policy.md). Recoverable parameters use defaults/safe limits with console warnings. Unavailable fonts or unrenderable text yield transparent/omitted output and safe statuses, never exceptions that interrupt the application. Preserve other scene content and suppress per-frame diagnostic/retry floods. This supersedes earlier exception-based decisions.
 - `scene::TextComponent : scene::DrawableComponent` owns exactly one procedural quad and one conventional material. Its albedo uses `base::ProceduralTextureGenerator`: RGB is white, including transparent pixels; alpha is glyph coverage. Color, unlit, alpha test and all appearance belong exclusively to the material.
 - Textures expose `sourceEditable()` (default true) and `ignoreSerialization()` (default false), with setters consistent with existing base APIs. The generated albedo sets them to false/true. Only replacing or removing its source is blocked by editor mutation paths. UV set, UV scale and all sampling controls remain available and survive reload. No protection against arbitrary mutable C++ API use is required; no per-frame albedo-repair loop.
 - `DrawableComponent::requiresBg2Export() const` is virtual, read-only and defaults to true; TextComponent overrides it to false. This differs from ignoring serialization: text data and embedded material must still be saved. Never bake text into a `.bg2` or export its generated albedo during normal scene saving.
@@ -40,6 +41,7 @@ Implement sequentially, one milestone per request to continue. The final milesto
 7. The plan explicitly authorizes narrowly scoped CMake edits needed to integrate stb_truetype, font/license asset copying and the requested tutorial target, overriding the repository's default CMake prohibition only for those purposes. Do not regenerate build trees. Reuse source discovery where sufficient.
 8. Follow full project GPL headers/style for repository-owned source; preserve third-party licenses. Keep stb implementation symbols private to avoid ImGui collisions. Never expose ImGui headers/types or stb implementation types in public engine headers.
 9. All generated files, source comments and documentation are English. User-facing work reports remain Spanish. No commits or unrelated refactors are requested.
+10. Apply [recovery-policy.md](recovery-policy.md) in every milestone. Do not throw for recoverable text/font/layout/source-edit errors. Contain lower-level allocation/I/O/backend exceptions at text boundaries, warn and recover; do not rely on `noexcept` alone. Check unavailable outcomes before use; one bad text must not abort scene loading or rendering.
 
 ## Font asset decision
 

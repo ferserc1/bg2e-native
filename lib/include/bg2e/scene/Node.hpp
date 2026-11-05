@@ -225,6 +225,8 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
         SceneLoadProgress* progress = nullptr);
     void deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::filesystem::path& basePath,
         draw::Engine& engine, SceneLoadProgress* progress = nullptr);
+    // When attached, prepares all owning-scene fonts before any component load.
+    // Detached subtrees with font declarations must first be adopted by a Scene.
     void loadResources(draw::Engine& engine, SceneLoadProgress* progress = nullptr);
     std::shared_ptr<json::JsonNode> serializeReferences(const std::filesystem::path& basePath,
         SceneSaveProgress* progress = nullptr);

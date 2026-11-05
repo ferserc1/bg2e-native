@@ -2,6 +2,8 @@
 
 Dependency: accepted step 7. This is the last implementation milestone and includes the requested example source, not only Markdown.
 
+Mandatory: [recovery-policy.md](recovery-policy.md). Document and use warning/default/transparent recovery rather than text exceptions. Guard unavailable fonts/rasters, keep the tutorial window/UI usable when text fails and explain explicit retry without per-frame warning floods.
+
 ## API documentation
 
 1. Update `doc/api` for every new public class and API, including Text, TextFont, TextFontComponent, TextComponent, the procedural generator if public, and any public registry/lookup helpers actually delivered.
