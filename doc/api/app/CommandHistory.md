@@ -34,7 +34,7 @@ users declare the same byte count.
 
 ## History and execution
 
-`CommandHistory` defaults to 256 entries and 64 MiB. It is owner-thread only;
+`CommandHistory` defaults to 256 entries and 1 GiB. It is owner-thread only;
 commands, callbacks and destruction use that same thread. `prepare` returns an
 admission result and move-only reservation. `execute(reservation)` consumes it;
 the convenience overload prepares and executes directly. `undo` and `redo`
@@ -44,10 +44,16 @@ IO and with no active preview. `noteNonhistoricalChange` requires explicit
 compatibility. Replacing a document requires a greater generation in
 `resetBaseline`; pending reservations from older generations become stale.
 
-History never evicts entries automatically to satisfy a limit. Admission and
-growth are rejected if the reservation cannot fit. Applications can call
-`discardOldest` or `discardRedo` at a stable boundary and adjust limits with
-`setLimits`. `CommandReleaseSink` can defer destruction; its implementation
+Limits apply to retained undo/redo entries, not admission. After a successful
+edit or transaction commit, history discards the oldest applied entries until
+both limits are satisfied. Failed/no-op edits and cancelled previews preserve
+history. Pending reservations and active previews may temporarily exceed the
+limits. An individual command larger than the budget still executes, but is
+not retained for undo. Zero limits disable retention without disabling edits.
+`setLimits` trims immediately, discarding oldest undo entries and then the
+farthest redo entries, preserving the next redo's baseline. Applications can
+also call `discardOldest` or `discardRedo` explicitly.
+`CommandReleaseSink` can defer destruction; its implementation
 must retain both the command and its resource accounting until the caller's
 safe retirement boundary, and must not re-enter history.
 
@@ -60,6 +66,10 @@ limited to 1024 and update payloads have a configurable byte ceiling. Adjacent
 unscheduled absolute updates coalesce only when interaction, generation and
 exact target/property key match. Ordinary updates keep FIFO order. Always call
 `shutdown()` at a safe boundary before destroying history or device resources.
+`cancelPending()` returns `Rejected` if called during model execution, leaving
+queued jobs intact. `setPayloadLimit()` rejects reductions below pending payload
+bytes without changing the previous limit. These recoverable rejections do not
+throw; owner-thread violations remain programming errors.
 
 Implement continuous actions as `CommandTransaction`: `begin()` captures the
 baseline once, `update(any)` applies a preview and restores the previous preview

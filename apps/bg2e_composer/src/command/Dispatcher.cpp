@@ -223,9 +223,16 @@ bg2e::app::CommandResult Dispatcher::submit(std::unique_ptr<bg2e::app::Command> 
         catch (...)
         {
         }
-        if (completion)
+        try
         {
-            completion(result);
+            if (completion)
+            {
+                completion(result);
+            }
+        }
+        catch (...)
+        {
+            // Rejection notifications have the same isolation as queued ones.
         }
         return result;
     };
@@ -233,32 +240,39 @@ bg2e::app::CommandResult Dispatcher::submit(std::unique_ptr<bg2e::app::Command> 
     {
         return reject("Missing Composer command");
     }
-    const auto [category, inserted] = _boundaries.try_emplace(command->info().category, boundary);
-    if (!inserted && category->second != boundary)
+    try
     {
-        return reject("Command category has conflicting execution boundaries");
-    }
-    const auto compatibility = command->info().impact == bg2e::app::CommandDocumentImpact::None
-        ? bg2e::app::CommandCompatibility::Preserve : bg2e::app::CommandCompatibility::Unspecified;
-    auto wrapped = std::make_unique<Envelope>(std::move(command), effects, _effects, std::move(valid));
-    return _queue->enqueue(std::move(wrapped), {_history->documentState().generation, origin, compatibility},
-        [notify = _completion, completion = std::move(completion)](auto result)
+        const auto [category, inserted] = _boundaries.try_emplace(command->info().category, boundary);
+        if (!inserted && category->second != boundary)
         {
-            try
+            return reject("Command category has conflicting execution boundaries");
+        }
+        const auto compatibility = command->info().impact == bg2e::app::CommandDocumentImpact::None
+            ? bg2e::app::CommandCompatibility::Preserve : bg2e::app::CommandCompatibility::Unspecified;
+        auto wrapped = std::make_unique<Envelope>(std::move(command), effects, _effects, std::move(valid));
+        return _queue->enqueue(std::move(wrapped), {_history->documentState().generation, origin, compatibility},
+            [notify = _completion, completion](auto result)
             {
-                if (notify)
+                try
                 {
-                    notify(result);
+                    if (notify)
+                    {
+                        notify(result);
+                    }
                 }
-            }
-            catch (...)
-            {
-            }
-            if (completion)
-            {
-                completion(result);
-            }
-        });
+                catch (...)
+                {
+                }
+                if (completion)
+                {
+                    completion(result);
+                }
+            });
+    }
+    catch (...)
+    {
+        return reject("Composer command preparation or admission failed");
+    }
 }
 
 bg2e::app::CommandResult Dispatcher::beginCpuInteraction(std::unique_ptr<bg2e::app::CommandTransaction> command, bool reserved)

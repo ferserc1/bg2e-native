@@ -61,12 +61,14 @@ class BG2E_API CommandQueue {
     // for the next pump. Scheduling is bounded and never recursively pumps.
     // At most 1024 pending jobs are accepted (in addition to payload limits).
     void pump();
-    void cancelPending();
+    // Reentrant cancellation is rejected without disturbing queued work.
+    CommandResult cancelPending();
     // Cancels pending work and restores an active queue-owned preview. Must be
     // called at a safe boundary before destroying history/device resources.
     CommandResult shutdown();
     size_t pending() const;
-    void setPayloadLimit(size_t bytes);
+    // Reject a reduction below pending payload bytes without changing the limit.
+    CommandResult setPayloadLimit(size_t bytes);
 
   private:
     struct Impl;

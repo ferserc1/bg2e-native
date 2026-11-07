@@ -23,9 +23,11 @@
 
 namespace bg2e::app {
 
+// Retained undo/redo limits. Successful edits evict oldest entries; pending
+// reservations and previews may temporarily exceed these limits.
 struct CommandHistoryLimits {
     size_t entries = 256;
-    size_t bytes = 64 * 1024 * 1024;
+    size_t bytes = 1024 * 1024 * 1024;
 };
 
 struct CommandDocumentState {
@@ -114,6 +116,7 @@ class BG2E_API CommandHistory {
     // Stable-boundary explicit eviction, never triggered by a failed/no-op edit.
     CommandResult discardOldest(size_t count);
     CommandResult discardRedo();
+    // Applies immediately, discarding oldest undo / farthest redo entries.
     CommandResult setLimits(CommandHistoryLimits limits);
 
   private:

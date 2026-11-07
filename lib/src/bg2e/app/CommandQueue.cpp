@@ -401,15 +401,16 @@ void CommandQueue::pump()
     core->pumping = false;
 }
 
-void CommandQueue::cancelPending()
+CommandResult CommandQueue::cancelPending()
 {
     auto core = _impl;
     core->checkThread();
     if (core->executing)
     {
-        throw std::logic_error("Cannot cancel the queue during model execution");
+        return {CommandStatus::Rejected, "Cannot cancel the queue during model execution"};
     }
     core->cancelAll();
+    return {};
 }
 
 CommandResult CommandQueue::shutdown()
@@ -441,14 +442,15 @@ size_t CommandQueue::pending() const
     return _impl->jobs.size();
 }
 
-void CommandQueue::setPayloadLimit(size_t bytes)
+CommandResult CommandQueue::setPayloadLimit(size_t bytes)
 {
     _impl->checkThread();
     if (bytes < _impl->payloadBytes)
     {
-        throw std::invalid_argument("Pending payload exceeds new queue limit");
+        return {CommandStatus::Rejected, "Pending payload exceeds new queue limit"};
     }
     _impl->payloadLimit = bytes;
+    return {};
 }
 
 }

@@ -20,7 +20,6 @@
 
 #include "command/Dispatcher.hpp"
 #include <bg2e/scene/Node.hpp>
-#include <stdexcept>
 #include <cstdint>
 #include <filesystem>
 #include <memory>
@@ -36,31 +35,54 @@ struct Document {
     bool dirty = false;
     uint64_t generation = 0;
 
+    // A legacy writer may already have changed the model before notification.
+    // Keep its dirty state until the history reaches a safe boundary.
+    bg2e::app::CommandCompatibility pendingCompatibility = bg2e::app::CommandCompatibility::Unspecified;
+
     void synchronizeDirty()
     {
+        using namespace bg2e::app;
         if (commands)
         {
-            dirty = commands->history().dirty();
+            auto& history = commands->history();
+            if (pendingCompatibility != CommandCompatibility::Unspecified)
+            {
+                const auto result = history.noteNonhistoricalChange(pendingCompatibility);
+                if (result.accepted())
+                {
+                    pendingCompatibility = CommandCompatibility::Unspecified;
+                }
+            }
+            dirty = history.dirty() || pendingCompatibility != CommandCompatibility::Unspecified;
         }
     }
 
     // Persisted nonhistorical changes require an explicit compatibility policy.
-    // Authored editor changes enter through commands, not this notification.
-    void markModified(bg2e::app::CommandCompatibility compatibility)
+    // Rejection is recoverable; never turn a busy history into an exception.
+    bg2e::app::CommandResult markModified(bg2e::app::CommandCompatibility compatibility)
     {
-        if (commands)
+        using namespace bg2e::app;
+        if (compatibility == CommandCompatibility::Unspecified)
         {
-            const auto result = commands->history().noteNonhistoricalChange(compatibility);
-            synchronizeDirty();
-            if (!result.accepted() && result.status != bg2e::app::CommandStatus::Faulted)
-            {
-                throw std::logic_error("Settle command interactions before legacy document edits");
-            }
+            return {CommandStatus::Rejected, "Legacy edits require an explicit compatibility policy"};
         }
-        else
+        if (!commands)
         {
             dirty = true;
+            return {CommandStatus::Applied, {}};
         }
+        // Coalesce pending notifications using the strongest invalidation.
+        if (compatibility > pendingCompatibility)
+        {
+            pendingCompatibility = compatibility;
+        }
+        const auto result = commands->history().noteNonhistoricalChange(pendingCompatibility);
+        if (result.accepted())
+        {
+            pendingCompatibility = CommandCompatibility::Unspecified;
+        }
+        dirty = commands->history().dirty() || pendingCompatibility != CommandCompatibility::Unspecified;
+        return result;
     }
 };
 

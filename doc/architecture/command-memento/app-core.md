@@ -29,10 +29,19 @@ uses the same contract for preview/adoption. `CompositeCommand` owns immutable
 children. `CommandReleaseSink` may delay destruction, retaining tickets and
 engine/module owners until native work is safe to release.
 
-The core defaults to 256 entries and 64 MiB. It does not silently evict. Failed
+The core defaults to 256 entries and 1 GiB. Successful edits automatically evict oldest entries when retention limits are exceeded. Failed
 recovery faults history; `reportExternalFault` covers host-side publication
 that could not be restored. `resetBaseline` requires a greater generation after
 producers stop.
+
+Legacy document notifications return a recoverable rejection while history is
+busy. Composer keeps already-applied legacy changes dirty and retries their
+coalesced compatibility notification at a stable boundary, including before
+save. Cancelling a preview cannot clear that pending dirty state. Saving with
+unsettled commands returns failure without clearing unsaved state. Dispatcher
+admission failures and throwing completion notifications do not escape into the
+editor loop. Queue cancellation during model execution and payload-limit
+reductions below pending bytes return `Rejected` without changing queued work.
 
 Composite children must be undoable and share parent category/policy and impact.
 Execution tracks effective children. If a later child fails, earlier children

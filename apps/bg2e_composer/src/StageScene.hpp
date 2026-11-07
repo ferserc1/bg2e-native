@@ -133,10 +133,11 @@ class StageScene {
         return _document;
     }
 
-    void markModified(bg2e::app::CommandCompatibility compatibility)
+    bg2e::app::CommandResult markModified(bg2e::app::CommandCompatibility compatibility)
     {
-        _document.markModified(compatibility);
+        return _document.markModified(compatibility);
     }
+
     void retireCommands()
     {
         _document.commands.reset();

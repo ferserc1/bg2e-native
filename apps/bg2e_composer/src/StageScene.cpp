@@ -947,12 +947,20 @@ bool StageScene::save(const std::filesystem::path& path, bool destinationConfirm
 {
     if (!_document.root)
     {
-        throw std::logic_error("Open a document before saving");
+        std::fprintf(stderr, "Scene save rejected: no document is open.\n");
+        return false;
     }
     if (_document.commands && (_document.commands->pending() ||
         _document.commands->history().transactionActive() || _document.commands->history().faulted()))
     {
-        throw std::logic_error("Flush and settle document commands before saving");
+        std::fprintf(stderr, "Scene save rejected: document commands are not settled.\n");
+        return false;
+    }
+    _document.synchronizeDirty();
+    if (_document.pendingCompatibility != bg2e::app::CommandCompatibility::Unspecified)
+    {
+        std::fprintf(stderr, "Scene save rejected: document changes could not be recorded.\n");
+        return false;
     }
     const auto target = bg2e::db::inspectSceneSaveTarget(path);
     const bool current = !target.pathChanged && target.path == _document.savePath;
@@ -976,7 +984,9 @@ bool StageScene::save(const std::filesystem::path& path, bool destinationConfirm
         const auto saved = _document.commands->history().markSaved();
         if (!saved.accepted())
         {
-            throw std::logic_error("Document history was not settled before saving");
+            std::fprintf(stderr, "Scene was written, but its history could not be marked saved.\n");
+            _document.synchronizeDirty();
+            return false;
         }
     }
     _document.savePath = std::move(committedPath);

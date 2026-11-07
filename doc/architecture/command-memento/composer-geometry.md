@@ -40,8 +40,9 @@ document remain responsible for their own synchronization and rebuilds.
 
 Admission reserves both CPU snapshots, conservative CPU/raster/upload overhead,
 and the actual retained BLAS and scratch allocation sizes of the two versions.
-Preparing candidates requires temporary allocation before admission; an exhausted
-history budget rejects the command without publishing the candidate.
+Preparing candidates requires temporary allocation before admission. History
+retention limits never reject a geometry edit: successful publication evicts
+oldest entries, and a command exceeding the budget is not retained for undo.
 
 Native resource identities are registered with the deferred release ledger even
 when their bytes are already reserved locally. Eviction and redo-tail discard

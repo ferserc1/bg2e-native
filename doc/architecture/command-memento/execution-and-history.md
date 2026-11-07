@@ -41,11 +41,16 @@ commands have `None` impact and do not dirty authored scene state.
 
 ## Limits and release
 
-Default limits are 256 entries/64 MiB. Preparation and transaction updates
-reserve before mutation and refresh estimates as state grows. Explicit eviction
-uses `discardOldest`/`discardRedo`; there is no automatic oldest-entry deletion.
-Conservative peak reservations mean large edits can be rejected while recovery
-memory exceeds the limit.
+Default retention limits are 256 entries/1 GiB. Preparation and transaction
+updates reserve storage and validate memory estimates before mutation, without
+rejecting work because history is full. Successful edits and transaction
+commits automatically discard oldest applied entries to satisfy both limits.
+Failed/no-op actions and cancelled previews do not evict history. Pending work
+and previews may temporarily exceed the limits. Oversized individual edits
+execute successfully but are not retained. Zero limits disable retention.
+`setLimits` trims immediately, removing oldest undo entries before farthest
+redo entries so the next redo remains applicable. Explicit eviction remains
+available through `discardOldest`/`discardRedo`.
 
 The optional release sink moves destruction to a caller-defined drained point
 and retains command plus accounting tickets. This protects plugin code and

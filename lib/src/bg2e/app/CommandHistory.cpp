@@ -26,7 +26,7 @@
 
 namespace bg2e::app {
 namespace {
-constexpr auto exhausted = CommandResult{CommandStatus::Rejected, "Command history budget exceeded"};
+constexpr auto invalidMemory = CommandResult{CommandStatus::Rejected, "Invalid command memory accounting"};
 constexpr auto blocked = CommandResult{CommandStatus::Rejected, "History is busy or has an active transaction"};
 constexpr auto broken = CommandResult{CommandStatus::Faulted, "History requires explicit repair or document replacement"};
 
@@ -54,6 +54,7 @@ struct CommandHistory::Impl {
         CommandMemory memory;
         bool record = false;
         bool registered = false;
+        bool retained = false;
         CommandState state = CommandState::Pending;
         uint64_t before = 0;
         uint64_t after = 0;
@@ -107,7 +108,7 @@ struct CommandHistory::Impl {
     }
 
     // No allocation: also used after swapping a proposed transaction estimate.
-    std::optional<size_t> bytes() const noexcept
+    std::optional<size_t> bytes(bool historyOnly = false) const noexcept
     {
         size_t total = 0;
         const auto add = [&total](size_t bytes)
@@ -121,6 +122,10 @@ struct CommandHistory::Impl {
         };
         for (auto entry : live)
         {
+            if (historyOnly && !entry->retained)
+            {
+                continue;
+            }
             if (!add(sizeof(Entry)) || !add(entry->info.name.capacity()) ||
                 !add(entry->info.category.capacity()) || !add(entry->memory.localBytes) ||
                 entry->memory.resources.capacity() > std::numeric_limits<size_t>::max() / sizeof(CommandResource) ||
@@ -138,6 +143,10 @@ struct CommandHistory::Impl {
                 bool seen = false;
                 for (auto previous : live)
                 {
+                    if (historyOnly && !previous->retained)
+                    {
+                        continue;
+                    }
                     const auto count = previous == entry ? i : previous->memory.resources.size();
                     for (size_t j = 0; j < count; ++j)
                     {
@@ -165,10 +174,29 @@ struct CommandHistory::Impl {
         return total;
     }
 
-    bool fits() const noexcept
+    // Retention limits never reject an edit. Pending work and active previews
+    // may temporarily exceed them; trim only after successful publication.
+    void trim() noexcept
     {
-        const auto used = bytes();
-        return used && *used <= limits.bytes && live.size() <= limits.entries;
+        while (!entries.empty())
+        {
+            const auto used = bytes(true);
+            if (used && *used <= limits.bytes && entries.size() <= limits.entries)
+            {
+                break;
+            }
+            if (cursor > 0)
+            {
+                entries.pop_front();
+                --cursor;
+            }
+            else
+            {
+                // Keep the next redo applicable: discard the farthest future
+                // first once no applied entries remain.
+                entries.pop_back();
+            }
+        }
     }
 
     bool refreshMemory(Entry& entry) noexcept
@@ -177,7 +205,7 @@ struct CommandHistory::Impl {
         {
             auto estimate = entry.command->memory();
             std::swap(entry.memory, estimate);
-            if (!fits())
+            if (!bytes())
             {
                 std::swap(entry.memory, estimate);
                 return false;
@@ -227,8 +255,10 @@ struct CommandHistory::Impl {
                 entry.after = current.state;
             }
             entry.state = CommandState::Applied;
+            entry.retained = true;
             entries.splice(entries.end(), source);
             ++cursor;
+            trim();
         }
         else
         {
@@ -371,9 +401,9 @@ CommandAdmission CommandHistory::prepare(std::unique_ptr<Command> command, Comma
         core.live.push_back(&stored);
         stored.registration = std::prev(core.live.end());
         stored.registered = true;
-        if (!core.fits())
+        if (!core.bytes())
         {
-            return {exhausted, {}};
+            return {invalidMemory, {}};
         }
         return {{CommandStatus::NoOp, {}},
             std::unique_ptr<CommandReservation>(new CommandReservation(std::move(pending)))};
@@ -407,7 +437,7 @@ CommandResult CommandHistory::execute(std::unique_ptr<CommandReservation> reserv
     }
     if (!core.refreshMemory(entry))
     {
-        return exhausted;
+        return invalidMemory;
     }
     entry.state = CommandState::Executing;
     auto result = entry.command->execute();
@@ -515,7 +545,7 @@ CommandResult CommandHistory::beginTransaction(std::unique_ptr<CommandReservatio
     BusyGuard guard(core.busy);
     if (!core.refreshMemory(entry))
     {
-        return exhausted;
+        return invalidMemory;
     }
     auto result = transaction->begin();
     if (result.status == CommandStatus::NoOp)
@@ -556,10 +586,10 @@ CommandResult CommandHistory::updateTransaction(const std::any& value)
     {
         auto estimate = transaction.memoryForUpdate(value);
         std::swap(entry.memory, estimate);
-        if (!core.fits())
+        if (!core.bytes())
         {
             std::swap(entry.memory, estimate);
-            return exhausted;
+            return invalidMemory;
         }
         entry.state = CommandState::Executing;
         auto result = transaction.update(value);
@@ -837,12 +867,9 @@ CommandResult CommandHistory::setLimits(CommandHistoryLimits limits)
     {
         return core.fault ? broken : blocked;
     }
-    const auto used = core.bytes();
-    if (!used || *used > limits.bytes || core.live.size() > limits.entries)
-    {
-        return exhausted;
-    }
+    BusyGuard guard(core.busy);
     core.limits = limits;
+    core.trim();
     return {};
 }
 

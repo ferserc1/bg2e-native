@@ -19,12 +19,21 @@ objects, independent geometry/material edits through complete scene save/reload,
 and restoration of live source references. Also run the existing
 [complete HDR mip-zero/UV2 resource probe](../resource_io/README.md).
 
+`document_state.cpp` is a separate CPU-only probe for recoverable document
+notifications. Link it with `apps/bg2e_composer/src/command/Dispatcher.cpp` and
+bg2e, using the normal engine include paths. It checks rejection during an
+active preview without throwing, preservation of unsaved legacy changes after
+cancel, coalesced compatibility policies, fault ownership, and isolation of
+throwing rejection callbacks. It has not been compiled or executed by the agent.
+
 ## Application regression matrix
 
 Use `draw_bg2e_composer` on applicable Vulkan and Metal backends. Reconfigure with
 the normal platform generator so the app's new DocumentIo.cpp is discovered.
 
 | Scenario | Expected result |
+| Keep a property preview active, move the camera, then cancel the preview | No exception; camera change remains dirty, survives save/reopen, and is not undone by cancelling the property preview |
+| Request save while commands are unsettled | Save is rejected without terminating the app or clearing unsaved state |
 |---|---|
 | Edit initial cube/camera, save, reopen three times | One editable root; camera/controller, names, flags, component priorities and independent resources retained; no editor floor/fill fixture exported |
 | Open a production scene with perspective/optical cameras | First enabled depth-first camera is active for draw and selection; authored FOV/near/far retained; missing projection gets 50 mm film / 55 mm lens optical fallback |

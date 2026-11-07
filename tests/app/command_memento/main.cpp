@@ -47,6 +47,7 @@ struct Behavior {
     bool failRedo = false;
     bool faultExecute = false;
     bool faultUndo = false;
+    std::function<void()> duringExecute;
     int executed = 0;
     int undone = 0;
     int redone = 0;
@@ -72,6 +73,10 @@ class SetValue final : public Command {
     CommandResult execute() noexcept override
     {
         ++_behavior->executed;
+        if (_behavior->duringExecute)
+        {
+            _behavior->duringExecute();
+        }
         _before = _model;
         if (_behavior->faultExecute)
         {
@@ -439,9 +444,9 @@ void transactions()
     const auto previousBytes = history.retainedBytes();
     status(history.beginTransaction(std::make_unique<Preview>(model, behavior)), CommandStatus::NoOp);
     behavior->estimate = 128 * 1024 * 1024;
-    status(history.updateTransaction(99), CommandStatus::Rejected);
-    require(model == 0);
-    status(history.cancelTransaction(), CommandStatus::NoOp);
+    status(history.updateTransaction(99), CommandStatus::Applied);
+    require(model == 99);
+    status(history.cancelTransaction(), CommandStatus::Applied);
     require(history.retainedBytes() == previousBytes);
 }
 
@@ -459,15 +464,16 @@ void budgetsAndRelease()
     require(history.retainedBytes() - firstBytes < 4096); // Shared ticket counted once.
     auto pending = history.prepare(std::make_unique<SetValue>(model, 3));
     require(bool(pending.reservation) && history.retainedEntries() == 3);
-    status(history.execute(std::make_unique<SetValue>(model, 4)), CommandStatus::Rejected);
-    require(model == 2 && history.undoCount() == 2);
+    status(history.execute(std::make_unique<SetValue>(model, 4)), CommandStatus::Applied);
+    require(model == 4 && history.undoCount() == 3);
     pending.reservation.reset();
     status(history.undo(), CommandStatus::Applied);
     const auto before = history.documentState();
     status(history.execute(std::make_unique<SetValue>(model, 9, CommandInfo{"Huge", "value"},
-        std::make_shared<Behavior>(), CommandMemory{2 * 1024 * 1024, {}})), CommandStatus::Rejected);
-    require(history.redoCount() == 1 && history.documentState() == before);
-    status(history.setLimits({0, 0}), CommandStatus::Rejected);
+        std::make_shared<Behavior>(), CommandMemory{2 * 1024 * 1024, {}})), CommandStatus::Applied);
+    require(model == 9 && history.redoCount() == 0 && history.undoCount() == 0);
+    require(history.documentState() != before && history.dirty());
+    status(history.setLimits({0, 0}), CommandStatus::NoOp);
     memory.resources.clear();
     resource.reset();
     status(history.discardRedo(), CommandStatus::NoOp);
@@ -479,6 +485,69 @@ void budgetsAndRelease()
         release->tickets[i] = {};
     }
     require(weak.expired());
+}
+
+void rollingHistoryLimits()
+{
+    int model = 0;
+    CommandHistory history({2, 1024 * 1024});
+    status(history.execute(std::make_unique<SetValue>(model, 1)), CommandStatus::Applied);
+    status(history.markSaved(), CommandStatus::NoOp);
+    status(history.execute(std::make_unique<SetValue>(model, 2)), CommandStatus::Applied);
+    // Admission and failed/no-op execution must preserve existing undo entries.
+    auto pending = history.prepare(std::make_unique<SetValue>(model, 3));
+    require(bool(pending.reservation) && history.undoCount() == 2);
+    auto failure = std::make_shared<Behavior>();
+    failure->failExecute = true;
+    status(history.execute(std::make_unique<SetValue>(model, 99, CommandInfo{"Fail", "value"}, failure)), CommandStatus::Failed);
+    status(history.execute(std::make_unique<SetValue>(model, 2)), CommandStatus::NoOp);
+    require(history.undoCount() == 2);
+    status(history.execute(std::move(pending.reservation)), CommandStatus::Applied);
+    require(model == 3 && history.undoCount() == 2);
+    status(history.undo(), CommandStatus::Applied);
+    require(model == 2);
+    status(history.undo(), CommandStatus::Applied);
+    require(model == 1 && !history.dirty());
+    status(history.undo(), CommandStatus::NoOp);
+    // Shrinking a redo-only history preserves its executable prefix.
+    status(history.setLimits({1, 1024 * 1024}), CommandStatus::NoOp);
+    require(history.redoCount() == 1);
+    status(history.redo(), CommandStatus::Applied);
+    require(model == 2);
+
+    // Byte pressure evicts old entries, independently of the entry limit.
+    const auto oneEntryBytes = history.retainedBytes();
+    status(history.setLimits({10, oneEntryBytes}), CommandStatus::NoOp);
+    status(history.execute(std::make_unique<SetValue>(model, 3)), CommandStatus::Applied);
+    require(history.undoCount() == 1 && history.retainedBytes() <= oneEntryBytes);
+    status(history.undo(), CommandStatus::Applied);
+    require(model == 2);
+
+    // An oversized preview is accepted; eviction waits until commit.
+    auto preview = std::make_shared<PreviewBehavior>();
+    preview->estimate = 2 * 1024 * 1024;
+    status(history.beginTransaction(std::make_unique<Preview>(model, preview)), CommandStatus::NoOp);
+    status(history.updateTransaction(4), CommandStatus::Applied);
+    require(history.redoCount() == 1);
+    status(history.commitTransaction(), CommandStatus::Applied);
+    require(model == 4 && history.undoCount() == 0 && history.redoCount() == 0);
+    status(history.setLimits({0, 0}), CommandStatus::NoOp);
+    status(history.execute(std::make_unique<SetValue>(model, 5)), CommandStatus::Applied);
+    require(model == 5 && history.retainedEntries() == 0 && !history.faulted());
+
+    // Repeated edits continue beyond the default 256-entry ceiling.
+    CommandHistory rolling;
+    for (int value = 1; value <= 300; ++value)
+    {
+        status(rolling.execute(std::make_unique<SetValue>(model, value)), CommandStatus::Applied);
+    }
+    require(model == 300 && rolling.undoCount() == 256);
+    for (int value = 299; value >= 44; --value)
+    {
+        status(rolling.undo(), CommandStatus::Applied);
+        require(model == value);
+    }
+    status(rolling.undo(), CommandStatus::NoOp);
 }
 
 void queueOrderingAndCompletion()
@@ -601,6 +670,36 @@ void queueCancellationAndBudgets()
     require(model == 0 && completed == 3 && throwing.pending() == 0);
 }
 
+void recoverableQueueRejections()
+{
+    int model = 0;
+    CommandHistory history;
+    CommandQueue queue(history, [](const CommandInfo*, const CommandContext*, auto run, auto)
+    {
+        run();
+    });
+    status(queue.setPayloadLimit(16), CommandStatus::NoOp);
+    status(queue.enqueueUpdate(1, 9, 8), CommandStatus::NoOp);
+    status(queue.setPayloadLimit(4), CommandStatus::Rejected);
+    // The rejected reduction leaves the previous limit and jobs intact.
+    status(queue.enqueueUpdate(1, 10, 8), CommandStatus::NoOp);
+    require(queue.pending() == 2);
+    status(queue.cancelPending(), CommandStatus::NoOp);
+    require(queue.pending() == 0);
+
+    CommandResult cancellation;
+    auto behavior = std::make_shared<Behavior>();
+    behavior->duringExecute = [&]
+    {
+        cancellation = queue.cancelPending();
+    };
+    status(queue.enqueue(std::make_unique<SetValue>(model, 1, CommandInfo{"Reentrant", "value"}, behavior)), CommandStatus::NoOp);
+    status(queue.enqueue(std::make_unique<SetValue>(model, 2)), CommandStatus::NoOp);
+    queue.pump();
+    status(cancellation, CommandStatus::Rejected);
+    require(model == 2 && queue.pending() == 0 && history.undoCount() == 2);
+}
+
 void compositeNoOpAndUndoFault()
 {
     int a = 1;
@@ -683,9 +782,11 @@ int main()
     compositeNoOpAndUndoFault();
     transactions();
     budgetsAndRelease();
+    rollingHistoryLimits();
     queueOrderingAndCompletion();
     ownerThreadAndForeignReservations();
     queueCancellationAndBudgets();
+    recoverableQueueRejections();
     queueTransactionsAndFaults();
     return 0;
 }
