@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <glm/glm.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e {
 namespace math {

@@ -17,7 +17,7 @@
  */
 
 #include <bg2e/draw/pipeline/FrameAccumulator.hpp>
-#include <glm/packing.hpp>
+#include <bg2e/math/glm.hpp>
 #include <cmath>
 #include <cstring>
 #include <limits>

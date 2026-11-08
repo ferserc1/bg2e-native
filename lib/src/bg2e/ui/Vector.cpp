@@ -18,9 +18,7 @@
 
 #include <bg2e/ui/Vector.hpp>
 
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/euler_angles.hpp>
+#include <bg2e/math/glm.hpp>
 
 #include <unordered_map>
 

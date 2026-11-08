@@ -20,8 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/gpu/Common.hpp>
-#include <glm/vec2.hpp>
-#include <glm/vec4.hpp>
+#include <bg2e/math/glm.hpp>
 #include <array>
 #include <cstdint>
 #include <memory>

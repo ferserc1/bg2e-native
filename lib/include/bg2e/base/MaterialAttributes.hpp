@@ -22,9 +22,7 @@
 #include <bg2e/base/Color.hpp>
 #include <bg2e/base/Texture.hpp>
 
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE 1
-#define GLM_FORCE_LEFT_HANDED 1
-#include <glm/vec2.hpp>
+#include <bg2e/math/glm.hpp>
 
 #include <memory>
 #include <array>

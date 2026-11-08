@@ -20,7 +20,7 @@
 
 #include <bg2e/base/Log.hpp>
 
-#include <glm/glm.hpp>
+#include <bg2e/math/glm.hpp>
 
 #include <bg2e/geo/modifiers.hpp>
 

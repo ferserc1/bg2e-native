@@ -22,7 +22,7 @@
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/BoundingBox.hpp>
 #include <bg2e/scene/Node.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <bg2e/math/glm.hpp>
 #include <algorithm>
 #include <array>
 #include <stdexcept>

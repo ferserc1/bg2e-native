@@ -23,7 +23,7 @@
 
 #include <array>
 #include <algorithm>
-#include <glm/common.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e::scene {
 

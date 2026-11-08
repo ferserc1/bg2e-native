@@ -24,7 +24,7 @@
 #include <set>
 #include <stdexcept>
 #include <utility>
-#include <glm/gtc/matrix_transform.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e_composer::command::geometry {
 namespace {

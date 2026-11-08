@@ -24,7 +24,7 @@
 #include <AreaTex.h>
 #include <SearchTex.h>
 #include <cmath>
-#include <glm/vec4.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e::draw::pipeline {
 namespace {

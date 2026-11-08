@@ -58,7 +58,7 @@ class BG2E_API Drawable {
     // Geometry-only preparation at a stopped graphics boundary. CPU mesh,
     // material identities and live bindings remain unchanged until publication.
     // Raster buffers and BLAS are prepared and exchanged as one version.
-    class PreparedGeometry {
+    class BG2E_API PreparedGeometry {
         friend class Drawable;
         const Drawable* owner = nullptr;
         Engine* engine = nullptr;

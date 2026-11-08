@@ -24,7 +24,7 @@
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <bg2e/math/glm.hpp>
 #include <cmath>
 #include <cstring>
 #include <filesystem>

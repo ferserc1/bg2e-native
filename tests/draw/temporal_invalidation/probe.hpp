@@ -24,7 +24,7 @@
 #include <array>
 #include <stdexcept>
 #include <utility>
-#include <glm/gtc/matrix_transform.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e::draw::tests {
 class SignatureDenoiseProbe : public pipeline::DenoiseFilter {

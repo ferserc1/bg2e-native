@@ -22,7 +22,7 @@
 #include <bg2e/gpu/Backend.hpp>
 #include <bg2e/draw/EngineConfig.hpp>
 
-#include <glm/glm.hpp>
+#include <bg2e/math/glm.hpp>
 
 #include <memory>
 #include <string>

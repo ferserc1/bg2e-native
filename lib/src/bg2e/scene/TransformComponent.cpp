@@ -23,7 +23,7 @@
 
 #include <cmath>
 #include <limits>
-#include <glm/gtx/euler_angles.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e::scene {
 

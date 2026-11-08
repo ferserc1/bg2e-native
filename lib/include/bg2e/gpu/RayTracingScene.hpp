@@ -22,7 +22,7 @@
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/DeviceResource.hpp>
 
-#include <glm/glm.hpp>
+#include <bg2e/math/glm.hpp>
 
 #include <cstdint>
 #include <vector>

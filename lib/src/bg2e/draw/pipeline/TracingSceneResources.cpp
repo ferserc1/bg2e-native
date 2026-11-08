@@ -22,7 +22,7 @@
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/base/Log.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
+#include <bg2e/math/glm.hpp>
 #include <algorithm>
 #include <cmath>
 #include <limits>

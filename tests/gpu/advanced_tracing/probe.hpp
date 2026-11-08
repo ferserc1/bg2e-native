@@ -24,7 +24,7 @@
 #include <bg2e/gpu/ResourceSet.hpp>
 #include <bg2e/gpu/RayTracingScene.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
-#include <glm/glm.hpp>
+#include <bg2e/math/glm.hpp>
 #include <array>
 #include <cmath>
 #include <filesystem>

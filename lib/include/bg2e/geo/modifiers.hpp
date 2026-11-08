@@ -21,8 +21,7 @@
 #include <bg2e/geo/AABoundingBox.hpp>
 #include <bg2e/geo/Mesh.hpp>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#include <glm/gtx/component_wise.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e {
 namespace geo {

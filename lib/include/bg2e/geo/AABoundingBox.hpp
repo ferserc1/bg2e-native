@@ -19,7 +19,7 @@
 #pragma once
 
 #include <bg2e/geo/Mesh.hpp>
-#include <glm/geometric.hpp>
+#include <bg2e/math/glm.hpp>
 #include <memory>
 
 namespace bg2e {

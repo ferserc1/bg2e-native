@@ -21,7 +21,7 @@
 #include <bg2e/common.hpp>
 #include <bg2e/draw/RenderLoopDelegate.hpp>
 
-#include <glm/glm.hpp>
+#include <bg2e/math/glm.hpp>
 
 #include <memory>
 #include <functional>

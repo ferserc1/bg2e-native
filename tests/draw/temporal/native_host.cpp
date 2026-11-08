@@ -24,7 +24,7 @@
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/geo/plane.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <bg2e/math/glm.hpp>
 #include <fstream>
 #include <iostream>
 #include <set>

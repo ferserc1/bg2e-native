@@ -29,6 +29,9 @@ class BG2E_API CompositeCommand final : public Command {
     CompositeCommand(CommandInfo info, std::vector<std::unique_ptr<Command>> children);
     ~CompositeCommand() override;
 
+    CompositeCommand(const CompositeCommand&) = delete;
+    CompositeCommand& operator=(const CompositeCommand&) = delete;
+
     const CommandInfo& info() const noexcept override;
     CommandMemory memory() const override;
 

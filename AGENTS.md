@@ -7,6 +7,10 @@ cmake -S . -B build -G Ninja -DVULKAN_SDK=/path/to/vulkan/sdk
 cmake --build build
 ```
 
+## GLM configuration
+
+- Include GLM only through `<bg2e/math/glm.hpp>` in repository-owned code, including apps, plugins, examples and tests. Define GLM configuration macros only in that header; the engine uses right-handed coordinates and zero-to-one clip-space depth.
+
 ## Cosmetic code style
 
 - These cosmetic rules apply only to C, C++, and shader source files (`.c`, `.cpp`, `.h`, `.hpp`, and shaders such as `.glsl` and `.metal`). They do not apply to build-system files, scripts, Markdown, or other file types.

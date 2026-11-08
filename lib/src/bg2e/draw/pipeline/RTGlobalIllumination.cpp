@@ -22,7 +22,7 @@
 #include <bg2e/draw/pipeline/RenderTarget.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/base/PlatformTools.hpp>
-#include <glm/gtc/matrix_inverse.hpp>
+#include <bg2e/math/glm.hpp>
 #include <algorithm>
 #include <cmath>
 

@@ -23,7 +23,7 @@
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/geo/plane.hpp>
 #include <bg2e/gpu/Queue.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <bg2e/math/glm.hpp>
 #include <algorithm>
 #include <array>
 #include <cmath>

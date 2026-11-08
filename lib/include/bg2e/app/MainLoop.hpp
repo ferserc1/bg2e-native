@@ -38,7 +38,7 @@
 #include <queue>
 #include <exception>
 
-#include <glm/glm.hpp>
+#include <bg2e/math/glm.hpp>
 
 namespace bg2e {
 namespace app {

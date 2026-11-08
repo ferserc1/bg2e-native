@@ -19,7 +19,7 @@
 #pragma once
 #include <bg2e/draw/pipeline/TemporalSurfacePass.hpp>
 #include <bg2e/draw/pipeline/MotionVectorGenerator.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+#include <bg2e/math/glm.hpp>
 #include <array>
 #include <cmath>
 #include <limits>

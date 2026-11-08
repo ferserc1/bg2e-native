@@ -2,6 +2,9 @@ cmake_minimum_required(VERSION 3.23)
 if(POLICY CMP0152)
     cmake_policy(SET CMP0152 NEW)
 endif()
+if(POLICY CMP0207)
+    cmake_policy(SET CMP0207 NEW)
+endif()
 
 # Invoked by a dependency target on every application build, never by configure.
 # Bundle executable directories may not exist before the app links. Collapse
