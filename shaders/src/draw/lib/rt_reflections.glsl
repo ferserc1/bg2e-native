@@ -90,15 +90,39 @@ vec3 reflectionNormal(uint instance, uint primitive, vec2 bary, vec3 direction)
         traceBackFace(instance,primitive,direction);
     return reverse ? -n : n;
 }
-vec3 reflectionDirection(vec2 xi, vec3 direction, float roughness)
+vec3 reflectionDirection(vec2 xi, vec3 normal, vec3 view, float roughness)
 {
-    float a = max(roughness*roughness,0.001);
-    float phi = 6.28318530718*xi.x;
-    float cosine = sqrt((1.0-xi.y)/max(1.0+(a*a-1.0)*xi.y,1e-8));
-    float sine = sqrt(max(0.0,1.0-cosine*cosine));
-    vec3 up = abs(direction.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
-    vec3 tangent = normalize(cross(up,direction));
-    return normalize(tangent*cos(phi)*sine+cross(direction,tangent)*sin(phi)*sine+direction*cosine);
+    // Isotropic GGX visible-normal sampling (Heitz): stretch the view,
+    // sample its visible projected disk, then unstretch the microfacet normal.
+    float alpha = max(roughness*roughness,1e-4);
+    vec3 up = abs(normal.z) < 0.999 ? vec3(0,0,1) : vec3(1,0,0);
+    vec3 tangent = normalize(cross(up,normal));
+    vec3 bitangent = cross(normal,tangent);
+    vec3 localView = vec3(dot(view,tangent),dot(view,bitangent),dot(view,normal));
+    vec3 stretched = normalize(vec3(alpha*localView.xy,localView.z));
+    float lensq = dot(stretched.xy,stretched.xy);
+    vec3 t1 = lensq > 1e-8 ? vec3(-stretched.y,stretched.x,0)/sqrt(lensq) : vec3(1,0,0);
+    vec3 t2 = cross(stretched,t1);
+    float radius = sqrt(clamp(xi.x,0.0,1.0));
+    float phi = 6.28318530718*xi.y;
+    float x = radius*cos(phi);
+    float y = radius*sin(phi);
+    float blend = 0.5*(1.0+stretched.z);
+    y = (1.0-blend)*sqrt(max(0.0,1.0-x*x))+blend*y;
+    vec3 diskNormal = x*t1+y*t2+sqrt(max(0.0,1.0-x*x-y*y))*stretched;
+    vec3 localNormal = normalize(vec3(alpha*diskNormal.xy,max(diskNormal.z,0.0)));
+    vec3 microNormal = tangent*localNormal.x+bitangent*localNormal.y+normal*localNormal.z;
+    return normalize(reflect(-view,microNormal));
+}
+
+float reflectionSampleWeight(float nDotL, float roughness)
+{
+    // VNDF cancels D and the view masking term. The remaining separable
+    // Smith G1(L) weights the normalized radiance kernel; the deferred pass
+    // applies its integrated Fresnel/BRDF factor once, after reconstruction.
+    float alpha = max(roughness*roughness,1e-4);
+    float alpha2 = alpha*alpha;
+    return 2.0*nDotL/max(nDotL+sqrt(alpha2+(1.0-alpha2)*nDotL*nDotL),1e-8);
 }
 void main()
 {
@@ -137,9 +161,16 @@ void main()
         return;
     }
     roughness = clamp(roughness,0.0,1.0);
-    vec3 reflected = normalize(reflect(normalize(viewRay),normal));
+    vec3 view = -normalize(viewRay);
+    if (dot(normal,view) <= 0.0)
+    {
+        imageStore(reflectionOutput,ivec2(pixel),vec4(0));
+        return;
+    }
+    vec3 reflected = normalize(reflect(-view,normal));
+    float samplingRoughness = clamp(roughness*dataBlock.spread.x,0.0,1.0);
     uint samples = dataBlock.counts.x;
-    if (roughness <= 0.01)
+    if (samplingRoughness <= 0.01)
     {
         samples = 1u;
     }
@@ -149,7 +180,8 @@ void main()
         samples = uint(ceil(mix(float(min(samples,2u)),float(samples),factor)));
     }
     vec3 radiance = vec3(0.0);
-    uint hits = 0u;
+    float hitWeight = 0.0;
+    float totalWeight = 0.0;
     for (uint sampleIndex = 0u; sampleIndex < samples; ++sampleIndex)
     {
         uint sequence = sampleIndex;
@@ -159,14 +191,19 @@ void main()
         vec2 xi = bg2eHashNoise2(ivec2(pixel),dataBlock.counts.w,sequence);
 #endif
         vec3 direction = reflected;
-        if (roughness > 0.01)
+        float weight = 1.0;
+        if (samplingRoughness > 0.01)
         {
-            direction = reflectionDirection(xi,reflected,roughness*dataBlock.spread.x);
-            if (dot(direction,normal) <= 0.01)
+            direction = reflectionDirection(xi,normal,view,samplingRoughness);
+            float nDotL = dot(direction,normal);
+            if (nDotL <= 0.0)
             {
-                direction = normalize(reflected+normal*0.1);
+                // A rejected microfacet never becomes a deterministic mirror ray.
+                continue;
             }
+            weight = reflectionSampleWeight(nDotL,samplingRoughness);
         }
+        totalWeight += weight;
         GIHit hit = giTrace(position+normal*dataBlock.parameters.y,direction,dataBlock.parameters.x);
         if (hit.found == 0u)
         {
@@ -227,10 +264,10 @@ void main()
         }
         if (!any(isnan(outgoing)) && !any(isinf(outgoing)))
         {
-            radiance += clamp(outgoing,vec3(0),vec3(65504));
-            hits++;
+            radiance += clamp(outgoing,vec3(0),vec3(65504))*weight;
+            hitWeight += weight;
         }
     }
-    vec3 result = hits > 0u ? radiance/float(hits) : vec3(0);
-    imageStore(reflectionOutput,ivec2(pixel),vec4(result,float(hits)/float(samples)));
+    vec3 result = hitWeight > 1e-8 ? radiance/hitWeight : vec3(0);
+    imageStore(reflectionOutput,ivec2(pixel),vec4(result,totalWeight > 1e-8 ? clamp(hitWeight/totalWeight,0.0,1.0) : 0.0));
 }

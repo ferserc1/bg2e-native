@@ -508,3 +508,27 @@ assert exact glass transport or per-pixel convergence from nominal counts. F0 ha
 token/motion/local metric captures. Perspective/FSR-SDK on/off, other sizes/qualities,
 maxFrames and freeze variants still need separate runs; this host uses the default
 resampling upscaler. Fixture-only waits/readbacks are intentional, not timings.
+
+
+### Upscaler jitter and unequal pixel centers
+
+Run `python3 tests/draw/temporal/pixel_center_reference.py` for the CPU-only
+coordinate regression. It covers 35/50/55/60/100% internal scales, reduced signal
+sizes, odd dimensions, static identity, fractional jitter and real motion. It also
+reproduces the old quarter-signal-pixel feedback bias for a 2:1 receiver/signal
+ratio. This is a numerical reference, not execution of the production shaders.
+
+Camera history sampling must transport `previousReceiverUV-currentReceiverUV`
+from the signal's own UV center. Absolute projected receiver UV remains the
+coordinate for receiver visibility/metadata checks. Signal history uses fractional
+bilinear taps; nearest-texel rounding must not turn a zero-net jitter sequence
+into whole-pixel motion. The shared v3/v4/v5 shader and the legacy camera shader
+follow this rule on both backends; world-position legacy sampling is unchanged.
+
+Native visual regression (not run): keep the camera and scene static with a
+high-contrast floor reflection, enable temporal accumulation, and compare FSR and
+MetalFX at 35/50/55/100%. Exercise receiver metadata off/on, adaptive off/on,
+reduced/full signal resolution, freeze/rolling, and reflection hit/miss confidence.
+After convergence the reflection must not advect. Then move the camera and an
+object to verify that actual motion and disocclusion still work. Capture raw
+reflection history as well as final upscaled output to distinguish the two stages.

@@ -236,6 +236,14 @@ void main()
         accepted = accepted && finite4(clip) && clip.w > 1e-8 && clip.z >= 0.0 && clip.z <= clip.w;
         previousUV = clip.xy/(abs(clip.w) > 1e-8 ? clip.w : 1.0)*vec2(0.5,-0.5)+0.5;
     }
+    // Transport receiver displacement, not its absolute texel center: signal
+    // and receiver grids may have different resolutions and sampling offsets.
+    vec2 historyUV = uv;
+    if (dataBlock.flags.x != 0u)
+    {
+        vec2 receiverUV = (vec2(sourcePixel)+0.5)/vec2(dataBlock.extent.xy);
+        historyUV += previousUV-receiverUV;
+    }
     accepted = accepted && all(greaterThanEqual(previousUV,vec2(0))) && all(lessThan(previousUV,vec2(1)));
 #if TEMPORAL_DIAGNOSTIC
     if (dataBlock.rejection.w <= 0.5)
@@ -295,7 +303,7 @@ void main()
 #endif
     if (accepted)
     {
-        vec2 q = previousUV*vec2(dataBlock.extent.zw)-0.5;
+        vec2 q = historyUV*vec2(dataBlock.extent.zw)-0.5;
         ivec2 base = ivec2(floor(q));
         vec2 fraction = q-vec2(base);
         ivec2 metadataExtent = textureSize(usampler2D(previousTokenImage,nearestSampler),0);

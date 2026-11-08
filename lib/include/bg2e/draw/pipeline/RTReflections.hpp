@@ -42,7 +42,7 @@ struct RTReflectionContext {
     uint64_t serial;
     uint32_t renderedSample;
     SurfaceInputs surface;
-    gpu::Image& output; // RGBA16 float: unweighted hit radiance, alpha=accepted hits/samples.
+    gpu::Image& output; // RGBA16 float: normalized GGX hit radiance, alpha=hit weight/valid weight.
     gpu::Image& material; // Sampled RGBA8 UNORM or RGBA16 float, G=receiver roughness.
     gpu::Size2D displayExtent; // Quality is relative to display, not surface/G-buffer.
     glm::vec3 cameraPosition{0};

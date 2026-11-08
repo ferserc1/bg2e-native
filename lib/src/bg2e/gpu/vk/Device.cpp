@@ -301,6 +301,29 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
     VK_ASSERT(vkCreateDevice(vkPhysDevice->handle(), &createInfo, nullptr, &_device));
 
+    VkPhysicalDeviceSubgroupProperties subgroups{};
+    subgroups.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
+    VkPhysicalDeviceProperties2 shaderProperties{};
+    shaderProperties.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2;
+    shaderProperties.pNext = &subgroups;
+    vkGetPhysicalDeviceProperties2(_physicalDevice, &shaderProperties);
+    // Instance::create requests Vulkan 1.3. The device may support less.
+    _shaderCapabilities.apiVersion = std::min(VK_API_VERSION_1_3, shaderProperties.properties.apiVersion);
+    _shaderCapabilities.limits = shaderProperties.properties.limits;
+    _shaderCapabilities.subgroupStages = subgroups.supportedStages;
+    _shaderCapabilities.subgroupOperations = subgroups.supportedOperations;
+    _shaderCapabilities.subgroupSize = subgroups.subgroupSize;
+    _shaderCapabilities.storageImageExtendedFormats = features2.features.shaderStorageImageExtendedFormats;
+    _shaderCapabilities.storageImageWriteWithoutFormat = features2.features.shaderStorageImageWriteWithoutFormat;
+    _shaderCapabilities.float16 = vulkan12Features.shaderFloat16;
+    _shaderCapabilities.int16 = features2.features.shaderInt16;
+    uint32_t familyCount = 0;
+    vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &familyCount, nullptr);
+    std::vector<VkQueueFamilyProperties> families(familyCount);
+    vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &familyCount, families.data());
+    _shaderCapabilities.graphicsQueueCompute =
+        (families.at(indices.graphics.value()).queueFlags & VK_QUEUE_COMPUTE_BIT) != 0;
+
     // Load device-level extension function pointers
     loadDeviceExtensions(*vkPhysDevice, _device, offscreen);
 
@@ -391,6 +414,7 @@ void Device::cleanup()
         _device = VK_NULL_HANDLE;
     }
     _resourceArrayCapabilities = {};
+    _shaderCapabilities = {};
     _renderingCapabilities = {};
     _rayTracingCapabilities = {};
     _rayTracingEnabled = false;

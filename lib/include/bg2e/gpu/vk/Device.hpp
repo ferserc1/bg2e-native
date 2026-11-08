@@ -30,6 +30,19 @@ namespace vk {
 
 class Device : public gpu::Device {
   public:
+    struct ShaderCapabilities {
+        uint32_t apiVersion = 0;
+        VkPhysicalDeviceLimits limits{};
+        VkShaderStageFlags subgroupStages = 0;
+        VkSubgroupFeatureFlags subgroupOperations = 0;
+        uint32_t subgroupSize = 0;
+        bool graphicsQueueCompute = false;
+        bool storageImageExtendedFormats = false;
+        bool storageImageWriteWithoutFormat = false;
+        bool float16 = false;
+        bool int16 = false;
+    };
+
     void create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface) override;
     void cleanup() override;
     void waitIdle() override;
@@ -82,6 +95,12 @@ class Device : public gpu::Device {
         return _physicalDevice;
     }
 
+    // Feature flags describe the logical device, not merely physical support.
+    const ShaderCapabilities& shaderCapabilities() const
+    {
+        return _shaderCapabilities;
+    }
+
     // True when the device was created with the ray tracing extensions enabled.
     bool rayTracingEnabled() const
     {
@@ -94,6 +113,7 @@ class Device : public gpu::Device {
     }
 
   private:
+    ShaderCapabilities _shaderCapabilities;
     ResourceArrayCapabilities _resourceArrayCapabilities;
     RenderingCapabilities _renderingCapabilities;
     RayTracingCapabilities _rayTracingCapabilities;

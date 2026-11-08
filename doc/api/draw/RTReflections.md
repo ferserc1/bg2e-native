@@ -12,13 +12,13 @@ configuration.reflections = reflections;
 
 RendererDeferred creates an enabled default pass when none is supplied. Reflections are requested by default and remain independent of the GI/AO/IBL mode. Check available/status and usesReflections(); unsupported hardware or shaders preserve the request while the renderer falls back without traced reflections. An injected pass or explicit enabled setting overrides this default. Configure an injected RTReflectionConfiguration before initialization with deployed shaderRoot, optional shared BlueNoise and a compatible shaderPrefix/interface (`draw.rt_reflections.v3`: Vulkan specialization ID0, Metal argument-record buffers8/9). Its exact table capacity is clamped to 16384 and native budgets after reserves. Lifecycle/preparation/recording, availability and outputExtent are virtual. RendererDeferred::reflections() exposes the component and usesReflections() reports graph support, independently of enabled(). Reflections coexist with IBL, RTAO or RTGI mode selection.
 
-Settings expose enabled, quality, sampleCount (1..64), bias/maxDistance (finite positive), maxRoughness ([0,1]), roughnessSpread ([0,16]), shadowSamples (1..64), useShadows and useBlueNoise. Active recording requires maxDistance > 2*bias. Mirrors at roughness <= 0.01 use one deterministic ray; glossy surfaces increase toward sampleCount with roughness. Changes belong at synchronized application boundaries, followed by a scene-frame request; call invalidateHistories() after discontinuities to coordinate effect and SDK resets.
+Settings expose enabled, quality, sampleCount (1..64), bias/maxDistance (finite positive), maxRoughness ([0,1]), roughnessSpread ([0,16]), shadowSamples (1..64), useShadows and useBlueNoise. Active recording requires maxDistance > 2*bias. Sampling roughness is clamp(roughness*roughnessSpread,0,1). Values <= 0.01 use one deterministic mirror ray; glossy surfaces increase toward sampleCount with roughness. Changes belong at synchronized application boundaries, followed by a scene-frame request; call invalidateHistories() after discontinuities to coordinate effect and SDK resets.
 
 Quality is relative to display output, independently of internal renderer/G-buffer/FSR scale. Low/Medium/High/Ultra use 1/3, 1/2, 2/3 and 1 with nearest integer rounding and a minimum of one pixel. outputExtent(displayExtent) computes the required target. RendererDeferred detects reflection quality changes and rebuilds targets; an internal-scale change does not change the reflection dimensions when display/quality are fixed.
 
 Standalone clients initialize(device,backend,slots), prepare a retired slot from RenderQueue or a compatible TracingSnapshot, then record RTReflectionContext. Context contains the existing camera-depth or explicit position/normal/coverage SurfaceInputs, receiver material image (sampled RGBA8 UNORM or RGBA16 float, G=roughness), displayExtent, cameraPosition, LightUniforms, retained EnvironmentResources and output. Receiver material matches the surface extent; output is sampled/storage/color-attachment RGBA16_SFLOAT at the display-relative extent. Receiver and output resolutions may differ. Keep caller-owned images alive through completion.
 
-RGB contains the average outgoing linear HDR radiance at accepted geometry hits, before receiver Fresnel/BRDF weighting. Alpha is accepted finite geometry hits divided by rays actually sampled. RGB is not premultiplied by alpha. Misses, uncovered pixels, rejected roughness, empty scenes and disabled/unavailable passes return zero confidence. The lighting pass mixes traced radiance with prefiltered specular IBL using confidence, then applies the receiver's existing split-sum BRDF, material AO and baked multiplier. Diffuse GI/IBL, direct PBR, emission and sheen retain their composition. Black geometry hits can have confidence one; environment misses use IBL rather than a duplicate traced environment term.
+RGB contains outgoing linear HDR hit radiance normalized by GGX visible-normal sample weights, before receiver Fresnel/BRDF weighting. The remaining separable Smith G1(L) term weights each valid direction. Alpha is finite geometry-hit weight divided by total valid-direction weight, including misses. Samples below the surface contribute to neither weight and are never replaced with a fixed mirror direction. RGB is not premultiplied by alpha. Misses, uncovered pixels, rejected roughness, empty scenes and disabled/unavailable passes return zero confidence. The lighting pass mixes traced radiance with prefiltered specular IBL using confidence, then applies the receiver's existing split-sum BRDF, material AO and baked multiplier. Diffuse GI/IBL, direct PBR, emission and sheen retain their composition. Black geometry hits can have confidence one; environment misses use IBL rather than a duplicate traced environment term.
 
 Vulkan uses raygen/miss/closest-hit/any-hit at recursion depth one. Metal uses compute nearest-hit queries. Both reuse the shared bounded tracing tables and cutout predicate, evaluate albedo/emission and normal-map slots at explicit LOD0, and include environment diffuse plus participating direct lights at the hit. LightData.flags.w is the existing affectsReflections participation bit. Normal interpolation uses inverse transpose; tangents use the model transform, orthogonalization and mirrored determinant sign, matching raster's XYZ-only source tangent convention. The single source tangent basis also applies when a normal texture selects UV1; no extra tangent set is invented.
 
@@ -47,3 +47,21 @@ binding tuples skip descriptor updates, while uniforms are uploaded each call.
 Tracing scene set1 and immutable material arrays set2 retain their existing owners.
 Use setPoolingEnabled(false) for fresh-invocation diagnostics and poolStatistics()
 for current retention, at a synchronized update boundary.
+
+
+## Roughness sampling regression
+
+Both backend shaders sample isotropic GGX visible microfacet normals in the
+surface frame, conditioned on the view, then reflect the view about the sampled
+normal. This replaces the previous cone around the ideal reflected direction.
+The deferred split-sum factor remains an approximation; this pass does not apply
+a second receiver Fresnel factor. `roughnessSpread` is an artistic control;
+values above one saturate at sampling roughness one.
+
+Run `python3 tests/draw/rt_reflections/sampling_reference.py` for CPU-only checks
+of unit/finite directions, bounded weights, broadening at normal incidence,
+no duplicated fallback directions at grazing angles, constant-radiance confidence
+composition, and paired shader helper equivalence. This does not compile or
+execute shaders. Native visual validation remains pending: enable RT up to
+roughness one, compare 0.1/0.3/0.5/0.8 at normal and grazing angles, and exercise
+misses, mirrors, blue/hash noise, temporal accumulation and both backends.

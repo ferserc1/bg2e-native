@@ -244,6 +244,14 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         accepted = accepted && finite4(clip) && clip.w > 1e-8 && clip.z >= 0.0 && clip.z <= clip.w;
         previousUV = clip.xy/(abs(clip.w) > 1e-8 ? clip.w : 1.0)*float2(0.5,-0.5)+0.5;
     }
+    // Transport receiver displacement, not its absolute texel center: signal
+    // and receiver grids may have different resolutions and sampling offsets.
+    float2 historyUV = uv;
+    if (dataBlock.flags.x != 0u)
+    {
+        float2 receiverUV = (float2(sourcePixel)+0.5)/float2(dataBlock.extent.xy);
+        historyUV += previousUV-receiverUV;
+    }
     accepted = accepted && all(previousUV >= float2(0)) && all(previousUV < float2(1));
 #if TEMPORAL_DIAGNOSTIC
     if (dataBlock.rejection.w <= 0.5)
@@ -303,7 +311,7 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
 #endif
     if (accepted)
     {
-        float2 q = previousUV*float2(dataBlock.extent.zw)-0.5;
+        float2 q = historyUV*float2(dataBlock.extent.zw)-0.5;
         int2 base = int2(floor(q));
         float2 fraction = q-float2(base);
         int2 metadataExtent = int2(previousTokenImage.get_width(),previousTokenImage.get_height());

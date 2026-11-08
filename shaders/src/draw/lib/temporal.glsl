@@ -135,6 +135,7 @@ void main()
 #endif
     if (accepted)
     {
+#if TEMPORAL_WORLD
         ivec2 previousPixel = ivec2(previousUV*vec2(dataBlock.extent.zw));
         vec4 previousPosition = texelFetch(sampler2D(previousPositionImage,nearestSampler),previousPixel,0);
         vec4 previousNormal = texelFetch(sampler2D(previousNormalImage,nearestSampler),previousPixel,0);
@@ -142,6 +143,69 @@ void main()
         float threshold = dataBlock.rejection.x+dataBlock.rejection.y*length(position-dataBlock.cameraRoughness.xyz);
         accepted = previousPosition.w > 0.5 && previousNormal.w >= 1.0 &&
             length(previousPosition.xyz-position) <= threshold && dot(normal,previousNormal.xyz) >= dataBlock.rejection.z;
+#else
+        // Receiver guides and signals can have different pixel centers. Reproject
+        // the receiver displacement, retaining the signal's own subpixel offset.
+        vec2 historyUV = uv;
+        if (dataBlock.flags.x != 0u)
+        {
+            historyUV += previousUV-sourceUV;
+        }
+        vec2 historyPixel = historyUV*vec2(dataBlock.extent.zw)-0.5;
+        ivec2 base = ivec2(floor(historyPixel));
+        vec2 fraction = historyPixel-vec2(base);
+        vec4 historySum = vec4(0.0);
+        float weightSum = 0.0;
+        float minimumCount = float(dataBlock.counts.y);
+        float threshold = dataBlock.rejection.x+dataBlock.rejection.y*length(position-dataBlock.cameraRoughness.xyz);
+        // Preserve fractional jitter motion instead of rounding every frame to a
+        // whole history texel, which can accumulate a directional drift.
+        for (int tap = 0; tap < 4; ++tap)
+        {
+            ivec2 offset = ivec2(tap & 1,tap >> 1);
+            ivec2 previousPixel = base+offset;
+            float weight = (offset.x == 0 ? 1.0-fraction.x : fraction.x)*
+                (offset.y == 0 ? 1.0-fraction.y : fraction.y);
+            if (weight <= 0.0 || any(lessThan(previousPixel,ivec2(0))) ||
+                any(greaterThanEqual(previousPixel,ivec2(dataBlock.extent.zw))))
+            {
+                continue;
+            }
+            vec4 previousPosition = texelFetch(sampler2D(previousPositionImage,nearestSampler),previousPixel,0);
+            vec4 previousNormal = texelFetch(sampler2D(previousNormalImage,nearestSampler),previousPixel,0);
+            vec4 candidate = texelFetch(sampler2D(previousImage,nearestSampler),previousPixel,0);
+            if (previousPosition.w <= 0.5 || previousNormal.w < 1.0 ||
+                !(length(previousPosition.xyz-position) <= threshold) ||
+                !(dot(normal,previousNormal.xyz) >= dataBlock.rejection.z) ||
+                (any(isnan(candidate)) || any(isinf(candidate))))
+            {
+                continue;
+            }
+#if !TEMPORAL_SCALAR
+            if (dataBlock.counts.x == 1u && candidate.a <= 0.5)
+            {
+                continue;
+            }
+            if (dataBlock.counts.x == 2u)
+            {
+                candidate.a = clamp(candidate.a,0.0,1.0);
+                candidate.rgb *= candidate.a;
+            }
+#endif
+            historySum += candidate*weight;
+            weightSum += weight;
+            minimumCount = min(minimumCount,previousNormal.w);
+        }
+        accepted = weightSum > 1e-6;
+        vec4 previous = accepted ? historySum/weightSum : vec4(0.0);
+#if !TEMPORAL_SCALAR
+        if (dataBlock.counts.x == 2u)
+        {
+            previous.rgb = previous.a > 1e-8 ? previous.rgb/previous.a : vec3(0.0);
+        }
+#endif
+        vec4 previousNormal = vec4(0.0,0.0,0.0,minimumCount);
+#endif
         if (accepted)
         {
             float oldCount = min(previousNormal.w,float(dataBlock.counts.y));
