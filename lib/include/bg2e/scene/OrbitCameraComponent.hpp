@@ -45,6 +45,7 @@ class BG2E_API OrbitCameraComponent : public Component {
     inline void setEnabled(bool value)
     {
         _enabled = value;
+        synchronizeMouseTargets();
     }
 
     // Rotation (yaw, pitch)
@@ -55,6 +56,7 @@ class BG2E_API OrbitCameraComponent : public Component {
     inline void setRotation(const glm::vec2& r)
     {
         _rotation = r;
+        _targetRotation = r;
     }
 
     // Distance
@@ -65,6 +67,7 @@ class BG2E_API OrbitCameraComponent : public Component {
     inline void setDistance(float d)
     {
         _distance = d;
+        _targetDistance = d;
     }
 
     // Center
@@ -75,6 +78,7 @@ class BG2E_API OrbitCameraComponent : public Component {
     inline void setCenter(const glm::vec3& c)
     {
         _center = c;
+        _targetCenter = c;
     }
 
     // Rotation speed
@@ -219,6 +223,25 @@ class BG2E_API OrbitCameraComponent : public Component {
         _displacementSpeed = v;
     }
 
+    // Time-based movement and mouse smoothing
+    float movementSpeedScale() const
+    {
+        return _movementSpeedScale;
+    }
+    void setMovementSpeedScale(float value)
+    {
+        _movementSpeedScale = value >= 0.0f ? value : 0.0f;
+    }
+
+    float mouseSmoothingTime() const
+    {
+        return _mouseSmoothingTime;
+    }
+    void setMouseSmoothingTime(float value)
+    {
+        _mouseSmoothingTime = value >= 0.0f ? value : 0.0f;
+    }
+
     void setRotateButtons(bool left, bool middle, bool right)
     {
         _rotationButtons = {left, middle, right};
@@ -315,7 +338,17 @@ class BG2E_API OrbitCameraComponent : public Component {
     float _maxZ = 45.0f;
     float _minZ = -45.0f;
 
+    // Legacy displacement speed is calibrated at 60 frames per second.
     float _displacementSpeed = 0.1f;
+    float _movementSpeedScale = 1.0f;
+    float _mouseSmoothingTime = 0.05f;
+
+    glm::vec2 _targetRotation = _rotation;
+    glm::vec3 _targetCenter = _center;
+    float _targetDistance = _distance;
+
+    void synchronizeMouseTargets();
+    void clampMouseTargets();
 
     static constexpr float _flightDistance = 0.02f;
     float _savedDistance = 0.0f;

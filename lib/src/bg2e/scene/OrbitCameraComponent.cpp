@@ -24,6 +24,7 @@
 #include <bg2e/math/tools.hpp>
 #include <bg2e/geo/AABoundingBox.hpp>
 #include <algorithm>
+#include <cmath>
 
 namespace bg2e::scene {
 
@@ -38,6 +39,7 @@ std::shared_ptr<Component> OrbitCameraComponent::clone() const
         copy->_distance = copy->_savedDistance;
         copy->_isFlying = false;
     }
+    copy->synchronizeMouseTargets();
     return copy;
 }
 
@@ -142,10 +144,19 @@ void OrbitCameraComponent::deserialize(std::shared_ptr<json::JsonNode> jsonData,
     {
         _displacementSpeed = *value;
     }
+    if (auto value = reader.getNumber("movementSpeedScale"))
+    {
+        setMovementSpeedScale(*value);
+    }
+    if (auto value = reader.getNumber("mouseSmoothingTime"))
+    {
+        setMouseSmoothingTime(*value);
+    }
     if (auto value = reader.getBool("enabled"))
     {
         _enabled = *value;
     }
+    synchronizeMouseTargets();
 }
 
 std::shared_ptr<json::JsonNode> OrbitCameraComponent::serialize(const std::filesystem::path& basePath)
@@ -186,6 +197,8 @@ std::shared_ptr<json::JsonNode> OrbitCameraComponent::serialize(const std::files
     obj["maxZ"] = JSON(_maxZ);
     obj["minZ"] = JSON(_minZ);
     obj["displacementSpeed"] = JSON(_displacementSpeed);
+    obj["movementSpeedScale"] = JSON(_movementSpeedScale);
+    obj["mouseSmoothingTime"] = JSON(_mouseSmoothingTime);
     obj["enabled"] = JSON(_enabled);
 
     return compData;
@@ -197,13 +210,19 @@ void OrbitCameraComponent::resizeViewport(const math::Viewport& vp)
     _viewportHeight = static_cast<uint32_t>(vp.height);
 }
 
-void OrbitCameraComponent::update(float /* delta */)
+void OrbitCameraComponent::update(float delta)
 {
     auto transform = ownerNode()->transform();
 
     if (transform && _enabled)
     {
-        math::BasisVectors basis(transform->matrix(), true);
+        delta = std::isfinite(delta) ? std::max(delta, 0.0f) : 0.0f;
+        clampMouseTargets();
+        const float alpha = _mouseSmoothingTime > 0.0f
+            ? -std::expm1(-delta / _mouseSmoothingTime) : 1.0f;
+        _rotation = glm::mix(_rotation, _targetRotation, alpha);
+        _center = glm::mix(_center, _targetCenter, alpha);
+        _distance = glm::mix(_distance, _targetDistance, alpha);
 
         auto pitch = _rotation.x > _minPitch ? _rotation.x : _minPitch;
         pitch = pitch < _maxPitch ? pitch : _maxPitch;
@@ -249,8 +268,10 @@ void OrbitCameraComponent::update(float /* delta */)
 
             if (glm::length(displacement) > 0.0f)
             {
-                displacement = glm::normalize(displacement) * _displacementSpeed;
+                displacement = glm::normalize(displacement) * _displacementSpeed * 60.0f * _movementSpeedScale * delta;
                 _center += displacement;
+                _targetCenter += displacement;
+                clampMouseTargets();
             }
         }
 
@@ -329,34 +350,39 @@ void OrbitCameraComponent::mouseMove(int x, int y)
             _lastPos.y - static_cast<float>(y),
             _lastPos.x - static_cast<float>(x)};
         _lastPos = {static_cast<float>(x), static_cast<float>(y)};
-        auto basis = math::BasisVectors(transform->matrix(), true);
+        auto orientation = glm::rotate(glm::mat4{1.0f}, glm::radians(_targetRotation.y), glm::vec3(0.0f, 1.0f, 0.0f));
+        orientation = glm::rotate(orientation, glm::radians(_targetRotation.x), glm::vec3(-1.0f, 0.0f, 0.0f));
+        auto basis = math::BasisVectors(orientation, true);
 
         switch (getOrbitAction())
         {
         case OrbitAction::Rotate:
             delta.x = delta.x * -1;
-            _rotation = _rotation + delta * 0.5f;
+            _targetRotation += delta * (_rotationSpeed * 2.5f);
             break;
-        case OrbitAction::Pan: {
-            auto speedFactor = std::abs((std::log(_distance) + 2.0f)) * 0.01f * _panSpeed;
-            if (std::isnan(speedFactor))
+        case OrbitAction::Pan:
+        {
+            auto speedFactor = std::abs((std::log(_targetDistance) + 2.0f)) * 0.01f * _panSpeed;
+            if (!std::isfinite(speedFactor))
             {
                 speedFactor = 0.01f;
             }
             auto up = basis.up * -delta.x * speedFactor;
             auto right = basis.right * delta.y * speedFactor;
 
-            _center = _center + up + right;
+            _targetCenter += up + right;
             break;
         }
-        case OrbitAction::Zoom: {
-            auto speedFactor = _distance * 0.005f * _panSpeed;
-            _distance += delta.x * speedFactor;
+        case OrbitAction::Zoom:
+        {
+            // Exponential scaling composes equally for split or coalesced events.
+            _targetDistance *= std::exp(delta.x * 0.005f * _panSpeed);
             break;
         }
         case OrbitAction::None:
             break;
         }
+        clampMouseTargets();
     }
 }
 
@@ -366,7 +392,8 @@ void OrbitCameraComponent::mouseWheel(int /*deltaX*/, int deltaY)
     {
         return;
     }
-    _distance += deltaY * 0.1f * std::clamp(_distance, 0.1f, 5.0f) * _wheelSpeed;
+    _targetDistance += deltaY * 0.1f * std::clamp(_targetDistance, 0.1f, 5.0f) * _wheelSpeed;
+    clampMouseTargets();
 }
 
 void OrbitCameraComponent::keyDown(const app::KeyEvent& event)
@@ -405,7 +432,8 @@ void OrbitCameraComponent::keyDown(const app::KeyEvent& event)
         break;
     }
 
-    if (!wasAnyKeyPressed && !_isFlying)
+    const bool anyKeyPressed = _keys.w || _keys.a || _keys.s || _keys.d || _keys.q || _keys.e || _keys.space;
+    if (!wasAnyKeyPressed && anyKeyPressed && !_isFlying)
     {
         _isFlying = true;
         _savedDistance = _distance;
@@ -416,6 +444,7 @@ void OrbitCameraComponent::keyDown(const app::KeyEvent& event)
 
         _center += forward * (_distance - _flightDistance);
         _distance = _flightDistance;
+        synchronizeMouseTargets();
     }
 }
 
@@ -462,6 +491,7 @@ void OrbitCameraComponent::keyUp(const app::KeyEvent& event)
 
             _center += forward * (_flightDistance - _savedDistance);
             _distance = _savedDistance;
+            synchronizeMouseTargets();
         }
     }
 }
@@ -471,6 +501,7 @@ void OrbitCameraComponent::cancelInput()
     _keys = {};
     _mouseButtonPressed = false;
     keyUp(app::KeyEvent(app::KeyEvent::KeyW));
+    synchronizeMouseTargets();
 }
 
 
@@ -479,6 +510,7 @@ void OrbitCameraComponent::reset()
     _rotation = _initialRotation;
     _distance = _initialDistance;
     _center = _initialCenter;
+    synchronizeMouseTargets();
 }
 
 void OrbitCameraComponent::centerOnTarget(bg2e::scene::Node* target)
@@ -509,7 +541,28 @@ void OrbitCameraComponent::centerOnTarget(bg2e::scene::Node* target)
         _rotation.x = 45.0f;
         _rotation.y = 45.0f;
         _center = target->worldPosition();
+        synchronizeMouseTargets();
     }
+}
+
+void OrbitCameraComponent::synchronizeMouseTargets()
+{
+    _targetRotation = _rotation;
+    _targetCenter = _center;
+    _targetDistance = _distance;
+}
+
+void OrbitCameraComponent::clampMouseTargets()
+{
+    _targetRotation.x = std::clamp(_targetRotation.x, _minPitch, _maxPitch);
+    if (_minDistance != std::numeric_limits<float>::min())
+    {
+        _targetDistance = std::max(_targetDistance, std::numeric_limits<float>::epsilon());
+    }
+    _targetDistance = std::min(_targetDistance, _maxDistance);
+    _targetCenter.x = std::clamp(_targetCenter.x, _minX, _maxX);
+    _targetCenter.y = std::clamp(_targetCenter.y, _minY, _maxY);
+    _targetCenter.z = std::clamp(_targetCenter.z, _minZ, _maxZ);
 }
 
 OrbitCameraComponent::OrbitAction OrbitCameraComponent::getOrbitAction()

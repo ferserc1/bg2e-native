@@ -6,6 +6,14 @@
  *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <bg2e/reflection/Registration.hpp>
@@ -62,6 +70,21 @@ reflection::TypeRegistration<scene::OrbitCameraComponent> _orbitCameraReflection
             .category("Speeds")
             .range(0.0, 100000.0)
             .step(0.01)
+            .drag();
+
+        t.property("movementSpeedScale", &scene::OrbitCameraComponent::movementSpeedScale, &scene::OrbitCameraComponent::setMovementSpeedScale)
+            .displayName("Movement Speed Scale")
+            .category("Speeds")
+            .tooltip("Multiplier for time-based keyboard movement; 1 preserves the legacy speed at 60 FPS")
+            .range(0.0, 100000.0)
+            .step(0.01)
+            .drag();
+        t.property("mouseSmoothingTime", &scene::OrbitCameraComponent::mouseSmoothingTime, &scene::OrbitCameraComponent::setMouseSmoothingTime)
+            .displayName("Mouse Smoothing Time")
+            .category("Speeds")
+            .tooltip("Mouse response time in seconds; 0 disables smoothing")
+            .range(0.0, 10.0)
+            .step(0.005)
             .drag();
 
         t.property("minFocus", &scene::OrbitCameraComponent::minFocus, &scene::OrbitCameraComponent::setMinFocus)
