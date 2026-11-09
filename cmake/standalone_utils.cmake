@@ -205,10 +205,11 @@ function(copy_vulkan_resources
             "${VULKAN_SDK_PATH}/lib/libVkLayer_api_dump.dylib"
         )
 
+        # Keep the link relative so the bundle can be moved or distributed.
         add_custom_command(
             TARGET ${TARGET_NAME} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E create_symlink
-            "$<TARGET_FILE_DIR:${TARGET_NAME}>/../lib/${LIBVULKAN_NAME}"
+            "${LIBVULKAN_NAME}"
             "$<TARGET_FILE_DIR:${TARGET_NAME}>/../lib/libvulkan.1.dylib"
         )
     endif(APPLE)
