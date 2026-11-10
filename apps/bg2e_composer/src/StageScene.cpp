@@ -19,6 +19,7 @@
 #include "StageScene.hpp"
 
 #include <bg2e/base/Color.hpp>
+#include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/db/scene.hpp>
@@ -38,6 +39,7 @@
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
+#include <bg2e/scene/TextFontComponent.hpp>
 #include <bg2e/scene/BoundingBox.hpp>
 #include <bg2e/scene/FindCameraVisitor.hpp>
 #include <bg2e/scene/UpdateVisitor.hpp>
@@ -93,21 +95,9 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create(std::shared_ptr<command::D
     }
     _root = std::make_shared<scene::Node>("Composer stage");
 
-    auto model = std::make_shared<draw::Drawable>();
-    model->setMesh(geo::createCube(2, 2, 2));
-    model->iterateMaterials([](auto& material)
-    {
-        material.setAlbedo(base::Color(0.25f, 0.55f, 0.8f));
-        material.setMetalness(0);
-        material.setRoughness(0.45f);
-        material.setAlphaCutoff(0);
-    });
-    addDrawable("Startup model", model, {0, 0, 0});
-    auto startup = _root->children().back();
-    _root->removeChild(startup);
     _model = std::make_shared<scene::Node>("Scene");
     _model->addComponent(new scene::TransformComponent());
-    _model->addChild(startup);
+    addDefaultContents(_model);
     _root->addChild(_model);
     _document.root = _model;
     _document.generation = 1;
@@ -149,7 +139,8 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create(std::shared_ptr<command::D
     _fillLight->setEnabled(false);
     _scene = std::make_shared<scene::Scene>();
     _scene->setSceneRoot(_root);
-    _scene->setMainEnvironment(nullptr);
+    _scene->prepareTextFonts();
+    refreshEnvironment(true);
     _scene->setMainCamera(_camera->camera());
     prepareTools();
     refreshCamera();
@@ -474,7 +465,79 @@ void StageScene::discardCandidate(const std::shared_ptr<bg2e::scene::Node>& cand
     }
 }
 
-std::shared_ptr<bg2e::scene::Node> StageScene::newDocumentRoot() const
+void StageScene::addDefaultContents(const std::shared_ptr<bg2e::scene::Node>& root)
+{
+    using namespace bg2e;
+    const auto fontDirectory = base::PlatformTools::assetPath() / "fonts/didact-gothic";
+    auto fonts = std::make_shared<scene::TextFontComponent>();
+    fonts->setDeclarations({{"default", fontDirectory / "DidactGothic-Regular.ttf", 0,
+        {fontDirectory / "OFL.txt", fontDirectory / "README.md"}}});
+    root->addComponent(fonts);
+
+    auto environment = std::make_shared<scene::Node>("Env and Light");
+    auto transform = std::make_shared<scene::TransformComponent>();
+    transform->setTranslation(0, 5, 0);
+    // LightComponent emits along local +Z. Yaw first, then tilt downward.
+    transform->rotate(glm::radians(45.0f), 0, 1, 0);
+    transform->rotate(glm::radians(60.0f), 1, 0, 0);
+    environment->addComponent(transform);
+    environment->addComponent(new scene::EnvironmentComponent());
+    environment->addComponent(new scene::LightComponent());
+    environment->light()->light().setType(base::Light::TypeSun);
+    environment->light()->light().setCastShadows(true);
+    root->addChild(environment);
+
+    const auto addMesh = [&](const char* name, std::shared_ptr<draw::Drawable> drawable,
+        const glm::vec3& position)
+    {
+        // Keep partially initialized GPU resources in the existing cleanup path.
+        _drawables.push_back(drawable);
+        auto node = std::make_shared<scene::Node>(name);
+        node->addComponent(scene::TransformComponent::makeTranslated(position));
+        node->addComponent(new scene::DrawableComponent(drawable));
+        root->addChild(node);
+        drawable->load(_engine);
+    };
+
+    auto floor = std::make_shared<draw::Drawable>();
+    floor->setMesh(geo::createPlane(20, 20));
+    floor->material().setAlbedo(base::Color(0.4f, 0.4f, 0.4f));
+    floor->material().setMetalness(0);
+    floor->material().setRoughness(0.8f);
+    floor->material().setAlphaCutoff(0);
+    addMesh("Floor", floor, {0, 0, 0});
+
+    auto cube = std::make_shared<draw::Drawable>();
+    cube->setMesh(geo::createCube(1, 1, 1));
+    cube->iterateMaterials([](auto& material)
+    {
+        material.setAlbedo(base::Color(0.25f, 0.55f, 0.8f));
+        material.setMetalness(0);
+        material.setRoughness(0.45f);
+        material.setAlphaCutoff(0);
+    });
+    // Half the side plus the requested 0.1 gap above the floor at Y=0.
+    addMesh("Startup model", cube, {0, 0.6f, 0});
+}
+
+
+std::shared_ptr<bg2e::scene::Node> StageScene::newDocumentRoot()
+{
+    auto root = emptyDocumentRoot();
+    try
+    {
+        addDefaultContents(root);
+    }
+    catch (...)
+    {
+        discardCandidate(root);
+        throw;
+    }
+    return root;
+}
+
+
+std::shared_ptr<bg2e::scene::Node> StageScene::emptyDocumentRoot() const
 {
     using namespace bg2e;
     auto root = std::make_shared<scene::Node>("Scene");
@@ -612,7 +675,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path&
     {
         return prepareScene(path, true, nullptr, std::move(schema), realizeResources);
     }
-    auto root = newDocumentRoot();
+    auto root = emptyDocumentRoot();
     root->addChild(prepareImport(path));
     return root;
 }

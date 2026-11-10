@@ -192,7 +192,8 @@ function(compile_metal_shaders
 
         add_custom_command(
             OUTPUT ${AIR}
-            COMMAND xcrun -sdk macosx metal -c -o "${AIR}" "${MSH}"
+            COMMAND xcrun -sdk macosx metal "-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+                -c -o "${AIR}" "${MSH}"
             DEPENDS ${MSH}
             COMMENT "Compiling metal shader ${MSH}"
             VERBATIM
@@ -676,7 +677,8 @@ function(compile_paired_shader_tree TARGET_NAME VULKAN_SDK_PATH SRC_PATH DST_PAT
             set(OUTPUT "${OUTPUT_DIR}/${NAME}.metallib")
             add_custom_command(OUTPUT "${AIR}"
                 COMMAND ${CMAKE_COMMAND} -E make_directory "${AIR_DIR}"
-                COMMAND xcrun -sdk macosx metal -I "${SRC_PATH}" -c "${SOURCE}" -o "${AIR}"
+                COMMAND xcrun -sdk macosx metal "-mmacosx-version-min=${CMAKE_OSX_DEPLOYMENT_TARGET}"
+                    -I "${SRC_PATH}" -c "${SOURCE}" -o "${AIR}"
                 DEPENDS "${SOURCE}" ${INCLUDES}
                 COMMENT "Compiling paired Metal ${RELATIVE}" VERBATIM)
             add_custom_command(OUTPUT "${OUTPUT}"

@@ -1,4 +1,23 @@
 cmake_minimum_required(VERSION 3.23)  # 3.23 required by FidelityFX SDK
+
+# Set the deployment target before project() initializes the Apple toolchain.
+# metal-cpp supports older systems; its SDK version is not a runtime minimum.
+# Support macOS Tahoe (26), the release preceding the current macOS 27 toolchain.
+if(CMAKE_HOST_APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+        if(NOT "$ENV{MACOSX_DEPLOYMENT_TARGET}" STREQUAL "")
+            set(CMAKE_OSX_DEPLOYMENT_TARGET "$ENV{MACOSX_DEPLOYMENT_TARGET}" CACHE STRING
+                "Minimum macOS version" FORCE)
+        else()
+            set(CMAKE_OSX_DEPLOYMENT_TARGET "26.0" CACHE STRING
+                "Minimum macOS version" FORCE)
+        endif()
+    endif()
+    if(CMAKE_OSX_DEPLOYMENT_TARGET VERSION_LESS "26.0")
+        message(FATAL_ERROR "bg2e requires a macOS deployment target of 26.0 or newer")
+    endif()
+endif()
+
 project(bg2e_native)
 
 set(CMAKE_CXX_STANDARD 20)

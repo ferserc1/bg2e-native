@@ -60,7 +60,7 @@ class StageScene {
 
     // Call only at a stopped renderer boundary. Candidates stay detached until
     // publication; imports preserve the current document and its save path.
-    std::shared_ptr<bg2e::scene::Node> newDocumentRoot() const;
+    std::shared_ptr<bg2e::scene::Node> newDocumentRoot();
     std::shared_ptr<bg2e::scene::Node> prepareImport(const std::filesystem::path& path,
         float unitsScale = 1.0f, bool sourceIsZUp = false,
         bg2e::scene::SceneProgressCallback progress = nullptr,
@@ -148,6 +148,9 @@ class StageScene {
     }
 
   private:
+    void addDefaultContents(const std::shared_ptr<bg2e::scene::Node>& root);
+    std::shared_ptr<bg2e::scene::Node> emptyDocumentRoot() const;
+
     std::shared_ptr<bg2e::scene::Node> prepareScene(const std::filesystem::path& path,
         bool requireCamera, bg2e::scene::SceneProgressCallback progress,
         std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
