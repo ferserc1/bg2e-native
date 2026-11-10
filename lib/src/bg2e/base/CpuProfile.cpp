@@ -26,6 +26,7 @@
 #include <functional>
 #include <deque>
 #include <cstdio>
+#include <cstring>
 #include <sstream>
 #include <tuple>
 #include <memory>
@@ -47,6 +48,18 @@ uint64_t nowNs()
 {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(
         std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+
+bool lightweightScope(const char* label)
+{
+    // Live display keeps only the frame path; all other scopes require explicit recording.
+    static constexpr std::array<const char*, 8> labels{
+        "app.events", "frame.total", "frame.prepare", "frame.acquire", "frame.update",
+        "frame.scene", "frame.uiPrep", "frame.uiDraw"};
+    return label && std::any_of(labels.begin(), labels.end(), [&](const char* candidate)
+    {
+        return std::strcmp(label, candidate) == 0;
+    });
 }
 
 std::string bounded(const char* text)
@@ -104,18 +117,19 @@ struct FileCloser {
 struct ThreadState {
     std::mutex mutex;
     std::vector<CpuProfileSample> samples;
-    uint64_t id = 0, lastPublication = 0;
+    uint64_t id = 0;
 };
 
 struct Service {
     std::mutex mutex, control, providerMutex;
     std::condition_variable ready;
-    std::atomic<bool> enabled{false}, recording{false}, gpuEnabled{true};
+    // Native GPU timestamp queries are opt-in because they allocate backend resources.
+    std::atomic<bool> enabled{false}, recording{false}, gpuEnabled{false};
     bool recordingGpuEnabled = true;
     std::atomic<uint64_t> epoch{0}, recordingId{0}, identity{0};
     std::atomic<uint64_t> dropped{0}, partial{0};
     size_t consumers = 0;
-    uint64_t openScopes = 0, recordingScopes = 0;
+    std::atomic<uint64_t> openScopes{0}, recordingScopes{0};
     std::vector<std::weak_ptr<ThreadState>> threads;
     std::deque<std::shared_ptr<const Batch>> history;
     std::deque<Batch> queue;
@@ -126,7 +140,8 @@ struct Service {
     std::array<GpuProfileQueueStatus, 64> gpuQueues{};
     size_t gpuQueueCount = 0;
     std::deque<GpuProfileSample> gpuHistory;
-    uint64_t gpuDropped = 0, gpuFailed = 0, gpuUnsupported = 0, gpuEvicted = 0, gpuLate = 0;
+    std::atomic<uint64_t> gpuDropped{0}, gpuLate{0};
+    uint64_t gpuFailed = 0, gpuUnsupported = 0, gpuEvicted = 0;
     uint64_t sessionGpuAvailable = 0, sessionGpuFailed = 0, sessionGpuUnsupported = 0, sessionGpuDropped = 0;
     uint64_t unresolvedGpu = 0;
     bool closing = false;
@@ -296,11 +311,18 @@ void expireGpuLocked(Service& data)
 void flush(const std::shared_ptr<ThreadState>& state)
 {
     auto& data = service();
-    std::lock_guard lock(data.mutex);
-    std::lock_guard threadLock(state->mutex);
+    std::unique_lock lock(data.mutex, std::try_to_lock);
+    if (!lock.owns_lock())
+    {
+        return;
+    }
+    std::unique_lock threadLock(state->mutex, std::try_to_lock);
+    if (!threadLock.owns_lock())
+    {
+        return;
+    }
     acceptLocked(data, std::move(state->samples));
     state->samples.clear();
-    state->lastPublication = nowNs();
 }
 
 struct Local {
@@ -328,7 +350,11 @@ std::shared_ptr<ThreadState> threadState()
     if (!local.state)
     {
         auto& data = service();
-        std::lock_guard lock(data.mutex);
+        std::unique_lock lock(data.mutex, std::try_to_lock);
+        if (!lock.owns_lock())
+        {
+            return {};
+        }
         std::erase_if(data.threads, [](const auto& weak)
         {
             return weak.expired();
@@ -339,6 +365,7 @@ std::shared_ptr<ThreadState> threadState()
         }
         local.state = std::make_shared<ThreadState>();
         local.state->id = ++data.identity;
+        local.state->samples.reserve(batchSize);
         data.threads.push_back(local.state);
     }
     return local.state;
@@ -353,7 +380,12 @@ void append(CpuProfileSample sample, bool* retired = nullptr, uint64_t scopeReco
         return;
     }
     auto& data = service();
-    std::unique_lock publication(data.mutex);
+    std::unique_lock publication(data.mutex, std::try_to_lock);
+    if (!publication.owns_lock())
+    {
+        ++data.dropped;
+        return;
+    }
     // Admission and stop's TLS drain share this lock, so accepted records are
     // either in the writer queue or visible to stop before its end boundary.
     if (sample.recording && (!data.recording || sample.recording != data.recordingId ||
@@ -373,16 +405,24 @@ void append(CpuProfileSample sample, bool* retired = nullptr, uint64_t scopeReco
     sample.thread = state->id;
     bool full;
     {
-        std::lock_guard lock(state->mutex);
+        std::unique_lock lock(state->mutex, std::try_to_lock);
+        if (!lock.owns_lock())
+        {
+            ++data.dropped;
+            return;
+        }
         state->samples.push_back(std::move(sample));
-        full = state->samples.size() >= batchSize || nowNs() - state->lastPublication >= 100'000'000;
+        full = state->samples.size() >= batchSize;
     }
     if (full)
     {
-        std::lock_guard lock(state->mutex);
+        std::unique_lock lock(state->mutex, std::try_to_lock);
+        if (!lock.owns_lock())
+        {
+            return;
+        }
         acceptLocked(data, std::move(state->samples));
         state->samples.clear();
-        state->lastPublication = nowNs();
     }
 }
 
@@ -562,7 +602,7 @@ void stopLocked(Service& data)
             {
                 data.unresolvedGpu += pending.token && pending.recording == data.recordingId ? 1 : 0;
             }
-            data.partial += data.recordingScopes;
+            data.partial += data.recordingScopes.load();
             data.recordingScopes = 0;
             for (const auto& weak : data.threads)
             {
@@ -659,7 +699,7 @@ bool CpuProfiler::start(const std::filesystem::path& path, bool overwrite)
         data.writerDropped = 0;
         data.sessionDropped = data.dropped;
         data.sessionPartial = data.partial;
-        data.partial += data.openScopes;
+        data.partial += data.openScopes.load();
         data.recordingScopes = 0;
         data.sessionGpuAvailable = data.sessionGpuFailed = data.sessionGpuUnsupported = data.sessionGpuDropped = 0;
         data.unresolvedGpu = 0;
@@ -787,13 +827,16 @@ GpuProfileSample CpuProfiler::beginGpu(uint64_t presentation, uint64_t scene, Gp
         if (!thread)
         {
             auto& data = service();
-            std::lock_guard lock(data.mutex);
             ++data.gpuDropped;
-            data.sessionGpuDropped += data.recording ? 1 : 0;
             return {};
         }
         auto& data = service();
-        std::lock_guard lock(data.mutex);
+        std::unique_lock lock(data.mutex, std::try_to_lock);
+        if (!lock.owns_lock())
+        {
+            ++data.gpuDropped;
+            return {};
+        }
         expireGpuLocked(data);
         if (!data.enabled || !data.gpuEnabled)
         {
@@ -827,10 +870,7 @@ GpuProfileSample CpuProfiler::beginGpu(uint64_t presentation, uint64_t scene, Gp
     }
     catch (...)
     {
-        auto& data = service();
-        std::lock_guard lock(data.mutex);
-        ++data.gpuDropped;
-        data.sessionGpuDropped += data.recording ? 1 : 0;
+        ++service().gpuDropped;
     }
     return {};
 }
@@ -844,7 +884,12 @@ void CpuProfiler::completeGpu(const GpuProfileSample& sample) noexcept
     try
     {
         auto& data = service();
-        std::lock_guard lock(data.mutex);
+        std::unique_lock lock(data.mutex, std::try_to_lock);
+        if (!lock.owns_lock())
+        {
+            ++data.gpuLate;
+            return;
+        }
         for (auto& pending : data.gpuPending)
         {
             if (pending.token == sample.token)
@@ -901,7 +946,12 @@ void CpuProfiler::completeGpu(const GpuProfileSample& sample) noexcept
 void CpuProfiler::gpuQueueStatus(const GpuProfileQueueStatus& status) noexcept
 {
     auto& data = service();
-    std::lock_guard lock(data.mutex);
+    std::unique_lock lock(data.mutex, std::try_to_lock);
+    if (!lock.owns_lock())
+    {
+        ++service().gpuDropped;
+        return;
+    }
     for (size_t i = 0; i < data.gpuQueueCount; ++i)
     {
         if (data.gpuQueues[i].device == status.device && data.gpuQueues[i].queue == status.queue)
@@ -923,10 +973,14 @@ void CpuProfiler::gpuQueueStatus(const GpuProfileQueueStatus& status) noexcept
 CpuProfileRecordingStatus CpuProfiler::recordingStatus()
 {
     auto& data = service();
-    std::lock_guard lock(data.mutex);
     CpuProfileRecordingStatus result;
-    result.active = data.recording;
-    result.session = data.recordingId;
+    result.active = data.recording.load(std::memory_order_relaxed);
+    result.session = data.recordingId.load(std::memory_order_relaxed);
+    std::unique_lock lock(data.mutex, std::try_to_lock);
+    if (!lock.owns_lock())
+    {
+        return result;
+    }
     result.begin = data.startTime;
     result.end = data.endTime;
     result.path = data.path;
@@ -940,17 +994,21 @@ CpuProfileSnapshot CpuProfiler::snapshot(uint64_t since)
     CpuProfileSnapshot result;
     std::deque<std::shared_ptr<const Batch>> history;
     {
-        std::lock_guard lock(data.mutex);
+        std::unique_lock lock(data.mutex, std::try_to_lock);
+        if (!lock.owns_lock())
+        {
+            return result;
+        }
         history = data.history;
         result.evicted = data.evicted;
         result.dropped = data.dropped;
         result.writerDropped = data.writerDropped;
         result.partial = data.partial;
-        result.gpuDropped = data.gpuDropped;
+        result.gpuDropped = data.gpuDropped.load(std::memory_order_relaxed);
         result.gpuFailed = data.gpuFailed;
         result.gpuUnsupported = data.gpuUnsupported;
         result.gpuEvicted = data.gpuEvicted;
-        result.gpuLate = data.gpuLate;
+        result.gpuLate = data.gpuLate.load(std::memory_order_relaxed);
         for (const auto& sample : data.gpuHistory)
         {
             if (sample.requested >= since && nowNs() - sample.resolved <= historyNs)
@@ -1035,7 +1093,7 @@ void CpuProfiler::publish() noexcept
 
 void CpuProfiler::count(const char* name, uint64_t value, const char* unit) noexcept
 {
-    if (!enabled() || !name)
+    if (!enabled() || !recording() || !name)
     {
         return;
     }
@@ -1091,14 +1149,18 @@ CpuProfileScope*& CpuProfileScope::current() noexcept
 }
 
 CpuProfileScope::CpuProfileScope(const char* label, bool reportBoundary) noexcept
-    : _label(label), _boundary(reportBoundary), _active(enabled())
+    : _label(label), _boundary(reportBoundary),
+      _active(enabled() && (CpuProfiler::recording() || lightweightScope(label)))
 {
     if (_active)
     {
         _parent = current();
-        current() = this;
         begin();
-        _frame = _boundary ? _id : (_parent ? _parent->_frame : 0);
+        if (_active)
+        {
+            current() = this;
+            _frame = _boundary ? _id : (_parent ? _parent->_frame : 0);
+        }
     }
 }
 
@@ -1131,25 +1193,21 @@ CpuProfileScope::~CpuProfileScope() noexcept
                 ++service().dropped;
             }
         }
-        if (!_parent || _boundary)
-        {
-            CpuProfiler::publish();
-        }
     }
 }
 
 void CpuProfileScope::begin() noexcept
 {
     auto& data = service();
-    std::lock_guard lock(data.mutex);
-    _epoch = data.epoch;
-    _recording = data.recording ? data.recordingId.load() : 0;
+    _epoch = data.epoch.load(std::memory_order_relaxed);
+    _recording = data.recording.load(std::memory_order_relaxed) ?
+        data.recordingId.load(std::memory_order_relaxed) : 0;
     ++data.openScopes;
     if (_recording)
     {
         ++data.recordingScopes;
     }
-    _id = ++service().identity;
+    _id = ++data.identity;
     _children = 0;
     _start = Clock::now();
 }
@@ -1173,7 +1231,6 @@ void CpuProfileScope::finish() noexcept
                 return;
             }
             auto& data = service();
-            std::lock_guard lock(data.mutex);
             --data.openScopes;
             if (recording && data.recording && recording == data.recordingId)
             {
@@ -1217,8 +1274,17 @@ void CpuProfileScope::next(const char* label) noexcept
     if (_active)
     {
         finish();
-        _label = label;
+        current() = _parent;
+        _active = false;
+    }
+    _label = label;
+    if (enabled() && (CpuProfiler::recording() || lightweightScope(label)))
+    {
+        _parent = current();
+        _active = true;
         begin();
+        current() = this;
+        _frame = _boundary ? _id : (_parent ? _parent->_frame : 0);
     }
 }
 

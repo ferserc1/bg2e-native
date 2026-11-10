@@ -25,11 +25,13 @@
 #include <imgui.h>
 
 #include <algorithm>
+#include <array>
 #include <chrono>
 #include <cmath>
 #include <exception>
 #include <filesystem>
 #include <string>
+#include <utility>
 
 namespace bg2e::ui {
 namespace {
@@ -165,6 +167,11 @@ struct Performance::Impl {
     uint64_t cutoff = 0, nextRefresh = 0, modalNs = 0;
     double refreshMs = 0, drawMs = 0;
     bool paused = false, busy = false, snapshotFailed = false;
+    bool advanced = false;
+    double basicFps = 0;
+    std::array<double, 7> basicPhaseMs{};
+    static constexpr std::array<const char*, 7> basicPhaseLabels{
+        "app.events", "frame.prepare", "frame.acquire", "frame.update", "frame.scene", "frame.uiPrep", "frame.uiDraw"};
     std::filesystem::path pendingPath;
     std::string error;
 
@@ -179,7 +186,11 @@ struct Performance::Impl {
         {
             {
                 base::CpuProfileScope profile("ui.performance.snapshot");
-                model.snapshot = base::CpuProfiler::snapshot(cutoff);
+                auto snapshot = base::CpuProfiler::snapshot(cutoff);
+                if (!snapshot.samples.empty() || !snapshot.gpuSamples.empty() || model.snapshot.samples.empty())
+                {
+                    model.snapshot = std::move(snapshot);
+                }
             }
             {
                 base::CpuProfileScope profile("ui.performance.series");
@@ -198,6 +209,80 @@ struct Performance::Impl {
             model.snapshot.begin = model.snapshot.end = 0;
             model.rows();
             model.rebuild(timestamp());
+            snapshotFailed = true;
+            nextRefresh = timestamp() + 1'000'000'000;
+        }
+        refreshMs = double(timestamp() - start) / 1e6;
+    }
+
+    void refreshBasic()
+    {
+        const auto start = timestamp();
+        if (paused || start < nextRefresh)
+        {
+            return;
+        }
+        try
+        {
+            base::CpuProfileScope profile("ui.performance.snapshot");
+            const auto sampleSince = cutoff ? cutoff : (start > 2'000'000'000 ? start - 2'000'000'000 : 0);
+            auto snapshot = base::CpuProfiler::snapshot(sampleSince);
+            if (!snapshot.samples.empty() || model.snapshot.samples.empty())
+            {
+                model.snapshot = std::move(snapshot);
+            }
+            basicPhaseMs.fill(0);
+            for (const auto& total : model.snapshot.totals)
+            {
+                if (total.kind != base::CpuProfileSample::Kind::Scope || total.calls == 0)
+                {
+                    continue;
+                }
+                for (size_t i = 0; i < basicPhaseLabels.size(); ++i)
+                {
+                    if (total.label == basicPhaseLabels[i])
+                    {
+                        basicPhaseMs[i] = total.inclusiveMs / double(total.calls);
+                    }
+                }
+            }
+            const auto now = timestamp();
+            const auto windowStart = now > 2'000'000'000 ? now - 2'000'000'000 : 0;
+            const base::CpuProfileSample* first = nullptr;
+            const base::CpuProfileSample* last = nullptr;
+            uint64_t thread = 0;
+            for (const auto& sample : model.snapshot.samples)
+            {
+                if (sample.kind == base::CpuProfileSample::Kind::Frame && sample.complete &&
+                    (!model.preferredEpoch || sample.epoch == model.preferredEpoch))
+                {
+                    thread = sample.thread;
+                }
+            }
+            for (const auto& sample : model.snapshot.samples)
+            {
+                if (sample.kind == base::CpuProfileSample::Kind::Frame && sample.complete &&
+                    sample.thread == thread && (!model.preferredEpoch || sample.epoch == model.preferredEpoch) &&
+                    sample.end >= windowStart && sample.end <= now)
+                {
+                    if (!first)
+                    {
+                        first = &sample;
+                    }
+                    last = &sample;
+                }
+            }
+            basicFps = first && last && last->end > first->end
+                ? double(last->presentationNumber - first->presentationNumber) * 1e9 /
+                    double(last->end - first->end)
+                : 0;
+            snapshotFailed = false;
+            nextRefresh = now + 250'000'000;
+        }
+        catch (...)
+        {
+            model.snapshot.samples.clear();
+            model.snapshot.totals.clear();
             snapshotFailed = true;
             nextRefresh = timestamp() + 1'000'000'000;
         }
@@ -567,6 +652,11 @@ struct Performance::Impl {
             nextRefresh = 0;
         }
         ImGui::SameLine();
+        if (ImGui::Checkbox("Advanced", &advanced) && advanced)
+        {
+            nextRefresh = 0;
+        }
+        ImGui::SameLine();
         if (ImGui::Button("Clear charts"))
         {
             cutoff = timestamp();
@@ -580,10 +670,33 @@ struct Performance::Impl {
             model.rebuild(cutoff);
         }
         ImGui::TextDisabled("Display controls affect this window only. Collection and recording continue.");
-        refresh();
+        if (advanced)
+        {
+            refresh();
+        }
+        else
+        {
+            refreshBasic();
+        }
         if (snapshotFailed)
         {
             ImGui::TextWrapped("Performance snapshot unavailable; collection/recording are unchanged. Retrying in one second.");
+        }
+        if (advanced)
+        {
+            ImGui::TextDisabled("Low-overhead live mode keeps only frame and event phases. Full scope and counter capture runs during an explicit recording.");
+        }
+        if (!advanced)
+        {
+            ImGui::Separator();
+            ImGui::Text("Total FPS: %.1f", basicFps);
+            ImGui::TextDisabled("CPU time per call, average over recent samples");
+            for (size_t i = 0; i < basicPhaseLabels.size(); ++i)
+            {
+                ImGui::Text("%s: %.3f ms", basicPhaseLabels[i], basicPhaseMs[i]);
+            }
+            ImGui::TextDisabled("Event processing includes SDL polling and dispatch. Frame phases are CPU wall time.");
+            return;
         }
         const auto& snapshot = model.snapshot;
         const double seconds = model.end > model.begin ? double(model.end - model.begin) / 1e9 : 0;

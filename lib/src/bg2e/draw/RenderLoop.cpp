@@ -207,7 +207,7 @@ void RenderLoop::frame(float deltaSeconds, ui::UserInterface&)
 void RenderLoop::frame(float deltaSeconds)
 {
     base::CpuProfileScope frameProfile("frame.total", true);
-    base::CpuProfileScope stageProfile("frame.prepareDelegate");
+    base::CpuProfileScope stageProfile("frame.prepare");
     if (!_engine || !_sceneInitialized)
     {
         throw std::logic_error("draw scene is not initialized.");
@@ -239,7 +239,7 @@ void RenderLoop::frame(float deltaSeconds)
     {
         return;
     }
-    stageProfile.next("frame.acquireAndWaitSlot");
+    stageProfile.next("frame.acquire");
     auto frame = surface->beginFrame();
     stageProfile.next("frame.resizeAndTargets");
     if (!frame)
@@ -332,7 +332,7 @@ void RenderLoop::frame(float deltaSeconds)
     }
     if (_uiPreparation)
     {
-        base::CpuProfileScope profile("frame.uiPreparation");
+        base::CpuProfileScope profile("frame.uiPrep");
         _uiPreparation(command, *frame);
     }
     if (command.hasActiveScope())
@@ -350,7 +350,7 @@ void RenderLoop::frame(float deltaSeconds)
                          surface->frameCounter(), slotIndex, deltaSeconds, _renderedSceneCount, _sceneDeltaSeconds};
     if (refresh)
     {
-        base::CpuProfileScope profile("frame.delegateUpdate");
+        base::CpuProfileScope profile("frame.update");
         _delegate->update(context);
     }
     if (command.hasActiveScope())
@@ -372,6 +372,7 @@ void RenderLoop::frame(float deltaSeconds)
         command.transition(_impl->sceneColor.get(), gpu::ImageLayout::ColorAttachment);
         // The delegate owns any rendering/compute scope it opens, with color
         // already in ColorAttachment layout. This initial contract has no depth.
+        base::CpuProfileScope profile("frame.scene");
         _delegate->render(context);
         if (command.hasActiveScope())
         {
@@ -385,7 +386,7 @@ void RenderLoop::frame(float deltaSeconds)
     command.transition(presentationColor, gpu::ImageLayout::ColorAttachment);
     if (_uiComposition)
     {
-        base::CpuProfileScope profile("frame.uiComposition");
+        base::CpuProfileScope profile("frame.uiDraw");
         gpu::GpuTimingScope gpuProfile(command, "frame.uiComposition");
         _uiComposition(command, *frame);
     }

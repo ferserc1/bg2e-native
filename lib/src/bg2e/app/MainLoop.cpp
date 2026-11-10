@@ -334,121 +334,124 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
 
     while (!quit)
     {
-        while (SDL_PollEvent(&event) != 0)
         {
+            base::CpuProfileScope profile("app.events");
+            while (SDL_PollEvent(&event) != 0)
+            {
 
-            if (event.type == SDL_QUIT)
-            {
-                if (_onExitFunction)
+                if (event.type == SDL_QUIT)
                 {
-                    quit = _onExitFunction();
-                }
-                else
-                {
-                    quit = true;
-                }
-            }
-            else if (event.type == SDL_DROPFILE)
-            {
-                std::string pathStr(event.drop.file);
-                SDL_free(event.drop.file);
-
-                application->inputDelegate()->fileDropped(std::filesystem::path(pathStr));
-            }
-            else if (event.type == SDL_WINDOWEVENT &&
-                     event.window.event == SDL_WINDOWEVENT_MINIMIZED)
-            {
-                stopRendering = true;
-            }
-            else if (event.type == SDL_WINDOWEVENT &&
-                     event.window.event == SDL_WINDOWEVENT_RESTORED)
-            {
-                stopRendering = false;
-                nextBackgroundFrame = std::chrono::steady_clock::now();
-                requestFrame();
-            }
-            else if (event.type == SDL_WINDOWEVENT &&
-                     event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
-            {
-                isForeground = true;
-                lastRenderedFrameTime = std::chrono::steady_clock::now();
-                requestFrame();
-            }
-            else if (event.type == SDL_WINDOWEVENT &&
-                     event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
-            {
-                isForeground = false;
-                _shortcuts.resetModifiers();
-                _inputManager.focusLost();
-                nextBackgroundFrame = std::chrono::steady_clock::now();
-                requestFrame();
-            }
-            else if ((event.type == SDL_WINDOWEVENT &&
-                      event.window.event == SDL_WINDOWEVENT_RESIZED) ||
-                     _resizeRequested)
-            {
-                int w, h;
-                SDL_GetWindowSize(window, &w, &h);
-                _windowSize = glm::uvec2{static_cast<uint32_t>(std::max(w, 0)),
-                    static_cast<uint32_t>(std::max(h, 0))};
-                storeWidth = w;
-                storeHeight = h;
-                application->uiDelegate()->_viewportWidth = static_cast<uint32_t>(w);
-                application->uiDelegate()->_viewportHeight = static_cast<uint32_t>(h);
-
-                lastResizeEventTime = std::chrono::steady_clock::now();
-                if (!resizing)
-                {
-                    _execution->requestResize();
-                    resizing = true;
-                }
-                _resizeRequested = false;
-            }
-            else if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
-            {
-                const auto bg2eEvent = KeyEvent::fromSDLEvent(event);
-                if (event.key.state == SDL_PRESSED)
-                {
-                    _inputManager.keyDown(bg2eEvent);
-                    _shortcuts.keyDown(bg2eEvent);
-                }
-                else if (event.key.state == SDL_RELEASED)
-                {
-                    _inputManager.keyUp(bg2eEvent);
-                    _shortcuts.keyUp(bg2eEvent);
-                }
-            }
-            else if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
-            {
-                int x, y;
-                SDL_GetMouseState(&x, &y);
-
-                if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
-                {
-                    auto button = event.button.button == SDL_BUTTON_LEFT ? 0 : event.button.button == SDL_BUTTON_MIDDLE ? 1
-                                                                                                                        : 2;
-                    if (event.button.state == SDL_PRESSED)
+                    if (_onExitFunction)
                     {
-                        _inputManager.mouseButtonDown(button, x, y);
+                        quit = _onExitFunction();
                     }
                     else
                     {
-                        _inputManager.mouseButtonUp(button, x, y);
+                        quit = true;
                     }
                 }
-                else
+                else if (event.type == SDL_DROPFILE)
                 {
-                    _inputManager.mouseMove(x, y);
-                }
-            }
-            else if (event.type == SDL_MOUSEWHEEL)
-            {
-                _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
-            }
+                    std::string pathStr(event.drop.file);
+                    SDL_free(event.drop.file);
 
-            if (!quit && _execution->userInterfaceReady())
-            {
-                _userInterface.processEvent(&event);
+                    application->inputDelegate()->fileDropped(std::filesystem::path(pathStr));
+                }
+                else if (event.type == SDL_WINDOWEVENT &&
+                         event.window.event == SDL_WINDOWEVENT_MINIMIZED)
+                {
+                    stopRendering = true;
+                }
+                else if (event.type == SDL_WINDOWEVENT &&
+                         event.window.event == SDL_WINDOWEVENT_RESTORED)
+                {
+                    stopRendering = false;
+                    nextBackgroundFrame = std::chrono::steady_clock::now();
+                    requestFrame();
+                }
+                else if (event.type == SDL_WINDOWEVENT &&
+                         event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
+                {
+                    isForeground = true;
+                    lastRenderedFrameTime = std::chrono::steady_clock::now();
+                    requestFrame();
+                }
+                else if (event.type == SDL_WINDOWEVENT &&
+                         event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
+                {
+                    isForeground = false;
+                    _shortcuts.resetModifiers();
+                    _inputManager.focusLost();
+                    nextBackgroundFrame = std::chrono::steady_clock::now();
+                    requestFrame();
+                }
+                else if ((event.type == SDL_WINDOWEVENT &&
+                          event.window.event == SDL_WINDOWEVENT_RESIZED) ||
+                         _resizeRequested)
+                {
+                    int w, h;
+                    SDL_GetWindowSize(window, &w, &h);
+                    _windowSize = glm::uvec2{static_cast<uint32_t>(std::max(w, 0)),
+                        static_cast<uint32_t>(std::max(h, 0))};
+                    storeWidth = w;
+                    storeHeight = h;
+                    application->uiDelegate()->_viewportWidth = static_cast<uint32_t>(w);
+                    application->uiDelegate()->_viewportHeight = static_cast<uint32_t>(h);
+
+                    lastResizeEventTime = std::chrono::steady_clock::now();
+                    if (!resizing)
+                    {
+                        _execution->requestResize();
+                        resizing = true;
+                    }
+                    _resizeRequested = false;
+                }
+                else if (event.type == SDL_KEYUP || event.type == SDL_KEYDOWN)
+                {
+                    const auto bg2eEvent = KeyEvent::fromSDLEvent(event);
+                    if (event.key.state == SDL_PRESSED)
+                    {
+                        _inputManager.keyDown(bg2eEvent);
+                        _shortcuts.keyDown(bg2eEvent);
+                    }
+                    else if (event.key.state == SDL_RELEASED)
+                    {
+                        _inputManager.keyUp(bg2eEvent);
+                        _shortcuts.keyUp(bg2eEvent);
+                    }
+                }
+                else if (event.type == SDL_MOUSEMOTION || event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
+                {
+                    int x, y;
+                    SDL_GetMouseState(&x, &y);
+
+                    if (event.type == SDL_MOUSEBUTTONDOWN || event.type == SDL_MOUSEBUTTONUP)
+                    {
+                        auto button = event.button.button == SDL_BUTTON_LEFT ? 0 : event.button.button == SDL_BUTTON_MIDDLE ? 1
+                                                                                                                            : 2;
+                        if (event.button.state == SDL_PRESSED)
+                        {
+                            _inputManager.mouseButtonDown(button, x, y);
+                        }
+                        else
+                        {
+                            _inputManager.mouseButtonUp(button, x, y);
+                        }
+                    }
+                    else
+                    {
+                        _inputManager.mouseMove(x, y);
+                    }
+                }
+                else if (event.type == SDL_MOUSEWHEEL)
+                {
+                    _inputManager.mouseWheel(event.wheel.x, event.wheel.y);
+                }
+
+                if (!quit && _execution->userInterfaceReady())
+                {
+                    _userInterface.processEvent(&event);
+                }
             }
         }
 
