@@ -46,3 +46,18 @@ an existing build. These checks do not require changes to CMake.
    regardless of the number of UI presentations between scene updates.
 
 No runtime results are claimed by this checklist.
+
+## Input must not drain GPU submissions
+
+1. Use a warmed-up scene with no active import, bake, resource edit or resize.
+   Observe `gpu::Device::waitIdleForResourceUpdate` and native device `waitIdle`
+   with debugger breakpoints; recording or the Performance window is optional.
+2. Move the pointer over the viewport without pressing any button, then hold an
+   unused keyboard key. Neither input alone may cause a device-wide idle wait.
+3. Orbit, pan and zoom the camera. CPU navigation must not drain submissions;
+   normal frame-slot reuse may still wait for that slot's completion.
+4. Click to select, manipulate a gizmo, cancel a drag, and undo/redo a resource
+   edit. Picking/resource operations retain their own synchronization. Input and
+   commands must retain their order, document guards and transaction behavior.
+
+This checklist documents expected behavior; it does not claim runtime coverage.

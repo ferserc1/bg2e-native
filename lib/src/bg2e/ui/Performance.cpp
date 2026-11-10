@@ -685,6 +685,20 @@ struct Performance::Impl {
         if (advanced)
         {
             ImGui::TextDisabled("Low-overhead live mode keeps only frame and event phases. Full scope and counter capture runs during an explicit recording.");
+            const auto average = [&](const char* label)
+            {
+                for (const auto& total : model.snapshot.totals)
+                {
+                    if (total.kind == base::CpuProfileSample::Kind::Scope && total.label == label && total.calls)
+                    {
+                        return total.inclusiveMs / double(total.calls);
+                    }
+                }
+                return 0.0;
+            };
+            ImGui::Text("Preparation detail (ms): GPU poll %.3f | delegate %.3f (updates %.3f, renderer %.3f) | renderer core %.3f (overlays %.3f, environment %.3f)",
+                average("frame.gpuPoll"), average("frame.delegate"), average("delegate.update"),
+                average("delegate.rPrep"), average("renderer.prep"), average("render.overlays"), average("renderer.env"));
         }
         if (!advanced)
         {

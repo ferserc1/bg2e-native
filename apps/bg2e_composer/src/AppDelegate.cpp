@@ -124,7 +124,10 @@ void AppDelegate::queueInput(std::function<void()> event)
         return;
     }
     const auto generation = document() ? document()->generation : 0;
-    enqueueRendererUpdate(rendererGeneration(), [this, weak = weak_from_this(), generation, event = std::move(event)](auto&)
+    // Preserve input/command ordering at the pre-acquisition boundary without
+    // draining GPU submissions for CPU navigation or a no-op event. Picking and
+    // resource-changing commands synchronize their own resource users.
+    enqueueCpuValueUpdate(rendererGeneration(), [this, weak = weak_from_this(), generation, event = std::move(event)](auto&)
     {
         auto owner = weak.lock();
         if (!owner)

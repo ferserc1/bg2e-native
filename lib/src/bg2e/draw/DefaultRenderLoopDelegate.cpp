@@ -471,11 +471,11 @@ void DefaultRenderLoopDelegate::prepareFrame()
     base::CpuProfileScope::count("delegate.sceneReplacementPending", _scenePending ? 1 : 0);
     if (!_pendingRenderer && !_scenePending)
     {
-        base::CpuProfileScope stageProfile("delegate.applyQueuedUpdatesAndReconfigure");
+        base::CpuProfileScope stageProfile("delegate.update");
         applyUpdates(std::move(updates));
         reconfigureRenderer();
         prepareTextResources();
-        stageProfile.next("delegate.rendererPrepareFrame");
+        stageProfile.next("delegate.rPrep");
         if (_rendererInitialized && _renderer->prepareFrame())
         {
             requestSceneFrame();
@@ -540,7 +540,7 @@ void DefaultRenderLoopDelegate::prepareFrame()
         scene::UpdateVisitor update;
         update.update(_scene.get(), 0.0f);
     }
-    stageProfile.next("delegate.rendererPrepareFrame");
+    stageProfile.next("delegate.rPrep");
     if (_rendererInitialized && _renderer->prepareFrame())
     {
         requestSceneFrame();

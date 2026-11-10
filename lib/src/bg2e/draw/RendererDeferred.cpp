@@ -937,13 +937,13 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
 
 bool RendererDeferred::prepareFrame()
 {
-    base::CpuProfileScope prepareProfile("renderer.prepareFrame");
+    base::CpuProfileScope prepareProfile("renderer.prep");
     if (!_engine)
     {
         return false;
     }
     bool overlayChanged = false;
-    base::CpuProfileScope overlayProfile("renderer.prepareOverlayFrames");
+    base::CpuProfileScope overlayProfile("render.overlays");
     for (const auto& overlay : _configuration.overlays)
     {
         overlayChanged = overlay->prepareFrame() || overlayChanged;
@@ -957,7 +957,7 @@ bool RendererDeferred::prepareFrame()
     {
         return overlayChanged;
     }
-    overlayProfile.next("renderer.prepareEnvironment");
+    overlayProfile.next("renderer.env");
     SceneInputs inputs(_scene.get());
     _scene->accept(&inputs);
     try

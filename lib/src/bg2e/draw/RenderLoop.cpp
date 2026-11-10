@@ -30,6 +30,7 @@
 
 #include <exception>
 #include <array>
+#include <chrono>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -45,12 +46,25 @@ struct RenderLoop::Impl {
         std::shared_ptr<gpu::SurfaceFrame> frame;
     };
     bool gpuTimingPending = false;
+    std::chrono::steady_clock::time_point nextGpuStatusPoll{};
 
     void collectTimings(const gpu::Device& device) noexcept
     {
-        if (!gpuTimingPending && !base::CpuProfiler::enabled())
+        if (!gpuTimingPending)
         {
-            return;
+            if (!base::CpuProfiler::enabled())
+            {
+                return;
+            }
+            if (!base::CpuProfiler::gpuTimingEnabled())
+            {
+                const auto now = std::chrono::steady_clock::now();
+                if (nextGpuStatusPoll != std::chrono::steady_clock::time_point{} && now < nextGpuStatusPoll)
+                {
+                    return;
+                }
+                nextGpuStatusPoll = now + std::chrono::seconds(1);
+            }
         }
         base::CpuProfileScope profile("profiling.gpu.collect");
         const std::array<const gpu::Queue*, 3> queues{
@@ -227,8 +241,14 @@ void RenderLoop::frame(float deltaSeconds)
             active = false;
         }
     } guard(_frameActive);
-    _impl->collectTimings(*_engine->device());
-    _delegate->prepareFrame();
+    {
+        base::CpuProfileScope profile("frame.gpuPoll");
+        _impl->collectTimings(*_engine->device());
+    }
+    {
+        base::CpuProfileScope profile("frame.delegate");
+        _delegate->prepareFrame();
+    }
     if (!_scenePaused)
     {
         _sceneDeltaSeconds += deltaSeconds;

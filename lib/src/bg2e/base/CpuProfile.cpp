@@ -53,9 +53,10 @@ uint64_t nowNs()
 bool lightweightScope(const char* label)
 {
     // Live display keeps only the frame path; all other scopes require explicit recording.
-    static constexpr std::array<const char*, 8> labels{
+    static constexpr std::array<const char*, 15> labels{
         "app.events", "frame.total", "frame.prepare", "frame.acquire", "frame.update",
-        "frame.scene", "frame.uiPrep", "frame.uiDraw"};
+        "frame.scene", "frame.uiPrep", "frame.uiDraw", "frame.gpuPoll", "frame.delegate",
+        "renderer.prep", "renderer.env", "render.overlays", "delegate.update", "delegate.rPrep"};
     return label && std::any_of(labels.begin(), labels.end(), [&](const char* candidate)
     {
         return std::strcmp(label, candidate) == 0;
