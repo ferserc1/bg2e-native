@@ -35,7 +35,7 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
     _vkDevice = dynamic_cast<vk::Device*>(device);
 
     _colorImage = std::make_unique<vk::Image>();
-    _colorImage->buildTargetImage(_vkDevice, _size, _colorFormat);
+    _colorImage->buildTargetImage(_vkDevice, _size, _colorFormat, "offscreen-color-image");
 
     createDepthTarget(_size, _depthFormat);
 

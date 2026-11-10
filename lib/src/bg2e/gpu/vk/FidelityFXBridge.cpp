@@ -145,6 +145,11 @@ VkFormat fsrFormat(FfxSurfaceFormat format)
 FfxErrorCode createVulkanResource(FfxInterface* backend, const FfxCreateResourceDescription* description,
     FfxUInt32 context, FfxResourceInternal* resource)
 {
+    if (!description || !description->name || std::wstring(description->name).find_first_not_of(L" \t\r\n") == std::wstring::npos)
+    {
+        return FFX_ERROR_INVALID_ARGUMENT;
+    }
+
     const auto state = admission(backend);
     if (!state)
     {
@@ -195,6 +200,11 @@ FfxErrorCode createVulkanResource(FfxInterface* backend, const FfxCreateResource
 FfxErrorCode createVulkanPipeline(FfxInterface* backend, FfxEffect effect, FfxPass pass,
     uint32_t permutation, const FfxPipelineDescription* description, FfxUInt32 context, FfxPipelineState* pipeline)
 {
+    if (!description || std::wstring(description->name).find_first_not_of(L" \t\r\n") == std::wstring::npos)
+    {
+        return FFX_ERROR_INVALID_ARGUMENT;
+    }
+
     const auto state = admission(backend);
     if (!state)
     {
@@ -458,7 +468,7 @@ bool FidelityFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D o
         {
             throw std::runtime_error("FSR shared resource description failed");
         }
-        auto image = [&](const FfxResourceDescription& source, PixelFormat format)
+        auto image = [&](const FfxResourceDescription& source, PixelFormat format, const char* debugName)
         {
             VkFormatProperties properties{};
             const auto vkFormat = fsrFormat(source.format);
@@ -475,16 +485,22 @@ bool FidelityFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D o
             desc.size = {source.width, source.height};
             desc.format = format;
             desc.usage = ImageUsage::Storage | ImageUsage::Sampled;
-            if (format != PixelFormat::R32_UINT)
+            if (format == PixelFormat::R32_UINT)
+            {
+                // FSR clears reconstructed previous depth with vkCmdClearColorImage.
+                // Storage usage alone does not permit that transfer operation.
+                desc.usage = desc.usage | ImageUsage::TransferDst;
+            }
+            else
             {
                 desc.usage = desc.usage | ImageUsage::ColorAttachment;
             }
-            desc.debugName = "draw FSR SDK shared resource";
+            desc.debugName = debugName;
             return device.createImage(desc);
         };
-        _state->dilatedDepth = image(shared.dilatedDepth.resourceDescription, PixelFormat::R32_SFLOAT);
-        _state->dilatedMotion = image(shared.dilatedMotionVectors.resourceDescription, PixelFormat::R16G16_SFLOAT);
-        _state->previousDepth = image(shared.reconstructedPrevNearestDepth.resourceDescription, PixelFormat::R32_UINT);
+        _state->dilatedDepth = image(shared.dilatedDepth.resourceDescription, PixelFormat::R32_SFLOAT, "fsr-dilated-depth-image");
+        _state->dilatedMotion = image(shared.dilatedMotionVectors.resourceDescription, PixelFormat::R16G16_SFLOAT, "fsr-dilated-motion-vectors-image");
+        _state->previousDepth = image(shared.reconstructedPrevNearestDepth.resourceDescription, PixelFormat::R32_UINT, "fsr-reconstructed-previous-depth-image");
         _state->status = "FSR 3.1 available (camera motion only)";
         return true;
     }
@@ -547,7 +563,7 @@ bool FidelityFXBridge::record(const FidelityFXDispatch& input)
     {
         throw std::invalid_argument("FSR opaque depth mismatch");
     }
-    auto resource = [](gpu::Image& image, FfxResourceUsage usage, FfxResourceStates state)
+    auto resource = [](gpu::Image& image, FfxResourceUsage usage, FfxResourceStates state, const wchar_t* debugName)
     {
         auto* native = dynamic_cast<vk::Image*>(&image);
         if (!native)
@@ -561,7 +577,7 @@ bool FidelityFXBridge::record(const FidelityFXDispatch& input)
         description.height = image.size().height;
         description.depth = description.mipCount = 1;
         description.usage = usage;
-        return ffxGetResourceVK(reinterpret_cast<void*>(native->handle()), description, nullptr, state);
+        return ffxGetResourceVK(reinterpret_cast<void*>(native->handle()), description, debugName, state);
     };
     input.command.transition(&input.color, ImageLayout::ShaderReadOnly);
     input.command.transition(&input.depth, ImageLayout::ShaderReadOnly);
@@ -574,14 +590,14 @@ bool FidelityFXBridge::record(const FidelityFXDispatch& input)
     }
     FfxFsr3UpscalerDispatchDescription dispatch{};
     dispatch.commandList = ffxGetCommandListVK(command->handle());
-    dispatch.color = resource(input.color, FFX_RESOURCE_USAGE_READ_ONLY, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
-    dispatch.depth = resource(input.depth, FfxResourceUsage(FFX_RESOURCE_USAGE_READ_ONLY | FFX_RESOURCE_USAGE_DEPTHTARGET), FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
-    dispatch.motionVectors = resource(input.motion, FFX_RESOURCE_USAGE_READ_ONLY, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ);
-    dispatch.output = resource(input.output, FFX_RESOURCE_USAGE_UAV, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+    dispatch.color = resource(input.color, FFX_RESOURCE_USAGE_READ_ONLY, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ, L"fsr-input-color-image");
+    dispatch.depth = resource(input.depth, FfxResourceUsage(FFX_RESOURCE_USAGE_READ_ONLY | FFX_RESOURCE_USAGE_DEPTHTARGET), FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ, L"fsr-input-depth-image");
+    dispatch.motionVectors = resource(input.motion, FFX_RESOURCE_USAGE_READ_ONLY, FFX_RESOURCE_STATE_PIXEL_COMPUTE_READ, L"fsr-input-motion-image");
+    dispatch.output = resource(input.output, FFX_RESOURCE_USAGE_UAV, FFX_RESOURCE_STATE_UNORDERED_ACCESS, L"fsr-output-image");
     const auto usage = FfxResourceUsage(FFX_RESOURCE_USAGE_UAV | FFX_RESOURCE_USAGE_RENDERTARGET);
-    dispatch.dilatedDepth = resource(*_state->dilatedDepth, usage, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
-    dispatch.dilatedMotionVectors = resource(*_state->dilatedMotion, usage, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
-    dispatch.reconstructedPrevNearestDepth = resource(*_state->previousDepth, FFX_RESOURCE_USAGE_UAV, FFX_RESOURCE_STATE_UNORDERED_ACCESS);
+    dispatch.dilatedDepth = resource(*_state->dilatedDepth, usage, FFX_RESOURCE_STATE_UNORDERED_ACCESS, L"fsr-dilated-depth-image");
+    dispatch.dilatedMotionVectors = resource(*_state->dilatedMotion, usage, FFX_RESOURCE_STATE_UNORDERED_ACCESS, L"fsr-dilated-motion-vectors-image");
+    dispatch.reconstructedPrevNearestDepth = resource(*_state->previousDepth, FFX_RESOURCE_USAGE_UAV, FFX_RESOURCE_STATE_UNORDERED_ACCESS, L"fsr-reconstructed-previous-depth-image");
     dispatch.jitterOffset = {input.jitterX, input.jitterY};
     dispatch.motionVectorScale = {1, 1}; // Motion texture is previous minus current in pixels.
     dispatch.renderSize = {_state->internal.width, _state->internal.height};

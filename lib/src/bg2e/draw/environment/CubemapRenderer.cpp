@@ -241,35 +241,41 @@ void CubemapRenderer::initialize(Engine& engine, const pipeline::LayerConfigurat
     _contract.outputs = {{semantic(_kind), _realized.format, pipeline::ExtentDomain::Internal, usage,
         _kind == GenerationKind::BRDF ? gpu::ImageType::Image2D : gpu::ImageType::Cubemap}};
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "cubemap-renderer-layout-pipeline-layout";
     layout.pushConstants.push_back({0, sizeof(GenerationPush), gpu::ShaderStage::Fragment});
     if (hasSource)
     {
         layout.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
         layout.resourceBindings.push_back({0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
     }
+    layout.debugName = "cubemap-renderer-layout-pipeline-layout";
     _layout = device->createPipelineLayout(layout);
     gpu::ShaderLib library(_realized.shaderRoot, engine.backendType());
     _vertex = library.vertex(_realized.vertexShader, device);
     _fragment = library.fragment(_realized.fragmentShader.empty() ? "draw/environment/" + shader(_kind) : _realized.fragmentShader, device);
     gpu::GraphicsPipelineDescription pipeline;
+    pipeline.debugName = "cubemap-renderer-pipeline-graphics-pipeline";
     pipeline.vertexShader = _vertex.get();
     pipeline.fragmentShader = _fragment.get();
     pipeline.layout = _layout.get();
     pipeline.colorFormat = _realized.format;
     pipeline.cullMode = gpu::CullMode::None;
     pipeline.depthState = gpu::DepthState{false, false, gpu::CompareOperation::Always};
+    pipeline.debugName = "cubemap-renderer-pipeline-graphics-pipeline";
     _pipeline = device->createGraphicsPipeline(pipeline);
     if (hasSource)
     {
         const bool linear = device->formatCapabilities(_source->pixelFormat()).linearFiltering;
         gpu::SamplerDescription sampler;
+        sampler.debugName = "cubemap-renderer-sampler-sampler";
         sampler.minFilter = sampler.magFilter = linear ? gpu::Filter::Linear : gpu::Filter::Nearest;
         sampler.mipFilter = linear ? gpu::MipmapFilter::Linear : gpu::MipmapFilter::Nearest;
         sampler.addressModeU = _source->isCubemap() ? gpu::AddressMode::ClampToEdge : gpu::AddressMode::Repeat;
         sampler.addressModeV = sampler.addressModeW = gpu::AddressMode::ClampToEdge;
         sampler.maxLod = float(_source->mipLevels() - 1);
+        sampler.debugName = "cubemap-renderer-source-sampler-sampler";
         _sourceSampler = device->createSampler(sampler);
-        _sourceSet = device->createResourceSet(_layout.get(), 0);
+        _sourceSet = device->createResourceSet(_layout.get(), 0, "cubemap-renderer-layout-set");
         _sourceSet->setSampledImage({.vulkan = 0, .metal = 0}, _source.get());
         _sourceSet->setSampler({.vulkan = 1, .metal = 0}, _sourceSampler.get());
         _sourceSet->update();

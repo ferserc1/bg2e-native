@@ -327,20 +327,25 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
     // Load device-level extension function pointers
     loadDeviceExtensions(*vkPhysDevice, _device, offscreen);
 
+    nameObject(_device, VK_OBJECT_TYPE_DEVICE, reinterpret_cast<uint64_t>(_device), "bg2e-gpu-device");
+
     // Retrieve queues
     VkQueue gfxQueue;
     vkGetDeviceQueue(_device, indices.graphics.value(), 0, &gfxQueue);
+    nameObject(_device, VK_OBJECT_TYPE_QUEUE, reinterpret_cast<uint64_t>(gfxQueue), "queue-family-" + std::to_string(indices.graphics.value()));
     _graphicsQueue = vk::Queue(gfxQueue, indices.graphics.value());
 
     if (!offscreen)
     {
         VkQueue presentQueue;
         vkGetDeviceQueue(_device, indices.present.value(), 0, &presentQueue);
+        nameObject(_device, VK_OBJECT_TYPE_QUEUE, reinterpret_cast<uint64_t>(presentQueue), "queue-family-" + std::to_string(indices.present.value()));
         _presentQueue = vk::Queue(presentQueue, indices.present.value());
     }
 
     VkQueue transferQueue;
     vkGetDeviceQueue(_device, indices.transfer.value(), 0, &transferQueue);
+    nameObject(_device, VK_OBJECT_TYPE_QUEUE, reinterpret_cast<uint64_t>(transferQueue), "queue-family-" + std::to_string(indices.transfer.value()));
     _transferQueue = vk::Queue(transferQueue, indices.transfer.value());
 
     // Initialize command pools for each queue
@@ -464,31 +469,37 @@ const gpu::Queue& Device::transferQueue() const
 
 std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<vk::ShaderModule>(this, _device, description);
 }
 
 std::shared_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<vk::PipelineLayout>(this, _device, description);
 }
 
 std::shared_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<vk::GraphicsPipeline>(this, _device, description);
 }
 
 std::shared_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<vk::ComputePipeline>(this, _device, description);
 }
 
 std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<vk::Sampler>(this, _device, description);
 }
 
 std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
 {
+    requireDebugName(debugName);
     auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(layout);
     if (!vkLayout || vkLayout->device() != this || !vkLayout->isValid())
     {
@@ -499,6 +510,7 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
+    requireDebugName(description.debugName);
     const auto limits = renderingCapabilities();
     const bool depthFormat = isDepthFormat(description.format);
     if (description.size.isZero() || description.size.width > limits.maxImageDimension2D ||
@@ -517,6 +529,7 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
 
 std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescription& description)
 {
+    requireDebugName(description.debugName);
     auto cubeMap = std::make_shared<gpu::CubeMap>(this);
     cubeMap->create(description);
     return cubeMap;
@@ -524,11 +537,13 @@ std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescriptio
 
 std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string& debugName)
 {
+    requireDebugName(debugName);
     return std::make_shared<vk::Buffer>(this, debugName);
 }
 
 std::shared_ptr<gpu::RayTracingMesh> Device::createRayTracingMesh(const RayTracingMeshDescription& description)
 {
+    requireDebugName(description.debugName);
     if (!_rayTracingEnabled)
     {
         throw std::runtime_error("vk::Device::createRayTracingMesh: ray tracing is not supported by this device");
@@ -538,6 +553,7 @@ std::shared_ptr<gpu::RayTracingMesh> Device::createRayTracingMesh(const RayTraci
 
 std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::string& debugName)
 {
+    requireDebugName(debugName);
     if (!_rayTracingEnabled)
     {
         throw std::runtime_error("vk::Device::createRayTracingScene: ray tracing is not supported by this device");
@@ -548,6 +564,7 @@ std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::s
 std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(
     const gpu::RayTracingPipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     if (!_rayTracingPipelineEnabled)
     {
         throw std::runtime_error("vk::Device::createRayTracingPipeline: tracing pipelines are not supported");

@@ -33,6 +33,16 @@
 namespace bg2e {
 namespace gpu {
 
+// Resource identity is required in every build configuration, including Release.
+// Use a role-specific name, e.g. "gbuffer-albedo-image"; whitespace is not an identity.
+inline void requireDebugName(const std::string& name)
+{
+    if (name.find_first_not_of(" \t\r\n") == std::string::npos || name.find('\0') != std::string::npos)
+    {
+        throw std::invalid_argument("GPU object debugName must be nonempty and contain no embedded NUL");
+    }
+}
+
 enum class BackendType
 {
     Vulkan,
@@ -215,7 +225,7 @@ struct ShaderModuleDescription {
     std::string filePath;            // Vulkan: .spv ; Metal: .metallib
     std::string entryPoint = "main"; // Vulkan: SPIR-V entry ; Metal: MTL function name
     ShaderStage stage = ShaderStage::Vertex;
-    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
+    std::string debugName; // Required identity for validation layers / GPU capture (all build configurations)
     std::vector<ShaderConstant> constants; // UInt32 Vulkan specialization / Metal function constants.
 };
 
@@ -333,7 +343,7 @@ struct ResourceBinding {
 struct PipelineLayoutDescription {
     std::vector<PushConstantRange> pushConstants;
     std::vector<ResourceBinding> resourceBindings;
-    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
+    std::string debugName; // Required identity for validation layers / GPU capture (all build configurations)
 };
 
 // Validate that at most one PushConstantRange is declared per ShaderStage.
@@ -557,7 +567,7 @@ struct SamplerDescription {
     AddressMode addressModeU = AddressMode::Repeat;
     AddressMode addressModeV = AddressMode::Repeat;
     AddressMode addressModeW = AddressMode::Repeat;
-    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
+    std::string debugName; // Required identity for validation layers / GPU capture (all build configurations)
     float minLod = 0.0f;
     float maxLod = 1000.0f;
     float mipLodBias = 0.0f;
@@ -823,7 +833,7 @@ struct ImageDescription {
     // (see mipLevelsForMinSize) and overrides `mipLevels`. When 0, `mipLevels`
     // is used as-is.
     uint32_t minMipSize = 0;
-    std::string debugName; // Debug label for validation layers / Xcode GPU Capture
+    std::string debugName; // Required identity for validation layers / GPU capture (all build configurations)
 };
 
 // Resolve the effective mip level count for an image description: derived from

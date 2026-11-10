@@ -168,6 +168,7 @@ SubmissionTimingStatus CommandBuffer::requestSubmissionTiming(const SubmissionTi
             ticket->complete(false);
             return SubmissionTimingStatus::Pending;
         }
+        nameObject(queries->device, VK_OBJECT_TYPE_QUERY_POOL, reinterpret_cast<uint64_t>(queries->pool), "command-timestamp-query-pool");
         ticket->resource = queries;
         ticket->sample.intervalCapability = request.passTiming ? base::GpuProfileGranularity::PipelineBoundary : base::GpuProfileGranularity::None;
         ticket->resolve = [queries, capabilities](SubmissionTimingResult& result)

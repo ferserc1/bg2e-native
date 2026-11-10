@@ -31,6 +31,7 @@ namespace metal {
 Buffer::Buffer(metal::Device* device, const std::string& debugName)
     : gpu::Buffer(device), _device(device), _debugName(debugName)
 {
+    requireDebugName(debugName);
 }
 
 Buffer::~Buffer()

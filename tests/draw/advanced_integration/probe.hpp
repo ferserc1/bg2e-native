@@ -106,9 +106,11 @@ inline bool runSMAAProbe(Engine& engine, const std::filesystem::path& shaderRoot
         bytes[i*4+2] = 64;
     }
     gpu::ImageDescription description;
+    description.debugName = "advanced-integration-description-image";
     description.size = {width,height};
     description.format = gpu::PixelFormat::R8G8B8A8_UNORM;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+    description.debugName = "advanced-integration-source-image";
     auto source = device.createImage(description);
     source->upload({bytes.data(),bytes.size(),width*4,0,0});
     uint64_t serial = 0;

@@ -1,3 +1,21 @@
+/*
+ *    business grade graphic engine (bg2e engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <bg2e/gpu/CommandBuffer.hpp>
@@ -22,21 +40,24 @@ inline void runMrtProbe(Device& device, ShaderModule& vertex, ShaderModule& frag
         image = device.createImage({
             .size = extent,
             .format = PixelFormat::R8G8B8A8_UNORM,
-            .usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc});
+            .usage = ImageUsage::ColorAttachment | ImageUsage::TransferSrc, .debugName = "mrt-probe-image"});
     }
     auto sampledOnly = device.createImage({
         .size = extent,
         .format = PixelFormat::R8G8B8A8_UNORM,
-        .usage = ImageUsage::Sampled});
+        .usage = ImageUsage::Sampled, .debugName = "mrt-probe-image"});
     auto depth = device.createImage({
         .size = extent,
         .format = PixelFormat::D32_SFLOAT,
-        .usage = ImageUsage::DepthStencil});
+        .usage = ImageUsage::DepthStencil, .debugName = "mrt-probe-image"});
     PipelineLayoutDescription layoutDescription;
+    layoutDescription.debugName = "mrt-probe-layout-description-pipeline-layout";
     layoutDescription.pushConstants = {{0, sizeof(float), ShaderStage::Vertex},
                                        {sizeof(float), sizeof(float), ShaderStage::Fragment}};
+    layoutDescription.debugName = "mrt-probe-layout-pipeline-layout";
     auto layout = device.createPipelineLayout(layoutDescription);
     GraphicsPipelineDescription pipelineDescription;
+    pipelineDescription.debugName = "mrt-probe-pipeline-description-graphics-pipeline";
     pipelineDescription.vertexShader = &vertex;
     pipelineDescription.fragmentShader = &fragment;
     pipelineDescription.layout = layout.get();
@@ -48,8 +69,10 @@ inline void runMrtProbe(Device& device, ShaderModule& vertex, ShaderModule& frag
     {
         attachment.format = PixelFormat::R8G8B8A8_UNORM;
     }
+    pipelineDescription.debugName = "mrt-probe-pipeline-graphics-pipeline";
     auto pipeline = device.createGraphicsPipeline(pipelineDescription);
     pipelineDescription.depthState->writeEnabled = false;
+    pipelineDescription.debugName = "mrt-probe-read-only-depth-pipeline-graphics-pipeline";
     auto readOnlyDepthPipeline = device.createGraphicsPipeline(pipelineDescription);
 
     // Validation failures must happen before any native render scope is opened.

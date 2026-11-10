@@ -1,3 +1,21 @@
+/*
+ *    business grade graphic engine (bg2e engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #include "probe.hpp"
 #include "../subresources/probe.hpp"
 #include "../shader_libraries/probe.hpp"
@@ -36,11 +54,11 @@ int main(int argc, char** argv)
             auto vertex = device->createShaderModule({
                 .filePath = (shaders / (metal ? "probe.metallib" : "probe.vert.spv")).string(),
                 .entryPoint = metal ? "probeVertex" : "main",
-                .stage = ShaderStage::Vertex});
+                .stage = ShaderStage::Vertex, .debugName = "mrt-probe-shader-module"});
             auto fragment = device->createShaderModule({
                 .filePath = (shaders / (metal ? "probe.metallib" : "probe.frag.spv")).string(),
                 .entryPoint = metal ? "probeFragment" : "main",
-                .stage = ShaderStage::Fragment});
+                .stage = ShaderStage::Fragment, .debugName = "mrt-probe-shader-module"});
             tests::runMrtProbe(*device, *vertex, *fragment);
             tests::runSubresourceProbe(*device);
             if (argc == 4)

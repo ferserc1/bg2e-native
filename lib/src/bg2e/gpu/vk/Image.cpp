@@ -36,17 +36,7 @@ namespace vk {
 
 static void setObjectName(VkDevice device, VkObjectType objectType, uint64_t objectHandle, const std::string& name)
 {
-    if (!base::Log::isDebug() || name.empty() || setDebugUtilsObjectName == nullptr)
-    {
-        return;
-    }
-
-    VkDebugUtilsObjectNameInfoEXT nameInfo{};
-    nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
-    nameInfo.objectType = objectType;
-    nameInfo.objectHandle = objectHandle;
-    nameInfo.pObjectName = name.c_str();
-    setDebugUtilsObjectName(device, &nameInfo);
+    nameObject(device, objectType, objectHandle, name);
 }
 
 namespace {
@@ -166,10 +156,6 @@ void Image::buildImage(vk::Device* device, const ImageDescription& description)
     {
         vmaSetAllocationName(device->allocator(), _allocation, _debugName.c_str());
         setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(_image), _debugName);
-        if (_imageView != VK_NULL_HANDLE)
-        {
-            setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(_imageView), _debugName + "_view");
-        }
     }
 }
 
@@ -207,6 +193,7 @@ void Image::createView()
     info.subresourceRange.levelCount = _mipLevels;
     info.subresourceRange.layerCount = arrayLayers();
     VK_ASSERT(vkCreateImageView(_device->handle(), &info, nullptr, &_imageView));
+    setObjectName(_device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(_imageView), _debugName + "-view");
 }
 
 VkImageView Image::subresourceView(const ImageSubresourceRange& range, bool attachment) const
@@ -240,6 +227,10 @@ VkImageView Image::subresourceView(const ImageSubresourceRange& range, bool atta
     }
     VkImageView result = VK_NULL_HANDLE;
     VK_ASSERT(vkCreateImageView(_device->handle(), &info, nullptr, &result));
+    setObjectName(_device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(result),
+        _debugName + "-mip-" + std::to_string(range.baseMipLevel) + "-count-" + std::to_string(range.mipCount) +
+        "-layer-" + std::to_string(range.baseArrayLayer) + "-count-" + std::to_string(range.layerCount) +
+        (attachment ? "-attachment-view" : "-sampled-view"));
     _subresourceViews.emplace(key, result);
     return result;
 }
@@ -253,8 +244,9 @@ VkImageView Image::cubemapFaceMipView(uint32_t face, uint32_t mipLevel) const
     return subresourceView({mipLevel, 1, face, 1}, true);
 }
 
-void Image::initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size, VkImageUsageFlags usage)
+void Image::initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size, const std::string& debugName, VkImageUsageFlags usage)
 {
+    requireDebugName(debugName);
     cleanup();
     _device = device;
     DeviceResource::_device = device;
@@ -268,6 +260,8 @@ void Image::initFromSwapchainImage(vk::Device* device, VkImage image, PixelForma
     _allocation = VK_NULL_HANDLE;
     _usage = usage;
     _ownsImage = false;
+    _debugName = debugName;
+    setObjectName(device->handle(), VK_OBJECT_TYPE_IMAGE, reinterpret_cast<uint64_t>(_image), _debugName);
     resetLayoutTracking();
     createView();
 }
@@ -323,6 +317,8 @@ void Image::upload(const ImageUploadDescription& description, ImageLayout finalL
     allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     VmaAllocationInfo mapped{};
     VK_ASSERT(vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped));
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(buffer), _debugName + "-upload-staging-buffer");
+    vmaSetAllocationName(_device->allocator(), allocation, (_debugName + "-upload-staging-buffer").c_str());
     for (uint32_t row = 0; row < extent.height; ++row)
     {
         std::memcpy(static_cast<uint8_t*>(mapped.pMappedData) + row * stride,
@@ -374,6 +370,8 @@ void Image::readPixels(std::vector<uint8_t>& data, const ImageSubresourceRange& 
     allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     VmaAllocationInfo mapped{};
     VK_ASSERT(vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped));
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(buffer), _debugName + "-color-readback-buffer");
+    vmaSetAllocationName(_device->allocator(), allocation, (_debugName + "-color-readback-buffer").c_str());
     try
     {
         _device->immediateSubmit([&](gpu::CommandBuffer* command)
@@ -428,6 +426,8 @@ void Image::readPixelsDepth32(std::vector<float>& data, ImageLayout finalLayout)
     allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     VmaAllocationInfo mapped{};
     VK_ASSERT(vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped));
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(buffer), _debugName + "-depth-readback-buffer");
+    vmaSetAllocationName(_device->allocator(), allocation, (_debugName + "-depth-readback-buffer").c_str());
     try
     {
         _device->immediateSubmit([&](gpu::CommandBuffer* command)

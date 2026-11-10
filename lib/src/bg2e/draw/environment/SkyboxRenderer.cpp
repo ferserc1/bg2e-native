@@ -69,12 +69,12 @@ void SkyboxRenderer::setEnvironment(std::shared_ptr<const EnvironmentResources> 
     if (resources && _engine && _layout && _pipeline)
     {
         resources->validate(_engine->device());
-        auto skySet = _engine->device()->createResourceSet(_layout.get(), 0);
+        auto skySet = _engine->device()->createResourceSet(_layout.get(), 0, "skybox-renderer-layout-set");
         skySet->setSampledImage({.vulkan = 0, .metal = 0},
             resources->skyboxBackground ? resources->skyboxBackground.get() : resources->sky.get());
         skySet->setSampler({.vulkan = 1, .metal = 0}, resources->sampler.get());
         skySet->update();
-        auto blurSet = _engine->device()->createResourceSet(_layout.get(), 0);
+        auto blurSet = _engine->device()->createResourceSet(_layout.get(), 0, "skybox-renderer-layout-set");
         blurSet->setSampledImage({.vulkan = 0, .metal = 0}, resources->prefilteredSpecular.get());
         blurSet->setSampler({.vulkan = 1, .metal = 0}, resources->sampler.get());
         blurSet->update();
@@ -99,14 +99,17 @@ void SkyboxRenderer::initialize(Engine& engine, gpu::PixelFormat color, gpu::Pix
     cleanup();
     _engine = &engine;
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "skybox-renderer-layout-pipeline-layout";
     layout.pushConstants.push_back({0, sizeof(SkyboxPush), gpu::ShaderStage::Fragment});
     layout.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
     layout.resourceBindings.push_back({0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+    layout.debugName = "skybox-renderer-layout-pipeline-layout";
     _layout = engine.device()->createPipelineLayout(layout);
     gpu::ShaderLib library(_settings.shaderRoot, engine.backendType());
     _vertex = library.vertex(_settings.vertexShader, engine.device());
     _fragment = library.fragment(_settings.fragmentShader, engine.device());
     gpu::GraphicsPipelineDescription description;
+    description.debugName = "skybox-renderer-description-graphics-pipeline";
     description.vertexShader = _vertex.get();
     description.fragmentShader = _fragment.get();
     description.layout = _layout.get();
@@ -114,6 +117,7 @@ void SkyboxRenderer::initialize(Engine& engine, gpu::PixelFormat color, gpu::Pix
     description.depthFormat = depth;
     description.cullMode = gpu::CullMode::None;
     description.depthState = gpu::DepthState{depth != gpu::PixelFormat::Undefined, false, gpu::CompareOperation::LessOrEqual};
+    description.debugName = "skybox-renderer-pipeline-graphics-pipeline";
     _pipeline = engine.device()->createGraphicsPipeline(description);
     _contract.outputs = {{"color", color, pipeline::ExtentDomain::Internal, gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled}};
     if (depth != gpu::PixelFormat::Undefined)

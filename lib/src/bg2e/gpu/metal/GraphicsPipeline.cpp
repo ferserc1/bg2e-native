@@ -88,6 +88,7 @@ MTL::ColorWriteMask colorWriteMask(ColorWriteMask value)
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::GraphicsPipelineDescription& description)
     : gpu::GraphicsPipeline(gpuDevice), _topology(description.topology), _layout(dynamic_cast<metal::PipelineLayout*>(description.layout)), _cullMode(description.cullMode), _frontFace(description.frontFace)
 {
+    requireDebugName(description.debugName);
     if (!gpuDevice)
     {
         throw std::invalid_argument("Graphics pipeline requires a device");
@@ -204,6 +205,7 @@ void GraphicsPipeline::cleanup()
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, void* /*device*/, const gpu::GraphicsPipelineDescription& description)
     : gpu::GraphicsPipeline(gpuDevice), _topology(description.topology), _layout(dynamic_cast<metal::PipelineLayout*>(description.layout)), _cullMode(description.cullMode), _frontFace(description.frontFace)
 {
+    requireDebugName(description.debugName);
 }
 
 GraphicsPipeline::~GraphicsPipeline()

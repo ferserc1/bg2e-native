@@ -72,10 +72,12 @@ void LightmapCompositionPass::initialize(gpu::Device& device, gpu::BackendType b
     for (size_t i = 0; i < names.size(); ++i)
     {
         _shaders[i] = library.compute(names[i],&device);
-        _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layouts[i].get()});
+        _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layouts[i].get(), "lightmap-composition-pass-shaders-compute-pipeline-" + std::to_string(i)});
     }
     gpu::SamplerDescription sampler;
+    sampler.debugName = "lightmap-composition-pass-sampler-sampler";
     sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
+    sampler.debugName = "lightmap-composition-pass-nearest-sampler";
     _nearest = device.createSampler(sampler);
     _slots.resize(slots);
 }
@@ -140,7 +142,7 @@ CompositionResult LightmapCompositionPass::record(gpu::CommandBuffer& command, u
     auto dispatch = [&](uint32_t pipeline, const std::vector<std::shared_ptr<gpu::Image>>& inputs,
         const std::shared_ptr<gpu::Image>& destination)
     {
-        auto set = _device->createResourceSet(_layouts[pipeline].get(),0);
+        auto set = _device->createResourceSet(_layouts[pipeline].get(),0, "lightmap-composition-pass-layouts-pipeline-set");
         slot.sets.push_back(set);
         set->setUniformBuffer({0,1},slot.uniforms.get());
         set->setSampler({1,0},_nearest.get());

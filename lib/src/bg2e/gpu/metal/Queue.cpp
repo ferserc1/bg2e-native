@@ -110,6 +110,7 @@ void Queue::setDevice(metal::Device* device)
 
 std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& debugName) const
 {
+    requireDebugName(debugName);
     if (!_submissions)
     {
         throw std::logic_error("Metal queue has no device");

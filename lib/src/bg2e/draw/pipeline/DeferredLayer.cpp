@@ -325,6 +325,7 @@ void FinalLayer::initialize(Engine& engine, const LayerConfiguration& configurat
         configuration.contract.inputs[0].extent == ExtentDomain::Output);
     settings.display.y = format == gpu::PixelFormat::R8G8B8A8_SRGB || format == gpu::PixelFormat::B8G8R8A8_SRGB;
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "deferred-layer-layout-pipeline-layout";
     imageBindings(layout, 0, 9);
     layout.pushConstants.push_back({0, sizeof(FinalSettings), gpu::ShaderStage::Fragment});
     const auto count = slots(engine, _slots);

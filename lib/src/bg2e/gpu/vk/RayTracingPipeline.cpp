@@ -43,6 +43,7 @@ RayTracingPipeline::RayTracingPipeline(gpu::Device* gpuDevice, VkDevice device, 
     const gpu::RayTracingPipelineDescription& description)
     : gpu::RayTracingPipeline(gpuDevice), _device(device), _allocator(allocator)
 {
+    requireDebugName(description.debugName);
     try
     {
         auto* nativeDevice = dynamic_cast<vk::Device*>(gpuDevice);
@@ -134,6 +135,8 @@ RayTracingPipeline::RayTracingPipeline(gpu::Device* gpuDevice, VkDevice device, 
             throw std::runtime_error("Failed to create Vulkan tracing pipeline");
         }
 
+        nameObject(_device, VK_OBJECT_TYPE_PIPELINE, reinterpret_cast<uint64_t>(_pipeline), description.debugName);
+
         const uint64_t handleSize = properties.shaderGroupHandleSize;
         const uint64_t stride = alignUp(handleSize, properties.shaderGroupHandleAlignment);
         const uint64_t slotSize = alignUp(stride, properties.shaderGroupBaseAlignment);
@@ -160,6 +163,7 @@ RayTracingPipeline::RayTracingPipeline(gpu::Device* gpuDevice, VkDevice device, 
         {
             throw std::runtime_error("Failed to allocate shader binding table");
         }
+        nameObject(_device, VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_sbtBuffer), description.debugName + "-shader-binding-table-buffer");
         VkBufferDeviceAddressInfo addressInfo{};
         addressInfo.sType = VK_STRUCTURE_TYPE_BUFFER_DEVICE_ADDRESS_INFO;
         addressInfo.buffer = _sbtBuffer;

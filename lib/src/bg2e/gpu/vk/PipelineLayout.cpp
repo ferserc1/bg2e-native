@@ -72,6 +72,7 @@ static VkDescriptorType toVkDescriptorType(ResourceType type)
 PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gpu::PipelineLayoutDescription& description)
     : gpu::PipelineLayout(gpuDevice), _device(device), _description(description)
 {
+    requireDebugName(description.debugName);
     try
     {
         validatePushConstantRanges(description.pushConstants);
@@ -164,7 +165,7 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
                     throw std::runtime_error("Failed to create Vulkan descriptor set layout");
                 }
 
-                if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+                if (!debugName.empty() && setDebugUtilsObjectName != nullptr)
                 {
                     std::string setName = debugName + "_set" + std::to_string(i);
                     VkDebugUtilsObjectNameInfoEXT nameInfo{};
@@ -172,7 +173,7 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
                     nameInfo.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT;
                     nameInfo.objectHandle = reinterpret_cast<uint64_t>(_descriptorSetLayouts[i]);
                     nameInfo.pObjectName = setName.c_str();
-                    setDebugUtilsObjectName(_device, &nameInfo);
+                    nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
                 }
             }
         }
@@ -202,14 +203,14 @@ PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, VkDevice device, const gp
             throw std::runtime_error("Failed to create Vulkan pipeline layout");
         }
 
-        if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+        if (!debugName.empty() && setDebugUtilsObjectName != nullptr)
         {
             VkDebugUtilsObjectNameInfoEXT nameInfo{};
             nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
             nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE_LAYOUT;
             nameInfo.objectHandle = reinterpret_cast<uint64_t>(_pipelineLayout);
             nameInfo.pObjectName = debugName.c_str();
-            setDebugUtilsObjectName(_device, &nameInfo);
+            nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
         }
     }
     catch (...)

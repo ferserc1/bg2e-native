@@ -36,7 +36,7 @@ class Device;
 // growing them only when the instance count exceeds the current capacity.
 class RayTracingScene : public gpu::RayTracingScene {
   public:
-    RayTracingScene(metal::Device* device, const std::string& debugName = {});
+    RayTracingScene(metal::Device* device, const std::string& debugName);
     ~RayTracingScene() override;
 
     RayTracingScene(const RayTracingScene&) = delete;

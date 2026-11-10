@@ -231,6 +231,7 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::generate(std::
         linear = linear && image && _engine->device()->formatCapabilities(image->pixelFormat()).linearFiltering;
     }
     gpu::SamplerDescription sampler;
+    sampler.debugName = "environment-generator-sampler-sampler";
     sampler.minFilter = sampler.magFilter = linear ? gpu::Filter::Linear : gpu::Filter::Nearest;
     sampler.mipFilter = linear ? gpu::MipmapFilter::Linear : gpu::MipmapFilter::Nearest;
     sampler.addressModeU = sampler.addressModeV = sampler.addressModeW = gpu::AddressMode::ClampToEdge;
@@ -285,6 +286,7 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::buildFallback(
     next->prefilteredSpecular = image(gpu::ImageType::Cubemap, 2, 2);
     next->brdf = image(gpu::ImageType::Image2D, 1, 1);
     gpu::SamplerDescription sampler;
+    sampler.debugName = "environment-generator-sampler-sampler";
     sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
     sampler.addressModeU = sampler.addressModeV = sampler.addressModeW = gpu::AddressMode::ClampToEdge;
     sampler.maxLod = 1;

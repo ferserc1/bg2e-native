@@ -77,9 +77,11 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
     auto upload = [&](gpu::Size2D size, gpu::PixelFormat format, const void* data, size_t bytes, size_t row)
     {
         gpu::ImageDescription description;
+        description.debugName = "queued-reprojection-probe-description-image";
         description.size = size;
         description.format = format;
         description.usage = uploadUsage;
+        description.debugName = "queued-reprojection-probe-image-image";
         auto image = device.createImage(description);
         image->upload({data,bytes,row,0,0});
         return image;
@@ -120,6 +122,7 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
         temporal.setMaxFrames(4);
         temporal.setFreezeAtLimit(true);
         gpu::ImageDescription depthDescription;
+        depthDescription.debugName = "queued-reprojection-probe-depth-description-image";
         depthDescription.size = {3,3};
         depthDescription.format = gpu::PixelFormat::D32_SFLOAT;
         depthDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::DepthStencil;
@@ -128,6 +131,7 @@ inline bool runQueuedTemporalReprojectionProbe(Engine& engine, const std::filesy
             temporal.cleanup();
             return false;
         }
+        depthDescription.debugName = "queued-reprojection-probe-depth-image";
         auto depth = device.createImage(depthDescription);
         device.immediateSubmit([&](gpu::CommandBuffer* command)
         {

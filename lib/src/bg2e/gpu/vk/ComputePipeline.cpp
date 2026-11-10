@@ -31,6 +31,7 @@ namespace vk {
 ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::ComputePipelineDescription& description)
     : gpu::ComputePipeline(gpuDevice), _device(device)
 {
+    requireDebugName(description.debugName);
     auto* vkCsModule = dynamic_cast<vk::ShaderModule*>(description.computeShader);
     auto* vkLayout = dynamic_cast<vk::PipelineLayout*>(description.layout);
 
@@ -59,14 +60,14 @@ ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, VkDevice device, const 
         throw std::runtime_error("Failed to create Vulkan compute pipeline");
     }
 
-    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
+    if (!description.debugName.empty() && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(_pipeline);
         nameInfo.pObjectName = description.debugName.c_str();
-        setDebugUtilsObjectName(_device, &nameInfo);
+        nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
     }
 }
 

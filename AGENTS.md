@@ -258,3 +258,12 @@ Always use English for the content of generated documents and files, regardless 
 
 * Avoid getting stuck in loops by repeating the same responses over and over.
 * Do not attempt to compile the code unless the user explicitly requests it.
+
+
+## API changes require explicit authorization
+
+- Before changing any API that the user has not explicitly requested to change, obtain the user's explicit permission. Explain the proposed contract/signature/behavior change and its impact before making it. Do not silently weaken validation, remove required arguments, add defaults, or change compatibility under the guise of cleanup or implementation work.
+- Authorization for a particular API change does not authorize unrelated API changes.
+- Debugging information in low-level graphics APIs, especially `bg2e::gpu`, is essential functionality. Never treat it as optional, cosmetic, or expendable merely because it does not affect production rendering output.
+- Require meaningful, nonempty debug identifiers when creating GPU objects in every build configuration. Preserve and propagate these identifiers to native graphics objects, including derived views, internal buffers, and third-party integration resources. Use names that identify the resource's role (for example, `gbuffer-albedo-image`) and distinguish related objects.
+- Do not remove, disable, or weaken object naming or other graphics diagnostics without explicit user authorization. If a platform cannot publish native names, retain the identifiers and report the limitation.

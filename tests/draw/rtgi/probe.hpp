@@ -86,8 +86,10 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
     auto nearPlane = plane(0.1f,false);
     auto farPlane = plane(0.5f,false);
     gpu::ImageDescription alphaDescription;
+    alphaDescription.debugName = "rtgi-alpha-description-image";
     alphaDescription.size = {2,1};
     alphaDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+    alphaDescription.debugName = "rtgi-alpha-image";
     auto alpha = device.createImage(alphaDescription);
     const uint8_t pixels[] = {255,255,255,0,255,255,255,255};
     alpha->upload({pixels,sizeof(pixels),8,0,0});
@@ -165,9 +167,11 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
     auto upload = [&](gpu::PixelFormat format, const void* data, size_t size)
     {
         gpu::ImageDescription description;
+        description.debugName = "rtgi-description-image";
         description.size = {1,1};
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+        description.debugName = "rtgi-image-image";
         auto image = device.createImage(description);
         image->upload({data,size,size,0,0});
         return image;
@@ -179,6 +183,7 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
     auto world = upload(gpu::PixelFormat::R32G32B32A32_SFLOAT,position,sizeof(position));
     auto valid = upload(gpu::PixelFormat::R8_UNORM,&coverage,1);
     gpu::ImageDescription description;
+    description.debugName = "rtgi-description-image";
     description.size = {1,1};
     description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
     description.usage = gpu::ImageUsage::Storage | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc;
@@ -187,6 +192,7 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
         gi.cleanup();
         return false;
     }
+    description.debugName = "rtgi-output-image";
     auto output = device.createImage(description);
     SurfaceInputs surface{SurfaceProfile::WorldPositionCoverage,normal.get(),world.get(),valid.get()};
     auto invalid = surface;
@@ -307,9 +313,11 @@ inline bool runRTGIProbe(Engine& engine, const std::filesystem::path& shaderRoot
     const uint16_t encodedNormal[] = {0x3800,0x3800,0x3c00,0};
     auto encoded = upload(gpu::PixelFormat::R16G16B16A16_SFLOAT,encodedNormal,sizeof(encodedNormal));
     gpu::ImageDescription depthDescription;
+    depthDescription.debugName = "rtgi-depth-description-image";
     depthDescription.size = {1,1};
     depthDescription.format = gpu::PixelFormat::D32_SFLOAT;
     depthDescription.usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled;
+    depthDescription.debugName = "rtgi-depth-image";
     auto depth = device.createImage(depthDescription);
     device.immediateSubmit([&](gpu::CommandBuffer* command)
     {

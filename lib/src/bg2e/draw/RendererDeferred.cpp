@@ -151,6 +151,7 @@ void RendererDeferred::initializeGIUpsampling()
     // Publish only a complete state; partial initialization releases local owners.
     auto state = std::make_shared<GIUpsamplingState>();
     gpu::PipelineLayoutDescription description;
+    description.debugName = "renderer-deferred-description-pipeline-layout";
     description.resourceBindings = {
         {0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute},
         {0,{1,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
@@ -161,13 +162,14 @@ void RendererDeferred::initializeGIUpsampling()
     };
     state->layout = device.createPipelineLayout(description);
     gpu::SamplerDescription nearest;
+    nearest.debugName = "renderer-deferred-nearest-sampler";
     nearest.minFilter = nearest.magFilter = gpu::Filter::Nearest;
     nearest.addressModeU = nearest.addressModeV = gpu::AddressMode::ClampToEdge;
     nearest.maxLod = 0;
     state->nearest = device.createSampler(nearest);
     gpu::ShaderLib library(_shaderRoot, _engine->backendType());
     state->shader = library.compute("draw/gi_upsampling/joint_bilateral", &device);
-    state->pipeline = device.createComputePipeline({state->shader.get(), state->layout.get()});
+    state->pipeline = device.createComputePipeline({state->shader.get(), state->layout.get(), "renderer-deferred-state-shader-compute-pipeline"});
     state->slots.resize(_targets.size());
     _giUpsampling = std::move(state);
 }
@@ -262,7 +264,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordGIUpsampling(gpu::CommandBuf
     // Immutable per-invocation objects: no descriptors or uniforms are reused before retirement.
     invocation.uniforms = device->createBuffer("draw GI upsampling invocation uniforms");
     invocation.uniforms->createUniformBuffer(data);
-    invocation.resources = device->createResourceSet(state.layout.get(), 0);
+    invocation.resources = device->createResourceSet(state.layout.get(), 0, "renderer-deferred-state-layout-set");
     invocation.resources->setUniformBuffer({0,1}, invocation.uniforms.get());
     invocation.resources->setSampledImage({1,0}, signal.get());
     invocation.resources->setSampledImage({2,1}, normal.get());
@@ -775,7 +777,7 @@ void RendererDeferred::buildTargets()
         Targets next;
         for (const auto& output : pipeline::gbufferContract(_configuration.depthFormat).outputs)
         {
-            next.gbuffer.push_back(RenderTarget::create(*_engine, size, output.format, output.semantic));
+            next.gbuffer.push_back(RenderTarget::create(*_engine, size, output.format, "gbuffer-" + output.semantic + "-image"));
         }
         next.opaqueDepth = RenderTarget::create(*_engine, size, _configuration.depthFormat, "preserved opaque depth");
         next.colorA = RenderTarget::create(*_engine, size, gpu::PixelFormat::R16G16B16A16_SFLOAT, "deferred HDR A");
@@ -819,6 +821,7 @@ void RendererDeferred::buildTargets()
             description.size = _configuration.globalIllumination->outputExtent(size);
             description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
             description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::ColorAttachment;
+            description.debugName = "renderer-deferred-next-gi-image";
             next.gi = _engine->device()->createImage(description);
             if (_giUpsampling && giUpsamplingCompatible() && description.size != size)
             {

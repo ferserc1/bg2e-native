@@ -78,9 +78,11 @@ inline bool runDenoiseProbe(Engine& engine, const std::filesystem::path& shaderR
     auto upload = [&](gpu::PixelFormat format, gpu::Size2D size, const void* data, size_t bytes)
     {
         gpu::ImageDescription description;
+        description.debugName = "denoise-description-image";
         description.size = size;
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst | gpu::ImageUsage::TransferSrc;
+        description.debugName = "denoise-image-image";
         auto image = device.createImage(description);
         image->upload({data,bytes,bytes/size.height,0,0});
         return image;
@@ -230,9 +232,11 @@ inline bool runDenoiseProbe(Engine& engine, const std::filesystem::path& shaderR
     }
     normal = upload(gpu::PixelFormat::R16G16B16A16_SFLOAT,{width,height},normals.data(),normals.size()*2);
     gpu::ImageDescription depthDescription;
+    depthDescription.debugName = "denoise-depth-description-image";
     depthDescription.size = {width,height};
     depthDescription.format = gpu::PixelFormat::D32_SFLOAT;
     depthDescription.usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled;
+    depthDescription.debugName = "denoise-depth-image";
     auto depth = device.createImage(depthDescription);
     device.immediateSubmit([&](gpu::CommandBuffer* command)
     {

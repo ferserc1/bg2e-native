@@ -30,6 +30,7 @@ namespace bg2e::gpu {
 
 void Image::validateDescription(const ImageDescription& description)
 {
+    requireDebugName(description.debugName);
     const auto maximum = mipLevelsForMinSize(std::max(description.size.width, description.size.height), 1);
     const auto levels = effectiveMipLevels(description);
     if (description.size.isZero() || levels == 0 || levels > maximum ||

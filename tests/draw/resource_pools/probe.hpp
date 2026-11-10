@@ -44,13 +44,16 @@ inline bool runTemporaryResourcePoolProbe(Engine& engine)
         }
     };
     gpu::ImageDescription description;
+    description.debugName = "resource-pools-description-image";
     description.size = {2,2};
     description.format = gpu::PixelFormat::R16_SFLOAT;
     description.usage = usage;
     gpu::PipelineLayoutDescription bindings;
+    bindings.debugName = "resource-pools-bindings-pipeline-layout";
     bindings.resourceBindings.push_back({0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute});
     bindings.resourceBindings.push_back({0,{1,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
     bindings.resourceBindings.push_back({0,{2,1},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+    bindings.debugName = "resource-pools-layout-pipeline-layout";
     auto layout = device.createPipelineLayout(bindings);
     TemporaryResourcePool pool(device);
     std::shared_ptr<gpu::Image> source, output;
@@ -125,6 +128,7 @@ inline bool runTemporaryResourcePoolProbe(Engine& engine)
         auto resized = description;
         resized.size = {3,2};
         require(pool.image(*command, resized) != candidate, "Extent changes must invalidate image compatibility");
+        bindings.debugName = "resource-pools-other-layout-pipeline-layout";
         auto otherLayout = device.createPipelineLayout(bindings);
         auto distinct = pool.bindings(*command, otherLayout, 0, sizeof(values));
         require(distinct->resources().get() != originalSet, "Native layout identity must distinguish compatible-looking layouts");

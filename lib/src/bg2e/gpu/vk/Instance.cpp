@@ -21,6 +21,8 @@
 #include <bg2e/gpu/vk/extensions.hpp>
 #include <bg2e/base/Log.hpp>
 
+#include <algorithm>
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_vulkan.h>
 
@@ -267,9 +269,13 @@ bool Instance::getRequiredExtensions(SDL_Window* sdlWindow, std::vector<const ch
     requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
-    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
+    if (std::find(_availableExtensions.begin(), _availableExtensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != _availableExtensions.end())
     {
         requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+    else
+    {
+        bg2e_log_warning << "VK_EXT_debug_utils is unavailable; native object names cannot be registered" << bg2e_log_end;
     }
 
     for (auto& requiredExtension : requiredExtensions)
@@ -301,9 +307,13 @@ bool Instance::getRequiredExtensions(std::vector<const char*>& requiredExtension
     requiredExtensions.push_back(VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
 #endif
 
-    if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
+    if (std::find(_availableExtensions.begin(), _availableExtensions.end(), VK_EXT_DEBUG_UTILS_EXTENSION_NAME) != _availableExtensions.end())
     {
         requiredExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+    }
+    else
+    {
+        bg2e_log_warning << "VK_EXT_debug_utils is unavailable; native object names cannot be registered" << bg2e_log_end;
     }
 
     for (auto& requiredExtension : requiredExtensions)

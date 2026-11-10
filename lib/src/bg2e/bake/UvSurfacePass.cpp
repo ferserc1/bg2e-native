@@ -113,13 +113,16 @@ void UvSurfacePass::initialize(gpu::Device& device, gpu::BackendType backend, ui
     }
     _device = &device;
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "uv-surface-pass-layout-pipeline-layout";
     layout.resourceBindings.push_back({0,{0,2},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Vertex});
     layout.resourceBindings.push_back({0,{1,3},gpu::ResourceType::StorageBuffer,gpu::ShaderStage::Vertex});
+    layout.debugName = "uv-surface-pass-layout-pipeline-layout";
     _layout = device.createPipelineLayout(layout);
     gpu::ShaderLib library(_configuration.shaderRoot,backend);
     _vertex = library.vertex(_configuration.shaderPrefix+"/surface",&device);
     _fragment = library.fragment(_configuration.shaderPrefix+"/surface",&device);
     gpu::GraphicsPipelineDescription description;
+    description.debugName = "uv-surface-pass-description-graphics-pipeline";
     description.vertexShader = _vertex.get();
     description.fragmentShader = _fragment.get();
     description.layout = _layout.get();
@@ -130,18 +133,23 @@ void UvSurfacePass::initialize(gpu::Device& device, gpu::BackendType backend, ui
     {
         description.colorAttachments.push_back({Formats[i],{}});
     }
+    description.debugName = "uv-surface-pass-pipeline-graphics-pipeline";
     _pipeline = device.createGraphicsPipeline(description);
     gpu::PipelineLayoutDescription coverage;
+    coverage.debugName = "uv-surface-pass-coverage-pipeline-layout";
     coverage.resourceBindings.push_back({0,{0,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
     coverage.resourceBindings.push_back({0,{1,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute});
     coverage.resourceBindings.push_back({0,{2,1},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+    coverage.debugName = "uv-surface-pass-coverage-layout-pipeline-layout";
     _coverageLayout = device.createPipelineLayout(coverage);
     _coverageShader = library.compute(_configuration.shaderPrefix+"/coverage",&device);
-    _coveragePipeline = device.createComputePipeline({_coverageShader.get(),_coverageLayout.get()});
+    _coveragePipeline = device.createComputePipeline({_coverageShader.get(),_coverageLayout.get(), "uv-surface-pass-coverage-shader-compute-pipeline"});
     gpu::SamplerDescription sampler;
+    sampler.debugName = "uv-surface-pass-sampler-sampler";
     sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
     sampler.addressModeU = sampler.addressModeV = gpu::AddressMode::ClampToEdge;
     sampler.maxLod = 0;
+    sampler.debugName = "uv-surface-pass-nearest-sampler";
     _nearest = device.createSampler(sampler);
     _slots.resize(slots);
 }
@@ -240,10 +248,12 @@ UvSurfaceResult UvSurfacePass::record(const UvSurfaceInput& input)
     for (size_t i = 0; i < Formats.size(); ++i)
     {
         gpu::ImageDescription description;
+        description.debugName = "uv-surface-pass-description-image";
         description.size = input.extent;
         description.format = Formats[i];
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc |
             (i < 4 ? gpu::ImageUsage::ColorAttachment : gpu::ImageUsage::Storage);
+        description.debugName = "uv-surface-pass-result-images-i-image";
         result.images[i] = _device->createImage(description);
     }
     gpu::RenderingDescription rendering;
@@ -266,7 +276,7 @@ UvSurfaceResult UvSurfacePass::record(const UvSurfaceInput& input)
         auto uniform = _device->createBuffer("bake UV transform");
         uniform->createUniformBuffer(data);
         invocation.uniforms.push_back(uniform);
-        auto set = _device->createResourceSet(_layout.get(),0);
+        auto set = _device->createResourceSet(_layout.get(),0, "uv-surface-pass-layout-set");
         set->setUniformBuffer({0,2},uniform.get());
         set->setStorageBuffer({1,3},geometry.vertices.get());
         set->update();
@@ -288,7 +298,7 @@ UvSurfaceResult UvSurfacePass::record(const UvSurfaceInput& input)
     {
         input.command.transition(result.images[i].get(),gpu::ImageLayout::ShaderReadOnly);
     }
-    auto coverage = _device->createResourceSet(_coverageLayout.get(),0);
+    auto coverage = _device->createResourceSet(_coverageLayout.get(),0, "uv-surface-pass-coverage-layout-set");
     invocation.sets.push_back(coverage);
     coverage->setSampledImage({0,0},result.images[3].get());
     coverage->setSampler({1,0},_nearest.get());

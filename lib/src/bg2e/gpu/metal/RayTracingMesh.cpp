@@ -31,6 +31,7 @@ namespace metal {
 RayTracingMesh::RayTracingMesh(metal::Device* device, const RayTracingMeshDescription& description)
     : gpu::RayTracingMesh(device), _device(device)
 {
+    requireDebugName(description.debugName);
     _description = description;
 
     if (!dynamic_cast<metal::Buffer*>(description.vertexBuffer) ||
@@ -145,6 +146,7 @@ void RayTracingMesh::cleanup()
 RayTracingMesh::RayTracingMesh(metal::Device* device, const RayTracingMeshDescription& description)
     : gpu::RayTracingMesh(device), _device(device)
 {
+    requireDebugName(description.debugName);
     _description = description;
     throw std::runtime_error("Metal backend is not available on this platform");
 }

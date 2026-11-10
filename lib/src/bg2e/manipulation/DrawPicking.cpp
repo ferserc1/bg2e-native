@@ -199,12 +199,15 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
         }
     }
     gpu::ImageDescription imageDescription;
+    imageDescription.debugName = "draw-picking-image-description-image";
     imageDescription.size = extent;
     imageDescription.format = gpu::PixelFormat::R8G8B8A8_UNORM;
     imageDescription.usage = gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc;
+    imageDescription.debugName = "draw-picking-color-image";
     auto color = device->createImage(imageDescription);
     imageDescription.format = gpu::PixelFormat::D32_SFLOAT;
     imageDescription.usage = gpu::ImageUsage::DepthStencil;
+    imageDescription.debugName = "draw-picking-depth-image";
     auto depth = device->createImage(imageDescription);
     auto transformDepth = toolsEnd < entries.size() ? device->createImage(imageDescription) : nullptr;
     // An explicit vec4 keeps C++, GLSL and Metal push layouts identical (80 bytes).
@@ -214,12 +217,15 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
     };
     static_assert(sizeof(Push) == 80);
     gpu::PipelineLayoutDescription layoutDescription;
+    layoutDescription.debugName = "draw-picking-layout-description-pipeline-layout";
     layoutDescription.pushConstants.push_back({0, sizeof(Push), gpu::ShaderStage::Vertex});
+    layoutDescription.debugName = "draw-picking-layout-pipeline-layout";
     auto layout = device->createPipelineLayout(layoutDescription);
     gpu::ShaderLib shaders(base::PlatformTools::shaderPath(), _drawEngine->backendType());
     auto vertex = shaders.vertex("draw/picking/picking", device);
     auto fragment = shaders.fragment("draw/picking/picking", device);
     gpu::GraphicsPipelineDescription pipelineDescription;
+    pipelineDescription.debugName = "draw-picking-pipeline-description-graphics-pipeline";
     pipelineDescription.vertexShader = vertex.get();
     pipelineDescription.fragmentShader = fragment.get();
     pipelineDescription.layout = layout.get();
@@ -228,11 +234,14 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
     pipelineDescription.cullMode = gpu::CullMode::Back;
     pipelineDescription.depthState = gpu::DepthState{true, true, gpu::CompareOperation::LessOrEqual};
     pipelineDescription.addVertexBufferDescription(draw::Drawable::DrawMesh::vertexBufferDescription());
+    pipelineDescription.debugName = "draw-picking-pipeline-graphics-pipeline";
     auto pipeline = device->createGraphicsPipeline(pipelineDescription);
     pipelineDescription.cullMode = gpu::CullMode::None;
+    pipelineDescription.debugName = "draw-picking-double-sided-pipeline-graphics-pipeline";
     auto doubleSidedPipeline = device->createGraphicsPipeline(pipelineDescription);
     pipelineDescription.cullMode = gpu::CullMode::Back;
     pipelineDescription.depthState = gpu::DepthState{false, false, gpu::CompareOperation::Always};
+    pipelineDescription.debugName = "draw-picking-top-pipeline-graphics-pipeline";
     auto topPipeline = device->createGraphicsPipeline(pipelineDescription);
     device->immediateSubmit([&](gpu::CommandBuffer* command)
     {

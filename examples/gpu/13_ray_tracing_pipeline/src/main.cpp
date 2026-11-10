@@ -356,8 +356,10 @@ int main(int argc, char** argv)
     cleanup.push(displayFs);
 
     gpu::PipelineLayoutDescription displayLayoutDesc{};
+    displayLayoutDesc.debugName = "src-display-layout-desc-pipeline-layout";
     displayLayoutDesc.resourceBindings.push_back({0, {.vulkan = 0, .metal = 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
     displayLayoutDesc.resourceBindings.push_back({0, {.vulkan = 1, .metal = 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
+    displayLayoutDesc.debugName = "src-display-layout-pipeline-layout";
     auto displayLayout = device->createPipelineLayout(displayLayoutDesc);
     cleanup.push(displayLayout);
 

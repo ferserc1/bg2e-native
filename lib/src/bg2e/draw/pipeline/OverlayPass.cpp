@@ -49,7 +49,9 @@ void MeshOverlayPass::initialize(Engine& engine, const OverlayConfiguration& con
     _engine = &engine;
     _configuration = configuration;
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "overlay-pass-layout-pipeline-layout";
     layout.pushConstants.push_back({0, 80, gpu::ShaderStage::Vertex});
+    layout.debugName = "overlay-pass-layout-pipeline-layout";
     _layout = engine.device()->createPipelineLayout(layout);
     gpu::ShaderLib shaders(_settings.shaderRoot.empty() ? base::PlatformTools::shaderPath() : _settings.shaderRoot, engine.backendType());
     auto vertex = shaders.vertex(_settings.gizmoShader, engine.device());
@@ -60,6 +62,7 @@ void MeshOverlayPass::initialize(Engine& engine, const OverlayConfiguration& con
     const auto make = [&](bool lines, bool test, bool write, bool blend, bool mask, bool highlight)
     {
         gpu::GraphicsPipelineDescription description;
+        description.debugName = "overlay-pass-description-graphics-pipeline";
         description.vertexShader = highlight ? highlightVertex.get() : vertex.get();
         description.fragmentShader = highlight ? highlightFragment.get() : fragment.get();
         description.layout = _layout.get();
@@ -89,12 +92,15 @@ void MeshOverlayPass::buildDepth()
 {
     std::vector<Slot> next(_configuration.frameSlots);
     gpu::ImageDescription description;
+    description.debugName = "overlay-pass-description-image";
     description.size = _configuration.extent;
     description.format = _configuration.depthFormat;
     description.usage = gpu::ImageUsage::DepthStencil;
     for (auto& slot : next)
     {
+        description.debugName = "overlay-pass-slot-scene-depth-image";
         slot.sceneDepth = _engine->device()->createImage(description);
+        description.debugName = "overlay-pass-slot-transform-depth-image";
         slot.transformDepth = _engine->device()->createImage(description);
     }
     _slots = std::move(next);

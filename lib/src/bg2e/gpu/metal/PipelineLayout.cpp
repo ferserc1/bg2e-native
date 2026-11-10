@@ -29,6 +29,7 @@ namespace metal {
 PipelineLayout::PipelineLayout(gpu::Device* gpuDevice, const gpu::PipelineLayoutDescription& description)
     : gpu::PipelineLayout(gpuDevice), _description(description)
 {
+    requireDebugName(description.debugName);
     validatePushConstantRanges(description.pushConstants);
     validateMetalBufferBindings(description.resourceBindings);
     validateResourceArrays(description, gpuDevice->resourceArrayCapabilities());

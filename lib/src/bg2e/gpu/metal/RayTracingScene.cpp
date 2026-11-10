@@ -33,6 +33,7 @@ namespace metal {
 RayTracingScene::RayTracingScene(metal::Device* device, const std::string& debugName)
     : gpu::RayTracingScene(device), _device(device), _debugName(debugName)
 {
+    requireDebugName(debugName);
 }
 
 RayTracingScene::~RayTracingScene()

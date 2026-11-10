@@ -143,6 +143,7 @@ gpu::PipelineLayoutDescription softShadowBindingLayout(uint32_t capacity)
     }
     using T = gpu::ResourceType;
     gpu::PipelineLayoutDescription result;
+    result.debugName = "soft-shadow-pass-result-pipeline-layout";
     const auto add = [&](uint32_t set, uint32_t vk, uint32_t metal, T type)
     {
         result.resourceBindings.push_back({set, {vk, metal}, type, gpu::ShaderStage::Compute, 1});
@@ -223,13 +224,17 @@ void SoftShadowPass::initialize(Engine& engine, const LayerConfiguration& config
             library.specialized("draw/query/soft_shadows",gpu::ShaderStage::Compute,engine.device(),{{0,_alphaCapacity}}) :
             library.compute("draw/query/soft_shadows", engine.device());
         gpu::ComputePipelineDescription description;
+        description.debugName = "soft-shadow-pass-description-compute-pipeline";
         description.layout = _layout.get();
         description.computeShader = _shader.get();
+        description.debugName = "soft-shadow-pass-pipeline-compute-pipeline";
         _pipeline = engine.device()->createComputePipeline(description);
         gpu::SamplerDescription nearest;
+        nearest.debugName = "soft-shadow-pass-nearest-sampler";
         nearest.minFilter = nearest.magFilter = gpu::Filter::Nearest;
         nearest.addressModeU = nearest.addressModeV = gpu::AddressMode::ClampToEdge;
         nearest.maxLod = 0;
+        nearest.debugName = "soft-shadow-pass-nearest-sampler";
         _nearest = engine.device()->createSampler(nearest);
         _slots.resize(slots);
         _status = "Query shadows ready (alpha capacity=" + std::to_string(_alphaCapacity) + ")";

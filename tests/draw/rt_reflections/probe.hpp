@@ -86,8 +86,10 @@ inline bool runRTReflectionsProbe(Engine& engine, const std::filesystem::path& s
     auto nearPlane = plane(0.1f,false);
     auto farPlane = plane(0.5f,false);
     gpu::ImageDescription alphaDescription;
+    alphaDescription.debugName = "rt-reflections-alpha-description-image";
     alphaDescription.size = {2,1};
     alphaDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+    alphaDescription.debugName = "rt-reflections-alpha-image";
     auto alpha = device.createImage(alphaDescription);
     const uint8_t pixels[] = {255,255,255,0,255,255,255,255};
     alpha->upload({pixels,sizeof(pixels),8,0,0});
@@ -118,9 +120,11 @@ inline bool runRTReflectionsProbe(Engine& engine, const std::filesystem::path& s
     auto upload = [&](gpu::PixelFormat format, const void* data, size_t size)
     {
         gpu::ImageDescription description;
+        description.debugName = "rt-reflections-description-image";
         description.size = {1,1};
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+        description.debugName = "rt-reflections-image-image";
         auto image = device.createImage(description);
         image->upload({data,size,size,0,0});
         return image;
@@ -132,6 +136,7 @@ inline bool runRTReflectionsProbe(Engine& engine, const std::filesystem::path& s
     auto world = upload(gpu::PixelFormat::R32G32B32A32_SFLOAT,position,sizeof(position));
     auto valid = upload(gpu::PixelFormat::R8_UNORM,&coverage,1);
     gpu::ImageDescription description;
+    description.debugName = "rt-reflections-description-image";
     description.size = {1,1};
     description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
     description.usage = gpu::ImageUsage::Storage | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc;
@@ -140,6 +145,7 @@ inline bool runRTReflectionsProbe(Engine& engine, const std::filesystem::path& s
         reflections.cleanup();
         return false;
     }
+    description.debugName = "rt-reflections-output-image";
     auto output = device.createImage(description);
     gpu::Size2D displayExtent{1,1};
     const uint8_t mirrorMaterial[] = {0,0,255,0};
@@ -243,9 +249,11 @@ inline bool runRTReflectionsProbe(Engine& engine, const std::filesystem::path& s
     const uint16_t encodedNormal[] = {0x3800,0x3800,0x3c00,0};
     auto encoded = upload(gpu::PixelFormat::R16G16B16A16_SFLOAT,encodedNormal,sizeof(encodedNormal));
     gpu::ImageDescription depthDescription;
+    depthDescription.debugName = "rt-reflections-depth-description-image";
     depthDescription.size = {1,1};
     depthDescription.format = gpu::PixelFormat::D32_SFLOAT;
     depthDescription.usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled;
+    depthDescription.debugName = "rt-reflections-depth-image";
     auto depth = device.createImage(depthDescription);
     device.immediateSubmit([&](gpu::CommandBuffer* command)
     {
@@ -270,6 +278,7 @@ inline bool runRTReflectionsProbe(Engine& engine, const std::filesystem::path& s
     {
         throw std::runtime_error("Reflection quality must be relative to display extent");
     }
+    description.debugName = "rt-reflections-output-image";
     output = device.createImage(description);
     if (glm::length(render()-nearReflection) > 0.01f)
     {

@@ -40,7 +40,7 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
     _metalDevice = dynamic_cast<metal::Device*>(device);
 
     _colorImage = std::make_unique<metal::Image>();
-    _colorImage->buildTargetImage(_metalDevice, _size, _colorFormat);
+    _colorImage->buildTargetImage(_metalDevice, _size, _colorFormat, "offscreen-color-image");
 
     createDepthTarget(_size, _depthFormat);
 

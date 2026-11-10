@@ -74,9 +74,11 @@ inline bool runTemporalProbe(Engine& engine, const std::filesystem::path& shader
     auto upload = [&](gpu::PixelFormat format, const void* data, size_t bytes)
     {
         gpu::ImageDescription description;
+        description.debugName = "temporal-description-image";
         description.size = {1,1};
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst | gpu::ImageUsage::TransferSrc;
+        description.debugName = "temporal-image-image";
         auto image = device.createImage(description);
         image->upload({data,bytes,bytes,0,0});
         return image;
@@ -364,9 +366,11 @@ inline bool runTemporalProbe(Engine& engine, const std::filesystem::path& shader
     const uint16_t encodedData[] = {0x3800,0x3800,0x3c00,0};
     auto encoded = upload(gpu::PixelFormat::R16G16B16A16_SFLOAT,encodedData,sizeof(encodedData));
     gpu::ImageDescription depthDescription;
+    depthDescription.debugName = "temporal-depth-description-image";
     depthDescription.size = {1,1};
     depthDescription.format = gpu::PixelFormat::D32_SFLOAT;
     depthDescription.usage = gpu::ImageUsage::DepthStencil | gpu::ImageUsage::Sampled;
+    depthDescription.debugName = "temporal-depth-image";
     auto depth = device.createImage(depthDescription);
     device.immediateSubmit([&](gpu::CommandBuffer* command)
     {
@@ -485,9 +489,11 @@ inline bool runTemporalMetadataProbe(Engine& engine, const std::filesystem::path
     auto upload = [&](gpu::Size2D size, gpu::PixelFormat format, const void* data, size_t bytes, size_t row)
     {
         gpu::ImageDescription description;
+        description.debugName = "temporal-description-image";
         description.size = size;
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+        description.debugName = "temporal-image-image";
         auto image = device.createImage(description);
         image->upload({data,bytes,row,0,0});
         return image;
@@ -502,9 +508,11 @@ inline bool runTemporalMetadataProbe(Engine& engine, const std::filesystem::path
     auto depth = [&](float value)
     {
         gpu::ImageDescription description;
+        description.debugName = "temporal-description-image";
         description.size = {3,3};
         description.format = gpu::PixelFormat::D32_SFLOAT;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::DepthStencil;
+        description.debugName = "temporal-image-image";
         auto image = device.createImage(description);
         device.immediateSubmit([&](gpu::CommandBuffer* command)
         {

@@ -87,7 +87,7 @@ std::shared_ptr<gpu::ResourceSet> TracingResourceTable::bindings(gpu::PipelineLa
             }
         }
     }
-    auto set = device->createResourceSet(&layout, 2);
+    auto set = device->createResourceSet(&layout, 2, "tracing-persistent-resources-layout-set");
     std::vector<gpu::ImageView> views(capacity, fallbackImage->fullView());
     std::vector<gpu::Sampler*> states(capacity, fallbackSampler.get());
     for (size_t i = 0; i < images.size(); ++i)

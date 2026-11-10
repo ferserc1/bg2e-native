@@ -64,6 +64,7 @@ void GBuffer::initialize(Engine& engine, const LayerConfiguration& configuration
     _vertex = library.vertex("draw/raster/gbuffer", engine.device());
     _fragment = library.fragment("draw/raster/gbuffer", engine.device());
     gpu::GraphicsPipelineDescription description;
+    description.debugName = "gbuffer-description-graphics-pipeline";
     description.vertexShader = _vertex.get();
     description.fragmentShader = _fragment.get();
     description.layout = _layout.get();
@@ -75,12 +76,16 @@ void GBuffer::initialize(Engine& engine, const LayerConfiguration& configuration
         description.colorAttachments.push_back({format, {}});
     }
     description.addVertexBufferDescription(Drawable::DrawMesh::vertexBufferDescription());
+    description.debugName = "gbuffer-pipeline-graphics-pipeline";
     _pipeline = engine.device()->createGraphicsPipeline(description);
     description.depthState->writeEnabled = false;
+    description.debugName = "gbuffer-transparent-pipeline-graphics-pipeline";
     _transparentPipeline = engine.device()->createGraphicsPipeline(description);
     description.cullMode = gpu::CullMode::None;
+    description.debugName = "gbuffer-double-sided-transparent-pipeline-graphics-pipeline";
     _doubleSidedTransparentPipeline = engine.device()->createGraphicsPipeline(description);
     description.depthState->writeEnabled = true;
+    description.debugName = "gbuffer-double-sided-pipeline-graphics-pipeline";
     _doubleSidedPipeline = engine.device()->createGraphicsPipeline(description);
 }
 

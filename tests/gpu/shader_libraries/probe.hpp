@@ -1,3 +1,21 @@
+/*
+ *    business grade graphic engine (bg2e engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <bg2e/gpu/CommandBuffer.hpp>
@@ -37,19 +55,21 @@ inline void runShaderLibraryProbe(Device& device, BackendType backend, const std
         }
     };
     auto image = device.createImage({.size = {7, 5}, .format = PixelFormat::R8G8B8A8_UNORM,
-        .usage = ImageUsage::ColorAttachment | ImageUsage::Storage | ImageUsage::TransferSrc});
-    auto layout = device.createPipelineLayout({});
+        .usage = ImageUsage::ColorAttachment | ImageUsage::Storage | ImageUsage::TransferSrc, .debugName = "shader-libraries-image"});
+    auto layout = device.createPipelineLayout({.debugName = "shader-libraries-pipeline-layout"});
     for (const auto* name : {"gbuffer", "composite"})
     {
         ShaderLib library(root / "draw" / name, backend);
         auto vertex = library.vertex("probe", &device);
         auto fragment = library.fragment("probe", &device);
         GraphicsPipelineDescription description;
+        description.debugName = "shader-libraries-description-graphics-pipeline";
         description.vertexShader = vertex.get();
         description.fragmentShader = fragment.get();
         description.layout = layout.get();
         description.colorFormat = PixelFormat::R8G8B8A8_UNORM;
         description.cullMode = CullMode::None;
+        description.debugName = "shader-libraries-pipeline-graphics-pipeline";
         auto pipeline = device.createGraphicsPipeline(description);
         device.immediateSubmit([&](CommandBuffer* command)
         {
@@ -69,10 +89,12 @@ inline void runShaderLibraryProbe(Device& device, BackendType backend, const std
     ShaderLib composite(root / "draw/composite", backend);
     auto compute = composite.compute("probe", &device);
     PipelineLayoutDescription computeLayoutDescription;
+    computeLayoutDescription.debugName = "shader-libraries-compute-layout-description-pipeline-layout";
     computeLayoutDescription.resourceBindings.push_back({0, {0, 0}, ResourceType::StorageImage, ShaderStage::Compute});
+    computeLayoutDescription.debugName = "shader-libraries-compute-layout-pipeline-layout";
     auto computeLayout = device.createPipelineLayout(computeLayoutDescription);
-    auto pipeline = device.createComputePipeline({compute.get(), computeLayout.get()});
-    auto resources = device.createResourceSet(computeLayout.get(), 0);
+    auto pipeline = device.createComputePipeline({compute.get(), computeLayout.get(), "shader-libraries-compute-compute-pipeline"});
+    auto resources = device.createResourceSet(computeLayout.get(), 0, "shader-libraries-compute-layout-set");
     resources->setStorageImage({0, 0}, image.get());
     resources->update();
     device.immediateSubmit([&](CommandBuffer* command)

@@ -42,9 +42,9 @@ class Image : public gpu::Image {
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
 
-    void buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
-    void buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
-    void buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage, const std::string& debugName = {});
+    void buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName);
+    void buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName);
+    void buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage, const std::string& debugName);
     void buildImage(vk::Device* device, const ImageDescription& description);
     void upload(const ImageUploadDescription& description, ImageLayout finalLayout = ImageLayout::ShaderReadOnly) override;
     void readPixels(std::vector<uint8_t>& data, const ImageSubresourceRange& range,
@@ -60,6 +60,7 @@ class Image : public gpu::Image {
 
     // Backend dependent functions
     void initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size,
+                                const std::string& debugName,
                                 VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
 
     VkImage handle() const
@@ -94,7 +95,7 @@ class Image : public gpu::Image {
         PixelFormat format,
         VkImageUsageFlags usage,
         uint32_t mipLevels,
-        const std::string& debugName = {});
+        const std::string& debugName);
 
   private:
     void createView();

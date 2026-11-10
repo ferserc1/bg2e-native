@@ -20,6 +20,8 @@
 #include <bg2e/gpu/vk/Device.hpp>
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
 
+#include <bg2e/gpu/vk/extensions.hpp>
+
 #include <cstring>
 #include <stdexcept>
 
@@ -78,6 +80,7 @@ VkBufferUsageFlags toVkBufferUsage(BufferUsage usage, bool rayTracingEnabled)
 Buffer::Buffer(vk::Device* device, const std::string& debugName)
     : gpu::Buffer(device), _device(device), _debugName(debugName)
 {
+    requireDebugName(debugName);
 }
 
 Buffer::~Buffer()
@@ -194,6 +197,8 @@ void Buffer::createMappedBuffer(const void* data, uint64_t byteSize,
         throw std::runtime_error(std::string("vk::Buffer::") + debugTag + ": vmaCreateBuffer failed");
     }
 
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_buffer), _debugName);
+    vmaSetAllocationName(_device->allocator(), _allocation, _debugName.c_str());
     _mappedData = allocOut.pMappedData;
     if (data != nullptr && _mappedData != nullptr)
     {
@@ -243,6 +248,8 @@ void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,
     VK_ASSERT(vmaCreateBuffer(_device->allocator(), &stagingInfo, &stagingAllocCI,
                               &stagingBuffer, &stagingAlloc, &stagingAllocOut));
 
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(stagingBuffer), _debugName + "-upload-staging-buffer");
+    vmaSetAllocationName(_device->allocator(), stagingAlloc, (_debugName + "-upload-staging-buffer").c_str());
     std::memcpy(stagingAllocOut.pMappedData, data, byteSize);
 
     // Device-local buffer
@@ -257,6 +264,9 @@ void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,
 
     VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
                               &_buffer, &_allocation, nullptr));
+
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_buffer), _debugName);
+    vmaSetAllocationName(_device->allocator(), _allocation, _debugName.c_str());
 
     // Upload via immediate submit
     _device->immediateSubmit([&](gpu::CommandBuffer* cmd)

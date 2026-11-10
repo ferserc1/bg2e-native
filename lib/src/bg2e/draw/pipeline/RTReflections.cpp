@@ -117,24 +117,28 @@ void RTReflections::initialize(gpu::Device& device, gpu::BackendType backend, ui
                 _stages[index*3+1] = library.specialized(name,gpu::ShaderStage::ClosestHit,&device,{{0,_capacity}});
                 _stages[index*3+2] = library.specialized(name,gpu::ShaderStage::AnyHit,&device,{{0,_capacity}});
                 gpu::RayTracingPipelineDescription description;
+                description.debugName = "rtreflections-description-ray-tracing-pipeline";
                 description.raygenShader = _shaders[index].get();
                 description.missShader = _stages[index*3].get();
                 description.closestHitShader = _stages[index*3+1].get();
                 description.anyHitShader = _stages[index*3+2].get();
                 description.layout = _layouts[index].get();
                 description.maxRecursionDepth = 1;
+                description.debugName = "rtreflections-pipelines-index-ray-tracing-pipeline";
                 _pipelines[index] = device.createRayTracingPipeline(description);
             }
             else
             {
                 _shaders[index] = library.compute(name,&device);
-                _compute[index] = device.createComputePipeline({_shaders[index].get(),_layouts[index].get()});
+                _compute[index] = device.createComputePipeline({_shaders[index].get(),_layouts[index].get(), "rtreflections-shaders-compute-pipeline-" + std::to_string(index)});
             }
         }
         gpu::SamplerDescription nearest;
+        nearest.debugName = "rtreflections-nearest-sampler";
         nearest.minFilter = nearest.magFilter = gpu::Filter::Nearest;
         nearest.addressModeU = nearest.addressModeV = gpu::AddressMode::ClampToEdge;
         nearest.maxLod = 0;
+        nearest.debugName = "rtreflections-nearest-sampler";
         _nearest = device.createSampler(nearest);
         _tracing = std::make_shared<TracingSceneResources>(device,_capacity);
         _slots.resize(slots);

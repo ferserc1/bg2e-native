@@ -37,6 +37,7 @@ namespace vk {
 ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
     : gpu::ResourceSet(gpuDevice), _device(device), _setIndex(setIndex)
 {
+    requireDebugName(debugName);
     base::CpuProfileScope profile("vulkan.resourceSet.allocatePoolAndSet");
     _bindings = layout->description().resourceBindings;
     VkDescriptorSetLayout dsLayout = layout->descriptorSetLayout(setIndex);
@@ -125,14 +126,14 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
         throw std::runtime_error("Failed to create Vulkan descriptor pool");
     }
 
-    if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+    if (!debugName.empty() && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_DESCRIPTOR_POOL;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(_descriptorPool);
         nameInfo.pObjectName = debugName.c_str();
-        setDebugUtilsObjectName(_device, &nameInfo);
+        nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
     }
 
     VkDescriptorSetAllocateInfo allocInfo{};
@@ -149,14 +150,14 @@ ResourceSet::ResourceSet(gpu::Device* gpuDevice, VkDevice device, const vk::Pipe
         throw std::runtime_error("Failed to allocate Vulkan descriptor set");
     }
 
-    if (base::Log::isDebug() && !debugName.empty() && setDebugUtilsObjectName != nullptr)
+    if (!debugName.empty() && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_DESCRIPTOR_SET;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(_descriptorSet);
         nameInfo.pObjectName = debugName.c_str();
-        setDebugUtilsObjectName(_device, &nameInfo);
+        nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
     }
 }
 

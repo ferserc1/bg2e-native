@@ -225,8 +225,10 @@ inline std::shared_ptr<scene::Node> shadowProbeScene(Engine& engine, bool tracin
         if (i == 1)
         {
             gpu::ImageDescription description;
+            description.debugName = "soft-shadows-description-image";
             description.size = {2, 1};
             description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+            description.debugName = "soft-shadows-image-image";
             auto image = engine.device()->createImage(description);
             const uint8_t pixels[] = {255, 255, 255, 0, 255, 255, 255, 255};
             image->upload({pixels, sizeof(pixels), 8, 0, 0});

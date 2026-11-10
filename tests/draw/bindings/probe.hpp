@@ -1,3 +1,21 @@
+/*
+ *    business grade graphic engine (bg2e engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <bg2e/draw/all.hpp>
@@ -144,6 +162,7 @@ class BindingProbe {
         vertex = library.vertex("draw/bindings/probe", engine.device());
         fragment = library.fragment("draw/bindings/probe", engine.device());
         gpu::GraphicsPipelineDescription description;
+        description.debugName = "bindings-description-graphics-pipeline";
         description.layout = layout.get();
         description.vertexShader = vertex.get();
         description.fragmentShader = fragment.get();
@@ -151,6 +170,7 @@ class BindingProbe {
         description.cullMode = gpu::CullMode::None;
         description.depthState = gpu::DepthState{false, false, gpu::CompareOperation::Always};
         description.addVertexBufferDescription(Drawable::DrawMesh::vertexBufferDescription());
+        description.debugName = "bindings-pipeline-graphics-pipeline";
         pipeline = engine.device()->createGraphicsPipeline(description);
         frameBinding.initialize(engine, layout, frameSlots);
         objectBinding.initialize(engine, layout, frameSlots);

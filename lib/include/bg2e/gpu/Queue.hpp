@@ -35,7 +35,7 @@ class BG2E_API Queue {
     virtual uint32_t familyIndex() const = 0;
     virtual bool isValid() const = 0;
 
-    virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const = 0;
+    virtual std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName) const = 0;
     virtual void submit(gpu::CommandBuffer* cmd) const = 0;
 
     virtual SubmissionTimingCapabilities submissionTimingCapabilities() const noexcept

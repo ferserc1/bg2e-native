@@ -88,6 +88,7 @@ VkDeviceAddress alignUp(VkDeviceAddress value, VkDeviceAddress alignment)
 RayTracingMesh::RayTracingMesh(vk::Device* device, const RayTracingMeshDescription& description)
     : gpu::RayTracingMesh(device), _device(device)
 {
+    requireDebugName(description.debugName);
     _description = description;
 
     auto* vkVertex = dynamic_cast<vk::Buffer*>(description.vertexBuffer);
@@ -162,6 +163,9 @@ RayTracingMesh::RayTracingMesh(vk::Device* device, const RayTracingMeshDescripti
                            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT |
                                VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT,
                            _scratchBuffer, _scratchAlloc, "BLAS scratch buffer");
+        nameObject(_device->handle(), VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, reinterpret_cast<uint64_t>(_accelerationStructure), description.debugName + "-blas");
+        nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_asBuffer), description.debugName + "-blas-storage-buffer");
+        nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_scratchBuffer), description.debugName + "-blas-scratch-buffer");
         VmaAllocationInfo allocationInfo{};
         vmaGetAllocationInfo(_device->allocator(), _asAlloc, &allocationInfo);
         _retainedBytes = static_cast<size_t>(allocationInfo.size);

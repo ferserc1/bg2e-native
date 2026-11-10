@@ -31,6 +31,7 @@ namespace metal {
 Sampler::Sampler(gpu::Device* gpuDevice, DeviceHandle device, const gpu::SamplerDescription& description)
     : gpu::Sampler(gpuDevice), _device(device)
 {
+    requireDebugName(description.debugName);
     if (!std::isfinite(description.mipLodBias) || !std::isfinite(description.minLod) || !std::isfinite(description.maxLod) ||
         description.minLod < 0.0f || description.maxLod < description.minLod)
     {

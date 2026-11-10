@@ -31,7 +31,7 @@ class Device;
 
 class Buffer : public gpu::Buffer {
   public:
-    Buffer(vk::Device* device, const std::string& debugName = {});
+    Buffer(vk::Device* device, const std::string& debugName);
     ~Buffer() override;
 
     Buffer(const Buffer&) = delete;

@@ -112,6 +112,7 @@ void MetalFXUpscaler::resize(const UpscalerConfiguration& configuration)
             return;
         }
         gpu::PipelineLayoutDescription layout;
+        layout.debugName = "metal-fxupscaler-layout-pipeline-layout";
         layout.resourceBindings.push_back({0,{0,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Fragment,1});
         layout.resourceBindings.push_back({0,{1,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Fragment,1});
         layout.pushConstants.push_back({0,128,gpu::ShaderStage::Fragment});
@@ -137,6 +138,7 @@ void MetalFXUpscaler::resize(const UpscalerConfiguration& configuration)
         try
         {
             gpu::PipelineLayoutDescription opaqueLayout;
+            opaqueLayout.debugName = "metal-fxupscaler-opaque-layout-pipeline-layout";
             for (uint32_t index = 0; index < 3; ++index)
             {
                 opaqueLayout.resourceBindings.push_back({0,{index,index},gpu::ResourceType::SampledImage,gpu::ShaderStage::Fragment,1});

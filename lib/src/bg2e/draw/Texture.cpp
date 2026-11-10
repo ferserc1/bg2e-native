@@ -89,6 +89,7 @@ gpu::AddressMode addressMode(base::Texture::AddressMode mode)
 gpu::SamplerDescription samplerDescription(const base::Texture& settings, uint32_t levels)
 {
     gpu::SamplerDescription description;
+    description.debugName = "texture-description-sampler";
     description.minFilter = settings.minFilter() == base::Texture::FilterLinear ? gpu::Filter::Linear : gpu::Filter::Nearest;
     description.magFilter = settings.magFilter() == base::Texture::FilterLinear ? gpu::Filter::Linear : gpu::Filter::Nearest;
     description.mipFilter = settings.minFilter() == base::Texture::FilterLinear ? gpu::MipmapFilter::Linear : gpu::MipmapFilter::Nearest;
@@ -170,6 +171,7 @@ void Texture::load(const base::Image& pixels, const base::Texture& settings)
 {
     // Upload into a new image; publication below retires the previous version.
     gpu::ImageDescription description;
+    description.debugName = "texture-image-" + settings.imageFilePath();
     description.size = {pixels.width(), pixels.height()};
     description.format = pixels.dataf() ? gpu::PixelFormat::R32G32B32A32_SFLOAT : gpu::PixelFormat::R8G8B8A8_UNORM;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
@@ -181,6 +183,7 @@ void Texture::load(const base::Image& pixels, const base::Texture& settings)
             throw std::runtime_error("Texture format does not support requested mipmap generation");
         }
     }
+    description.debugName = "texture-image-" + settings.imageFilePath();
     auto image = _engine->device()->createImage(description);
     image->uploadImage(&pixels);
     if (description.mipLevels > 1)
@@ -208,6 +211,7 @@ void Texture::load(std::shared_ptr<base::Texture> settings, std::shared_ptr<gpu:
     }
     auto independent = cloneTextureSettings(*settings);
     auto description = samplerDescription(*independent, image->mipLevels());
+    description.debugName = "texture-sampler-sampler";
     auto sampler = _engine->device()->createSampler(description);
     if (_image || _sampler)
     {
@@ -282,6 +286,7 @@ std::shared_ptr<Texture> Texture::clone() const
         throw std::invalid_argument("Texture cloning requires transfer-source usage");
     }
     gpu::ImageDescription description;
+    description.debugName = "texture-description-image";
     description.size = _image->size();
     description.format = _image->pixelFormat();
     description.type = _image->imageType();
@@ -297,6 +302,7 @@ std::shared_ptr<Texture> Texture::clone() const
             }
         }
     }
+    description.debugName = "texture-clone-image";
     auto image = _engine->device()->createImage(description);
     _engine->device()->immediateSubmit([&](gpu::CommandBuffer* command)
     {

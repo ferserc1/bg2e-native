@@ -29,7 +29,7 @@ void Surface::createDepthTarget(const Size2D& size, PixelFormat format)
     if (format != PixelFormat::Undefined)
     {
         _depthImage = std::make_unique<vk::Image>();
-        _depthImage->buildDepthImage(_vkDevice, size, format);
+        _depthImage->buildDepthImage(_vkDevice, size, format, "surface-depth-image");
     }
 }
 

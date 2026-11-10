@@ -21,6 +21,7 @@
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/Image.hpp>
+#include <bg2e/gpu/Mesh.hpp>
 #include <bg2e/gpu/ResourceSet.hpp>
 #include <bg2e/gpu/RayTracingScene.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
@@ -31,6 +32,23 @@
 #include <stdexcept>
 
 namespace bg2e::gpu::tests {
+// Helper-generated descriptions must preserve the mandatory identity contract.
+// No device or native buffers are needed to inspect the generated descriptions.
+inline void runMeshDebugNameProbe()
+{
+    MeshP mesh;
+    mesh.meshData().submeshes = {{0, 3}, {3, 3}};
+    const auto first = mesh.rayTracingMeshDescription(0);
+    const auto second = mesh.rayTracingMeshDescription(1);
+    requireDebugName(first.debugName);
+    requireDebugName(second.debugName);
+    if (first.debugName != "mesh-submesh-0-ray-tracing-geometry" ||
+        second.debugName != "mesh-submesh-1-ray-tracing-geometry")
+    {
+        throw std::runtime_error("Ray tracing geometry names must identify their submesh");
+    }
+}
+
 // CPU-only boundary checks; no Device/window or shader execution required.
 inline void runResourceArrayCapacityProbe()
 {
@@ -68,6 +86,7 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
 {
     const auto caps = device.resourceArrayCapabilities();
     runResourceArrayCapacityProbe();
+    runMeshDebugNameProbe();
     // This primitive fixture deliberately retains its precompiled small templates.
     const auto available = caps.profileCapacity(0, 0, 6);
     const uint32_t count = available >= 256 ? 256 : available >= 128 ? 128 : available >= 32 ? 32 : 0;
@@ -111,12 +130,14 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
     for (uint32_t i = 0; i < 2; ++i)
     {
         RayTracingMeshDescription description;
+        description.debugName = "advanced-tracing-description-ray-tracing-mesh";
         description.vertexBuffer = vertexBuffer.get();
         description.indexBuffer = indexBuffer.get();
         description.vertexCount = 6;
         description.vertexStride = sizeof(Vertex);
         description.firstIndex = 3 + i * 3;
         description.indexCount = 3;
+        description.debugName = "advanced-tracing-meshes-i-ray-tracing-mesh";
         meshes[i] = device.createRayTracingMesh(description);
     }
     auto scene = device.createRayTracingScene("primitive cutout probe");
@@ -155,9 +176,11 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
     for (uint32_t i = 0; i < count; ++i)
     {
         ImageDescription description;
+        description.debugName = "advanced-tracing-description-image";
         description.size = {2,1};
         description.format = PixelFormat::R8G8B8A8_UNORM;
         description.usage = ImageUsage::Sampled | ImageUsage::TransferDst;
+        description.debugName = "advanced-tracing-image-image";
         auto image = device.createImage(description);
         const auto intensity = static_cast<uint8_t>(8 + (i % 32) * 7);
         const auto alpha = static_cast<uint8_t>(i % 2 ? 255 : 0);
@@ -167,17 +190,22 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
         owners.push_back(image);
     }
     SamplerDescription samplerDescription;
+    samplerDescription.debugName = "advanced-tracing-sampler-description-sampler";
     samplerDescription.minFilter = Filter::Nearest;
     samplerDescription.magFilter = Filter::Nearest;
+    samplerDescription.debugName = "advanced-tracing-repeat-sampler";
     auto repeat = device.createSampler(samplerDescription);
     samplerDescription.addressModeU = AddressMode::ClampToEdge;
+    samplerDescription.debugName = "advanced-tracing-clamp-sampler";
     auto clamp = device.createSampler(samplerDescription);
     std::vector<Sampler*> samplers(count, repeat.get());
     samplers[1] = clamp.get();
     ImageDescription outputDescription;
+    outputDescription.debugName = "advanced-tracing-output-description-image";
     outputDescription.size = {32,1};
     outputDescription.format = PixelFormat::R8G8B8A8_UNORM;
     outputDescription.usage = ImageUsage::Storage | ImageUsage::TransferSrc;
+    outputDescription.debugName = "advanced-tracing-output-image";
     auto output = device.createImage(outputDescription);
     ShaderLib library(root / "draw/rt_probe", backend);
     const auto name = "probe" + std::to_string(count);
@@ -209,6 +237,7 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
     {
         const auto stage = pipelinePath ? ShaderStage::RayGeneration : ShaderStage::Compute;
         PipelineLayoutDescription layoutDescription;
+        layoutDescription.debugName = "advanced-tracing-layout-description-pipeline-layout";
         layoutDescription.resourceBindings = {
             {0,{0,0},ResourceType::StorageImage,stage},
             {0,{1,0},ResourceType::SampledImage,stage,count,{},6},
@@ -240,8 +269,9 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
         {
             throw std::runtime_error("Oversized tracing table layout was accepted");
         }
+        layoutDescription.debugName = "advanced-tracing-layout-pipeline-layout";
         auto layout = device.createPipelineLayout(layoutDescription);
-        auto resources = device.createResourceSet(layout.get(),0);
+        auto resources = device.createResourceSet(layout.get(),0, "advanced-tracing-layout-set");
         auto mustReject = [](auto operation)
         {
             bool rejected = false;
@@ -298,6 +328,7 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
             auto hit = library.closestHit(name,&device);
             auto any = library.anyHit(name,&device);
             RayTracingPipelineDescription description;
+            description.debugName = "advanced-tracing-description-ray-tracing-pipeline";
             description.raygenShader = raygen.get();
             description.missShader = miss.get();
             description.closestHitShader = hit.get();
@@ -313,6 +344,7 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
             {
                 device.createRayTracingPipeline(wrongStage);
             });
+            description.debugName = "advanced-tracing-pipeline-ray-tracing-pipeline";
             auto pipeline = device.createRayTracingPipeline(description);
             device.immediateSubmit([&](CommandBuffer* command)
             {
@@ -325,7 +357,7 @@ inline bool runAdvancedTracingProbe(Device& device, BackendType backend, const s
         else
         {
             auto shader = library.compute(name,&device);
-            auto pipeline = device.createComputePipeline({shader.get(),layout.get()});
+            auto pipeline = device.createComputePipeline({shader.get(),layout.get(), "advanced-tracing-shader-compute-pipeline"});
             device.immediateSubmit([&](CommandBuffer* command)
             {
                 command->transition(output.get(),ImageLayout::General);

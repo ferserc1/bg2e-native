@@ -131,6 +131,7 @@ UpscalerRequirements ResamplingUpscaler::requirements() const
 void ResamplingUpscaler::initialize(Engine& engine, const UpscalerConfiguration& configuration)
 {
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "upscaler-layout-pipeline-layout";
     layout.resourceBindings.push_back({0, {0, 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
     layout.resourceBindings.push_back({0, {1, 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
     layout.pushConstants.push_back({0, 16, gpu::ShaderStage::Fragment});

@@ -20,6 +20,7 @@
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/vk/PhysicalDevice.hpp>
 #include <bg2e/base/Log.hpp>
+#include <bg2e/gpu/Common.hpp>
 
 namespace bg2e {
 namespace gpu {
@@ -44,6 +45,24 @@ T loadExtension(VkInstance instance, const char* fnName, bool isOptional = false
     return func;
 }
 
+void nameObject(VkDevice device, VkObjectType type, uint64_t handle, const std::string& name)
+{
+    requireDebugName(name);
+    if (setDebugUtilsObjectName && handle)
+    {
+        VkDebugUtilsObjectNameInfoEXT info{};
+        info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
+        info.objectType = type;
+        info.objectHandle = handle;
+        info.pObjectName = name.c_str();
+        const auto result = setDebugUtilsObjectName(device, &info);
+        if (result != VK_SUCCESS)
+        {
+            bg2e_log_warning << "Unable to register Vulkan object name: " << name << " (" << result << ")" << bg2e_log_end;
+        }
+    }
+}
+
 void loadInstanceExtensions(VkInstance instance, bool offscreen)
 {
     bg2e_log_debug << "Loading extension functions:" << bg2e_log_end;
@@ -60,10 +79,7 @@ void loadInstanceExtensions(VkInstance instance, bool offscreen)
     cmdPipelineBarrier2 = loadExtension<PFN_vkCmdPipelineBarrier2KHR>(instance, "vkCmdPipelineBarrier2KHR");
     cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
 
-    if (base::Log::isDebug())
-    {
-        setDebugUtilsObjectName = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT", true);
-    }
+    setDebugUtilsObjectName = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT", true);
 }
 
 void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device, bool offscreen)

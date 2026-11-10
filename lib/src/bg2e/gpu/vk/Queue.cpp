@@ -95,6 +95,7 @@ void Queue::initCommandPool(VkDevice device, vk::Device* gpuDevice)
     pool->device = device;
     auto info = Info::commandPoolCreateInfo(_familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
     check(vkCreateCommandPool(device, &info, nullptr, &_commandPool), "vkCreateCommandPool");
+    nameObject(device, VK_OBJECT_TYPE_COMMAND_POOL, reinterpret_cast<uint64_t>(_commandPool), "queue-family-" + std::to_string(_familyIndex) + "-command-pool");
     pool->pool = _commandPool;
     _poolStates.push_back(std::move(pool));
 }
@@ -118,6 +119,7 @@ void Queue::destroyCommandPool()
 
 std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& debugName) const
 {
+    requireDebugName(debugName);
     if (!_submissions)
     {
         throw std::logic_error("Vulkan queue has no device");
@@ -139,6 +141,7 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
         pool->device = _device;
         auto info = Info::commandPoolCreateInfo(_familyIndex, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT);
         check(vkCreateCommandPool(_device, &info, nullptr, &pool->pool), "vkCreateCommandPool");
+        nameObject(_device, VK_OBJECT_TYPE_COMMAND_POOL, reinterpret_cast<uint64_t>(pool->pool), debugName + "-command-pool");
         _poolStates.push_back(pool);
     }
     std::unique_lock poolLock(pool->mutex);
@@ -162,7 +165,7 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
         name.objectType = VK_OBJECT_TYPE_COMMAND_BUFFER;
         name.objectHandle = reinterpret_cast<uint64_t>(allocation->command);
         name.pObjectName = debugName.c_str();
-        setDebugUtilsObjectName(_device, &name);
+        nameObject(_device, name.objectType, name.objectHandle, name.pObjectName);
     }
     return command;
 }
@@ -216,6 +219,7 @@ void Queue::submit(gpu::CommandBuffer* command) const
     {
         auto info = Info::fenceCreateInfo();
         check(vkCreateFence(_device, &info, nullptr, &fence), "vkCreateFence");
+        nameObject(_device, VK_OBJECT_TYPE_FENCE, reinterpret_cast<uint64_t>(fence), "queue-submission-completion-fence");
         ownedFence = std::shared_ptr<VkFence>(new VkFence(fence), [device = _device](VkFence* value)
                                               {
                                                   vkDestroyFence(device, *value, nullptr);

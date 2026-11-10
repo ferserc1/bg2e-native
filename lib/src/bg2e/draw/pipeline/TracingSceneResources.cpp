@@ -180,7 +180,7 @@ std::shared_ptr<gpu::ResourceSet> TracingSnapshot::resourceSet(gpu::PipelineLayo
         }
     }
     base::CpuProfileScope profile("tracing.createSceneBindings");
-    auto set = device->createResourceSet(&layout,setIndex);
+    auto set = device->createResourceSet(&layout,setIndex, "tracing-scene-resources-layout-set");
     set->setStorageBuffer({0,2},geometry->vertexBuffer.get());
     set->setStorageBuffer({1,3},geometry->indexBuffer.get());
     set->setStorageBuffer({2,4},instanceBuffer.get());
@@ -234,7 +234,7 @@ std::shared_ptr<gpu::ResourceSet> TracingSnapshot::shadowResourceSet(std::shared
             }
         }
     }
-    auto set = device->createResourceSet(layout.get(), setIndex);
+    auto set = device->createResourceSet(layout.get(), setIndex, "tracing-scene-resources-layout-set");
     set->setStorageBuffer({1,2}, shadowInstances.get());
     set->setStorageBuffer({2,3}, geometry->vertexBuffer.get());
     set->setStorageBuffer({9,7}, geometry->indexBuffer.get());
@@ -256,6 +256,7 @@ gpu::PipelineLayoutDescription tracingBindingLayout(uint32_t capacity, gpu::Shad
         throw std::invalid_argument("Tracing arrays require capacity in [1, 16384]");
     }
     gpu::PipelineLayoutDescription result;
+    result.debugName = "tracing-scene-resources-result-pipeline-layout";
     for (uint32_t i = 0; i < 4; ++i)
     {
         result.resourceBindings.push_back({1,{i,2+i},gpu::ResourceType::StorageBuffer,stage,1,additionalStages});

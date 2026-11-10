@@ -48,11 +48,13 @@ inline bool runOpaqueMotionProbe(Engine& engine, const std::filesystem::path& sh
         return false;
     }
     gpu::PipelineLayoutDescription cameraLayout;
+    cameraLayout.debugName = "opaque-motion-probe-camera-layout-pipeline-layout";
     cameraLayout.resourceBindings = {
         {0,{0,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Fragment,1},
         {0,{1,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Fragment,1}};
     cameraLayout.pushConstants.push_back({0,128,gpu::ShaderStage::Fragment});
     gpu::PipelineLayoutDescription opaqueLayout;
+    opaqueLayout.debugName = "opaque-motion-probe-opaque-layout-pipeline-layout";
     for (uint32_t i = 0; i < 3; ++i)
     {
         opaqueLayout.resourceBindings.push_back({0,{i,i},gpu::ResourceType::SampledImage,gpu::ShaderStage::Fragment,1});
@@ -74,9 +76,11 @@ inline bool runOpaqueMotionProbe(Engine& engine, const std::filesystem::path& sh
     auto upload = [&](gpu::Size2D size, gpu::PixelFormat format, const void* data, size_t bytes, size_t row)
     {
         gpu::ImageDescription description;
+        description.debugName = "opaque-motion-probe-description-image";
         description.size = size;
         description.format = format;
         description.usage = sampledUpload;
+        description.debugName = "opaque-motion-probe-image-image";
         auto image = device.createImage(description);
         image->upload({data,bytes,row,0,0});
         return image;
@@ -100,9 +104,11 @@ inline bool runOpaqueMotionProbe(Engine& engine, const std::filesystem::path& sh
     const std::array<uint16_t,2> oneVector{};
     auto small = upload({1,1},gpu::PixelFormat::R16G16_SFLOAT,oneVector.data(),sizeof(oneVector),4);
     gpu::ImageDescription noSampleDescription;
+    noSampleDescription.debugName = "opaque-motion-probe-no-sample-description-image";
     noSampleDescription.size = extent;
     noSampleDescription.format = gpu::PixelFormat::R16G16_SFLOAT;
     noSampleDescription.usage = gpu::ImageUsage::TransferDst;
+    noSampleDescription.debugName = "opaque-motion-probe-no-sample-image";
     auto noSample = device.createImage(noSampleDescription);
     const std::array<UpscalerOpaqueMotion,8> invalid{{
         {motion.get(),nullptr},{nullptr,token.get()},
@@ -123,13 +129,17 @@ inline bool runOpaqueMotionProbe(Engine& engine, const std::filesystem::path& sh
         require(rejected,"Malformed opaque motion must reject rather than silently binding mismatched inputs");
     }
     gpu::ImageDescription description;
+    description.debugName = "opaque-motion-probe-description-image";
     description.size = extent;
     description.format = gpu::PixelFormat::D32_SFLOAT;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::DepthStencil;
+    description.debugName = "opaque-motion-probe-depth-image";
     auto depth = device.createImage(description);
     description.format = gpu::PixelFormat::R16G16_SFLOAT;
     description.usage = outputUsage;
+    description.debugName = "opaque-motion-probe-camera-output-image";
     auto cameraOutput = device.createImage(description);
+    description.debugName = "opaque-motion-probe-mixed-output-image";
     auto mixedOutput = device.createImage(description);
     struct Push {
         glm::mat4 current{1}, previous{1};

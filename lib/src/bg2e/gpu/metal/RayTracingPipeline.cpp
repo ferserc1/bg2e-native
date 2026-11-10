@@ -35,6 +35,7 @@ RayTracingPipeline::RayTracingPipeline(
     const gpu::RayTracingPipelineDescription& description)
     : gpu::RayTracingPipeline(gpuDevice)
 {
+    requireDebugName(description.debugName);
     auto* metalRgenModule = dynamic_cast<metal::ShaderModule*>(description.raygenShader);
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(description.layout);
 

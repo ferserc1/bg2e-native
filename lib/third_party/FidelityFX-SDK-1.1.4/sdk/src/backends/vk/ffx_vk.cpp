@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <string>
 #include <FidelityFX/host/ffx_interface.h>
 #include <FidelityFX/host/ffx_util.h>
 #include <FidelityFX/host/ffx_assert.h>
@@ -64,7 +65,6 @@ void                   BreadcrumbsWriteVK(FfxInterface* backendInterface, FfxCom
 void                   BreadcrumbsPrintDeviceInfoVK(FfxInterface* backendInterface, FfxAllocationCallbacks* allocs, bool extendedInfo, char** printBuffer, size_t* printSize);
 void                   RegisterConstantBufferAllocatorVK(FfxInterface* backendInterface, FfxConstantBufferAllocator fpConstantAllocator);
 
-
 static VkDeviceContext sVkDeviceContext = { VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE };
 
 #define MAX_PIPELINE_USAGE_PER_FRAME      (10) // Required to make sure passes that are called more than once per-frame don't have their descriptors overwritten.
@@ -82,9 +82,8 @@ typedef struct BackendContext_VK {
     // store for resources and resourceViews
     typedef struct Resource
     {
-#ifdef _DEBUG
         char                    resourceName[64] = {};
-#endif
+
         union {
             VkImage             imageResource;
             VkBuffer            bufferResource;
@@ -393,11 +392,10 @@ FfxResource ffxGetResourceVK(void* vkResource,
     resource.state = state;
     resource.description = ffxResDescription;
 
-#ifdef _DEBUG
-    if (ffxResName) {
+    if (ffxResName)
+    {
         wcscpy_s(resource.name, ffxResName);
     }
-#endif
 
     return resource;
 }
@@ -826,7 +824,6 @@ VkFormat getVkFormatFromSurfaceFormatAndUsage(FfxSurfaceFormat fmt, FfxResourceU
     return format;
 }
 
-
 VkImageUsageFlags getVKImageUsageFlagsFromResourceUsage(FfxResourceUsage flags)
 {
     VkImageUsageFlags ret = VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT;
@@ -952,12 +949,28 @@ FfxErrorCode allocateDeviceMemory(BackendContext_VK* backendContext, VkMemoryReq
     return FFX_OK;
 }
 
-void setVKObjectName(BackendContext_VK::VKFunctionTable& vkFunctionTable, VkDevice device, VkObjectType objectType, uint64_t object, char* name)
+// Native identities must survive Release builds as well as Debug builds.
+static void copyVKObjectName(char* destination, size_t capacity, const wchar_t* source)
+{
+    size_t i = 0;
+    if (source)
+    {
+        for (; i + 1 < capacity && source[i]; ++i)
+        {
+            destination[i] = source[i] < 128 ? static_cast<char>(source[i]) : '?';
+        }
+    }
+    destination[i] = '\0';
+}
+
+void setVKObjectName(BackendContext_VK::VKFunctionTable& vkFunctionTable, VkDevice device, VkObjectType objectType, uint64_t object, const char* name)
 {
     VkDebugUtilsObjectNameInfoEXT s{ VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT, nullptr, objectType, object, name };
 
     if (vkFunctionTable.vkSetDebugUtilsObjectNameEXT)
+    {
         vkFunctionTable.vkSetDebugUtilsObjectNameEXT(device, &s);
+    }
 }
 
 uint32_t getDynamicResourcesStartIndex(uint32_t effectContextId)
@@ -1546,6 +1559,7 @@ FfxErrorCode CreateBackendContextVK(FfxInterface* backendInterface, FfxEffect ef
         if (backendContext->vkFunctionTable.vkCreateDescriptorPool(backendContext->device, &descriptorPoolCreateInfo, nullptr, &backendContext->descriptorPool) != VK_SUCCESS) {
             return FFX_ERROR_BACKEND_API_ERROR;
         }
+        setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)backendContext->descriptorPool, "ffx-backend-context-descriptor-pool");
 
         // set bindless resource view to base
         backendContext->bindlessBase = (backendContext->maxEffectContexts * FFX_MAX_QUEUED_FRAMES * FFX_MAX_RESOURCE_COUNT * 2);
@@ -1812,6 +1826,7 @@ FfxErrorCode CreateBackendContextVK(FfxInterface* backendInterface, FfxEffect ef
                 {
                     return FFX_ERROR_BACKEND_API_ERROR;
                 }
+        setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)effectContext.bindlessDescriptorPool, "ffx-effect-context-bindless-descriptor-pool");
 
                 // create the descriptor layout for bindless texture srv buffers
                 if (bindlessConfig->maxTextureSrvs > 0)
@@ -2199,7 +2214,6 @@ FfxErrorCode CreateResourceVK(
     FFX_ASSERT_MESSAGE(createResourceDescription->initData.type != FFX_RESOURCE_INIT_DATA_TYPE_INVALID,
                        "InitData type cannot be FFX_RESOURCE_INIT_DATA_TYPE_INVALID. Please explicitly specify the resource initialization type.");
 
-
     BackendContext_VK* backendContext = (BackendContext_VK*)backendInterface->scratchBuffer;
     BackendContext_VK::EffectContext& effectContext = backendContext->pEffectContexts[effectContextId];
     VkDevice vkDevice = backendContext->device;
@@ -2247,11 +2261,7 @@ FfxErrorCode CreateResourceVK(
     backendResource->initialState = resourceState;
     backendResource->currentState = resourceState;
 
-#ifdef _DEBUG
-    size_t retval = 0;
-    wcstombs_s(&retval, backendResource->resourceName, sizeof(backendResource->resourceName), createResourceDescription->name, sizeof(backendResource->resourceName));
-    if (retval >= 64) backendResource->resourceName[63] = '\0';
-#endif
+    copyVKObjectName(backendResource->resourceName, sizeof(backendResource->resourceName), createResourceDescription->name);
 
     VkMemoryRequirements memRequirements = {};
 
@@ -2278,9 +2288,7 @@ FfxErrorCode CreateResourceVK(
             return FFX_ERROR_BACKEND_API_ERROR;
         }
 
-#ifdef _DEBUG
         setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_BUFFER, (uint64_t)backendResource->bufferResource, backendResource->resourceName);
-#endif
 
         backendContext->vkFunctionTable.vkGetBufferMemoryRequirements(backendContext->device, backendResource->bufferResource, &memRequirements);
 
@@ -2358,9 +2366,7 @@ FfxErrorCode CreateResourceVK(
             return FFX_ERROR_BACKEND_API_ERROR;
         }
 
-#ifdef _DEBUG
         setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_IMAGE, (uint64_t)backendResource->imageResource, backendResource->resourceName);
-#endif
 
         backendContext->vkFunctionTable.vkGetImageMemoryRequirements(backendContext->device, backendResource->imageResource, &memRequirements);
 
@@ -2437,9 +2443,7 @@ FfxErrorCode CreateResourceVK(
         if (backendContext->vkFunctionTable.vkCreateImageView(backendContext->device, &imageViewCreateInfo, NULL, &backendContext->pResourceViews[backendResource->srvViewIndex].imageView) != VK_SUCCESS) {
             return FFX_ERROR_BACKEND_API_ERROR;
         }
-#ifdef _DEBUG
         setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)backendContext->pResourceViews[backendResource->srvViewIndex].imageView, backendResource->resourceName);
-#endif
 
         // create image views of individual mip levels for use as a uav
         if (FFX_CONTAINS_FLAG(backendResource->resourceDescription.usage, FFX_RESOURCE_USAGE_UAV))
@@ -2460,9 +2464,8 @@ FfxErrorCode CreateResourceVK(
                 if (backendContext->vkFunctionTable.vkCreateImageView(backendContext->device, &imageViewCreateInfo, NULL, &backendContext->pResourceViews[backendResource->uavViewIndex + mip].imageView) != VK_SUCCESS) {
                     return FFX_ERROR_BACKEND_API_ERROR;
                 }
-#ifdef _DEBUG
                 setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)backendContext->pResourceViews[backendResource->uavViewIndex + mip].imageView, backendResource->resourceName);
-#endif
+
             }
 
             effectContext.nextStaticResourceView += uavResourceViewCount;
@@ -2683,14 +2686,9 @@ FfxErrorCode RegisterResourceVK(
 
     copyResourceState(backendResource, inFfxResource);
 
-#ifdef _DEBUG
-    size_t retval = 0;
-    wcstombs_s(&retval, backendResource->resourceName, sizeof(backendResource->resourceName), inFfxResource->name, sizeof(backendResource->resourceName));
-    if (retval >= 64) backendResource->resourceName[63] = '\0';
-#endif
+    copyVKObjectName(backendResource->resourceName, sizeof(backendResource->resourceName), inFfxResource->name);
 
     // the first call of RegisterResource can be identified because
-
 
     //////////////////////////////////////////////////////////////////////////
     // Create SRVs and UAVs
@@ -2749,9 +2747,7 @@ FfxErrorCode RegisterResourceVK(
         if (backendContext->vkFunctionTable.vkCreateImageView(backendContext->device, &imageViewCreateInfo, NULL, &backendContext->pResourceViews[backendResource->srvViewIndex].imageView) != VK_SUCCESS) {
             return FFX_ERROR_BACKEND_API_ERROR;
         }
-#ifdef _DEBUG
         setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)backendContext->pResourceViews[backendResource->srvViewIndex].imageView, backendResource->resourceName);
-#endif
 
         // create image views of individual mip levels for use as a uav
         if (FFX_CONTAINS_FLAG(backendResource->resourceDescription.usage, FFX_RESOURCE_USAGE_UAV))
@@ -2772,9 +2768,8 @@ FfxErrorCode RegisterResourceVK(
                 if (backendContext->vkFunctionTable.vkCreateImageView(backendContext->device, &imageViewCreateInfo, NULL, &backendContext->pResourceViews[backendResource->uavViewIndex + mip].imageView) != VK_SUCCESS) {
                     return FFX_ERROR_BACKEND_API_ERROR;
                 }
-#ifdef _DEBUG
                 setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_IMAGE_VIEW, (uint64_t)backendContext->pResourceViews[backendResource->uavViewIndex + mip].imageView, backendResource->resourceName);
-#endif
+
             }
             effectContext.nextDynamicResourceView[effectContext.frameIndex] -= uavResourceViewCount;
         }
@@ -2809,12 +2804,10 @@ FfxResource GetResourceVK(FfxInterface* backendInterface, FfxResourceInternal in
     resource.state = backendContext->pResources[inResource.internalIndex].currentState;
     resource.description = ffxResDescription;
 
-#ifdef _DEBUG
     if (backendContext->pResources[inResource.internalIndex].resourceName)
     {
         ConvertUTF8ToUTF16(backendContext->pResources[inResource.internalIndex].resourceName, resource.name, 64);
     }
-#endif
 
     return resource;
 }
@@ -2931,18 +2924,14 @@ FfxErrorCode registerStaticTextureSrv(BackendContext_VK* backendContext, const F
             return FFX_ERROR_BACKEND_API_ERROR;
         }
 
-#ifdef _DEBUG
-        size_t retval = 0;
         char   resourceName[64];
-        wcstombs_s(&retval, resourceName, sizeof(resourceName), inResource->name, sizeof(resourceName));
-        if (retval >= 64) resourceName[63] = '\0';
+        copyVKObjectName(resourceName, sizeof(resourceName), inResource->name);
 
         setVKObjectName(backendContext->vkFunctionTable,
                         backendContext->device,
                         VK_OBJECT_TYPE_IMAGE_VIEW,
                         (uint64_t)backendContext->pResourceViews[imageViewIndex].imageView,
                         resourceName);
-#endif
 
         VkWriteDescriptorSet  writeDescriptorSet  = {};
         VkDescriptorImageInfo imageDescriptorInfo = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
@@ -3082,18 +3071,14 @@ FfxErrorCode registerStaticTextureUav(BackendContext_VK* backendContext, const F
             return FFX_ERROR_BACKEND_API_ERROR;
         }
 
-#ifdef _DEBUG
-        size_t retval = 0;
         char   resourceName[64];
-        wcstombs_s(&retval, resourceName, sizeof(resourceName), inResource->name, sizeof(resourceName));
-        if (retval >= 64) resourceName[63] = '\0';
+        copyVKObjectName(resourceName, sizeof(resourceName), inResource->name);
 
         setVKObjectName(backendContext->vkFunctionTable,
                         backendContext->device,
                         VK_OBJECT_TYPE_IMAGE_VIEW,
                         (uint64_t)backendContext->pResourceViews[imageViewIndex].imageView,
                         resourceName);
-#endif
 
         VkWriteDescriptorSet  writeDescriptorSet  = {};
         VkDescriptorImageInfo imageDescriptorInfo = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_UNDEFINED};
@@ -3312,6 +3297,7 @@ FfxErrorCode CreatePipelineVK(FfxInterface* backendInterface,
         if (backendContext->vkFunctionTable.vkCreateSampler(backendContext->device, &createInfo, nullptr, &pPipelineLayout->samplers[currentSamplerIndex]) != VK_SUCCESS) {
             return FFX_ERROR_BACKEND_API_ERROR;
         }
+        setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)pPipelineLayout->samplers[currentSamplerIndex], ("ffx-p-pipeline-layout-samplers-current-sampler-index" + std::to_string(currentSamplerIndex)).c_str());
     }
 
     int32_t staticTextureSrvCount = 0;
@@ -3623,6 +3609,7 @@ FfxErrorCode CreatePipelineVK(FfxInterface* backendInterface,
     if (backendContext->vkFunctionTable.vkCreateShaderModule(backendContext->device, &shaderModuleCreateInfo, nullptr, &shaderModule) != VK_SUCCESS) {
         return FFX_ERROR_BACKEND_API_ERROR;
     }
+        setVKObjectName(backendContext->vkFunctionTable, backendContext->device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)shaderModule, "ffx-shader-module");
 
     // fill out shader stage create info
     VkPipelineShaderStageCreateInfo shaderStageCreateInfo = {};
@@ -3651,6 +3638,20 @@ FfxErrorCode CreatePipelineVK(FfxInterface* backendInterface,
     VkPipeline computePipeline = VK_NULL_HANDLE;
     if (backendContext->vkFunctionTable.vkCreateComputePipelines(backendContext->device, nullptr, 1, &pipelineCreateInfo, nullptr, &computePipeline) != VK_SUCCESS) {
         return FFX_ERROR_BACKEND_API_ERROR;
+    }
+
+    char pipelineName[256] = {};
+    copyVKObjectName(pipelineName, sizeof(pipelineName), pipelineDescription->name);
+    setVKObjectName(backendContext->vkFunctionTable, backendContext->device,
+        VK_OBJECT_TYPE_PIPELINE, (uint64_t)computePipeline, pipelineName);
+    setVKObjectName(backendContext->vkFunctionTable, backendContext->device,
+        VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pPipelineLayout->pipelineLayout, pipelineName);
+    setVKObjectName(backendContext->vkFunctionTable, backendContext->device,
+        VK_OBJECT_TYPE_DESCRIPTOR_SET_LAYOUT, (uint64_t)pPipelineLayout->descriptorSetLayout, pipelineName);
+    for (auto descriptorSet : pPipelineLayout->descriptorSets)
+    {
+        setVKObjectName(backendContext->vkFunctionTable, backendContext->device,
+            VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, pipelineName);
     }
 
     // done with shader module, so clean up

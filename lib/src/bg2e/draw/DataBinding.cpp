@@ -110,7 +110,7 @@ void DataBinding::initializeUniforms(Engine& engine, std::shared_ptr<gpu::Pipeli
     {
         slot.buffer = engine.device()->createBuffer("Draw frame uniform data");
         slot.buffer->createUniformBuffer(zero.data(), byteSize);
-        slot.set = engine.device()->createResourceSet(_layout.get(), setIndex);
+        slot.set = engine.device()->createResourceSet(_layout.get(), setIndex, "data-binding-layout-set");
         for (const auto binding : bindings)
         {
             slot.set->setUniformBuffer(binding, slot.buffer.get());
@@ -243,7 +243,7 @@ void EnvironmentDataBinding::update(const FrameContext& frame, std::shared_ptr<c
     {
         if (!slot.set)
         {
-            slot.set = frame.engine.device()->createResourceSet(_layout.get(), 3);
+            slot.set = frame.engine.device()->createResourceSet(_layout.get(), 3, "data-binding-layout-set");
             slot.set->setUniformBuffer({.vulkan = 8, .metal = 5}, slot.buffer.get());
         }
         if (uniformChanged)
@@ -379,7 +379,7 @@ void ObjectDataBinding::prepare(const FrameContext& frame, const RenderQueue& qu
             }
             if (newSet)
             {
-                record.set = frame.engine.device()->createResourceSet(_layout.get(), 1);
+                record.set = frame.engine.device()->createResourceSet(_layout.get(), 1, "data-binding-layout-set");
             }
             if (!wasValid || newBuffer || newSet)
             {

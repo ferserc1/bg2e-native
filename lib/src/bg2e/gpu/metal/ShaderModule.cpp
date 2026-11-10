@@ -29,6 +29,7 @@ namespace metal {
 ShaderModule::ShaderModule(gpu::Device* gpuDevice, MTL::Device* device, const gpu::ShaderModuleDescription& description)
     : gpu::ShaderModule(gpuDevice), _device(device), _stage(description.stage), _entryPoint(description.entryPoint)
 {
+    requireDebugName(description.debugName);
     if (!_device)
     {
         throw std::runtime_error("metal::ShaderModule: invalid device");
@@ -116,6 +117,7 @@ void ShaderModule::cleanup()
 ShaderModule::ShaderModule(gpu::Device* gpuDevice, void* /*device*/, const gpu::ShaderModuleDescription& description)
     : gpu::ShaderModule(gpuDevice), _stage(description.stage), _entryPoint(description.entryPoint)
 {
+    requireDebugName(description.debugName);
 }
 
 ShaderModule::~ShaderModule()

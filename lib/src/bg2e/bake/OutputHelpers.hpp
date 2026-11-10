@@ -36,6 +36,7 @@ static_assert(sizeof(float) == 4 && sizeof(uint32_t) == 4 && sizeof(glm::uvec4) 
 inline gpu::PipelineLayoutDescription outputLayout(uint32_t sampled, uint32_t storage)
 {
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "output-helpers-layout-pipeline-layout";
     layout.resourceBindings.push_back({0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute});
     layout.resourceBindings.push_back({0,{1,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute});
     for (uint32_t i = 0; i < sampled+storage; ++i)
@@ -49,6 +50,7 @@ inline gpu::PipelineLayoutDescription outputLayout(uint32_t sampled, uint32_t st
 inline std::shared_ptr<gpu::Image> outputImage(gpu::Device& device, gpu::Size2D extent, gpu::PixelFormat format)
 {
     gpu::ImageDescription description;
+    description.debugName = "output-helpers-description-image";
     description.size = extent;
     description.format = format;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;

@@ -55,9 +55,11 @@ inline void runDrawableResourceProbe(Engine& engine)
     source->load(&engine);
 
     gpu::ImageDescription description;
+    description.debugName = "drawable-resources-description-image";
     description.size = {4, 4};
     description.mipLevels = 3;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
+    description.debugName = "drawable-resources-image-image";
     auto image = engine.device()->createImage(description);
     for (uint32_t mip = 0; mip < 3; ++mip)
     {

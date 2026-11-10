@@ -70,6 +70,7 @@ static VkSamplerAddressMode toVkAddressMode(gpu::AddressMode m)
 Sampler::Sampler(gpu::Device* gpuDevice, VkDevice device, const gpu::SamplerDescription& description)
     : gpu::Sampler(gpuDevice), _device(device)
 {
+    requireDebugName(description.debugName);
     if (!std::isfinite(description.mipLodBias) || !std::isfinite(description.minLod) || !std::isfinite(description.maxLod) ||
         description.minLod < 0.0f || description.maxLod < description.minLod)
     {
@@ -103,14 +104,14 @@ Sampler::Sampler(gpu::Device* gpuDevice, VkDevice device, const gpu::SamplerDesc
         throw std::runtime_error("Failed to create Vulkan sampler");
     }
 
-    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
+    if (!description.debugName.empty() && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_SAMPLER;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(_sampler);
         nameInfo.pObjectName = description.debugName.c_str();
-        setDebugUtilsObjectName(_device, &nameInfo);
+        nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
     }
 }
 

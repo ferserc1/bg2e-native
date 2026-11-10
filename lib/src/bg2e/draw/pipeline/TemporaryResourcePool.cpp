@@ -314,6 +314,7 @@ void TemporaryResourcePool::trim()
 
 std::shared_ptr<gpu::Image> TemporaryResourcePool::image(gpu::CommandBuffer& command, const gpu::ImageDescription& description)
 {
+    gpu::Image::validateDescription(description);
     if (!command.isValid() || !command.recordingCompletion())
     {
         throw std::invalid_argument("Temporary images require a native recording ticket");
@@ -377,7 +378,7 @@ std::shared_ptr<TemporaryBindings> TemporaryResourcePool::bindings(gpu::CommandB
     {
         entry->_uniforms = _device->createBuffer("draw pooled invocation uniforms");
     }
-    entry->_resources = _device->createResourceSet(entry->_layout.get(), set);
+    entry->_resources = _device->createResourceSet(entry->_layout.get(), set, "temporary-resource-pool-entry-layout-set");
     entry->_dirty = true;
     entry->_completion = command.recordingCompletion();
     _bindings.push_back(entry);

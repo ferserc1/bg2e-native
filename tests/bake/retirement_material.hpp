@@ -97,6 +97,7 @@ inline void runRetirementMaterialProbe(draw::Engine& engine, const std::filesyst
     for (const auto& slot : configuration.contract.outputs)
     {
         gpu::ImageDescription description;
+        description.debugName = "retirement-material-description-image";
         description.size = {64, 64};
         description.format = slot.format;
         description.usage = slot.usage | gpu::ImageUsage::TransferSrc;

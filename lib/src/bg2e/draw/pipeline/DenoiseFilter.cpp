@@ -64,6 +64,7 @@ void DenoiseFilter::initialize(gpu::Device& device, gpu::BackendType backend, ui
     try
     {
         gpu::PipelineLayoutDescription description;
+        description.debugName = "denoise-filter-description-pipeline-layout";
         description.resourceBindings.push_back({0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute});
         for (uint32_t i = 1; i <= 5; ++i)
         {
@@ -71,11 +72,14 @@ void DenoiseFilter::initialize(gpu::Device& device, gpu::BackendType backend, ui
         }
         description.resourceBindings.push_back({0,{6,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute});
         description.resourceBindings.push_back({0,{7,5},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+        description.debugName = "denoise-filter-layout-pipeline-layout";
         _layout = device.createPipelineLayout(description);
         gpu::SamplerDescription nearest;
+        nearest.debugName = "denoise-filter-nearest-sampler";
         nearest.minFilter = nearest.magFilter = gpu::Filter::Nearest;
         nearest.addressModeU = nearest.addressModeV = gpu::AddressMode::ClampToEdge;
         nearest.maxLod = 0;
+        nearest.debugName = "denoise-filter-nearest-sampler";
         _nearest = device.createSampler(nearest);
         _slots.resize(slots);
         _status.clear();
@@ -93,7 +97,7 @@ void DenoiseFilter::initialize(gpu::Device& device, gpu::BackendType backend, ui
             {
                 const auto name = _configuration.shaderPrefix+"/"+(i >= 2 ? "world_" : "camera_")+(i%2 ? "hdr" : "scalar");
                 _shaders[i] = library.compute(name,&device);
-                _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layout.get()});
+                _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layout.get(), "denoise-filter-shaders-compute-pipeline-" + std::to_string(i)});
             }
             catch (const std::exception& error)
             {

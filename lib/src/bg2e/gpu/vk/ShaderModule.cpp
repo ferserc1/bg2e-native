@@ -30,6 +30,7 @@ namespace vk {
 ShaderModule::ShaderModule(gpu::Device* gpuDevice, VkDevice device, const gpu::ShaderModuleDescription& description)
     : gpu::ShaderModule(gpuDevice), _device(device), _stage(description.stage), _entryPoint(description.entryPoint)
 {
+    requireDebugName(description.debugName);
     for (const auto& constant : description.constants)
     {
         for (const auto& entry : _constantEntries)
@@ -71,14 +72,14 @@ ShaderModule::ShaderModule(gpu::Device* gpuDevice, VkDevice device, const gpu::S
 
     VK_ASSERT(vkCreateShaderModule(_device, &createInfo, nullptr, &_shaderModule));
 
-    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
+    if (!description.debugName.empty() && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_SHADER_MODULE;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(_shaderModule);
         nameInfo.pObjectName = description.debugName.c_str();
-        setDebugUtilsObjectName(_device, &nameInfo);
+        nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
     }
 }
 

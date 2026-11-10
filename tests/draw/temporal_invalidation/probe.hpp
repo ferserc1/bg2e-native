@@ -101,9 +101,11 @@ inline bool runTemporalInvalidationProbe(Engine& engine, const std::filesystem::
     root->addChild(lamp);
     renderer.attachScene(root);
     gpu::ImageDescription output;
+    output.debugName = "temporal-invalidation-output-image";
     output.size = configuration.outputExtent;
     output.format = configuration.outputFormat;
     output.usage = usage;
+    output.debugName = "temporal-invalidation-target-image";
     auto target = engine.device()->createImage(output);
     uint64_t serial = 0;
     const auto update = [&]()

@@ -28,6 +28,7 @@
 #include <cmath>
 #include <optional>
 #include <stdexcept>
+#include <string>
 
 namespace bg2e {
 namespace gpu {
@@ -171,6 +172,7 @@ class BG2E_API MeshGeneric {
         const auto& submesh = _meshData.submeshes[submeshIndex];
 
         gpu::RayTracingMeshDescription desc;
+        desc.debugName = "mesh-submesh-" + std::to_string(submeshIndex) + "-ray-tracing-geometry";
         desc.vertexBuffer = _vertexBuffer.get();
         desc.indexBuffer = _indexBuffer.get();
         desc.vertexCount = static_cast<uint32_t>(_meshData.vertices.size());

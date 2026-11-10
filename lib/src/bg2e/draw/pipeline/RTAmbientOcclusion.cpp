@@ -160,12 +160,14 @@ void RTAmbientOcclusion::initialize(gpu::Device& device, gpu::BackendType backen
             _shaders[index] = backend == gpu::BackendType::Vulkan ?
                 library.specialized(name,gpu::ShaderStage::Compute,&device,{{0,_capacity}}) :
                 library.compute(name,&device);
-            _pipelines[index] = device.createComputePipeline({_shaders[index].get(),_layouts[index].get()});
+            _pipelines[index] = device.createComputePipeline({_shaders[index].get(),_layouts[index].get(), "rtambient-occlusion-shaders-compute-pipeline-" + std::to_string(index)});
         }
         gpu::SamplerDescription nearest;
+        nearest.debugName = "rtambient-occlusion-nearest-sampler";
         nearest.minFilter = nearest.magFilter = gpu::Filter::Nearest;
         nearest.addressModeU = nearest.addressModeV = gpu::AddressMode::ClampToEdge;
         nearest.maxLod = 0;
+        nearest.debugName = "rtambient-occlusion-nearest-sampler";
         _nearest = device.createSampler(nearest);
         _tracing = std::make_shared<TracingSceneResources>(device,_capacity);
         _slots.resize(slots);

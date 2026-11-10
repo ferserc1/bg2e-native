@@ -21,12 +21,15 @@
 #include <bg2e/common.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <vulkan/vulkan.h>
+#include <string>
 
 namespace bg2e {
 namespace gpu {
 namespace vk {
 
 class PhysicalDevice;
+
+BG2E_API void nameObject(VkDevice device, VkObjectType type, uint64_t handle, const std::string& name);
 
 void loadInstanceExtensions(VkInstance instance, bool offscreen);
 

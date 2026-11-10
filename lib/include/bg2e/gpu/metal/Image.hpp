@@ -42,10 +42,10 @@ class Image : public gpu::Image {
     Image(const Image&) = delete;
     Image& operator=(const Image&) = delete;
 
-    void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
-    void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
-    void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {}, ImageUsage usage = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst);
-    void buildStorageImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName = {});
+    void buildTargetImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName);
+    void buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName);
+    void buildSampledImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName, ImageUsage usage = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst);
+    void buildStorageImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName);
 
     void buildImage(metal::Device* device, const ImageDescription& description);
     void upload(const ImageUploadDescription& description, ImageLayout finalLayout = ImageLayout::ShaderReadOnly) override;
@@ -90,7 +90,7 @@ class Image : public gpu::Image {
         PixelFormat format,
         TextureUsageEnum usage,
         uint32_t mipLevels,
-        const std::string& debugName = {});
+        const std::string& debugName);
 
   private:
     metal::Device* _device = nullptr;

@@ -55,10 +55,12 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
     auto node = std::make_shared<scene::Node>(name);
     node->addComponent(new scene::DrawableComponent(drawable)); // Deliberately no source path.
     gpu::ImageDescription description;
+    description.debugName = "resource-io-description-image";
     description.size = {2, 2};
     description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
     description.mipLevels = 2;
+    description.debugName = "resource-io-image-image";
     auto image = engine.device()->createImage(description);
     const std::array<float, 16> mip0{4, 2, 1, 1, 8, 4, 2, 1, 16, 8, 4, 1, 32, 16, 8, 1};
     const std::array<float, 4> mip1{15, 7.5f, 3.75f, 1};

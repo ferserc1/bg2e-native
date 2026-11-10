@@ -195,6 +195,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
 
     VkSwapchainKHR oldSwapchain = _swapchain;
     VK_ASSERT(vkCreateSwapchainKHR(vkDev, &createInfo, nullptr, &_swapchain));
+    nameObject(vkDev, VK_OBJECT_TYPE_SWAPCHAIN_KHR, reinterpret_cast<uint64_t>(_swapchain), "window-swapchain");
     if (oldSwapchain != VK_NULL_HANDLE)
     {
         vkDestroySwapchainKHR(vkDev, oldSwapchain, nullptr);
@@ -210,7 +211,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     for (auto& vkImage : swapchainImages)
     {
         auto img = std::make_unique<vk::Image>();
-        img->initFromSwapchainImage(vkDevice, vkImage, _colorFormat, _size, createInfo.imageUsage);
+        img->initFromSwapchainImage(vkDevice, vkImage, _colorFormat, _size, "swapchain-color-image-" + std::to_string(_colorImages.size()), createInfo.imageUsage);
         _colorImages.push_back(std::move(img));
     }
 
@@ -233,7 +234,9 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     for (uint32_t i = 0; i < _framesInFlight; ++i)
     {
         vkCreateSemaphore(vkDev, &semInfo, nullptr, &_imageAvailable[i]);
+        nameObject(vkDev, VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<uint64_t>(_imageAvailable[i]), "swapchain-image-available-" + std::to_string(i));
         vkCreateFence(vkDev, &fenceInfo, nullptr, &_inFlight[i]);
+        nameObject(vkDev, VK_OBJECT_TYPE_FENCE, reinterpret_cast<uint64_t>(_inFlight[i]), "swapchain-in-flight-" + std::to_string(i));
         _frames[i] = std::make_shared<vk::SurfaceFrame>();
     }
 
@@ -242,6 +245,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     for (auto& sem : _renderFinished)
     {
         vkCreateSemaphore(vkDev, &semInfo, nullptr, &sem);
+        nameObject(vkDev, VK_OBJECT_TYPE_SEMAPHORE, reinterpret_cast<uint64_t>(sem), "swapchain-render-finished-" + std::to_string(&sem - _renderFinished.data()));
     }
 
     // No image is in flight yet.

@@ -108,9 +108,11 @@ static bool runS10(draw::Engine& engine, const std::filesystem::path& shaders,
     plane("stationary far glass",0.9f,1.4f,0.15f,0.4f,{0.1f,0.25f,0.8f,0.5f},true);
     renderer.attachScene(root);
     gpu::ImageDescription description;
+    description.debugName = "native-host-description-image";
     description.size = configuration.outputExtent;
     description.format = configuration.outputFormat;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc;
+    description.debugName = "native-host-target-image";
     auto target = engine.device()->createImage(description);
     std::shared_ptr<gpu::Image> retained;
     std::vector<uint8_t> retainedBytes;

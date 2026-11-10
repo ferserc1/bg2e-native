@@ -141,6 +141,7 @@ void FsrUpscaler::resize(const UpscalerConfiguration& configuration)
             return;
         }
         gpu::PipelineLayoutDescription layout;
+        layout.debugName = "fsr-upscaler-layout-pipeline-layout";
         layout.resourceBindings.push_back({0, {0, 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment, 1});
         layout.resourceBindings.push_back({0, {1, 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment, 1});
         layout.pushConstants.push_back({0, 128, gpu::ShaderStage::Fragment});
@@ -164,6 +165,7 @@ void FsrUpscaler::resize(const UpscalerConfiguration& configuration)
                 throw std::runtime_error("Integer opaque token sampling unsupported");
             }
             gpu::PipelineLayoutDescription opaqueLayout;
+            opaqueLayout.debugName = "fsr-upscaler-opaque-layout-pipeline-layout";
             for (uint32_t i = 0; i < 3; ++i)
             {
                 opaqueLayout.resourceBindings.push_back({0,{i,i},gpu::ResourceType::SampledImage,gpu::ShaderStage::Fragment,1});

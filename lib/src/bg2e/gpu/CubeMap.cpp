@@ -31,6 +31,7 @@ CubeMap::CubeMap(Device* device)
 
 void CubeMap::create(const CubeMapDescription& description)
 {
+    requireDebugName(description.debugName);
     if (description.size == 0)
     {
         throw std::runtime_error("gpu::CubeMap::create: size must be > 0");

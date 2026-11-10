@@ -62,9 +62,11 @@ void UvTemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType bac
     _layout = device.createPipelineLayout(detail::outputLayout(6,2));
     gpu::ShaderLib library(_configuration.shaderRoot,backend);
     _shader = library.compute(_configuration.shaderPrefix+"/sum",&device);
-    _pipeline = device.createComputePipeline({_shader.get(),_layout.get()});
+    _pipeline = device.createComputePipeline({_shader.get(),_layout.get(), "uv-temporal-accumulator-shader-compute-pipeline"});
     gpu::SamplerDescription sampler;
+    sampler.debugName = "uv-temporal-accumulator-sampler-sampler";
     sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
+    sampler.debugName = "uv-temporal-accumulator-nearest-sampler";
     _nearest = device.createSampler(sampler);
     _slots.resize(slots);
 }
@@ -125,7 +127,7 @@ std::shared_ptr<const AccumulationResult> UvTemporalAccumulator::record(gpu::Com
         sample.surface.images[3],previous ? previous->surface.images[3] : sample.surface.images[3]};
     slot.uniforms = _device->createBuffer("Bake raw accumulation parameters");
     slot.uniforms->createUniformBuffer(glm::uvec4(uint32_t(mode),previous ? 1u : 0u,sample.sampleIndex,0));
-    slot.set = _device->createResourceSet(_layout.get(),0);
+    slot.set = _device->createResourceSet(_layout.get(),0, "uv-temporal-accumulator-layout-set");
     slot.set->setUniformBuffer({0,1},slot.uniforms.get());
     slot.set->setSampler({1,0},_nearest.get());
     for (uint32_t i = 0; i < slot.inputs.size(); ++i)

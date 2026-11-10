@@ -232,10 +232,12 @@ BakeSample LightmapBakeExecutor::record(const UvSurfaceInput& input, uint32_t sa
     sample.sampleIndex = sampleIndex;
     sample.mode = _settings.mode();
     gpu::ImageDescription description;
+    description.debugName = "lightmap-bake-executor-description-image";
     description.size = extent;
     description.format = _gi ? gpu::PixelFormat::R16G16B16A16_SFLOAT : gpu::PixelFormat::R16_SFLOAT;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage |
         gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc;
+    description.debugName = "lightmap-bake-executor-sample-signal-image";
     sample.signal = _configuration.device->createImage(description);
     sample.surface = _surface->record(input);
     if (sample.surface.geometry != input.geometry || sample.surface.sourceGeneration != input.sourceGeneration ||

@@ -71,6 +71,7 @@ void SMAAProcessor::initialize(gpu::Device& device, gpu::BackendType backend, ui
     try
     {
         gpu::PipelineLayoutDescription layout;
+        layout.debugName = "smaaprocessor-layout-pipeline-layout";
         layout.resourceBindings.push_back({0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute});
         for (uint32_t i = 0; i < 3; ++i)
         {
@@ -78,27 +79,33 @@ void SMAAProcessor::initialize(gpu::Device& device, gpu::BackendType backend, ui
         }
         layout.resourceBindings.push_back({0,{4,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute});
         layout.resourceBindings.push_back({0,{5,3},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
+        layout.debugName = "smaaprocessor-layout-pipeline-layout";
         _layout = device.createPipelineLayout(layout);
         gpu::ShaderLib library(_configuration.shaderRoot,backend);
         const char* names[] = {"edge","weights","blend"};
         for (uint32_t i = 0; i < 3; ++i)
         {
             _shaders[i] = library.compute(_configuration.shaderPrefix+"/"+names[i],&device);
-            _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layout.get()});
+            _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layout.get(), "smaaprocessor-shaders-compute-pipeline-" + std::to_string(i)});
         }
         gpu::SamplerDescription linear;
+        linear.debugName = "smaaprocessor-linear-sampler";
         linear.minFilter = linear.magFilter = gpu::Filter::Linear;
         linear.addressModeU = linear.addressModeV = gpu::AddressMode::ClampToEdge;
         linear.maxLod = 0;
+        linear.debugName = "smaaprocessor-linear-sampler";
         _linear = device.createSampler(linear);
         gpu::ImageDescription description;
+        description.debugName = "smaaprocessor-description-image";
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
         description.size = {AREATEX_WIDTH,AREATEX_HEIGHT};
         description.format = gpu::PixelFormat::R8G8_UNORM;
+        description.debugName = "smaaprocessor-area-image";
         _area = device.createImage(description);
         _area->upload({areaTexBytes,sizeof(areaTexBytes),AREATEX_PITCH,0,0});
         description.size = {SEARCHTEX_WIDTH,SEARCHTEX_HEIGHT};
         description.format = gpu::PixelFormat::R8_UNORM;
+        description.debugName = "smaaprocessor-search-image";
         _search = device.createImage(description);
         _search->upload({searchTexBytes,sizeof(searchTexBytes),SEARCHTEX_PITCH,0,0});
         _slots.resize(slots);
@@ -129,6 +136,7 @@ void SMAAProcessor::initialize(Engine& engine, gpu::PixelFormat format, uint32_t
     try
     {
         gpu::PipelineLayoutDescription layout;
+        layout.debugName = "smaaprocessor-layout-pipeline-layout";
         layout.resourceBindings.push_back({0,{0,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Fragment});
         layout.resourceBindings.push_back({0,{1,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Fragment});
         _copy.initialize(engine,_configuration.shaderRoot,_configuration.shaderPrefix+"/copy",engine.device()->createPipelineLayout(layout),format,slots);
@@ -168,12 +176,14 @@ SMAAResult SMAAProcessor::process(const SMAAInput& input)
     slot.serial = input.serial;
     slot.prepared = true;
     gpu::ImageDescription image;
+    image.debugName = "smaaprocessor-image-image";
     image.size = input.color.size();
     image.usage = gpu::ImageUsage::Storage | gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc;
     const gpu::PixelFormat formats[] = {gpu::PixelFormat::R8G8_UNORM,gpu::PixelFormat::R8G8B8A8_UNORM,gpu::PixelFormat::R16G16B16A16_SFLOAT};
     for (uint32_t i = 0; i < 3; ++i)
     {
         image.format = formats[i];
+        image.debugName = "smaaprocessor-slot-images-i-image";
         slot.images[i] = _device->createImage(image);
     }
     SMAAUniforms data;
@@ -187,7 +197,7 @@ SMAAResult SMAAProcessor::process(const SMAAInput& input)
         const std::array<gpu::Image*,3> inputs = pass == 0 ? std::array<gpu::Image*,3>{&input.color,_area.get(),_search.get()} :
             (pass == 1 ? std::array<gpu::Image*,3>{slot.images[0].get(),_area.get(),_search.get()} :
              std::array<gpu::Image*,3>{&input.color,slot.images[1].get(),_search.get()});
-        slot.sets[pass] = _device->createResourceSet(_layout.get(),0);
+        slot.sets[pass] = _device->createResourceSet(_layout.get(),0, "smaaprocessor-layout-set");
         auto& set = slot.sets[pass];
         set->setUniformBuffer({0,1},slot.uniforms.get());
         for (uint32_t i = 0; i < 3; ++i)

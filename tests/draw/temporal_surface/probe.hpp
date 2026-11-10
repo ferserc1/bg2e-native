@@ -126,9 +126,11 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
     auto [frontNode,front] = addPlane("foreground",0.75f,1.0f,0.599f,true); // Close parallel receivers, equal normals.
     renderer.attachScene(root);
     gpu::ImageDescription targetDescription;
+    targetDescription.debugName = "temporal-surface-target-description-image";
     targetDescription.size = configuration.outputExtent;
     targetDescription.format = configuration.outputFormat;
     targetDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::ColorAttachment | gpu::ImageUsage::TransferSrc;
+    targetDescription.debugName = "temporal-surface-target-image";
     auto target = engine.device()->createImage(targetDescription);
     struct Snapshot {
         TemporalSurfaceMetadata metadata;
@@ -140,10 +142,12 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
         uint64_t layer = 0;
     };
     gpu::ImageDescription normalDescription;
+    normalDescription.debugName = "temporal-surface-normal-description-image";
     normalDescription.size = configuration.internalExtent;
     normalDescription.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
     normalDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
     std::vector<std::array<uint16_t,4>> normals(32*16,{0x3800,0x3800,0x3c00,0});
+    normalDescription.debugName = "temporal-surface-normal-image";
     auto normal = engine.device()->createImage(normalDescription);
     normal->upload({normals.data(),normals.size()*8,32*8,0,0});
     std::vector<std::shared_ptr<gpu::Image>> signals;
@@ -313,10 +317,12 @@ inline bool runTemporalSurfaceProbe(Engine& engine, const std::filesystem::path&
     moved[3].z = 0.2f; // Distinct UNORM depth values for actual GBuffer coverage comparison.
     frontNode->transform()->setMatrix(moved);
     gpu::ImageDescription alphaDescription;
+    alphaDescription.debugName = "temporal-surface-alpha-description-image";
     alphaDescription.size = {2,2};
     alphaDescription.format = gpu::PixelFormat::R8G8B8A8_UNORM;
     alphaDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
     const uint8_t alphaPixels[]{255,255,255,0,255,255,255,255,255,255,255,0,255,255,255,255};
+    alphaDescription.debugName = "temporal-surface-alpha-image-image";
     auto alphaImage = engine.device()->createImage(alphaDescription);
     alphaImage->upload({alphaPixels,sizeof(alphaPixels),8,0,0});
     auto alphaSettings = std::make_shared<base::Texture>();

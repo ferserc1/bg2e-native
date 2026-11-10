@@ -1,9 +1,28 @@
+/*
+ *    business grade graphic engine (bg2e engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/ResourceSet.hpp>
+#include <bg2e/gpu/Queue.hpp>
 #include <array>
 #include <cstring>
 #include <cstdlib>
@@ -25,6 +44,30 @@ inline void runSubresourceProbe(Device& device)
         }
         throw std::runtime_error("Subresource probe: invalid operation was accepted");
     };
+    for (const auto& invalidName : std::array<std::string, 3>{"", " \t\r\n", std::string("image\0hidden", 12)})
+    {
+        expectRejected([&]()
+        {
+            device.createBuffer(invalidName);
+        });
+        expectRejected([&]()
+        {
+            device.graphicsQueue().createCommandBuffer(invalidName);
+        });
+        expectRejected([&]()
+        {
+            device.createImage({.size = {1, 1}, .debugName = invalidName});
+        });
+        expectRejected([&]()
+        {
+            device.createSampler({.debugName = invalidName});
+        });
+        expectRejected([&]()
+        {
+            device.createPipelineLayout({.debugName = invalidName});
+        });
+    }
+    requireDebugName("gbuffer-albedo-image");
     const auto checkRgba = [](Image& image, const ImageSubresourceRange& range, const std::array<uint8_t, 4>& expected)
     {
         std::vector<uint8_t> pixels;
@@ -47,7 +90,7 @@ inline void runSubresourceProbe(Device& device)
     };
     const auto usages = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst;
     auto texture = device.createImage({.size = {7, 5}, .format = PixelFormat::R8G8B8A8_UNORM,
-        .usage = usages, .minMipSize = 1});
+        .usage = usages, .minMipSize = 1, .debugName = "subresources-image"});
     const std::array<uint8_t, 4> baseColor{64, 128, 192, 255};
     std::vector<uint8_t> basePixels(7 * 5 * 4);
     for (size_t pixel = 0; pixel < basePixels.size(); pixel += 4)
@@ -88,7 +131,7 @@ inline void runSubresourceProbe(Device& device)
     checkRgba(*texture, {1, 1, 0, 1}, {255, 0, 0, 255});
     checkRgba(*texture, {2, 1, 0, 1}, baseColor);
 
-    auto copied = device.createImage({.size = {3, 2}, .format = PixelFormat::R8G8B8A8_UNORM, .usage = usages});
+    auto copied = device.createImage({.size = {3, 2}, .format = PixelFormat::R8G8B8A8_UNORM, .usage = usages, .debugName = "subresources-image"});
     device.immediateSubmit([&](CommandBuffer* command)
     {
         command->transition(texture.get(), ImageLayout::TransferSrc, {1, 1, 0, 1});
@@ -102,7 +145,7 @@ inline void runSubresourceProbe(Device& device)
     const std::array<std::array<uint8_t, 4>, 6> faces = {{{255, 0, 0, 255}, {0, 255, 0, 255},
         {0, 0, 255, 255}, {255, 255, 0, 255}, {255, 0, 255, 255}, {0, 255, 255, 255}}};
     auto cube = device.createCubeMap({.size = 8, .format = PixelFormat::R8G8B8A8_UNORM,
-        .usage = usages, .minMipSize = 1});
+        .usage = usages, .minMipSize = 1, .debugName = "subresources-cube-map"});
     device.immediateSubmit([&](CommandBuffer* command)
     {
         for (uint32_t face = 0; face < faces.size(); ++face)
@@ -126,18 +169,20 @@ inline void runSubresourceProbe(Device& device)
 
     // Exercise native sampled views without changing ShaderBinding's indices.
     PipelineLayoutDescription viewLayoutDescription;
+    viewLayoutDescription.debugName = "subresources-view-layout-description-pipeline-layout";
     viewLayoutDescription.resourceBindings = {
         {0, {.vulkan = 0, .metal = 0}, ResourceType::SampledImage, ShaderStage::Fragment, 1},
         {0, {.vulkan = 1, .metal = 1}, ResourceType::SampledImage, ShaderStage::Fragment, 1}};
+    viewLayoutDescription.debugName = "subresources-view-layout-pipeline-layout";
     auto viewLayout = device.createPipelineLayout(viewLayoutDescription);
-    auto viewSet = device.createResourceSet(viewLayout.get(), 0);
+    auto viewSet = device.createResourceSet(viewLayout.get(), 0, "subresources-view-layout-set");
     viewSet->setSampledImage({.vulkan = 0, .metal = 0}, texture->view({1, 1, 0, 1}));
     viewSet->setSampledImage({.vulkan = 1, .metal = 1}, cube->image()->view({1, 1, 0, 6}));
     viewSet->update();
 
     // Packed HDR uploads/readback must preserve out-of-range float components.
     auto hdr = device.createImage({.size = {1, 1}, .format = PixelFormat::R32G32B32A32_SFLOAT,
-        .usage = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst});
+        .usage = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst, .debugName = "subresources-image"});
     const std::array<float, 4> hdrPixels{4.0f, -0.5f, 0.25f, 1.0f};
     hdr->upload({hdrPixels.data(), sizeof(hdrPixels)});
     hdr->generateMipmaps(); // Single-level final transition, no filtering required.
@@ -157,10 +202,10 @@ inline void runSubresourceProbe(Device& device)
     });
     expectRejected([&]()
     {
-        device.createImage({.size = {3, 1}, .mipLevels = 3});
+        device.createImage({.size = {3, 1}, .mipLevels = 3, .debugName = "subresources-image"});
     });
     auto integer = device.createImage({.size = {2, 2}, .format = PixelFormat::R32_UINT,
-        .usage = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst, .mipLevels = 2});
+        .usage = ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst, .mipLevels = 2, .debugName = "subresources-image"});
     const std::array<uint32_t, 4> values{1, 2, 3, 4};
     integer->upload({values.data(), sizeof(values)});
     expectRejected([&]()

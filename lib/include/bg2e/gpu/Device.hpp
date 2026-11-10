@@ -123,7 +123,7 @@ class BG2E_API Device {
         throw std::runtime_error("createSampler not implemented");
     }
 
-    virtual std::shared_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName = {})
+    virtual std::shared_ptr<ResourceSet> createResourceSet(PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
     {
         throw std::runtime_error("createResourceSet not implemented");
     }
@@ -158,7 +158,7 @@ class BG2E_API Device {
         throw std::runtime_error("createComputePipeline not implemented");
     }
 
-    virtual std::shared_ptr<Buffer> createBuffer(const std::string& debugName = {})
+    virtual std::shared_ptr<Buffer> createBuffer(const std::string& debugName)
     {
         throw std::runtime_error("createBuffer not implemented");
     }
@@ -178,7 +178,7 @@ class BG2E_API Device {
         throw std::runtime_error("createRayTracingMesh not implemented");
     }
 
-    virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName = {})
+    virtual std::shared_ptr<RayTracingScene> createRayTracingScene(const std::string& debugName)
     {
         throw std::runtime_error("createRayTracingScene not implemented");
     }

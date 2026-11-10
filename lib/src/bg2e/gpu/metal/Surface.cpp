@@ -31,7 +31,7 @@ void Surface::createDepthTarget(const Size2D& size, PixelFormat format)
     if (format != PixelFormat::Undefined)
     {
         _depthImage = std::make_unique<metal::Image>();
-        _depthImage->buildDepthImage(_metalDevice, size, format);
+        _depthImage->buildDepthImage(_metalDevice, size, format, "surface-depth-image");
     }
 }
 

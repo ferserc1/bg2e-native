@@ -32,6 +32,7 @@ namespace metal {
 ComputePipeline::ComputePipeline(gpu::Device* gpuDevice, MTL::Device* device, const gpu::ComputePipelineDescription& description)
     : gpu::ComputePipeline(gpuDevice)
 {
+    requireDebugName(description.debugName);
     auto* metalComputeModule = dynamic_cast<metal::ShaderModule*>(description.computeShader);
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(description.layout);
 

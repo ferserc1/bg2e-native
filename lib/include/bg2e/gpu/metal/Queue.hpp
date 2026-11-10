@@ -52,7 +52,7 @@ class Queue : public gpu::Queue {
 
     void setDevice(metal::Device* device);
 
-    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
     SubmissionTimingCapabilities submissionTimingCapabilities() const noexcept override;

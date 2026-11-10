@@ -36,7 +36,7 @@ class Device;
 // current capacity.
 class RayTracingScene : public gpu::RayTracingScene {
   public:
-    RayTracingScene(vk::Device* device, const std::string& debugName = {});
+    RayTracingScene(vk::Device* device, const std::string& debugName);
     ~RayTracingScene() override;
 
     RayTracingScene(const RayTracingScene&) = delete;

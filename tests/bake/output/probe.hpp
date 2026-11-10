@@ -77,9 +77,11 @@ inline void runBakeOutputGpuProbe(gpu::Device& device, gpu::BackendType backend,
     auto image = [&](gpu::PixelFormat format, const void* data, size_t bytes)
     {
         gpu::ImageDescription description;
+        description.debugName = "output-description-image";
         description.size = extent;
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
+        description.debugName = "output-result-image";
         auto result = device.createImage(description);
         result->upload({data,bytes});
         return result;
@@ -188,9 +190,11 @@ inline void runBakeGiCompositionProbe(gpu::Device& device, gpu::BackendType back
     sourceEnvironment->validate(&device);
     auto environment = std::make_shared<draw::environment::EnvironmentResources>(*sourceEnvironment);
     gpu::SamplerDescription sampler;
+    sampler.debugName = "output-sampler-sampler";
     sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
     environment->sampler = device.createSampler(sampler);
     gpu::ImageDescription description;
+    description.debugName = "output-description-image";
     description.size = {1,1};
     description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
     description.type = gpu::ImageType::Cubemap;
@@ -208,9 +212,11 @@ inline void runBakeGiCompositionProbe(gpu::Device& device, gpu::BackendType back
     auto image = [&](gpu::PixelFormat format, const void* data, size_t bytes)
     {
         gpu::ImageDescription desc;
+        desc.debugName = "output-desc-image";
         desc.size = {1,1};
         desc.format = format;
         desc.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferSrc | gpu::ImageUsage::TransferDst;
+        desc.debugName = "output-value-image";
         auto value = device.createImage(desc);
         value->upload({data,bytes});
         return value;

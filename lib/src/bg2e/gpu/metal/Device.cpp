@@ -174,31 +174,37 @@ const gpu::Queue& Device::transferQueue() const
 
 std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::ShaderModule>(this, _device, description);
 }
 
 std::shared_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::PipelineLayout>(this, description);
 }
 
 std::shared_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::GraphicsPipeline>(this, _device, description);
 }
 
 std::shared_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::ComputePipeline>(this, _device, description);
 }
 
 std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::Sampler>(this, _device, description);
 }
 
-std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
+std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
 {
+    requireDebugName(debugName);
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
     if (!metalLayout || metalLayout->device() != this || !metalLayout->isValid())
     {
@@ -209,6 +215,7 @@ std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout*
 
 std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& description)
 {
+    requireDebugName(description.debugName);
     const auto limits = renderingCapabilities();
     const bool depthFormat = isDepthFormat(description.format);
     if (description.size.isZero() || description.size.width > limits.maxImageDimension2D ||
@@ -227,6 +234,7 @@ std::shared_ptr<gpu::Image> Device::createImage(const ImageDescription& descript
 
 std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescription& description)
 {
+    requireDebugName(description.debugName);
     auto cubeMap = std::make_shared<gpu::CubeMap>(this);
     cubeMap->create(description);
     return cubeMap;
@@ -234,22 +242,26 @@ std::shared_ptr<gpu::CubeMap> Device::createCubeMap(const gpu::CubeMapDescriptio
 
 std::shared_ptr<gpu::Buffer> Device::createBuffer(const std::string& debugName)
 {
+    requireDebugName(debugName);
     return std::make_shared<metal::Buffer>(this, debugName);
 }
 
 std::shared_ptr<gpu::RayTracingMesh> Device::createRayTracingMesh(const RayTracingMeshDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::RayTracingMesh>(this, description);
 }
 
 std::shared_ptr<gpu::RayTracingScene> Device::createRayTracingScene(const std::string& debugName)
 {
+    requireDebugName(debugName);
     return std::make_shared<metal::RayTracingScene>(this, debugName);
 }
 
 std::shared_ptr<gpu::RayTracingPipeline> Device::createRayTracingPipeline(
     const gpu::RayTracingPipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::RayTracingPipeline>(this, _device, description);
 }
 
@@ -298,31 +310,37 @@ const gpu::Queue& Device::transferQueue() const
 
 std::shared_ptr<gpu::ShaderModule> Device::createShaderModule(const gpu::ShaderModuleDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::ShaderModule>(this, nullptr, description);
 }
 
 std::shared_ptr<gpu::PipelineLayout> Device::createPipelineLayout(const gpu::PipelineLayoutDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::PipelineLayout>(this, description);
 }
 
 std::shared_ptr<gpu::GraphicsPipeline> Device::createGraphicsPipeline(const gpu::GraphicsPipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::GraphicsPipeline>(this, nullptr, description);
 }
 
 std::shared_ptr<gpu::ComputePipeline> Device::createComputePipeline(const gpu::ComputePipelineDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::ComputePipeline>(this, nullptr, description);
 }
 
 std::shared_ptr<gpu::Sampler> Device::createSampler(const gpu::SamplerDescription& description)
 {
+    requireDebugName(description.debugName);
     return std::make_shared<metal::Sampler>(this, nullptr, description);
 }
 
-std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& /*debugName*/)
+std::shared_ptr<gpu::ResourceSet> Device::createResourceSet(gpu::PipelineLayout* layout, uint32_t setIndex, const std::string& debugName)
 {
+    requireDebugName(debugName);
     auto* metalLayout = dynamic_cast<metal::PipelineLayout*>(layout);
     if (!metalLayout || metalLayout->device() != this || !metalLayout->isValid())
     {

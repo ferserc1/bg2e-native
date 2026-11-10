@@ -92,6 +92,7 @@ VkBlendOp blendOperation(BlendOperation value)
 GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, const gpu::GraphicsPipelineDescription& description)
     : gpu::GraphicsPipeline(gpuDevice), _device(device)
 {
+    requireDebugName(description.debugName);
     if (!gpuDevice)
     {
         throw std::invalid_argument("Graphics pipeline requires a device");
@@ -245,14 +246,14 @@ GraphicsPipeline::GraphicsPipeline(gpu::Device* gpuDevice, VkDevice device, cons
         throw std::runtime_error("Failed to create Vulkan graphics pipeline");
     }
 
-    if (base::Log::isDebug() && !description.debugName.empty() && setDebugUtilsObjectName != nullptr)
+    if (!description.debugName.empty() && setDebugUtilsObjectName != nullptr)
     {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_PIPELINE;
         nameInfo.objectHandle = reinterpret_cast<uint64_t>(_pipeline);
         nameInfo.pObjectName = description.debugName.c_str();
-        setDebugUtilsObjectName(_device, &nameInfo);
+        nameObject(_device, nameInfo.objectType, nameInfo.objectHandle, nameInfo.pObjectName);
     }
 }
 

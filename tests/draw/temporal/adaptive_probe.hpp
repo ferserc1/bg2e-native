@@ -103,17 +103,21 @@ inline bool runAdaptiveTemporalProbe(Engine& engine, const std::filesystem::path
     auto upload = [&](gpu::PixelFormat format, const void* data, size_t bytes, size_t row)
     {
         gpu::ImageDescription description;
+        description.debugName = "adaptive-probe-description-image";
         description.size = {3,3};
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+        description.debugName = "adaptive-probe-image-image";
         auto image = device.createImage(description);
         image->upload({data,bytes,row,0,0});
         return image;
     };
     gpu::ImageDescription depthDescription;
+    depthDescription.debugName = "adaptive-probe-depth-description-image";
     depthDescription.size = {3,3};
     depthDescription.format = gpu::PixelFormat::D32_SFLOAT;
     depthDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::DepthStencil;
+    depthDescription.debugName = "adaptive-probe-depth-image";
     auto depth = device.createImage(depthDescription);
     device.immediateSubmit([&](gpu::CommandBuffer* command)
     {

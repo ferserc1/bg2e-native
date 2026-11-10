@@ -5,6 +5,15 @@ paired draw shaders and existing production/draw examples; use the existing
 `tests/draw/deferred` fixture/host with the following configuration changes.
 These probes have not been compiled or executed by the implementing agent.
 
+FSR Vulkan validation regression: rebuild the SDK shader permutations after
+changing its GLSL callbacks, then run Composer with FSR and validation enabled.
+Inspect first-frame initialization, consecutive odd/even history frames, resize,
+and disable/re-enable. `fsr-reconstructed-previous-depth-image` must include
+`VK_IMAGE_USAGE_TRANSFER_DST_BIT`; its SDK clears and layout transitions must not
+report VUID 01213 or 00002. The `FSR3-LUMA-INSTABILITY` pipeline must declare
+`rw_luma_history` as `rgba16f`, matching the RGBA16F `FSR3UPSCALER_LumaHistory1/2`
+views, with no storage-image format-mismatch warning on either history frame.
+
 1. Default configuration: native output must remain equivalent. Enable the live
    `resolution` target and set `scale` to 0.5: G-buffer, opaque depth and HDR
    composition become half-size; reconstructed HDR and final output remain full

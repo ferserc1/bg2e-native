@@ -70,6 +70,7 @@ VkTransformMatrixKHR toVkTransform(const glm::mat4& m)
 RayTracingScene::RayTracingScene(vk::Device* device, const std::string& debugName)
     : gpu::RayTracingScene(device), _device(device), _debugName(debugName)
 {
+    requireDebugName(debugName);
 }
 
 RayTracingScene::~RayTracingScene()
@@ -112,6 +113,7 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
         VmaAllocationInfo allocOut{};
         VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
                                   &_instanceBuffer, &_instanceAlloc, &allocOut));
+        nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_instanceBuffer), _debugName + "-instance-buffer");
         _instanceMapped = allocOut.pMappedData;
         _instanceAddress = bufferDeviceAddress(_device, _instanceBuffer);
     }
@@ -181,6 +183,9 @@ void RayTracingScene::ensureCapacity(uint32_t instanceCount)
         _scratchAddress = alignUp(bufferDeviceAddress(_device, _scratchBuffer), scratchAlign);
     }
 
+    nameObject(_device->handle(), VK_OBJECT_TYPE_ACCELERATION_STRUCTURE_KHR, reinterpret_cast<uint64_t>(_tlas), _debugName + "-tlas");
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_asBuffer), _debugName + "-tlas-storage-buffer");
+    nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_scratchBuffer), _debugName + "-tlas-scratch-buffer");
     _capacity = newCapacity;
 }
 

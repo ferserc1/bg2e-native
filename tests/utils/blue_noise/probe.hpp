@@ -157,9 +157,11 @@ inline bool checkBlueNoiseGpu(gpu::Device& device, gpu::BackendType backend,
     // any renderer, tracing tables or acceleration support.
     const Size2D extent{data.tileSize.width+3,data.tileSize.height*data.layers+2};
     ImageDescription outputDescription;
+    outputDescription.debugName = "blue-noise-output-description-image";
     outputDescription.size = extent;
     outputDescription.format = PixelFormat::R8G8B8A8_UNORM;
     outputDescription.usage = ImageUsage::Storage | ImageUsage::TransferSrc;
+    outputDescription.debugName = "blue-noise-output-image";
     auto output = device.createImage(outputDescription);
     struct alignas(16) Uniforms {
         glm::uvec4 metadata;
@@ -174,6 +176,7 @@ inline bool checkBlueNoiseGpu(gpu::Device& device, gpu::BackendType backend,
     {
         auto shader = library.compute(fallback ? "fallback" : "probe",&device);
         PipelineLayoutDescription description;
+        description.debugName = "blue-noise-description-pipeline-layout";
         description.resourceBindings = {
             {0,{0,1},ResourceType::UniformBuffer,ShaderStage::Compute},
             {0,{1,0},ResourceType::StorageImage,ShaderStage::Compute}};
@@ -182,9 +185,10 @@ inline bool checkBlueNoiseGpu(gpu::Device& device, gpu::BackendType backend,
             description.resourceBindings.push_back({0,{2,1},ResourceType::SampledImage,ShaderStage::Compute});
             description.resourceBindings.push_back({0,{3,0},ResourceType::Sampler,ShaderStage::Compute});
         }
+        description.debugName = "blue-noise-layout-pipeline-layout";
         auto layout = device.createPipelineLayout(description);
-        auto pipeline = device.createComputePipeline({shader.get(),layout.get()});
-        auto resources = device.createResourceSet(layout.get(),0);
+        auto pipeline = device.createComputePipeline({shader.get(),layout.get(), "blue-noise-shader-compute-pipeline"});
+        auto resources = device.createResourceSet(layout.get(),0, "blue-noise-layout-set");
         resources->setUniformBuffer({0,1},buffer.get());
         resources->setStorageImage({1,0},output.get());
         if (!fallback)

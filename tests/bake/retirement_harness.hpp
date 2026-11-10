@@ -88,9 +88,11 @@ class RetirementProbe final : public app::DrawOffscreenApplicationDelegate {
         runBakeOutputGpuProbe(*_engine->device(), _engine->backendType(), _shaders);
         draw::environment::EnvironmentGenerator generator(*_engine, _shaders);
         gpu::ImageDescription skyDescription;
+        skyDescription.debugName = "retirement-harness-sky-description-image";
         skyDescription.size = {8, 4};
         skyDescription.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
         skyDescription.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+        skyDescription.debugName = "retirement-harness-sky-image";
         auto sky = _engine->device()->createImage(skyDescription);
         std::vector<float> skyPixels(8 * 4 * 4);
         for (size_t i = 0; i < skyPixels.size(); i += 4)

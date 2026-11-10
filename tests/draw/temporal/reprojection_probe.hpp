@@ -52,9 +52,11 @@ inline bool runTemporalReprojectionProbe(Engine& engine, const std::filesystem::
     auto upload = [&](gpu::Size2D size, gpu::PixelFormat format, const void* data, size_t bytes, size_t row)
     {
         gpu::ImageDescription description;
+        description.debugName = "reprojection-probe-description-image";
         description.size = size;
         description.format = format;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+        description.debugName = "reprojection-probe-image-image";
         auto image = device.createImage(description);
         image->upload({data,bytes,row,0,0});
         return image;
@@ -62,9 +64,11 @@ inline bool runTemporalReprojectionProbe(Engine& engine, const std::filesystem::
     auto depth = [&](float value)
     {
         gpu::ImageDescription description;
+        description.debugName = "reprojection-probe-description-image";
         description.size = {3,3};
         description.format = gpu::PixelFormat::D32_SFLOAT;
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::DepthStencil;
+        description.debugName = "reprojection-probe-image-image";
         auto image = device.createImage(description);
         device.immediateSubmit([&](gpu::CommandBuffer* command)
         {

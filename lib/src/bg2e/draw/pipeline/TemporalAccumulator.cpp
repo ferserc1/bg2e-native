@@ -89,6 +89,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
     try
     {
         gpu::PipelineLayoutDescription layout;
+        layout.debugName = "temporal-accumulator-layout-pipeline-layout";
         layout.resourceBindings.push_back({0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute});
         for (uint32_t i = 1; i <= 8; ++i)
         {
@@ -99,28 +100,34 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
         {
             layout.resourceBindings.push_back({0,{i,i-2},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute});
         }
+        layout.debugName = "temporal-accumulator-layout-pipeline-layout";
         _layout = device.createPipelineLayout(layout);
         gpu::ShaderLib library(_configuration.shaderRoot,backend);
         for (uint32_t i = 0; i < 4; ++i)
         {
             const auto name = _configuration.shaderPrefix+"/"+(i >= 2 ? "world_" : "camera_")+(i%2 ? "hdr" : "scalar");
             _shaders[i] = library.compute(name,&device);
-            _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layout.get()});
+            _pipelines[i] = device.createComputePipeline({_shaders[i].get(),_layout.get(), "temporal-accumulator-shaders-compute-pipeline-" + std::to_string(i)});
         }
         gpu::SamplerDescription nearest;
+        nearest.debugName = "temporal-accumulator-nearest-sampler";
         nearest.minFilter = nearest.magFilter = gpu::Filter::Nearest;
         nearest.addressModeU = nearest.addressModeV = gpu::AddressMode::ClampToEdge;
         nearest.maxLod = 0;
+        nearest.debugName = "temporal-accumulator-nearest-sampler";
         _nearest = device.createSampler(nearest);
         const float zero[4] = {};
         const uint16_t halfZero[4] = {};
         gpu::ImageDescription description;
+        description.debugName = "temporal-accumulator-description-image";
         description.size = {1,1};
         description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
         description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
+        description.debugName = "temporal-accumulator-zero-position-image";
         _zeroPosition = device.createImage(description);
         _zeroPosition->upload({zero,sizeof(zero),sizeof(zero),0,0});
         description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
+        description.debugName = "temporal-accumulator-zero-normal-image";
         _zeroNormal = device.createImage(description);
         _zeroNormal->upload({halfZero,sizeof(halfZero),sizeof(halfZero),0,0});
         _slots.resize(slots);
@@ -138,12 +145,13 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                 {
                     layout.resourceBindings.push_back({0,{i,i-2},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute});
                 }
+                layout.debugName = "temporal-accumulator-metadata-layout-pipeline-layout";
                 _metadataLayout = device.createPipelineLayout(layout);
                 for (uint32_t i = 0; i < 4; ++i)
                 {
                     const auto name = _configuration.metadataShaderPrefix+"/"+(i >= 2 ? "world_" : "camera_")+(i%2 ? "hdr" : "scalar");
                     _metadataShaders[i] = library.compute(name,&device);
-                    _metadataPipelines[i] = device.createComputePipeline({_metadataShaders[i].get(),_metadataLayout.get()});
+                    _metadataPipelines[i] = device.createComputePipeline({_metadataShaders[i].get(),_metadataLayout.get(), "temporal-accumulator-metadata-shaders-compute-pipeline-" + std::to_string(i)});
                 }
                 _metadataStatus = "Optional draw.temporal.v2 ready";
                 // Diagnostics are independently optional and never disable temporal kernels.
@@ -161,23 +169,25 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                         const auto name = std::string("draw/temporal_accumulation_diagnostic/")+
                             (i >= 2 ? "world_" : "camera_")+(i%2 ? "hdr" : "scalar");
                         _acceptanceShaders[i] = library.compute(name,&device);
-                        _acceptancePipelines[i] = device.createComputePipeline({_acceptanceShaders[i].get(),_acceptanceLayout.get()});
+                        _acceptancePipelines[i] = device.createComputePipeline({_acceptanceShaders[i].get(),_acceptanceLayout.get(), "temporal-accumulator-acceptance-shaders-compute-pipeline-" + std::to_string(i)});
                     }
                     gpu::PipelineLayoutDescription diagnosticLayout;
+                    diagnosticLayout.debugName = "temporal-accumulator-diagnostic-layout-pipeline-layout";
                     diagnosticLayout.resourceBindings = {
                         {0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute},
                         {0,{1,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
                         {0,{2,1},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
                         {0,{3,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute},
                         {0,{4,2},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute}};
+                    diagnosticLayout.debugName = "temporal-accumulator-diagnostic-layout-pipeline-layout";
                     _diagnosticLayout = device.createPipelineLayout(diagnosticLayout);
                     _diagnosticShader = library.compute("draw/temporal_diagnostic/view",&device);
-                    _diagnosticPipeline = device.createComputePipeline({_diagnosticShader.get(),_diagnosticLayout.get()});
+                    _diagnosticPipeline = device.createComputePipeline({_diagnosticShader.get(),_diagnosticLayout.get(), "temporal-accumulator-diagnostic-shader-compute-pipeline"});
                     try
                     {
                         // Same display ABI, separately versioned shader: old diagnostic kernels remain unchanged.
                         _surfaceDiagnosticShader = library.compute("draw/temporal_diagnostic/surface",&device);
-                        _surfaceDiagnosticPipeline = device.createComputePipeline({_surfaceDiagnosticShader.get(),_diagnosticLayout.get()});
+                        _surfaceDiagnosticPipeline = device.createComputePipeline({_surfaceDiagnosticShader.get(),_diagnosticLayout.get(), "temporal-accumulator-surface-diagnostic-shader-compute-pipeline"});
                     }
                     catch (const std::exception& error)
                     {
@@ -223,7 +233,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                 {
                     const auto name = _configuration.reprojectionShaderPrefix+(i ? "/camera_hdr" : "/camera_scalar");
                     _reprojectionShaders[i] = library.compute(name,&device);
-                    _reprojectionPipelines[i] = device.createComputePipeline({_reprojectionShaders[i].get(),_reprojectionLayout.get()});
+                    _reprojectionPipelines[i] = device.createComputePipeline({_reprojectionShaders[i].get(),_reprojectionLayout.get(), "temporal-accumulator-reprojection-shaders-compute-pipeline-" + std::to_string(i)});
                 }
                 _reprojectionStatus = "Optional draw.temporal.v3 camera-depth reprojection ready";
                 try
@@ -239,7 +249,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                         const auto name = std::string("draw/temporal_accumulation_v3_diagnostic")+(i ? "/camera_hdr" : "/camera_scalar");
                         _reprojectionAcceptanceShaders[i] = library.compute(name,&device);
                         _reprojectionAcceptancePipelines[i] = device.createComputePipeline(
-                            {_reprojectionAcceptanceShaders[i].get(),_reprojectionAcceptanceLayout.get()});
+                            {_reprojectionAcceptanceShaders[i].get(),_reprojectionAcceptanceLayout.get(), "temporal-accumulator-reprojection-acceptance-shaders-compute-pipeline-" + std::to_string(i)});
                     }
                 }
                 catch (const std::exception& error)
@@ -276,7 +286,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                 {
                     const auto name = _configuration.adaptiveShaderPrefix+(i ? "/camera_hdr" : "/camera_scalar");
                     _adaptiveShaders[i] = library.compute(name,&device);
-                    _adaptivePipelines[i] = device.createComputePipeline({_adaptiveShaders[i].get(),_adaptiveLayout.get()});
+                    _adaptivePipelines[i] = device.createComputePipeline({_adaptiveShaders[i].get(),_adaptiveLayout.get(), "temporal-accumulator-adaptive-shaders-compute-pipeline-" + std::to_string(i)});
                 }
                 _adaptiveStatus = "Optional draw.temporal.v4 bounded camera-depth weighting ready";
                 try
@@ -292,7 +302,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                         const auto name = std::string("draw/temporal_accumulation_v4_diagnostic")+(i ? "/camera_hdr" : "/camera_scalar");
                         _adaptiveAcceptanceShaders[i] = library.compute(name,&device);
                         _adaptiveAcceptancePipelines[i] = device.createComputePipeline(
-                            {_adaptiveAcceptanceShaders[i].get(),_adaptiveAcceptanceLayout.get()});
+                            {_adaptiveAcceptanceShaders[i].get(),_adaptiveAcceptanceLayout.get(), "temporal-accumulator-adaptive-acceptance-shaders-compute-pipeline-" + std::to_string(i)});
                     }
                 }
                 catch (const std::exception& error)
@@ -326,9 +336,11 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                     throw std::runtime_error("RG16F sampled/storage/transfer moments unsupported");
                 }
                 gpu::ImageDescription dummy;
+                dummy.debugName = "temporal-accumulator-dummy-image";
                 dummy.size = {1,1};
                 dummy.format = gpu::PixelFormat::R16G16_SFLOAT;
                 dummy.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::TransferDst;
+                dummy.debugName = "temporal-accumulator-zero-moments-image";
                 _zeroMoments = device.createImage(dummy);
                 _zeroMoments->upload({halfZero,2*sizeof(uint16_t),2*sizeof(uint16_t),0,0});
                 auto momentLayout = layout;
@@ -343,7 +355,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                 {
                     const auto name = _configuration.momentShaderPrefix+(i ? "/camera_hdr" : "/camera_scalar");
                     _momentShaders[i] = library.compute(name,&device);
-                    _momentPipelines[i] = device.createComputePipeline({_momentShaders[i].get(),_momentLayout.get()});
+                    _momentPipelines[i] = device.createComputePipeline({_momentShaders[i].get(),_momentLayout.get(), "temporal-accumulator-moment-shaders-compute-pipeline-" + std::to_string(i)});
                 }
                 _momentStatus = "Optional draw.temporal.v5 RG16F bounded-statistic moments ready";
                 try
@@ -359,7 +371,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                         const auto name = std::string("draw/temporal_accumulation_v5_diagnostic")+(i ? "/camera_hdr" : "/camera_scalar");
                         _momentAcceptanceShaders[i] = library.compute(name,&device);
                         _momentAcceptancePipelines[i] = device.createComputePipeline(
-                            {_momentAcceptanceShaders[i].get(),_momentAcceptanceLayout.get()});
+                            {_momentAcceptanceShaders[i].get(),_momentAcceptanceLayout.get(), "temporal-accumulator-moment-acceptance-shaders-compute-pipeline-" + std::to_string(i)});
                     }
                 }
                 catch (const std::exception& error)
@@ -385,15 +397,17 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
             try
             {
                 gpu::PipelineLayoutDescription displayLayout;
+                displayLayout.debugName = "temporal-accumulator-display-layout-pipeline-layout";
                 displayLayout.resourceBindings = {
                     {0,{0,1},gpu::ResourceType::UniformBuffer,gpu::ShaderStage::Compute},
                     {0,{1,0},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
                     {0,{2,1},gpu::ResourceType::SampledImage,gpu::ShaderStage::Compute},
                     {0,{3,0},gpu::ResourceType::Sampler,gpu::ShaderStage::Compute},
                     {0,{4,2},gpu::ResourceType::StorageImage,gpu::ShaderStage::Compute}};
+                displayLayout.debugName = "temporal-accumulator-metric-display-layout-pipeline-layout";
                 _metricDisplayLayout = device.createPipelineLayout(displayLayout);
                 _metricDisplayShader = library.compute("draw/temporal_diagnostic/metrics",&device);
-                _metricDisplayPipeline = device.createComputePipeline({_metricDisplayShader.get(),_metricDisplayLayout.get()});
+                _metricDisplayPipeline = device.createComputePipeline({_metricDisplayShader.get(),_metricDisplayLayout.get(), "temporal-accumulator-metric-display-shader-compute-pipeline"});
                 _adaptiveDiagnosticStatus = "Adaptive metric display ready";
                 for (uint32_t version = 0; version < 2; ++version)
                 {
@@ -422,7 +436,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
                                 "draw/temporal_accumulation_v4_metrics")+(profile ? "/camera_hdr" : "/camera_scalar");
                             const auto index = 2*version+profile;
                             _metricShaders[index] = library.compute(name,&device);
-                            _metricPipelines[index] = device.createComputePipeline({_metricShaders[index].get(),_metricLayouts[version].get()});
+                            _metricPipelines[index] = device.createComputePipeline({_metricShaders[index].get(),_metricLayouts[version].get(), "temporal-accumulator-metric-shaders-compute-pipeline-" + std::to_string(index)});
                         }
                         _adaptiveDiagnosticStatus += version ? "; v5 capture ready" : "; v4 capture ready";
                     }
@@ -679,25 +693,32 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
         (rollingFromPrevious ? previous->rollingFramesRemaining - 1 : 0);
     const bool effectiveFreeze = _settings.freezeAtLimit && !slot.sceneMotion && !rollingFromPrevious;
     gpu::ImageDescription description;
+    description.debugName = "temporal-accumulator-description-image";
     description.size = input.signal.size();
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;
     description.format = input.signal.pixelFormat();
+    description.debugName = "temporal-next-signal-image";
     next->signal = _pool->image(input.command, description);
     description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
+    description.debugName = "temporal-next-position-image";
     next->position = _pool->image(input.command, description);
     description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
+    description.debugName = "temporal-next-normal-image";
     next->normal = _pool->image(input.command, description);
     if (diagnose)
     {
+        description.debugName = "temporal-history-acceptance-image";
         next->acceptance = _pool->image(input.command,description);
     }
     if (metrics)
     {
+        description.debugName = "temporal-history-metrics-image";
         next->metrics = _pool->image(input.command,description); // Existing RGBA16F guide format.
     }
     if (moments)
     {
         description.format = gpu::PixelFormat::R16G16_SFLOAT;
+        description.debugName = "temporal-history-moments-image";
         next->moments = _pool->image(input.command,description);
     }
     Invocation invocation;
@@ -903,6 +924,7 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
         invocation.diagnosticMetadata.motion.reset();
     }
     gpu::ImageDescription description;
+    description.debugName = "temporal-accumulator-description-image";
     description.size = metadata.token->size();
     description.format = gpu::PixelFormat::R16G16B16A16_SFLOAT;
     description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;

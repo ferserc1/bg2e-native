@@ -49,11 +49,13 @@ void BloomPass::initialize(Engine& engine, const std::filesystem::path& shaderRo
         throw std::runtime_error("Bloom requires filterable, blendable RGBA16F attachments");
     }
     gpu::PipelineLayoutDescription layout;
+    layout.debugName = "bloom-pass-layout-pipeline-layout";
     layout.resourceBindings = {
         {0, {0, 0}, gpu::ResourceType::SampledImage, gpu::ShaderStage::Fragment},
         {0, {1, 0}, gpu::ResourceType::Sampler, gpu::ShaderStage::Fragment}
     };
     layout.pushConstants.push_back({0, sizeof(Push), gpu::ShaderStage::Fragment});
+    layout.debugName = "bloom-pass-layout-pipeline-layout";
     _layout = device.createPipelineLayout(layout);
     gpu::ShaderLib library(shaderRoot, engine.backendType());
     _vertex = library.vertex("draw/raster/fullscreen", &device);
@@ -74,9 +76,11 @@ void BloomPass::initialize(Engine& engine, const std::filesystem::path& shaderRo
     pipeline.debugName = "bloom upsample";
     _upsample = device.createGraphicsPipeline(pipeline);
     gpu::SamplerDescription sampler;
+    sampler.debugName = "bloom-pass-sampler-sampler";
     sampler.minFilter = sampler.magFilter = gpu::Filter::Linear;
     sampler.addressModeU = sampler.addressModeV = sampler.addressModeW = gpu::AddressMode::ClampToEdge;
     sampler.maxLod = 0;
+    sampler.debugName = "bloom-pass-sampler-sampler";
     _sampler = device.createSampler(sampler);
     _slots.resize(slots);
 }
@@ -86,7 +90,7 @@ void BloomPass::draw(const FrameContext& frame, Slot& slot, gpu::Image& source,
 {
     if (slot.invocation == slot.bindings.size())
     {
-        slot.bindings.push_back(_engine->device()->createResourceSet(_layout.get(), 0));
+        slot.bindings.push_back(_engine->device()->createResourceSet(_layout.get(), 0, "bloom-pass-layout-set"));
     }
     const auto& resources = slot.bindings.at(slot.invocation++);
     resources->setSampledImage({0, 0}, &source);

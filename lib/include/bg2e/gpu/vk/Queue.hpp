@@ -46,7 +46,7 @@ class Queue : public gpu::Queue {
     void initCommandPool(VkDevice device, vk::Device* gpuDevice);
     void destroyCommandPool();
 
-    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName = {}) const override;
+    std::shared_ptr<gpu::CommandBuffer> createCommandBuffer(const std::string& debugName) const override;
     void submit(gpu::CommandBuffer* cmd) const override;
 
     SubmissionTimingCapabilities submissionTimingCapabilities() const noexcept override;

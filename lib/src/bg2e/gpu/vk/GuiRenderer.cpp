@@ -25,6 +25,7 @@
 #include <bg2e/gpu/vk/WindowSurface.hpp>
 #include <bg2e/gpu/vk/CommandBuffer.hpp>
 #include <bg2e/gpu/vk/common.hpp>
+#include <bg2e/gpu/vk/extensions.hpp>
 #include <imgui.h>
 #include <imgui_impl_vulkan.h>
 
@@ -200,6 +201,7 @@ class VulkanImGuiBackend final : public GuiRenderer {
         info.poolSizeCount = uint32_t(sizeof(sizes) / sizeof(sizes[0]));
         info.pPoolSizes = sizes;
         check(vkCreateDescriptorPool(_info.Device, &info, nullptr, &_pool));
+        nameObject(_info.Device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, reinterpret_cast<uint64_t>(_pool), "gui-texture-descriptor-pool");
     }
 
     void initializeRenderer()
