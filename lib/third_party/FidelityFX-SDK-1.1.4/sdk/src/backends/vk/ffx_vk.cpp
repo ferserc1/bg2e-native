@@ -20,6 +20,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 // THE SOFTWARE.
 
+#include <cstdint>
 #include <string>
 #include <FidelityFX/host/ffx_interface.h>
 #include <FidelityFX/host/ffx_util.h>
@@ -289,8 +290,11 @@ FFX_API size_t ffxGetScratchMemorySizeVK(VkPhysicalDevice physicalDevice, size_t
     uint32_t resourceArraySize = FFX_ALIGN_UP(maxContexts * FFX_MAX_RESOURCE_COUNT * sizeof(BackendContext_VK::Resource), sizeof(uint32_t));
     uint32_t contextArraySize = FFX_ALIGN_UP(maxContexts * sizeof(BackendContext_VK::EffectContext), sizeof(uint32_t));
     
+    // The context array is over-aligned and its padding depends on the actual
+    // scratch address. Reserve the worst case, even for an unaligned offset.
+    const size_t contextAlignmentPadding = alignof(BackendContext_VK::EffectContext) - 1;
     return FFX_ALIGN_UP(sizeof(BackendContext_VK) + extensionPropArraySize + gpuJobDescArraySize + resourceViewArraySize + stagingRingBufferArraySize +
-                            pipelineArraySize + resourceArraySize + contextArraySize,
+                            pipelineArraySize + resourceArraySize + contextAlignmentPadding + contextArraySize,
                         sizeof(uint64_t));
 }
 
@@ -1458,6 +1462,11 @@ FfxErrorCode CreateBackendContextVK(FfxInterface* backendInterface, FfxEffect ef
         for (uint32_t i = 0; i < backendContext->maxEffectContexts * FFX_MAX_RESOURCE_COUNT; ++i) {
             backendContext->pResources[i].uavViewIndex = backendContext->pResources[i].srvViewIndex = -1;
         }
+
+        // Align the absolute address, not just the offset: the caller's scratch
+        // allocation need not satisfy EffectContext's extended alignment.
+        pMem = reinterpret_cast<uint8_t*>(FFX_ALIGN_UP(reinterpret_cast<std::uintptr_t>(pMem),
+            alignof(BackendContext_VK::EffectContext)));
 
         // Map context array
         backendContext->pEffectContexts = (BackendContext_VK::EffectContext*)pMem;
