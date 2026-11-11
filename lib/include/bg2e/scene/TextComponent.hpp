@@ -27,7 +27,12 @@ namespace bg2e::scene {
 // bottom-right. Ordinary material appearance is independent of paragraph data.
 class BG2E_API TextComponent final : public DrawableComponent {
   public:
+    void collectDependencyIssues(const ComponentValidationContext& context,
+        std::vector<ComponentIssue>& issues) const override;
+
     BG2E_COMPONENT_TYPE_NAME("Text");
+
+    std::optional<ComponentIssue> checkCompatibility(const Component& other) const override;
 
     TextComponent();
 

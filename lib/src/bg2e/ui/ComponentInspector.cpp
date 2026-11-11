@@ -20,6 +20,7 @@
 #include <bg2e/ui/ReflectionWidget.hpp>
 #include <bg2e/reflection/Registry.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/ComponentIssues.hpp>
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/ui/Layout.hpp>
@@ -29,6 +30,8 @@
 #include <bg2e/ui/Value.hpp>
 
 #include <bg2e/app/MainLoop.hpp>
+
+#include <imgui.h>
 
 #include <algorithm>
 #include <stdexcept>
@@ -41,6 +44,13 @@ namespace bg2e {
 namespace ui {
 
 namespace {
+
+void issueText(const std::string& message)
+{
+    ImGui::PushTextWrapPos(0.0f);
+    Text::text(message);
+    ImGui::PopTextWrapPos();
+}
 
 struct ResourceSnapshot {
     const reflection::PropertyInfo* property = nullptr;
@@ -132,6 +142,7 @@ ComponentInspector& ComponentInspector::operator=(const ComponentInspector& othe
             throw std::logic_error("Settle the component interaction before assigning the inspector");
         }
         _node = other._node;
+        _validationRoot = other._validationRoot;
         _selectedComponentIndex = other._selectedComponentIndex;
         _registryRevision = other._registryRevision;
         _onChanged = other._onChanged;
@@ -140,6 +151,7 @@ ComponentInspector& ComponentInspector::operator=(const ComponentInspector& othe
         _onRemoveRequested = other._onRemoveRequested;
         _onDrawComponent = other._onDrawComponent;
         _onActionRequested = other._onActionRequested;
+        _onIssueFixRequested = other._onIssueFixRequested;
         onEditRequested(other._onEditRequested);
     }
     return *this;
@@ -157,6 +169,7 @@ void ComponentInspector::setNode(scene::Node* node)
         }
         _node = node;
         _selectedComponentIndex = 0;
+        _issueFixFeedback = std::make_shared<std::string>();
     }
 }
 
@@ -306,6 +319,13 @@ void ComponentInspector::draw()
     }
     Text::separator("Components");
 
+    if (!_issueFixFeedback->empty())
+    {
+        Text::text(*_issueFixFeedback);
+    }
+    const auto validationRoot = _validationRoot.lock();
+    const auto issues = scene::validateNodeComponents(*_node, validationRoot.get());
+    std::function<std::unique_ptr<app::Command>()> pendingFix;
     std::shared_ptr<scene::Component> pendingRemove;
     int id = 0;
 
@@ -316,12 +336,33 @@ void ComponentInspector::draw()
         {
             continue;
         }
-
         Group::pushId(id++);
 
-        const auto headerTitle = !typeInfo->displayName.empty()
+        auto headerTitle = !typeInfo->displayName.empty()
                                      ? typeInfo->displayName
                                      : comp->typeName();
+
+        size_t errors = 0, warnings = 0;
+        for (const auto& entry : issues)
+        {
+            if (entry.component.lock() == comp)
+            {
+                if (entry.issue.severity == scene::ComponentIssueSeverity::Error)
+                {
+                    ++errors;
+                }
+                else
+                {
+                    ++warnings;
+                }
+            }
+        }
+        if (errors || warnings)
+        {
+            headerTitle += " (" + std::to_string(errors) + " errors, " + std::to_string(warnings) + " warnings)";
+        }
+        // Counts change as dependencies are fixed; keep the expansion ID stable.
+        headerTitle += "###component";
 
         // allowOverlap: the Remove button is drawn on top of the header row
         // (sameLine), so the header must not steal its mouse clicks.
@@ -335,6 +376,37 @@ void ComponentInspector::draw()
             {
                 // Defer the removal until the iteration is finished
                 pendingRemove = comp;
+            }
+
+            int issueId = 0;
+            for (const auto& entry : issues)
+            {
+                if (entry.component.lock() != comp)
+                {
+                    continue;
+                }
+                Group::pushId(issueId++);
+                const auto& issue = entry.issue;
+                const bool error = issue.severity == scene::ComponentIssueSeverity::Error;
+                ImGui::PushStyleColor(ImGuiCol_Text, error ? ImVec4(1.0f, 0.35f, 0.3f, 1.0f) : ImVec4(1.0f, 0.8f, 0.25f, 1.0f));
+                issueText(std::string(error ? "Error: " : "Warning: ") + issue.message);
+                ImGui::PopStyleColor();
+                if (!issue.help.empty())
+                {
+                    issueText(issue.help);
+                }
+                int fixId = 0;
+                for (const auto& fix : issue.fixes)
+                {
+                    Group::pushId(fixId++);
+                    if (fix.createCommand && Button::button(fix.label))
+                    {
+                        pendingFix = fix.createCommand;
+                    }
+                    Text::tooltip(fix.description);
+                    Group::popId();
+                }
+                Group::popId();
             }
 
             if (_onDrawComponent)
@@ -406,6 +478,53 @@ void ComponentInspector::draw()
         }
 
         Group::popId();
+    }
+
+    if (pendingFix && !pendingRemove)
+    {
+        cancelInteraction();
+        if (_editSession && _editSession->active())
+        {
+            return;
+        }
+        try
+        {
+            auto command = pendingFix();
+            if (!command)
+            {
+                *_issueFixFeedback = "The issue solution is no longer available.";
+            }
+            else if (_onIssueFixRequested)
+            {
+                _issueFixFeedback->clear();
+                _onIssueFixRequested(std::move(command));
+            }
+            else if (auto* loop = app::MainLoop::current())
+            {
+                auto retained = std::shared_ptr<app::Command>(std::move(command));
+                loop->safeUpdateScene([retained, feedback = _issueFixFeedback, notify = _onChanged]()
+                {
+                    const auto result = retained->execute();
+                    *feedback = result.accepted() ? "" : std::string(result.message);
+                    if (result.status == app::CommandStatus::Applied && notify)
+                    {
+                        notify();
+                    }
+                });
+            }
+            else
+            {
+                *_issueFixFeedback = "A scene command executor is required to apply this solution.";
+            }
+        }
+        catch (const std::exception& error)
+        {
+            *_issueFixFeedback = error.what();
+        }
+        catch (...)
+        {
+            *_issueFixFeedback = "The issue solution could not be prepared.";
+        }
     }
 
     if (pendingRemove)

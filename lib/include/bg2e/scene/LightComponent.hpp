@@ -26,6 +26,9 @@ namespace scene {
 
 class BG2E_API LightComponent : public Component {
   public:
+    void collectDependencyIssues(const ComponentValidationContext& context,
+        std::vector<ComponentIssue>& issues) const override;
+
     BG2E_COMPONENT_TYPE_NAME("LightSource");
 
     LightComponent() = default;

@@ -25,6 +25,9 @@ namespace bg2e::scene {
 
 class BG2E_API ChainJointComponent : public Component {
   public:
+    void collectDependencyIssues(const ComponentValidationContext& context,
+        std::vector<ComponentIssue>& issues) const override;
+
     base::LinkJoint& joint()
     {
         return _joint;

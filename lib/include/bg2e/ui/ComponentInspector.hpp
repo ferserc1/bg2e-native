@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/app/Command.hpp>
 #include <bg2e/ui/ReflectionWidget.hpp>
 
 #include <functional>
@@ -55,6 +56,12 @@ class BG2E_API ComponentInspector {
     scene::Node* node() const
     {
         return _node;
+    }
+
+    // Optional document scope when tool nodes share the runtime scene.
+    void setValidationRoot(std::weak_ptr<scene::Node> root)
+    {
+        _validationRoot = std::move(root);
     }
 
     void draw();
@@ -94,6 +101,14 @@ class BG2E_API ComponentInspector {
     {
         _onRemoveRequested = std::move(cb);
     }
+    using IssueFixHandler = std::function<void(std::unique_ptr<app::Command>)>;
+    // Receives an unexecuted command. The application owns history and scheduling.
+    // Without a handler, fixes execute at MainLoop's safe scene boundary.
+    void onIssueFixRequested(IssueFixHandler handler)
+    {
+        _onIssueFixRequested = std::move(handler);
+    }
+
     void onDrawComponent(std::function<void(std::shared_ptr<scene::Component>)> cb)
     {
         _onDrawComponent = std::move(cb);
@@ -103,8 +118,11 @@ class BG2E_API ComponentInspector {
     std::unique_ptr<EditSession> _editSession;
     std::weak_ptr<scene::Component> _editTarget;
     ActionIntentHandler _onActionRequested;
+    IssueFixHandler _onIssueFixRequested;
+    std::shared_ptr<std::string> _issueFixFeedback = std::make_shared<std::string>();
     EditIntentHandler _onEditRequested;
     scene::Node* _node = nullptr;
+    std::weak_ptr<scene::Node> _validationRoot;
     uint32_t _selectedComponentIndex = 0;
     uint64_t _registryRevision = 0;
     std::function<void()> _onChanged;

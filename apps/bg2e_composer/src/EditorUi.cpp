@@ -571,8 +571,10 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                 ui->_sceneTree.onSelect({});
                 ui->_sceneTree.onReparent({});
                 ui->_componentInspector.setNode(nullptr);
+                ui->_componentInspector.setValidationRoot({});
                 ui->_componentInspector.onAddRequested({});
                 ui->_componentInspector.onRemoveRequested({});
+                ui->_componentInspector.onIssueFixRequested({});
                 ui->_componentInspector.onDrawComponent({});
                 ui->_ui = nullptr;
             }

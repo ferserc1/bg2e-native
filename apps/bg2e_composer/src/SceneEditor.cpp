@@ -143,6 +143,14 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
         delegate->setNodeEnabled(target->shared_from_this(), enabled);
     }
     _componentInspector.setNode(target);
+    if (delegate->stage()->contains(target))
+    {
+        _componentInspector.setValidationRoot(document->root);
+    }
+    else
+    {
+        _componentInspector.setValidationRoot({});
+    }
     _componentInspector.onAddRequested([weak, node](const std::string& typeName)
     {
         if (auto owner = weak.lock())
@@ -155,6 +163,13 @@ void EditorUi::drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate)
         if (auto owner = weak.lock())
         {
             owner->editComponent(node, component, {});
+        }
+    });
+    _componentInspector.onIssueFixRequested([weak, node](auto command)
+    {
+        if (auto owner = weak.lock())
+        {
+            owner->fixSceneComponent(node, std::move(command));
         }
     });
     _componentInspector.onDrawComponent({});

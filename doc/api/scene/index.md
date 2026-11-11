@@ -42,3 +42,5 @@ DrawableRegistry retains name uniqueness for draw resources. BoundingBox retains
 transformed visible geometry filtering using geo::MeshPNUUT. ResizeViewportVisitor
 retains generic extent conversion and graphics-free component callbacks, alongside
 Find/Update/Input/Transform visitors. Render traversal/bindings live in draw.
+
+- [Component issues and reversible fixes](ComponentIssues.md)

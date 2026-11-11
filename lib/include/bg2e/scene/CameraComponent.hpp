@@ -26,6 +26,9 @@ namespace scene {
 
 class BG2E_API CameraComponent : public Component {
   public:
+    void collectDependencyIssues(const ComponentValidationContext& context,
+        std::vector<ComponentIssue>& issues) const override;
+
     BG2E_COMPONENT_TYPE_NAME("Camera");
 
     CameraComponent();

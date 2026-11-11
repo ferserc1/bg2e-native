@@ -22,6 +22,7 @@
 #include <bg2e/scene/Chain.hpp>
 #include <bg2e/scene/ChainJoint.hpp>
 #include <bg2e/scene/Component.hpp>
+#include <bg2e/scene/ComponentIssues.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/DrawableRegistry.hpp>

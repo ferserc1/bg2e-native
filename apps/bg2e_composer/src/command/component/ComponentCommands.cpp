@@ -376,6 +376,109 @@ CommandResult EditMembership::redo() noexcept
     return restore(true);
 }
 
+FixSceneComponentCommand::FixSceneComponentCommand(std::shared_ptr<StageScene> stage,
+    std::weak_ptr<bg2e::scene::Node> inspectedNode, std::unique_ptr<Command> command)
+    : _stage(std::move(stage)), _node(std::move(inspectedNode)), _command(std::move(command))
+{
+    if (!_command || !_command->info().undoable)
+    {
+        throw std::invalid_argument("A component fix requires an undoable command");
+    }
+}
+
+const CommandInfo& FixSceneComponentCommand::info() const noexcept
+{
+    return _command->info();
+}
+
+CommandMemory FixSceneComponentCommand::memory() const
+{
+    auto result = _command->memory();
+    result.localBytes += sizeof(*this);
+    if (auto stage = _stage.lock())
+    {
+        result.localBytes += 4 * stage->editingStateBytes();
+    }
+    return result;
+}
+
+CommandResult FixSceneComponentCommand::execute() noexcept
+{
+    return apply(0);
+}
+
+CommandResult FixSceneComponentCommand::undo() noexcept
+{
+    return apply(1);
+}
+
+CommandResult FixSceneComponentCommand::redo() noexcept
+{
+    return apply(2);
+}
+
+CommandResult FixSceneComponentCommand::apply(int operation) noexcept
+{
+    auto stage = _stage.lock();
+    auto node = _node.lock();
+    if (!stage || !node || (!stage->contains(node.get()) && node != stage->fillLightNode()) ||
+        (operation != 0 && !_captured))
+    {
+        return {CommandStatus::Rejected, "Component issue target is stale"};
+    }
+    bool applied = false;
+    StageScene::EditingState recovery;
+    try
+    {
+        recovery = stage->editingState();
+        if (operation == 0)
+        {
+            _beforeState = recovery;
+        }
+        auto result = operation == 0 ? _command->execute() :
+            operation == 1 ? _command->undo() : _command->redo();
+        if (result.status != CommandStatus::Applied)
+        {
+            return result;
+        }
+        applied = true;
+        stage->validateEditingGraph(false);
+        refreshTools(*node);
+        if (operation == 0)
+        {
+            stage->refreshCamera(true);
+            _afterState = stage->editingState();
+            _captured = true;
+        }
+        else
+        {
+            stage->restoreEditingState(operation == 1 ? _beforeState : _afterState);
+        }
+        return result;
+    }
+    catch (...)
+    {
+        if (applied)
+        {
+            const auto restored = operation == 1 ? _command->redo() : _command->undo();
+            if (restored.status != CommandStatus::Applied)
+            {
+                return {CommandStatus::Faulted, "Component fix recovery failed"};
+            }
+            try
+            {
+                stage->restoreEditingState(recovery);
+                refreshTools(*node);
+            }
+            catch (...)
+            {
+                return {CommandStatus::Faulted, "Component fix editor recovery failed"};
+            }
+        }
+        return {CommandStatus::Failed, "Component fix rejected by the editor"};
+    }
+}
+
 bool supportedProperty(Component& component, const bg2e::ui::ReflectionEditIntent& intent)
 {
     using namespace bg2e::scene;

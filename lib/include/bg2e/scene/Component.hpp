@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/scene/ComponentIssues.hpp>
 #include <bg2e/math/projections.hpp>
 #include <bg2e/app/KeyEvent.hpp>
 #include <bg2e/json/JsonNode.hpp>
@@ -103,6 +104,12 @@ class BG2E_API Component : public std::enable_shared_from_this<Component> {
     virtual void keyUp(const app::KeyEvent& /* keyEvent */)
     {
     }
+
+    // Queries never modify nodes or realize resources. Compatibility is
+    // directional: only the declaring component receives the reported issue.
+    virtual std::optional<ComponentIssue> checkCompatibility(const Component& other) const;
+    virtual void collectDependencyIssues(const ComponentValidationContext& context,
+        std::vector<ComponentIssue>& issues) const;
 
     virtual std::string typeName() const = 0;
 

@@ -26,6 +26,9 @@ namespace scene {
 
 class BG2E_API PolarTransformControllerComponent : public Component {
   public:
+    void collectDependencyIssues(const ComponentValidationContext& context,
+        std::vector<ComponentIssue>& issues) const override;
+
     BG2E_COMPONENT_TYPE_NAME("PolarTransformController");
 
     std::shared_ptr<Component> clone() const override;

@@ -53,6 +53,29 @@ class EditMembership final : public bg2e::app::Command {
     bg2e::app::CommandResult restore(bool forward) noexcept;
 };
 
+// Adds Composer bookkeeping around a self-contained SDK scene repair.
+class FixSceneComponentCommand final : public bg2e::app::Command {
+  public:
+    FixSceneComponentCommand(std::shared_ptr<StageScene> stage,
+        std::weak_ptr<bg2e::scene::Node> inspectedNode,
+        std::unique_ptr<bg2e::app::Command> command);
+
+    const bg2e::app::CommandInfo& info() const noexcept override;
+    bg2e::app::CommandMemory memory() const override;
+    bg2e::app::CommandResult execute() noexcept override;
+    bg2e::app::CommandResult undo() noexcept override;
+    bg2e::app::CommandResult redo() noexcept override;
+
+  private:
+    std::weak_ptr<StageScene> _stage;
+    std::weak_ptr<bg2e::scene::Node> _node;
+    std::unique_ptr<bg2e::app::Command> _command;
+    StageScene::EditingState _beforeState, _afterState;
+    bool _captured = false;
+
+    bg2e::app::CommandResult apply(int operation) noexcept;
+};
+
 enum class Action { Property, TransformIdentity, ResetProjection, ResetOrbit };
 bool supportedProperty(bg2e::scene::Component& component, const bg2e::ui::ReflectionEditIntent& intent);
 

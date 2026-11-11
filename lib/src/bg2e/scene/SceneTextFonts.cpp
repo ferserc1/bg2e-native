@@ -33,6 +33,13 @@ void Scene::invalidateTextFonts() noexcept
 }
 
 
+bool Scene::textFontAvailable(const std::string& identifier) const noexcept
+{
+    const auto found = _textFonts.find(identifier);
+    return !_textFontsDirty && found != _textFonts.end() && found->second.font != nullptr;
+}
+
+
 bool Scene::textFontsReady() const
 {
     return !_textFontsDirty;

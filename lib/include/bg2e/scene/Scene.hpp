@@ -99,6 +99,8 @@ class BG2E_API Scene {
     std::shared_ptr<const base::TextFont> textFont(const std::string& identifier) const noexcept;
     // Preparation completed, not a promise that every font source is available.
     bool textFontsReady() const;
+    // Quiet inspection of the prepared registry; does not load or log.
+    bool textFontAvailable(const std::string& identifier) const noexcept;
     uint64_t textFontVersion() const;
 
     [[nodiscard]] const std::vector<std::shared_ptr<LightComponent>>& lightComponents() const

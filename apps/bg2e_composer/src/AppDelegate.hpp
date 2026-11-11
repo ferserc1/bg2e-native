@@ -172,6 +172,8 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         bg2e::ui::EditPhase phase, uint64_t interaction, const std::any& value);
     void reloadTextFonts();
     void addPrimitive(unsigned kind);
+    void fixSceneComponent(std::weak_ptr<bg2e::scene::Node> node,
+        std::unique_ptr<bg2e::app::Command> command);
     void addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName);
 
     void editGeometry(command::geometry::Operation operation);

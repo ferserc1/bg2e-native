@@ -249,6 +249,16 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
     });
 }
 
+void AppDelegate::fixSceneComponent(std::weak_ptr<bg2e::scene::Node> node,
+    std::unique_ptr<bg2e::app::Command> action)
+{
+    auto holder = std::make_shared<std::unique_ptr<bg2e::app::Command>>(std::move(action));
+    queueSceneCommand([this, node, holder]() -> std::unique_ptr<bg2e::app::Command>
+    {
+        return std::make_unique<command::component::FixSceneComponentCommand>(_stage, node, std::move(*holder));
+    }, {.lightmapSources = true, .renderHistories = true, .sceneReferences = true, .tools = true});
+}
+
 void AppDelegate::addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName)
 {
     queueSceneCommand([this, node, typeName]() -> std::unique_ptr<bg2e::app::Command>
