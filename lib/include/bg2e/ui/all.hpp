@@ -65,3 +65,5 @@
 #include <bg2e/ui/IconManager.hpp>
 
 #include <bg2e/ui/EditInteraction.hpp>
+
+#include <bg2e/ui/SceneResourcesWindow.hpp>

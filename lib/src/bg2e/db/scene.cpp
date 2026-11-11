@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/db/scene.hpp>
+#include <bg2e/db/SceneResourceManager.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
@@ -104,41 +105,12 @@ void writeSceneDocument(std::shared_ptr<json::JsonNode> document, const std::fil
 
 static int countDrawTextures(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
 {
-    json::ObjectReader reader(data);
     int result = 0;
-    if (auto components = reader.getArray("components"))
+    for (const auto& model : sceneFileReferences(data, basePath).models)
     {
-        for (std::size_t i = 0; i < components->size(); ++i)
+        if (model.extension() == ".bg2")
         {
-            auto component = components->getObject(i);
-            if (!component || component->getString("type").value_or("") != "Drawable")
-            {
-                continue;
-            }
-            std::filesystem::path path;
-            if (auto source = component->getString("path"))
-            {
-                path = basePath / *source;
-            }
-            else if (auto name = component->getString("name"))
-            {
-                path = basePath / *name;
-                path.replace_extension(".bg2");
-            }
-            if (path.extension() == ".bg2")
-            {
-                result += countMeshTextures(path);
-            }
-        }
-    }
-    if (auto children = reader.getArray("children"))
-    {
-        for (std::size_t i = 0; i < children->size(); ++i)
-        {
-            if (auto child = children->getObject(i))
-            {
-                result += countDrawTextures(child->node(), basePath);
-            }
+            result += countMeshTextures(model);
         }
     }
     return result;

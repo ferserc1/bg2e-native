@@ -29,6 +29,7 @@
 #include <bg2e/ui/Performance.hpp>
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <bg2e/ui/Window.hpp>
+#include <bg2e/ui/SceneResourcesWindow.hpp>
 #include <bg2e/ui/Toolbar.hpp>
 #include <bg2e/ui/DrawMaterialEditor.hpp>
 #include <bg2e/ui/StatusBar.hpp>
@@ -88,6 +89,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     bg2e::ui::Performance _performance;
     bg2e::ui::UISettingsWindow _uiSettings;
     SceneLightmapWindow _lightmap;
+    bg2e::ui::SceneResourcesWindow _sceneResources;
     bg2e::ui::Window _importSettingsWindow;
     bg2e::ui::Window _importQueueWindow;
     std::string _importPort;

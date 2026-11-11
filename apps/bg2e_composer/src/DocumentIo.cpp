@@ -155,6 +155,53 @@ bool AppDelegate::saveBeforeReplace()
     return saved; // Cancellation/failure prevents replacement.
 }
 
+bool AppDelegate::sceneResourceOperationAvailable() const
+{
+    return document() && document()->commands && !_pendingIo && !sceneLoading() &&
+        !_imports.busy() && !_importPublicationPending && !lightmapBakeActive() && !commandFaulted();
+}
+
+const bg2e::db::SceneResourceAnalysis* AppDelegate::sceneResourceAnalysis() const
+{
+    const auto* doc = document();
+    if (!_resourceAnalysis || !doc || !doc->commands || doc->dirty ||
+        doc->commands->pending() || doc->commands->history().transactionActive() ||
+        doc->generation != _resourceAnalysisGeneration || doc->savePath != _resourceAnalysisSavePath ||
+        doc->commands->history().documentState() != _resourceAnalysisState)
+    {
+        return nullptr;
+    }
+    return &*_resourceAnalysis;
+}
+
+void AppDelegate::analyzeSceneResources()
+{
+    if (!sceneResourceOperationAvailable())
+    {
+        return;
+    }
+    PendingIo operation;
+    operation.kind = PendingIo::Kind::AnalyzeResources;
+    operation.generation = document()->generation;
+    _pendingIo = std::move(operation);
+    _resourceAnalysis.reset();
+    requestSceneFrame();
+}
+
+void AppDelegate::cleanupSceneResources(bool ignoreWarnings)
+{
+    if (!sceneResourceOperationAvailable() || !sceneResourceAnalysis())
+    {
+        return;
+    }
+    PendingIo operation;
+    operation.kind = PendingIo::Kind::CleanupResources;
+    operation.generation = document()->generation;
+    operation.ignoreResourceWarnings = ignoreWarnings;
+    _pendingIo = std::move(operation);
+    requestSceneFrame();
+}
+
 void AppDelegate::processDocumentIo()
 {
     if (!_pendingIo || !_stage || _asyncLoadInProgress)
@@ -174,9 +221,67 @@ void AppDelegate::processDocumentIo()
         {
             return;
         }
+        if (operation.resourceCleanupPlan && (commandFaulted() || !sceneResourceAnalysis()))
+        {
+            throw std::runtime_error("The scene changed. Save and analyze resources again before cleanup.");
+        }
         _engine->device()->waitIdle();
+        if (operation.kind == Kind::AnalyzeResources || operation.kind == Kind::CleanupResources)
+        {
+            if (operation.generation != document()->generation || _imports.busy() || _importPublicationPending)
+            {
+                throw std::runtime_error("The scene changed or an import is pending; analyze resources again.");
+            }
+            _stage->synchronizeDirty();
+            if (operation.kind == Kind::AnalyzeResources)
+            {
+                _resourceAnalysis.reset();
+                if (document()->dirty || document()->savePath.empty())
+                {
+                    const auto path = document()->savePath.empty() ? chooseSavePath() : document()->savePath;
+                    if (path.empty() || !_stage->save(path, document()->savePath.empty()))
+                    {
+                        _status = "Resource analysis cancelled: save the scene first";
+                        return;
+                    }
+                    sampleNavigation(false);
+                }
+                if (document()->dirty || document()->savePath.empty())
+                {
+                    throw std::runtime_error("Save the scene before analyzing its resources.");
+                }
+                _resourceAnalysis = bg2e::db::SceneResourceManager::analyze(document()->savePath);
+                _resourceAnalysisSavePath = document()->savePath;
+                _resourceAnalysisGeneration = document()->generation;
+                _resourceAnalysisState = document()->commands->history().documentState();
+                _status = "Scene resources analyzed";
+            }
+            else
+            {
+                const auto* analysis = sceneResourceAnalysis();
+                if (!analysis)
+                {
+                    _resourceAnalysis.reset();
+                    throw std::runtime_error("The scene changed. Save and analyze resources again.");
+                }
+                operation.resourceCleanupPlan = bg2e::db::SceneResourceManager::createCleanupPlan(*analysis,
+                    operation.ignoreResourceWarnings);
+                // Complete saves deliberately restore authored live source paths.
+                // Reload the persisted snapshot transactionally before removing any
+                // old source, so future saves use only the surviving packaged files.
+                // Successful adoption retires the previous undo/redo and clipboard.
+                operation.kind = Kind::Open;
+                operation.path = document()->savePath;
+                operation.replacementConfirmed = true;
+                _pendingIo = std::move(operation);
+                _status = "Reloading saved scene before resource cleanup...";
+                requestSceneFrame();
+            }
+            return;
+        }
         if (operation.kind == Kind::Save)
         {
+            _resourceAnalysis.reset();
             const bool saved = _stage->save(operation.path, operation.destinationConfirmed);
             sampleNavigation(false);
             _status = saved ? "Saved " + document()->savePath.filename().string() : "Scene save cancelled or failed (see log)";
@@ -395,9 +500,30 @@ void AppDelegate::processDocumentIo()
             _sceneResourceLoad = false;
             bg2e::app::MainLoop::current()->resumeScene();
         }
+        if (operation.resourceCleanupPlan)
+        {
+            _resourceAnalysis.reset();
+            const auto result = bg2e::db::SceneResourceManager::executeCleanup(*operation.resourceCleanupPlan);
+            _status = "Deleted " + std::to_string(result.deleted.size()) + " unused scene files";
+            if (!result.errors.empty())
+            {
+                std::string errors;
+                for (const auto& error : result.errors)
+                {
+                    errors += error + "\n";
+                }
+                bg2e::app::MessageBox::showWarning("Scene cleanup incomplete", errors,
+                    {{0, "OK", bg2e::app::MessageBox::Return}});
+            }
+        }
     }
     catch (const std::exception& error)
     {
+        if (operation.resourceCleanupPlan || operation.kind == PendingIo::Kind::CleanupResources ||
+            operation.kind == PendingIo::Kind::AnalyzeResources)
+        {
+            _resourceAnalysis.reset();
+        }
         if (!commandFaulted())
         {
             _stage->discardCandidate(candidate);

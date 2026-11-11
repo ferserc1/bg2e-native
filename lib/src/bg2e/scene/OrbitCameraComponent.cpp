@@ -220,9 +220,12 @@ void OrbitCameraComponent::update(float delta)
         clampMouseTargets();
         const float alpha = _mouseSmoothingTime > 0.0f
             ? -std::expm1(-delta / _mouseSmoothingTime) : 1.0f;
-        _rotation = glm::mix(_rotation, _targetRotation, alpha);
-        _center = glm::mix(_center, _targetCenter, alpha);
-        _distance = glm::mix(_distance, _targetDistance, alpha);
+        // Interpolate the remaining displacement so an already-reached target
+        // stays bit-exact. Weighted endpoint sums can drift even when both
+        // endpoints are equal, falsely marking an idle editor camera as edited.
+        _rotation += (_targetRotation - _rotation) * alpha;
+        _center += (_targetCenter - _center) * alpha;
+        _distance += (_targetDistance - _distance) * alpha;
 
         auto pitch = _rotation.x > _minPitch ? _rotation.x : _minPitch;
         pitch = pitch < _maxPitch ? pitch : _maxPitch;

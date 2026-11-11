@@ -28,3 +28,5 @@
 
 #include <bg2e/db/scene_path.hpp>
 #include <bg2e/db/scene_save_dialog.hpp>
+
+#include <bg2e/db/SceneResourceManager.hpp>

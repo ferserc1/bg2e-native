@@ -74,6 +74,9 @@ extern BG2E_API std::shared_ptr<draw::Drawable> loadDrawableBg2(
 extern BG2E_API bool storeDrawableBg2(const std::filesystem::path& path,
     draw::Engine& engine, scene::Node* node) noexcept;
 
+// CPU-only material inspection. Preserves repeated texture slots; throws on read/parse failure.
+extern BG2E_API std::vector<std::filesystem::path> meshTexturePaths(const std::filesystem::path& filePath);
+
 extern BG2E_API uint32_t countMeshTextures(const std::filesystem::path& filePath);
 
 }

@@ -376,12 +376,45 @@ void EditorUi::initWindowMenu()
             owner->_lightmap.open();
         }
     }}});
+    window.addMenuItem({"Scene Resources Manager", {.handler = [weakUi]
+    {
+        if (auto owner = weakUi.lock())
+        {
+            owner->_sceneResources.open();
+        }
+    }}});
     _toolbar.addMenuItem(window);
 }
 
 void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session)
 {
     _ui = session;
+    const auto weakResourcesDelegate = _delegate;
+    _sceneResources.configure([weakResourcesDelegate]() -> const bg2e::db::SceneResourceAnalysis*
+    {
+        auto owner = weakResourcesDelegate.lock();
+        return owner ? owner->sceneResourceAnalysis() : nullptr;
+    }, [weakResourcesDelegate]
+    {
+        auto owner = weakResourcesDelegate.lock();
+        return owner && owner->sceneResourceOperationAvailable();
+    }, [weakResourcesDelegate]
+    {
+        if (auto owner = weakResourcesDelegate.lock())
+        {
+            owner->analyzeSceneResources();
+        }
+    }, [weakResourcesDelegate](bool ignoreWarnings)
+    {
+        if (auto owner = weakResourcesDelegate.lock())
+        {
+            owner->cleanupSceneResources(ignoreWarnings);
+        }
+    }, [weakResourcesDelegate]
+    {
+        auto owner = weakResourcesDelegate.lock();
+        return owner ? owner->status() : std::string{};
+    });
     _toolbar.setTitle("Scene tools");
     _toolbar.options.noClose = true;
     const auto weakDelegate = _delegate;
@@ -693,6 +726,7 @@ void EditorUi::drawUI()
         _importQueueWindow.draw();
         return;
     }
+    _sceneResources.draw();
     _importSettingsWindow.draw();
     if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(delegate->renderer());
         deferred && !deferred->environmentError().empty())

@@ -78,3 +78,16 @@ M07-03 still owns the complete scene tree/component/menu/gizmo/active-controller
 and the Composer-specific fixture/light policy. M07-04 owns async import/server
 scheduling and M07-05 owns multiple bake jobs; these checks do not establish their
 completion or package/backend evidence.
+
+## Idle camera saved-state regression
+
+`document_state.cpp` also deserializes an orbit controller using the sample
+scene's non-integral camera coordinates. It advances 600 idle frames with zero,
+30/60/120/144 FPS and irregular deltas, applying Composer's exact pose comparison
+to the document history. It checks that both a freshly opened scene and a scene
+marked saved after an actual edit remain clean. No engine or device is required.
+
+Manual check: open a scene with an orbit camera, leave it idle, save it, and run
+Scene Resources Manager analysis. Opening/saving must leave the document clean,
+and idle frames must not invalidate the resource analysis. Real camera movement
+must still mark the document dirty.

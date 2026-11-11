@@ -34,6 +34,7 @@
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/draw/RenderSettingsPreferences.hpp>
 #include <bg2e/bake/IntegratedBakerContext.hpp>
+#include <bg2e/db/SceneResourceManager.hpp>
 #include <bg2e/bake/LightmapPixels.hpp>
 #include <bg2e/scene/InputVisitor.hpp>
 #include <bg2e/ui/Loader.hpp>
@@ -123,6 +124,13 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         _quit = std::move(callback);
     }
     void saveDocument(bool saveAs = false);
+
+    // Editor policy around the file-only SDK resource manager.
+    void analyzeSceneResources();
+    void cleanupSceneResources(bool ignoreWarnings);
+    const bg2e::db::SceneResourceAnalysis* sceneResourceAnalysis() const;
+    bool sceneResourceOperationAvailable() const;
+
 
     std::shared_ptr<bg2e::manipulation::SelectionManager> selection() const
     {
@@ -259,12 +267,14 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::filesystem::path chooseSavePath();
 
     struct PendingIo {
-        enum class Kind { Open, Save, New, Export };
+        enum class Kind { Open, Save, New, Export, AnalyzeResources, CleanupResources };
         Kind kind = Kind::Open;
         std::filesystem::path path;
         uint64_t generation = 0;
         std::weak_ptr<bg2e::scene::Node> parent;
         std::vector<std::weak_ptr<bg2e::scene::Node>> targets;
+        std::optional<bg2e::db::SceneCleanupPlan> resourceCleanupPlan;
+        bool ignoreResourceWarnings = false;
         bool batch = false;
         bool destinationConfirmed = false;
         std::shared_ptr<bg2e::json::JsonNode> schema;
@@ -341,6 +351,10 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     bool _quitConfirmed = false;
     std::function<void()> _quit;
     std::optional<PendingIo> _pendingIo;
+    std::optional<bg2e::db::SceneResourceAnalysis> _resourceAnalysis;
+    bg2e::app::CommandDocumentState _resourceAnalysisState;
+    uint64_t _resourceAnalysisGeneration = 0;
+    std::filesystem::path _resourceAnalysisSavePath;
     std::string _status;
     std::string _lastEnvironmentError;
     std::string _viewpointStatus;

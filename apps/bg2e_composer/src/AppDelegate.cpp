@@ -462,7 +462,7 @@ void AppDelegate::openDocument()
     }
     try
     {
-        const auto path = bg2e::app::FileDialog::getOpenFilePath({{"Models and scenes", "bg2,vwglb,obj,gltf,glb,json,bg2scene,bg2e,vitscnj"}});
+        const auto path = bg2e::app::FileDialog::getPickFolderPath();
         requestOpen(path);
     }
     catch (const std::exception& error)

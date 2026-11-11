@@ -64,31 +64,48 @@ uint32_t readHeader(Bg2ioBufferIterator& it)
     return static_cast<uint32_t>(numberOfPlist);
 }
 
-std::vector<base::MaterialAttributes> readMaterials(Bg2ioBufferIterator& it, const std::filesystem::path& basePath)
+std::vector<base::MaterialAttributes> readMaterials(Bg2ioBufferIterator& it, const std::filesystem::path& basePath, bool strict = false)
 {
+    if (strict && it.buffer->length - it.current < static_cast<Bg2ioSize>(sizeof(int)))
+    {
+        throw std::runtime_error("Truncated BG2 materials block");
+    }
     unsigned int token = 0;
     bg2io_readInteger(&it, reinterpret_cast<int*>(&token));
     if (token != bg2io_Materials)
     {
         throw std::runtime_error("Malformed bg2 file: expecting materials block");
     }
-
-    char* headerString;
-    bg2io_readString(&it, &headerString);
-
+    if (strict)
+    {
+        auto probe = it;
+        int length = 0;
+        if (bg2io_readInteger(&probe, &length) < 0 || length < 0 ||
+            static_cast<Bg2ioSize>(length) > probe.buffer->length - probe.current)
+        {
+            throw std::runtime_error("Invalid BG2 material string length");
+        }
+    }
+    char* headerString = nullptr;
+    if (bg2io_readString(&it, &headerString) < 0 || !headerString)
+    {
+        throw std::runtime_error("Could not read BG2 materials");
+    }
+    std::unique_ptr<char, decltype(&free)> headerOwner(headerString, &free);
     utils::MaterialSerializer serializer;
-
     std::vector<base::MaterialAttributes> result;
-    bool status = serializer.deserializeMaterialArray(headerString, basePath, result);
-
+    const bool status = serializer.deserializeMaterialArray(headerString, basePath, result);
+    if (!status && strict)
+    {
+        throw std::runtime_error("Invalid BG2 material data");
+    }
     if (!status)
     {
         std::cout << "WARN: Error loading bg2 file material data." << std::endl;
     }
-
-    free(headerString);
     return result;
 }
+
 
 void skipShadowProjectors(Bg2ioBufferIterator& it)
 {
@@ -663,76 +680,68 @@ std::shared_ptr<draw::Drawable> loadDrawableBg2(const std::filesystem::path& bas
     return loadDrawableBg2(basePath / fileName, engine);
 }
 
-static uint32_t countMaterialTextures(const base::MaterialAttributes& mat)
-{
-    uint32_t count = 0;
-    if (mat.albedoTexture() && !mat.albedoTexture()->imageFilePath().empty())
-    {
-        ++count;
-    }
-    if (mat.metalnessTexture() && !mat.metalnessTexture()->imageFilePath().empty())
-    {
-        ++count;
-    }
-    if (mat.roughnessTexture() && !mat.roughnessTexture()->imageFilePath().empty())
-    {
-        ++count;
-    }
-    if (mat.normalTexture() && !mat.normalTexture()->imageFilePath().empty())
-    {
-        ++count;
-    }
-    if (mat.aoTexture() && !mat.aoTexture()->imageFilePath().empty())
-    {
-        ++count;
-    }
-    if (mat.lightEmissionTexture() && !mat.lightEmissionTexture()->imageFilePath().empty())
-    {
-        ++count;
-    }
-    return count;
-}
-
-uint32_t countMeshTextures(const std::filesystem::path& filePath)
+static std::vector<std::filesystem::path> meshTexturePathsImpl(const std::filesystem::path& filePath, bool strict)
 {
     Bg2ioBuffer buffer = BG2IO_BUFFER_INIT;
     try
     {
-        std::ifstream fileStream;
-        fileStream.open(filePath, std::ios::binary | std::ios::ate);
-        if (!fileStream.is_open())
+        std::ifstream input(filePath, std::ios::binary | std::ios::ate);
+        if (!input || input.tellg() <= 0)
         {
-            return 0;
+            throw std::runtime_error("Cannot read BG2 model: " + filePath.string());
         }
-
-        auto fileSize = fileStream.tellg();
-        fileStream.seekg(0, std::ios::beg);
-
-        if (bg2io_createBuffer(&buffer, static_cast<Bg2ioSize>(fileSize)) < 0)
+        const auto size = input.tellg();
+        input.seekg(0);
+        if (bg2io_createBuffer(&buffer, static_cast<Bg2ioSize>(size)) < 0)
         {
-            fileStream.close();
-            return 0;
+            throw std::bad_alloc();
         }
-
-        fileStream.read(reinterpret_cast<char*>(buffer.mem), buffer.length);
-        fileStream.close();
-
+        if (!input.read(reinterpret_cast<char*>(buffer.mem), buffer.length))
+        {
+            throw std::runtime_error("Incomplete BG2 model: " + filePath.string());
+        }
+        if (buffer.length < 12)
+        {
+            throw std::runtime_error("Truncated BG2 header: " + filePath.string());
+        }
         Bg2ioBufferIterator it = BG2IO_ITERATOR(&buffer);
-        auto numberOfPlist = readHeader(it);
-        auto materials = readMaterials(it, std::filesystem::path(filePath).remove_filename());
-
-        uint32_t total = 0;
-        for (auto& mat : materials)
+        readHeader(it);
+        const auto materials = readMaterials(it, std::filesystem::absolute(filePath).parent_path(), strict);
+        std::vector<std::filesystem::path> result;
+        for (const auto& mat : materials)
         {
-            total += countMaterialTextures(mat);
+            for (const auto& texture : {mat.albedoTexture(), mat.metalnessTexture(), mat.roughnessTexture(),
+                mat.normalTexture(), mat.aoTexture(), mat.lightEmissionTexture()})
+            {
+                if (texture && !texture->imageFilePath().empty())
+                {
+                    result.emplace_back(texture->imageFilePath());
+                }
+            }
         }
-
         bg2io_freeBuffer(&buffer);
-        return total;
+        return result;
     }
     catch (...)
     {
         bg2io_freeBuffer(&buffer);
+        throw;
+    }
+}
+
+std::vector<std::filesystem::path> meshTexturePaths(const std::filesystem::path& filePath)
+{
+    return meshTexturePathsImpl(filePath, true);
+}
+
+uint32_t countMeshTextures(const std::filesystem::path& filePath)
+{
+    try
+    {
+        return static_cast<uint32_t>(meshTexturePathsImpl(filePath, false).size());
+    }
+    catch (...)
+    {
         return 0;
     }
 }
