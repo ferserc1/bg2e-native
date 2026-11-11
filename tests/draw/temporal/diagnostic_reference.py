@@ -87,7 +87,9 @@ def check_sources():
     assert 'bool diagnoseAdaptive = false' in header
     assert 'input.diagnoseAcceptance && input.diagnoseAdaptive' in cpp
     assert 'const bool metrics = adaptive && input.diagnoseAdaptive' in cpp
-    assert 'if (metrics)\n    {\n        next->metrics = ' in cpp
+    assert ('if (metrics)\n    {\n'
+            '        description.debugName = "temporal-history-metrics-image";\n'
+            '        next->metrics = ') in cpp
     assert 'setStorageImage({21,19},next->metrics.get())' in cpp
     assert 'metrics ? _metricLayouts[moments ? 1u : 0u]' in cpp
     assert 'metrics ? _metricPipelines[metricIndex].get()' in cpp

@@ -905,6 +905,7 @@ void RendererDeferred::resize(gpu::Size2D output, gpu::Size2D internal)
         base::CpuProfileScope::count("renderer.resizeSyncRequests", 1, "requests");
         _engine->device()->waitIdleForResourceUpdate();
     }
+    cleanupDebug();
     resetGIUpsamplingSlots();
     _configuration.outputExtent = output;
     _configuration.internalExtent = internal;
@@ -1028,6 +1029,10 @@ void RendererDeferred::update(const FrameContext& frame)
         _temporalCameraIdentity = nullptr;
         _temporalCameraOwner.reset();
     }
+    if (_debugOptions.enabled && _debugOptions.disableTransparent)
+    {
+        slot.queue.excludeTransparent();
+    }
     slot.queue.sort(glm::vec3(glm::inverse(_view)[3]));
     _queue = slot.queue;
     stageProfile.next("renderer.temporalSignature");
@@ -1075,6 +1080,12 @@ void RendererDeferred::update(const FrameContext& frame)
     slot.diagnosticView = _temporalDiagnosticView;
     slot.diagnosticSignal = _temporalDiagnosticSignal;
     slot.diagnosticLayer = _temporalDiagnosticLayer;
+    if (debugTemporalView() != pipeline::TemporalDiagnosticView::Off)
+    {
+        slot.diagnosticView = debugTemporalView();
+        slot.diagnosticSignal = static_cast<pipeline::TemporalSignal>(_debugOptions.temporalSignal);
+        slot.diagnosticLayer = _debugOptions.layer;
+    }
     slot.transparentTemporalSurface = {};
     updateTemporalSurfaceStatus();
     slot.recordTemporalSurfaces = _temporalSurfaceEnabled && temporalSurfaceAvailable() &&
@@ -1263,6 +1274,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     {
         throw std::logic_error("Update the acquired renderer slot before recording");
     }
+    beginDebugFrame(frame);
     // Resolve the predecessor at recording time, after any intervening ordered
     // submission. Fingerprint queries and update-only work never publish it.
     auto correspondence = _temporalCorrespondence->record(*slot.preparedCorrespondence,
@@ -1314,6 +1326,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         auto resolveSignal = [&](pipeline::TemporalSignal kind, gpu::Image& signal, gpu::Image* material = nullptr,
             float maxRoughness = 1.0f, std::shared_ptr<gpu::Image>* selectedOwner = nullptr)
         {
+            captureDebugSignal(frame,kind,RendererDebugStage::Original,signal,layer);
             pipeline::SurfaceInputs surface;
             surface.normal = slot.gbuffer[1].get();
             surface.depthOrPosition = surfaceDepth;
@@ -1342,6 +1355,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                     uint32_t(slot.diagnosticView) >= uint32_t(pipeline::TemporalDiagnosticView::CurrentWeight) &&
                         slot.diagnosticSignal == kind && slot.diagnosticLayer == layer});
             }();
+            captureDebugSignal(frame,kind,RendererDebugStage::Accumulated,*accumulated.image,layer);
             pipeline::DenoiseSignal filteredKind = pipeline::DenoiseSignal::Visibility;
             if (kind == pipeline::TemporalSignal::DiffuseRadiance)
             {
@@ -1376,6 +1390,11 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             const std::vector<pipeline::ImageBinding> sources{{"normalEmission", slot.gbuffer[1].get()}, {"depth", surfaceDepth}};
             pipeline::LayerSelection selection{_configuration.softShadows, _shadowConfiguration};
             Renderer::recordLayer(selection, {frame, selection.configuration, sources, visibility, _scene.get(), &raster});
+            if (_debugOptions.enabled && _debugOptions.view == RendererDebugView::ShadowVisibility &&
+                _debugOptions.layer == layer && _debugOptions.shadowIndex < slot.shadows.size())
+            {
+                captureDebug(frame,*slot.shadows.at(_debugOptions.shadowIndex),1);
+            }
             inputs.insert(inputs.end(), visibility.begin(), visibility.end());
         }
         if (_ambientOcclusion)
@@ -1391,6 +1410,10 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             if (_configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion && _configuration.ambientOcclusion->enabled())
             {
                 signal = resolveSignal(pipeline::TemporalSignal::Visibility,*signal);
+            }
+            if (_configuration.indirectLighting == IndirectLightingMode::AmbientOcclusion && _configuration.ambientOcclusion->enabled())
+            {
+                captureDebugSignal(frame,pipeline::TemporalSignal::Visibility,RendererDebugStage::Filtered,*signal,layer);
             }
             inputs.push_back({"ambientOcclusion",signal});
         }
@@ -1431,6 +1454,10 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                         slot.giUpsampled,frame.frameSlot,frame.frameNumber,layer).get();
                 }
             }
+            if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination && _configuration.globalIllumination->enabled())
+            {
+                captureDebugSignal(frame,pipeline::TemporalSignal::DiffuseRadiance,RendererDebugStage::Filtered,*signal,layer);
+            }
             inputs.push_back({"globalIllumination",signal});
         }
         if (_reflections)
@@ -1450,6 +1477,10 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
                 signal = resolveSignal(pipeline::TemporalSignal::ReflectedRadiance,*signal,slot.gbuffer[2].get(),
                     _configuration.reflections->maxRoughness());
             }
+            if (_configuration.reflections->enabled())
+            {
+                captureDebugSignal(frame,pipeline::TemporalSignal::ReflectedRadiance,RendererDebugStage::Filtered,*signal,layer);
+            }
             inputs.push_back({"reflections",signal});
         }
         return inputs;
@@ -1465,7 +1496,9 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         inputs[6].image = slot.gbuffer[6].get();
         inputs.push_back({"background",background});
         inputs.insert(inputs.end(),effects.begin(),effects.end());
+        captureDebugGBuffer(frame,layer);
         dispatch(1, frame, inputs, {{"color", output}}, &raster);
+        captureDebugLighting(frame,inputs,raster,layer);
     };
     const auto opaqueEffects = recordEffects(0);
     composite(slot.colorA.get(),slot.colorB.get(),0,opaqueEffects);
@@ -1619,17 +1652,28 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         }
         if (slot.diagnostic)
         {
-            current = slot.diagnostic.get();
+            if (_debugOptions.enabled && debugTemporalView() != pipeline::TemporalDiagnosticView::Off)
+            {
+                captureDebug(frame,*slot.diagnostic);
+            }
+            else if (!_debugOptions.enabled)
+            {
+                current = slot.diagnostic.get();
+            }
         }
     }
     base::CpuProfileScope reconstructionCpu("renderer.reconstruction");
     gpu::GpuTimingScope reconstructionTiming(frame.commandBuffer, "renderer.reconstruction");
+    if (_debugOptions.enabled && _debugOptions.view == RendererDebugView::BeforeUpscale)
+    {
+        captureDebug(frame,*current);
+    }
     UpscalerInput upscale{frame, *current, *slot.opaqueDepth, *slot.reconstructed, slot.camera, slot.jitteredProjection};
     // Always borrow the opaque result captured before the transparent loop.
     // Transparent motion is not motion of the composited/refraction color.
     upscale.opaqueMotion = {slot.opaqueTemporalSurface.motion.get(),slot.opaqueTemporalSurface.token.get(),
         slot.opaqueTemporalSurface.motion,slot.opaqueTemporalSurface.token};
-    const bool reconstructed = !slot.diagnostic && _configuration.upscaler->available() &&
+    const bool reconstructed = (!slot.diagnostic || _debugOptions.enabled) && _configuration.upscaler->available() &&
         _configuration.upscaler->record(upscale);
     slot.temporalUpscaleApplied = reconstructed && _configuration.upscaler->requirements().jitter;
     if (!reconstructed)
@@ -1637,6 +1681,10 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
         _fallback->record(upscale);
     }
     frame.commandBuffer.transition(slot.reconstructed.get(), gpu::ImageLayout::ShaderReadOnly);
+    if (_debugOptions.enabled && _debugOptions.view == RendererDebugView::AfterUpscale)
+    {
+        captureDebug(frame,*slot.reconstructed);
+    }
     slot.linearRecorded = true;
     _temporalCorrespondence->publish(std::move(correspondence));
     return slot.reconstructed;
@@ -1690,6 +1738,7 @@ void RendererDeferred::recordFinal(const FrameContext& frame, gpu::Image& linear
         }
     }
     frame.commandBuffer.transition(&frame.colorTarget, gpu::ImageLayout::ShaderReadOnly);
+    recordDebugFinal(frame);
     slot.finalRecorded = true;
 }
 
@@ -1938,6 +1987,7 @@ void RendererDeferred::setCameraParameters(float nearPlane, float farPlane, floa
 
 void RendererDeferred::cleanup()
 {
+    cleanupDebug();
     if (_engine)
     {
         base::CpuProfileScope profile("renderer.resourceSync.cleanup");

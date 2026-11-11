@@ -116,6 +116,10 @@ class BG2E_API TemporalAccumulator {
     bool adaptiveDiagnosticsAvailable() const;
     const std::string& adaptiveDiagnosticsStatus() const;
 
+    // Synchronized diagnostic teardown. Preserves accepted color/moment histories
+    // but releases diagnostic images, retired invocations and their pool cache.
+    void releaseDiagnosticCaptures();
+
     virtual void invalidate(); // Logical reset; keeps submitted invocation owners alive.
     virtual void cleanup(); // Drains before releasing all owners.
 
@@ -152,12 +156,17 @@ class BG2E_API TemporalAccumulator {
     }
 
   protected:
+    struct StableGIState;
+    std::shared_ptr<StableGIState> _stableGI;
+    gpu::BackendType _backend{};
+
     struct History {
         std::shared_ptr<const gpu::detail::RecordingCompletion> recording;
         std::shared_ptr<gpu::Image> signal, position, normal, moments;
         TemporalSurfaceMetadata metadata;
         std::shared_ptr<gpu::Image> acceptance, metrics;
         TemporalView view;
+        bool stableGrid = false;
         uint64_t sequence = 0, generation = 0, reset = 0;
         uint32_t count = 1;
         uint32_t metadataMode = 0; // 0=v1, 1=token-only v2, 2=rigid camera-depth v3, 3=adaptive v4, 4=moments v5.
@@ -173,6 +182,8 @@ class BG2E_API TemporalAccumulator {
         std::shared_ptr<gpu::ResourceSet> resources;
         std::shared_ptr<gpu::Image> diagnostic;
         TemporalSurfaceMetadata diagnosticMetadata;
+        std::vector<std::shared_ptr<gpu::Image>> stableOwners;
+        std::vector<std::shared_ptr<TemporaryBindings>> stableBindings;
     };
     struct Slot {
         uint64_t serial = 0, sequence = 0;
@@ -180,6 +191,11 @@ class BG2E_API TemporalAccumulator {
         bool sceneMotion = false;
         std::vector<Invocation> invocations;
     };
+    gpu::ComputePipeline* stableGIPipeline(uint32_t mode, bool diagnose, bool metrics,
+        const std::shared_ptr<gpu::PipelineLayout>& layout);
+    std::shared_ptr<gpu::Image> presentStableGI(const TemporalInput& input,
+        const std::shared_ptr<History>& history, const std::shared_ptr<gpu::Image>& signal,
+        bool diagnostic, bool nearest);
     TemporalConfiguration _configuration;
     TemporalSettings _settings;
     gpu::Device* _device = nullptr;

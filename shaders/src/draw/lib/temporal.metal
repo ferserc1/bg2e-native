@@ -18,6 +18,9 @@
 
 #include <metal_stdlib>
 using namespace metal;
+#ifndef TEMPORAL_STABLE_GI
+#define TEMPORAL_STABLE_GI 0
+#endif
 struct TemporalUniforms {
     float4x4 inverseViewProjection;
     float4x4 previousViewProjection;
@@ -30,7 +33,14 @@ struct TemporalUniforms {
     float4x4 currentViewProjection;
     float4 metadataRejection;
 #endif
+#if TEMPORAL_STABLE_GI
+    float4 stableJitter; // current and previous framebuffer UV offsets.
+#endif
 };
+#if TEMPORAL_STABLE_GI
+#include "temporal_stable_input.metal"
+#endif
+
 kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     constant TemporalUniforms& dataBlock [[buffer(1)]],
     texture2d<float> normalImage [[texture(0)]],
@@ -63,10 +73,19 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         return;
     }
     float2 uv = (float2(pixel)+0.5)/float2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+    float2 jitteredUV = uv+dataBlock.stableJitter.xy;
+    bool receiverInBounds = all(jitteredUV >= float2(0)) && all(jitteredUV < float2(1));
+    int2 sourcePixel = clamp(int2(jitteredUV*float2(dataBlock.extent.xy)),int2(0),int2(dataBlock.extent.xy)-1);
+#else
     int2 sourcePixel = min(int2(uv*float2(dataBlock.extent.xy)),int2(dataBlock.extent.xy)-1);
+#endif
     float3 encoded = normalImage.read(uint2(sourcePixel)).xyz;
     float3 position, normal;
     bool covered = dot(encoded,encoded) > 1e-8;
+#if TEMPORAL_STABLE_GI
+    covered = covered && receiverInBounds;
+#endif
 #if TEMPORAL_WORLD
     covered = covered && coverageImage.read(uint2(sourcePixel)).r > 0.0;
     position = positionImage.read(uint2(sourcePixel)).xyz;
@@ -80,7 +99,15 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     position = world.xyz/(abs(world.w) > 1e-8 ? world.w : 1.0);
     normal = normalize(encoded*2.0-1.0);
 #endif
+#if TEMPORAL_STABLE_GI
+    float4 current = stableGICurrent(int2(pixel),position,normal,dataBlock,currentImage,normalImage,positionImage
+#if TEMPORAL_METADATA
+        , tokenImage
+#endif
+        );
+#else
     float4 current = currentImage.read(uint2(int2(pixel)));
+#endif
 #if TEMPORAL_SCALAR
     covered = covered && ((as_type<uint>(current.r) & 0x7f800000u) != 0x7f800000u);
     current = float4(clamp(current.r,0.0,1.0));
@@ -117,7 +144,17 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         if (accepted)
         {
             // UV is checked before conversion: an out-of-bounds predecessor never clamps.
+#if TEMPORAL_STABLE_GI
+            float2 metadataUV = previousUV+dataBlock.stableJitter.zw;
+            if (any(metadataUV < float2(0)) || any(metadataUV >= float2(1)))
+            {
+                accepted = false;
+            }
+            uint2 metadataPixel = uint2(clamp(metadataUV,float2(0),float2(1))*float2(dataBlock.extent.xy));
+            metadataPixel = min(metadataPixel,uint2(dataBlock.extent.xy)-1);
+#else
             uint2 metadataPixel = uint2(previousUV*float2(dataBlock.extent.xy));
+#endif
             uint token = tokenImage.read(uint2(sourcePixel)).r;
             uint previousToken = previousTokenImage.read(metadataPixel).r;
             float metadataDepth = metadataDepthImage.read(uint2(sourcePixel));
@@ -149,9 +186,24 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         float2 historyUV = uv;
         if (dataBlock.flags.x != 0u)
         {
-            historyUV += previousUV-sourceUV;
+#if TEMPORAL_STABLE_GI
+        historyUV += previousUV-(sourceUV-dataBlock.stableJitter.xy);
+        if (dataBlock.flags.w != 0u)
+        {
+            historyUV = uv;
+        }
+#else
+        historyUV += previousUV-sourceUV;
+#endif
         }
         float2 historyPixel = historyUV*float2(dataBlock.extent.zw)-0.5;
+#if TEMPORAL_STABLE_GI
+        // A stationary history cell must remain an exact texel, not an almost-integer UV.
+        if (dataBlock.flags.w != 0u && all(historyUV == uv))
+        {
+            historyPixel = float2(pixel);
+        }
+#endif
         int2 base = int2(floor(historyPixel));
         float2 fraction = historyPixel-float2(base);
         float4 historySum = float4(0.0);

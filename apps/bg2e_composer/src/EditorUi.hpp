@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/ui/EditInteraction.hpp>
+#include <bg2e/draw/RendererDebug.hpp>
 
 #include "AppDelegate.hpp"
 
@@ -51,6 +52,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void initViewMenu();
     void initCreateNodeMenu();
     void initWindowMenu();
+    void drawDebug(const std::shared_ptr<AppDelegate>& delegate);
 
     void drawImportSettings(const std::shared_ptr<AppDelegate>& delegate);
     void drawImportProgress(const std::shared_ptr<AppDelegate>& delegate);
@@ -73,6 +75,9 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     bool _componentInspectorDrawn = false;
     std::weak_ptr<bg2e::scene::Node> _nameEditNode;
     uint64_t _nameEditGeneration = 0;
+    bg2e::ui::Window _debugWindow;
+    bg2e::draw::RendererDebugOptions _debugOptions;
+    uint64_t _debugRendererGeneration = UINT64_MAX;
     bg2e::ui::Window _properties;
     bg2e::ui::Window _sceneProperties;
     uint64_t _boundGeneration = UINT64_MAX;

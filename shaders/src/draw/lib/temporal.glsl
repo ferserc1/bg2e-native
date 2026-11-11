@@ -16,6 +16,9 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef TEMPORAL_STABLE_GI
+#define TEMPORAL_STABLE_GI 0
+#endif
 layout(local_size_x=16,local_size_y=16,local_size_z=1) in;
 layout(set=0,binding=0,std140) uniform TemporalUniforms
 {
@@ -29,6 +32,9 @@ layout(set=0,binding=0,std140) uniform TemporalUniforms
 #if TEMPORAL_METADATA
     mat4 currentViewProjection;
     vec4 metadataRejection;
+#endif
+#if TEMPORAL_STABLE_GI
+    vec4 stableJitter; // current and previous framebuffer UV offsets.
 #endif
 } dataBlock;
 layout(set=0,binding=1) uniform texture2D normalImage;
@@ -55,6 +61,10 @@ layout(set=0,binding=15) uniform utexture2D previousTokenImage;
 #if TEMPORAL_DIAGNOSTIC
 layout(set=0,binding=16,rgba16f) uniform image2D outputAcceptance;
 #endif
+#if TEMPORAL_STABLE_GI
+#include "temporal_stable_input.glsl"
+#endif
+
 void main()
 {
     uvec2 pixel = gl_GlobalInvocationID.xy;
@@ -63,10 +73,19 @@ void main()
         return;
     }
     vec2 uv = (vec2(pixel)+0.5)/vec2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+    vec2 jitteredUV = uv+dataBlock.stableJitter.xy;
+    bool receiverInBounds = all(greaterThanEqual(jitteredUV,vec2(0))) && all(lessThan(jitteredUV,vec2(1)));
+    ivec2 sourcePixel = clamp(ivec2(jitteredUV*vec2(dataBlock.extent.xy)),ivec2(0),ivec2(dataBlock.extent.xy)-1);
+#else
     ivec2 sourcePixel = min(ivec2(uv*vec2(dataBlock.extent.xy)),ivec2(dataBlock.extent.xy)-1);
+#endif
     vec3 encoded = texelFetch(sampler2D(normalImage,nearestSampler),sourcePixel,0).xyz;
     vec3 position, normal;
     bool covered = dot(encoded,encoded) > 1e-8;
+#if TEMPORAL_STABLE_GI
+    covered = covered && receiverInBounds;
+#endif
 #if TEMPORAL_WORLD
     covered = covered && texelFetch(sampler2D(coverageImage,nearestSampler),sourcePixel,0).r > 0.0;
     position = texelFetch(sampler2D(positionImage,nearestSampler),sourcePixel,0).xyz;
@@ -80,7 +99,11 @@ void main()
     position = world.xyz/(abs(world.w) > 1e-8 ? world.w : 1.0);
     normal = normalize(encoded*2.0-1.0);
 #endif
+#if TEMPORAL_STABLE_GI
+    vec4 current = stableGICurrent(ivec2(pixel),position,normal);
+#else
     vec4 current = texelFetch(sampler2D(currentImage,nearestSampler),ivec2(pixel),0);
+#endif
 #if TEMPORAL_SCALAR
     covered = covered && (!isnan(current.r) && !isinf(current.r));
     current = vec4(clamp(current.r,0.0,1.0));
@@ -117,7 +140,17 @@ void main()
         if (accepted)
         {
             // UV is checked before conversion: an out-of-bounds predecessor never clamps.
+#if TEMPORAL_STABLE_GI
+            vec2 metadataUV = previousUV+dataBlock.stableJitter.zw;
+            if (any(lessThan(metadataUV,vec2(0))) || any(greaterThanEqual(metadataUV,vec2(1))))
+            {
+                accepted = false;
+            }
+            ivec2 metadataPixel = ivec2(clamp(metadataUV,vec2(0),vec2(1))*vec2(dataBlock.extent.xy));
+            metadataPixel = min(metadataPixel,ivec2(dataBlock.extent.xy)-1);
+#else
             ivec2 metadataPixel = ivec2(previousUV*vec2(dataBlock.extent.xy));
+#endif
             uint token = texelFetch(usampler2D(tokenImage,nearestSampler),sourcePixel,0).r;
             uint previousToken = texelFetch(usampler2D(previousTokenImage,nearestSampler),metadataPixel,0).r;
             float metadataDepth = texelFetch(sampler2D(metadataDepthImage,nearestSampler),sourcePixel,0).r;
@@ -149,9 +182,24 @@ void main()
         vec2 historyUV = uv;
         if (dataBlock.flags.x != 0u)
         {
-            historyUV += previousUV-sourceUV;
+#if TEMPORAL_STABLE_GI
+        historyUV += previousUV-(sourceUV-dataBlock.stableJitter.xy);
+        if (dataBlock.flags.w != 0u)
+        {
+            historyUV = uv;
+        }
+#else
+        historyUV += previousUV-sourceUV;
+#endif
         }
         vec2 historyPixel = historyUV*vec2(dataBlock.extent.zw)-0.5;
+#if TEMPORAL_STABLE_GI
+        // A stationary history cell must remain an exact texel, not an almost-integer UV.
+        if (dataBlock.flags.w != 0u && all(equal(historyUV,uv)))
+        {
+            historyPixel = vec2(pixel);
+        }
+#endif
         ivec2 base = ivec2(floor(historyPixel));
         vec2 fraction = historyPixel-vec2(base);
         vec4 historySum = vec4(0.0);

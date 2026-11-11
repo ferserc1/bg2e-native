@@ -287,7 +287,7 @@ def check():
     diagnostic_helpers = []
     for lang in ('glsl', 'metal'):
         source = without_features((root / f'shaders/src/draw/lib/temporal_reprojection.{lang}').read_text(),
-                                  {'TEMPORAL_ADAPTIVE', 'TEMPORAL_MOMENTS', 'TEMPORAL_METRICS'})
+                                  {'TEMPORAL_ADAPTIVE', 'TEMPORAL_MOMENTS', 'TEMPORAL_METRICS', 'TEMPORAL_STABLE_GI'})
         diagnostic_helpers.append(source[source.index('reasonColor('):source.index('\n#endif', source.index('reasonColor('))].replace('vec3', 'float3'))
         assert 'uint reason = accepted ? (geometricConfidence >= 1.0-1e-6 ? 9u : 8u) : rejectionReason;' in source
         start = source.index('    float expectedDepth =')

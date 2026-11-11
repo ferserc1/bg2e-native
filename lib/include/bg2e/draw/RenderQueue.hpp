@@ -61,6 +61,8 @@ class BG2E_API RenderQueue {
     void beginFrame(Engine& engine);
     void enqueue(scene::Node& node, const std::shared_ptr<Drawable>& drawable, uint32_t submesh, const glm::mat4& world);
     void sort(const glm::vec3& cameraPosition);
+    // Omit transparent receivers and tracing instances from this extracted frame.
+    void excludeTransparent();
     void validate(Engine& engine) const;
     const std::vector<Item>& items() const;
     const std::vector<Item>& queue(RenderQueueType type) const;

@@ -16,6 +16,9 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef TEMPORAL_STABLE_GI
+#define TEMPORAL_STABLE_GI 0
+#endif
 layout(local_size_x=16,local_size_y=16,local_size_z=1) in;
 layout(set=0,binding=0,std140) uniform TemporalUniforms
 {
@@ -33,6 +36,9 @@ layout(set=0,binding=0,std140) uniform TemporalUniforms
 #if TEMPORAL_ADAPTIVE
     layout(offset = 352) vec4 adaptive;
 #endif
+#endif
+#if TEMPORAL_STABLE_GI
+    vec4 stableJitter; // current and previous framebuffer UV offsets.
 #endif
 } dataBlock;
 layout(set=0,binding=1) uniform texture2D normalImage;
@@ -90,6 +96,10 @@ bool validPreviousGeometry(vec4 previousPosition, vec4 previousNormal,
         length(previousPosition.xyz-expectedPosition) <= threshold &&
         dot(expectedDirection,previousNormal.xyz) >= normalCosine;
 }
+
+#if TEMPORAL_STABLE_GI
+#include "temporal_stable_input.glsl"
+#endif
 
 #if TEMPORAL_MOMENTS
 #include "temporal_moments.glsl"
@@ -155,10 +165,19 @@ void main()
         return;
     }
     vec2 uv = (vec2(pixel)+0.5)/vec2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+    vec2 jitteredUV = uv+dataBlock.stableJitter.xy;
+    bool receiverInBounds = all(greaterThanEqual(jitteredUV,vec2(0))) && all(lessThan(jitteredUV,vec2(1)));
+    ivec2 sourcePixel = clamp(ivec2(jitteredUV*vec2(dataBlock.extent.xy)),ivec2(0),ivec2(dataBlock.extent.xy)-1);
+#else
     ivec2 sourcePixel = min(ivec2(uv*vec2(dataBlock.extent.xy)),ivec2(dataBlock.extent.xy)-1);
+#endif
     vec3 encoded = texelFetch(sampler2D(normalImage,nearestSampler),sourcePixel,0).xyz;
     vec3 position, normal;
     bool covered = dot(encoded,encoded) > 1e-8;
+#if TEMPORAL_STABLE_GI
+    covered = covered && receiverInBounds;
+#endif
 #if TEMPORAL_WORLD
     covered = covered && texelFetch(sampler2D(coverageImage,nearestSampler),sourcePixel,0).r > 0.0;
     position = texelFetch(sampler2D(positionImage,nearestSampler),sourcePixel,0).xyz;
@@ -176,7 +195,11 @@ void main()
     bool receiverCovered = covered && finite4(vec4(position,1)) && finite4(vec4(normal,1));
     uint rejectionReason = 10u;
 #endif
+#if TEMPORAL_STABLE_GI
+    vec4 current = stableGICurrent(ivec2(pixel),position,normal);
+#else
     vec4 current = texelFetch(sampler2D(currentImage,nearestSampler),ivec2(pixel),0);
+#endif
 #if TEMPORAL_SCALAR
     covered = covered && (!isnan(current.r) && !isinf(current.r));
     current = vec4(clamp(current.r,0.0,1.0));
@@ -242,7 +265,19 @@ void main()
     if (dataBlock.flags.x != 0u)
     {
         vec2 receiverUV = (vec2(sourcePixel)+0.5)/vec2(dataBlock.extent.xy);
+#if TEMPORAL_STABLE_GI
+        historyUV += previousUV-(receiverUV-dataBlock.stableJitter.xy);
+        // Test correspondence in pixel space: quantized depth must not look
+        // like motion, and moving-object metadata must still transport history.
+        vec4 stationaryClip = dataBlock.currentViewProjection*vec4(expectedPosition.xyz,1);
+        vec2 stationaryUV = stationaryClip.xy/max(abs(stationaryClip.w),1e-8)*vec2(0.5,-0.5)+0.5;
+        if (dataBlock.flags.w != 0u && finite4(stationaryClip) && stationaryClip.w > 1e-8 && all(lessThan(abs(stationaryUV-receiverUV)*vec2(dataBlock.extent.xy),vec2(0.01))))
+        {
+            historyUV = uv;
+        }
+#else
         historyUV += previousUV-receiverUV;
+#endif
     }
     accepted = accepted && all(greaterThanEqual(previousUV,vec2(0))) && all(lessThan(previousUV,vec2(1)));
 #if TEMPORAL_DIAGNOSTIC
@@ -304,6 +339,13 @@ void main()
     if (accepted)
     {
         vec2 q = historyUV*vec2(dataBlock.extent.zw)-0.5;
+#if TEMPORAL_STABLE_GI
+        // A stationary history cell must remain an exact texel, not an almost-integer UV.
+        if (dataBlock.flags.w != 0u && all(equal(historyUV,uv)))
+        {
+            q = vec2(pixel);
+        }
+#endif
         ivec2 base = ivec2(floor(q));
         vec2 fraction = q-vec2(base);
         ivec2 metadataExtent = textureSize(usampler2D(previousTokenImage,nearestSampler),0);
@@ -327,7 +369,16 @@ void main()
             }
             // Map this signal texel center into the retained integer metadata image.
             vec2 candidateUV = (vec2(previousPixel)+0.5)/vec2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+            vec2 metadataUV = candidateUV+dataBlock.stableJitter.zw;
+            if (any(lessThan(metadataUV,vec2(0))) || any(greaterThanEqual(metadataUV,vec2(1))))
+            {
+                continue;
+            }
+            ivec2 metadataPixel = ivec2(floor(metadataUV*vec2(metadataExtent)));
+#else
             ivec2 metadataPixel = ivec2(floor(candidateUV*vec2(metadataExtent)));
+#endif
             uint previousToken = texelFetch(usampler2D(previousTokenImage,nearestSampler),metadataPixel,0).r;
             if (previousToken == 0u || previousToken != token)
             {

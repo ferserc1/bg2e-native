@@ -66,7 +66,9 @@ def check_source():
     assert 'base::CpuProfileScope profile("effect.temporal.record")' in record
     assert 'if (diagnose || metrics)\n    {\n        diagnosticCpu.emplace(' in record
     assert 'diagnosticGpu.emplace(input.command,"effect.temporal.diagnosticCapture"' in record
-    assert 'if (diagnose)\n    {\n        next->acceptance = ' in record
+    assert ('if (diagnose)\n    {\n'
+            '        description.debugName = "temporal-history-acceptance-image";\n'
+            '        next->acceptance = ') in record
     assert display.index('TemporalDiagnosticView::Off') < display.index('effect.temporal.diagnosticDisplay')
     assert display.index('if (!surfaceData)') < display.index('effect.temporal.diagnosticDisplay')
     for source in (record, display):

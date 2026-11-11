@@ -453,3 +453,7 @@ slot lifetime and threshold semantics; [live settings](Settings.md#bloom-setting
 for Graphics Settings and persistence; and [architecture](../../architecture/draw_bloom.md)
 for filter equations, memory costs and temporal/headless integration. Native GPU
 validation remains distinct from source/numerical-specification checks.
+
+
+Session-only buffer inspection and its disabled-path resource contract are documented
+in [RendererDebug](RendererDebug.md). Composer exposes it through Window > Debug.

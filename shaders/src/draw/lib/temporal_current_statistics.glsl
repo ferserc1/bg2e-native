@@ -65,6 +65,13 @@ CurrentStatistics gatherCurrentStatistics(ivec2 pixel, uint token, vec3 position
             continue;
         }
         vec2 neighborUV = (vec2(neighbor)+0.5)/vec2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+        neighborUV += dataBlock.stableJitter.xy;
+        if (any(lessThan(neighborUV,vec2(0))) || any(greaterThanEqual(neighborUV,vec2(1))))
+        {
+            continue;
+        }
+#endif
         ivec2 receiver = ivec2(floor(neighborUV*vec2(dataBlock.extent.xy)));
         uint neighborToken = texelFetch(usampler2D(tokenImage,nearestSampler),receiver,0).r;
         if (neighborToken == 0u || neighborToken != token)
@@ -98,7 +105,11 @@ CurrentStatistics gatherCurrentStatistics(ivec2 pixel, uint token, vec3 position
         {
             continue;
         }
+#if TEMPORAL_STABLE_GI
+        vec4 sampleValue = stableGICurrent(neighbor,neighborPosition,neighborNormal);
+#else
         vec4 sampleValue = texelFetch(sampler2D(currentImage,nearestSampler),neighbor,0);
+#endif
         if (!finite4(sampleValue))
         {
             continue;

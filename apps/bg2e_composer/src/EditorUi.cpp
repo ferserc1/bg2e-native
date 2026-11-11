@@ -340,6 +340,17 @@ void EditorUi::initWindowMenu()
             owner->_graphics.open();
         }
     }}});
+    window.addMenuItem({"Debug", {.handler = [weakUi]
+    {
+        if (auto owner = weakUi.lock())
+        {
+            owner->_debugWindow.open();
+        }
+    }}, [weakUi]
+    {
+        const auto owner = weakUi.lock();
+        return owner && owner->_debugWindow.isOpen();
+    }});
     window.addMenuItem({"Performance", {.handler = [weakUi]
     {
         if (auto owner = weakUi.lock())
@@ -519,6 +530,8 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
                 ui->_componentInspector.onEditRequested({});
                 ui->_componentInspector.onActionRequested({});
                 ui->_graphics.clear();
+                ui->_debugOptions = {};
+                ui->_debugRendererGeneration = UINT64_MAX;
                 ui->_performance.close();
                 ui->_sceneTree.setRootNode(nullptr);
                 ui->_sceneTree.setSelectionManager(nullptr);
@@ -546,6 +559,20 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
             }
         });
     }
+    _debugWindow.setTitle("Debug");
+    _debugWindow.setPosition(340,100);
+    _debugWindow.setSize(500,530);
+    _debugWindow.close();
+    _debugWindow.setDrawFunction([weakUi]
+    {
+        if (auto owner = weakUi.lock())
+        {
+            if (auto delegate = owner->_delegate.lock())
+            {
+                owner->drawDebug(delegate);
+            }
+        }
+    });
     _uiSettings.init(true, true);
     _uiSettings.close();
     if (auto delegate = _delegate.lock())
@@ -709,6 +736,19 @@ void EditorUi::drawUI()
     _importStatusItem->setText(delegate->importStatus());
     _workspace.draw();
     _graphics.draw();
+    _debugWindow.draw();
+    if (!_debugWindow.isOpen() && _debugOptions.enabled)
+    {
+        _debugOptions.enabled = false;
+        const auto options = _debugOptions;
+        delegate->enqueueRendererUpdate(delegate->rendererGeneration(),[options](bg2e::draw::Renderer& renderer)
+        {
+            if (auto* deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(&renderer))
+            {
+                deferred->setDebugOptions(options);
+            }
+        });
+    }
     _performance.draw();
     if (_uiSettings.isOpen())
     {

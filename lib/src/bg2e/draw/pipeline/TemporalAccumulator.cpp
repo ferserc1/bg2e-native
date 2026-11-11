@@ -25,6 +25,10 @@
 #include <cmath>
 #include <limits>
 #include <optional>
+#include <cstring>
+#include <array>
+#include <cstddef>
+#include <string_view>
 
 namespace bg2e::draw::pipeline {
 namespace {
@@ -77,6 +81,7 @@ void TemporalAccumulator::initialize(gpu::Device& device, gpu::BackendType backe
         throw std::invalid_argument("Temporal initialization requires a clean lifecycle, valid slots/capacity/interface");
     }
     _device = &device;
+    _backend = backend;
     const auto usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;
     for (auto format : {gpu::PixelFormat::R16_SFLOAT,gpu::PixelFormat::R16G16B16A16_SFLOAT,gpu::PixelFormat::R32G32B32A32_SFLOAT})
     {
@@ -589,6 +594,14 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     const bool adaptive = rigid && _settings.adaptiveEnabled && adaptiveAvailable();
     const bool moments = adaptive && momentsAvailable();
     const uint32_t metadataMode = moments ? 4u : (adaptive ? 3u : (rigid ? 2u : (enhanced ? 1u : 0u)));
+    // Only built-in shader families implement the private stable-grid suffix.
+    // Injected shader contracts and explicit world-position profiles stay unchanged.
+    const auto& prefix = moments ? _configuration.momentShaderPrefix : adaptive ? _configuration.adaptiveShaderPrefix :
+        rigid ? _configuration.reprojectionShaderPrefix : enhanced ? _configuration.metadataShaderPrefix : _configuration.shaderPrefix;
+    constexpr std::array<std::string_view,5> builtinPrefixes{"draw/temporal_accumulation","draw/temporal_accumulation_v2",
+        "draw/temporal_accumulation_v3","draw/temporal_accumulation_v4","draw/temporal_accumulation_v5"};
+    bool stableGrid = input.key.signal == TemporalSignal::DiffuseRadiance &&
+        input.surface.profile == SurfaceProfile::CameraDepth && input.view.reproject && std::string_view(prefix) == builtinPrefixes.at(metadataMode);
     const bool diagnose = enhanced && input.diagnoseAcceptance && diagnosticsAvailable() &&
         (moments ? bool(_momentAcceptancePipelines[0]) : (adaptive ? bool(_adaptiveAcceptancePipelines[0]) : (!rigid || bool(_reprojectionAcceptancePipelines[0]))));
     const uint32_t metricIndex = (moments ? 2u : 0u)+(scalar ? 0u : 1u);
@@ -605,6 +618,20 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     }
     input.surface.validate(*_device);
     MotionVectorGenerator::validate(input.view);
+    if (stableGrid)
+    {
+        const auto offset = input.view.jitteredProjection*glm::inverse(input.view.projection);
+        glm::mat4 translation{1};
+        translation[3][0] = offset[3][0];
+        translation[3][1] = offset[3][1];
+        for (uint32_t column = 0; column < 4; ++column)
+        {
+            for (uint32_t row = 0; row < 4; ++row)
+            {
+                stableGrid = stableGrid && std::abs(offset[column][row]-translation[column][row]) < 1e-5f;
+            }
+        }
+    }
     if (input.key.signal == TemporalSignal::ReflectedRadiance && (!input.material || !input.material->isValid() ||
         input.material->device() != _device || input.material->size() != input.surface.extent() ||
         input.material->imageType() != gpu::ImageType::Image2D || !gpu::hasFlag(input.material->usage(),gpu::ImageUsage::Sampled) ||
@@ -644,7 +671,7 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     if (!consecutive || (cameraChanged && !rigid) || previous->metadataMode != metadataMode ||
         previous->generation != input.generation || previous->reset != _generation ||
         previous->signal->size() != input.signal.size() || previous->surfaceExtent != input.surface.extent() ||
-        previous->profile != input.surface.profile || previous->view.reproject != input.view.reproject ||
+        previous->profile != input.surface.profile || previous->stableGrid != stableGrid || previous->view.reproject != input.view.reproject ||
         previous->view.projection != input.view.projection || previous->maxRoughness != input.maxRoughness)
     {
         previous.reset();
@@ -676,6 +703,7 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     next->generation = input.generation;
     next->reset = _generation;
     next->view = input.view;
+    next->stableGrid = stableGrid;
     next->metadataMode = metadataMode;
     if (enhanced)
     {
@@ -730,7 +758,7 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     auto& enhancedData = reprojectionData.metadata;
     auto& data = enhancedData.temporal;
     data.inverseViewProjection = input.surface.inverseViewProjection;
-    data.previousViewProjection = previous ? previous->view.jitteredProjection*previous->view.view : glm::mat4(1);
+    data.previousViewProjection = previous ? (stableGrid ? previous->view.projection : previous->view.jitteredProjection)*previous->view.view : glm::mat4(1);
     data.rejection = {_settings.absolutePositionThreshold,_settings.relativePositionThreshold,_settings.normalThreshold,previous ? 1.0f : 0.0f};
     data.counts = {uint32_t(input.key.signal),_settings.maxFrames,effectiveFreeze ? 1u : 0u,
         input.surface.profile == SurfaceProfile::WorldPositionCoverage ? 1u : 0u};
@@ -746,9 +774,28 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     const auto uniformBytes = adaptive ? sizeof(adaptiveData) : (rigid ? sizeof(reprojectionData) : (enhanced ? sizeof(enhancedData) : sizeof(data)));
     const auto selectedLayout = metrics ? _metricLayouts[moments ? 1u : 0u] : moments ? (diagnose ? _momentAcceptanceLayout : _momentLayout) : (adaptive ? (diagnose ? _adaptiveAcceptanceLayout : _adaptiveLayout) : (rigid ? (diagnose ? _reprojectionAcceptanceLayout : _reprojectionLayout) :
         (diagnose ? _acceptanceLayout : (enhanced ? _metadataLayout : _layout))));
-    invocation.pooled = _pool->bindings(input.command, selectedLayout, 0, uniformBytes,
+    glm::vec4 stableJitter{0};
+    if (stableGrid)
+    {
+        const auto jitter = [](const TemporalView& view)
+        {
+            const auto offset = view.jitteredProjection*glm::inverse(view.projection);
+            return glm::vec2(offset[3][0]*0.5f,-offset[3][1]*0.5f);
+        };
+        stableJitter = glm::vec4(jitter(input.view),previous ? jitter(previous->view) : glm::vec2(0));
+        // On static receivers, avoid even sub-ULP resampling from inverse/multiply.
+        data.flags.w = previous && !slot.sceneMotion && previous->view.view == input.view.view ? 1u : 0u;
+    }
+    const auto bytes = uniformBytes + (stableGrid ? sizeof(stableJitter) : 0);
+    std::array<std::byte,sizeof(TemporalAdaptiveUniforms)+sizeof(glm::vec4)> uniforms{};
+    std::memcpy(uniforms.data(),&adaptiveData,uniformBytes);
+    if (stableGrid)
+    {
+        std::memcpy(uniforms.data()+uniformBytes,&stableJitter,sizeof(stableJitter));
+    }
+    invocation.pooled = _pool->bindings(input.command, selectedLayout, 0, bytes,
         {input.slot, uint64_t(input.key.signal), input.key.view, input.key.layer});
-    invocation.pooled->writeUniforms(&adaptiveData, uniformBytes);
+    invocation.pooled->writeUniforms(uniforms.data(), bytes);
     invocation.uniforms = invocation.pooled->uniforms();
     invocation.resources = invocation.pooled->resources();
     invocation.pooled->setUniformBuffer({0,1},invocation.uniforms.get());
@@ -809,9 +856,13 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
     invocation.pooled->update();
     slot.invocations.push_back(std::move(invocation));
     const uint32_t index = (input.surface.profile == SurfaceProfile::WorldPositionCoverage ? 2u : 0u)+(scalar ? 0u : 1u);
-    input.command.beginCompute();
     auto* pipeline = metrics ? _metricPipelines[metricIndex].get() : moments ? (diagnose ? _momentAcceptancePipelines[index].get() : _momentPipelines[index].get()) : (adaptive ? (diagnose ? _adaptiveAcceptancePipelines[index].get() : _adaptivePipelines[index].get()) : (rigid ? (diagnose ? _reprojectionAcceptancePipelines[index].get() : _reprojectionPipelines[index].get()) :
         (diagnose ? _acceptancePipelines[index].get() : (enhanced ? _metadataPipelines[index].get() : _pipelines[index].get()))));
+    if (stableGrid)
+    {
+        pipeline = stableGIPipeline(metadataMode,diagnose,metrics,selectedLayout);
+    }
+    input.command.beginCompute();
     input.command.bindPipeline(pipeline);
     input.command.bindResourceSet(pipeline,0,slot.invocations.back().resources.get());
     input.command.dispatch((input.signal.width()+15)/16,(input.signal.height()+15)/16,1);
@@ -833,6 +884,20 @@ TemporalResult TemporalAccumulator::record(const TemporalInput& input)
         input.command.transition(next->metrics.get(),gpu::ImageLayout::ShaderReadOnly);
     }
     _histories[input.key] = next;
+    if (stableGrid && input.view.jitteredProjection != input.view.projection)
+    {
+        // Presentation images are never assigned to history->signal or moments.
+        auto presented = presentStableGI(input,next,next->signal,false,false);
+        if (next->acceptance)
+        {
+            next->acceptance = presentStableGI(input,next,next->acceptance,true,true);
+        }
+        if (next->metrics)
+        {
+            next->metrics = presentStableGI(input,next,next->metrics,true,false);
+        }
+        return {presented.get(),presented,next->count};
+    }
     return {next->signal.get(),next->signal,next->count};
 }
 
@@ -958,6 +1023,26 @@ std::shared_ptr<gpu::Image> TemporalAccumulator::recordDiagnostic(gpu::CommandBu
     return result;
 }
 
+void TemporalAccumulator::releaseDiagnosticCaptures()
+{
+    if (_device)
+    {
+        _device->waitIdleForResourceUpdate();
+    }
+    for (auto& slot : _slots)
+    {
+        slot.invocations.clear();
+    }
+    for (auto& [key, history] : _histories)
+    {
+        history->acceptance.reset();
+        history->metrics.reset();
+    }
+    // Accepted signal/geometry/moments have their own strong history owners.
+    // Discarding the pool only evicts cached storage and descriptor bindings.
+    _pool.reset();
+}
+
 void TemporalAccumulator::invalidate()
 {
     if (_generation == std::numeric_limits<uint64_t>::max())
@@ -977,6 +1062,7 @@ void TemporalAccumulator::cleanup()
     _histories.clear();
     _slots.clear();
     _pool.reset();
+    _stableGI.reset();
     _metricPipelines = {};
     _metricShaders = {};
     _metricLayouts = {};

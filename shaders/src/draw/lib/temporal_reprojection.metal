@@ -18,6 +18,9 @@
 
 #include <metal_stdlib>
 using namespace metal;
+#ifndef TEMPORAL_STABLE_GI
+#define TEMPORAL_STABLE_GI 0
+#endif
 struct TemporalUniforms {
     float4x4 inverseViewProjection;
     float4x4 previousViewProjection;
@@ -34,12 +37,15 @@ struct TemporalUniforms {
     float4 adaptive;
 #endif
 #endif
+#if TEMPORAL_STABLE_GI
+    float4 stableJitter; // current and previous framebuffer UV offsets.
+#endif
 };
 #if !TEMPORAL_ADAPTIVE
-static_assert(sizeof(TemporalUniforms) == 352, "Temporal v3 uniform size");
+static_assert(sizeof(TemporalUniforms) == 352+16*TEMPORAL_STABLE_GI, "Temporal v3 uniform size");
 #endif
 #if TEMPORAL_ADAPTIVE
-static_assert(sizeof(TemporalUniforms) == 368, "Temporal v4 uniform size");
+static_assert(sizeof(TemporalUniforms) == 368+16*TEMPORAL_STABLE_GI, "Temporal v4 uniform size");
 static_assert(__builtin_offsetof(TemporalUniforms, adaptive) == 352, "Adaptive offset");
 #endif
 static_assert(__builtin_offsetof(TemporalUniforms, previousView) == 288, "Previous view offset");
@@ -65,6 +71,10 @@ bool validPreviousGeometry(float4 previousPosition, float4 previousNormal,
         length(previousPosition.xyz-expectedPosition) <= threshold &&
         dot(expectedDirection,previousNormal.xyz) >= normalCosine;
 }
+
+#if TEMPORAL_STABLE_GI
+#include "temporal_stable_input.metal"
+#endif
 
 #if TEMPORAL_MOMENTS
 #include "temporal_moments.metal"
@@ -163,10 +173,19 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
         return;
     }
     float2 uv = (float2(pixel)+0.5)/float2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+    float2 jitteredUV = uv+dataBlock.stableJitter.xy;
+    bool receiverInBounds = all(jitteredUV >= float2(0)) && all(jitteredUV < float2(1));
+    int2 sourcePixel = clamp(int2(jitteredUV*float2(dataBlock.extent.xy)),int2(0),int2(dataBlock.extent.xy)-1);
+#else
     int2 sourcePixel = min(int2(uv*float2(dataBlock.extent.xy)),int2(dataBlock.extent.xy)-1);
+#endif
     float3 encoded = normalImage.read(uint2(sourcePixel)).xyz;
     float3 position, normal;
     bool covered = dot(encoded,encoded) > 1e-8;
+#if TEMPORAL_STABLE_GI
+    covered = covered && receiverInBounds;
+#endif
 #if TEMPORAL_WORLD
     covered = covered && coverageImage.read(uint2(sourcePixel)).r > 0.0;
     position = positionImage.read(uint2(sourcePixel)).xyz;
@@ -184,7 +203,15 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     bool receiverCovered = covered && finite4(float4(position,1)) && finite4(float4(normal,1));
     uint rejectionReason = 10u;
 #endif
+#if TEMPORAL_STABLE_GI
+    float4 current = stableGICurrent(int2(pixel),position,normal,dataBlock,currentImage,normalImage,positionImage
+#if TEMPORAL_METADATA
+        , tokenImage
+#endif
+        );
+#else
     float4 current = currentImage.read(uint2(int2(pixel)));
+#endif
 #if TEMPORAL_SCALAR
     covered = covered && ((as_type<uint>(current.r) & 0x7f800000u) != 0x7f800000u);
     current = float4(clamp(current.r,0.0,1.0));
@@ -250,7 +277,19 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     if (dataBlock.flags.x != 0u)
     {
         float2 receiverUV = (float2(sourcePixel)+0.5)/float2(dataBlock.extent.xy);
+#if TEMPORAL_STABLE_GI
+        historyUV += previousUV-(receiverUV-dataBlock.stableJitter.xy);
+        // Test correspondence in pixel space: quantized depth must not look
+        // like motion, and moving-object metadata must still transport history.
+        float4 stationaryClip = dataBlock.currentViewProjection*float4(expectedPosition.xyz,1);
+        float2 stationaryUV = stationaryClip.xy/max(abs(stationaryClip.w),1e-8)*float2(0.5,-0.5)+0.5;
+        if (dataBlock.flags.w != 0u && finite4(stationaryClip) && stationaryClip.w > 1e-8 && all(abs(stationaryUV-receiverUV)*float2(dataBlock.extent.xy) < float2(0.01)))
+        {
+            historyUV = uv;
+        }
+#else
         historyUV += previousUV-receiverUV;
+#endif
     }
     accepted = accepted && all(previousUV >= float2(0)) && all(previousUV < float2(1));
 #if TEMPORAL_DIAGNOSTIC
@@ -312,6 +351,13 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     if (accepted)
     {
         float2 q = historyUV*float2(dataBlock.extent.zw)-0.5;
+#if TEMPORAL_STABLE_GI
+        // A stationary history cell must remain an exact texel, not an almost-integer UV.
+        if (dataBlock.flags.w != 0u && all(historyUV == uv))
+        {
+            q = float2(pixel);
+        }
+#endif
         int2 base = int2(floor(q));
         float2 fraction = q-float2(base);
         int2 metadataExtent = int2(previousTokenImage.get_width(),previousTokenImage.get_height());
@@ -335,7 +381,16 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
             }
             // Map this signal texel center into the retained integer metadata image.
             float2 candidateUV = (float2(previousPixel)+0.5)/float2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+            float2 metadataUV = candidateUV+dataBlock.stableJitter.zw;
+            if (any(metadataUV < float2(0)) || any(metadataUV >= float2(1)))
+            {
+                continue;
+            }
+            int2 metadataPixel = int2(floor(metadataUV*float2(metadataExtent)));
+#else
             int2 metadataPixel = int2(floor(candidateUV*float2(metadataExtent)));
+#endif
             uint previousToken = previousTokenImage.read(uint2(metadataPixel)).r;
             if (previousToken == 0u || previousToken != token)
             {

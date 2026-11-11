@@ -532,3 +532,20 @@ reduced/full signal resolution, freeze/rolling, and reflection hit/miss confiden
 After convergence the reflection must not advect. Then move the camera and an
 object to verify that actual motion and disocclusion still work. Capture raw
 reflection history as well as final upscaled output to distinguish the two stages.
+
+### Stable-grid GI regression
+
+Run `python3 tests/draw/temporal/stable_grid_reference.py`. The deterministic
+reference reproduces recursive bilinear diffusion, then verifies that filtering
+only fresh samples preserves stationary contrast with freeze on/off while still
+reducing noise. It also checks receiver isolation, real-motion displacement,
+feedback/presentation ownership and source expansion of all private GLSL/Metal
+variants. It does not compile or execute GPU shaders.
+
+Manual visual validation: enable FSR or MetalFX, keep a cube and camera stationary,
+and inspect Debug > Global illumination > Accumulated. The ground darkening should
+remain after settling, with freeze on or off. Compare Original and Filtered without
+changing camera, test the supported upscale ratios, then move the camera and cube
+and inspect disocclusions. Repeat with receiver metadata/adaptation off and on.
+No screenshot submission, exact frame count or precisely timed invalidation is
+required. Rebuild/deploy the new `temporal_stable_gi` shaders before native testing.

@@ -5,6 +5,7 @@ from pathlib import Path
 import math
 import re
 import struct
+from feature_source import without_features
 
 EPSILON = 1e-6
 LUMA = (.2126, .7152, .0722)
@@ -150,7 +151,7 @@ def check_sources():
     canonical = []
     for language in ('glsl', 'metal'):
         path = ROOT / f'shaders/src/draw/lib/temporal_current_statistics.{language}'
-        source = path.read_text()
+        source = without_features(path.read_text(), {"TEMPORAL_STABLE_GI"})
         assert source.startswith('/*') and 'GNU General Public License' in source
         assert source.count('{') == source.count('}') and source.count('(') == source.count(')')
         assert 'CURRENT_STATISTICS_EPSILON = 1e-6' in source

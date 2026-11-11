@@ -68,6 +68,13 @@ CurrentStatistics gatherCurrentStatistics(int2 pixel, uint token, float3 positio
             continue;
         }
         float2 neighborUV = (float2(neighbor)+0.5)/float2(dataBlock.extent.zw);
+#if TEMPORAL_STABLE_GI
+        neighborUV += dataBlock.stableJitter.xy;
+        if (any(neighborUV < float2(0)) || any(neighborUV >= float2(1)))
+        {
+            continue;
+        }
+#endif
         int2 receiver = int2(floor(neighborUV*float2(dataBlock.extent.xy)));
         uint neighborToken = tokenImage.read(uint2(receiver)).r;
         if (neighborToken == 0u || neighborToken != token)
@@ -101,7 +108,11 @@ CurrentStatistics gatherCurrentStatistics(int2 pixel, uint token, float3 positio
         {
             continue;
         }
+#if TEMPORAL_STABLE_GI
+        float4 sampleValue = stableGICurrent(neighbor,neighborPosition,neighborNormal,dataBlock,currentImage,normalImage,positionImage,tokenImage);
+#else
         float4 sampleValue = currentImage.read(uint2(neighbor));
+#endif
         if (!finite4(sampleValue))
         {
             continue;

@@ -38,23 +38,24 @@ void FullscreenPass::initialize(Engine& engine, const std::filesystem::path& sha
     _vertex = library.vertex("draw/raster/fullscreen", engine.device());
     _fragment = library.fragment(fragment, engine.device());
     gpu::GraphicsPipelineDescription description;
-    description.debugName = "fullscreen-pass-description-graphics-pipeline";
+    const auto identity = fragment + "-" + std::to_string(uint32_t(output));
+    description.debugName = identity + "-fullscreen-pipeline";
     description.layout = _layout.get();
     description.vertexShader = _vertex.get();
     description.fragmentShader = _fragment.get();
     description.colorFormat = output;
     description.cullMode = gpu::CullMode::None;
     description.depthState = gpu::DepthState{false, false, gpu::CompareOperation::Always};
-    description.debugName = "fullscreen-pass-pipeline-graphics-pipeline";
+    description.debugName = identity + "-fullscreen-pipeline";
     _pipeline = engine.device()->createGraphicsPipeline(description);
     gpu::SamplerDescription sampler;
-    sampler.debugName = "fullscreen-pass-sampler-sampler";
+    sampler.debugName = identity + "-nearest-sampler";
     // Nearest supports every sampled G-buffer format including depth. Final
     // reconstruction implements bilinear explicitly, independent of format support.
     sampler.minFilter = sampler.magFilter = gpu::Filter::Nearest;
     sampler.addressModeU = sampler.addressModeV = sampler.addressModeW = gpu::AddressMode::ClampToEdge;
     sampler.maxLod = 0;
-    sampler.debugName = "fullscreen-pass-sampler-sampler";
+    sampler.debugName = identity + "-nearest-sampler";
     _sampler = engine.device()->createSampler(sampler);
     _sets.resize(slots);
     _serial.assign(slots, std::numeric_limits<uint64_t>::max());

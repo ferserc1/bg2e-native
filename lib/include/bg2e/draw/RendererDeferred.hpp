@@ -19,6 +19,7 @@
 #pragma once
 
 #include <bg2e/draw/Renderer.hpp>
+#include <bg2e/draw/RendererDebug.hpp>
 #include <bg2e/draw/pipeline/GBuffer.hpp>
 #include <bg2e/draw/pipeline/SoftShadowPass.hpp>
 #include <bg2e/draw/pipeline/RTAmbientOcclusion.hpp>
@@ -47,6 +48,12 @@ class BG2E_API RendererDeferred : public Renderer {
     static constexpr uint64_t TransparentTemporalLayer = 1;
 
     explicit RendererDeferred(std::filesystem::path shaderRoot = {}, uint32_t frameSlots = 0);
+
+    // Set at a synchronized renderer update boundary. Disabled releases all
+    // inspection resources; observing a signal never replaces the upscale input.
+    const RendererDebugOptions& debugOptions() const;
+    void setDebugOptions(const RendererDebugOptions& options);
+    const std::string& debugStatus() const;
 
     const RendererConfiguration& configuration() const override;
 
@@ -153,6 +160,23 @@ class BG2E_API RendererDeferred : public Renderer {
     }
 
   private:
+    struct DebugState;
+    std::shared_ptr<DebugState> _debug;
+    RendererDebugOptions _debugOptions;
+    bool _debugUsedTemporal = false;
+    bool _debugFailed = false;
+    std::string _debugStatus = "Disabled";
+    void cleanupDebug();
+    void beginDebugFrame(const FrameContext& frame);
+    void captureDebug(const FrameContext& frame, gpu::Image& image, uint32_t mode = 0);
+    void captureDebugSignal(const FrameContext& frame, pipeline::TemporalSignal kind,
+        RendererDebugStage stage, gpu::Image& image, uint64_t layer);
+    void captureDebugGBuffer(const FrameContext& frame, uint64_t layer);
+    void captureDebugLighting(const FrameContext& frame,
+        const std::vector<pipeline::ImageBinding>& inputs, const pipeline::RasterFrame& raster, uint64_t layer);
+    void recordDebugFinal(const FrameContext& frame);
+    pipeline::TemporalDiagnosticView debugTemporalView() const;
+
     struct GIUpsamplingState;
 
     // Private stage lifecycle: retire only an acquired slot; teardown requires a drained device.

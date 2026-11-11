@@ -172,6 +172,17 @@ void RenderQueue::validate(Engine& engine) const
     }
 }
 
+void RenderQueue::excludeTransparent()
+{
+    for (size_t i = 0; i < _opaque.size(); ++i)
+    {
+        _opaque[i].objectId = uint32_t(i + 1);
+    }
+    _items = _opaque;
+    _transparent.clear();
+    _solidTransparent.clear();
+}
+
 void RenderQueue::sort(const glm::vec3& cameraPosition)
 {
     if (!std::isfinite(cameraPosition.x) || !std::isfinite(cameraPosition.y) || !std::isfinite(cameraPosition.z))

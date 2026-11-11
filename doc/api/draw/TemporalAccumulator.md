@@ -703,3 +703,54 @@ Metal. Vulkan S10 raster assertions passed with its AO capability path unavailab
 Library/paired shaders compiled; broader matrix, SDK and benchmarks remain pending.
 See [native evidence](../../../plans/temporal_acc_improvements/validation_2026_10_23/README.md)
 for exact scope and commands. Defaults and implemented_unverified status are unchanged.
+
+## Stable camera-depth GI history
+
+Built-in camera-depth GI accumulation now stores its signal, geometry and moments
+in an unjittered camera grid. The current and previous framebuffer jitter offsets
+are derived from `jitteredProjection * inverse(projection)`. Newly generated GI is
+sampled once onto that stable grid with a four-tap gather. Position, normal,
+coverage and optional surface-token checks prevent interpolation across receiver
+discontinuities; valid black GI remains a sample. A missing current footprint
+restarts the local pixel rather than creating a fabricated dark sample.
+
+History transport uses the previous **unjittered** view-projection matrix. A
+stationary camera/receiver reads its exact history texel, including an explicit
+integer-coordinate path to avoid floating-point almost-integer filtering. Rigid
+correspondence is tested in projected pixel space so depth quantization alone is
+not mistaken for motion. Real camera/object motion still uses geometric
+reprojection and the existing acceptance, frame bounds, adaptive response, moments
+and settling/freeze policy. Retained token images remain in their original receiver
+grids; token lookup includes the previous jitter offset separately from history UV.
+
+When the current projection has jitter, a separate GPU-only presentation kernel
+maps stable GI back into the jittered signal grid for the denoiser, spatial GI
+upsampling and lighting. This kernel validates geometry and may use raw current GI
+for presentation holes. Its result is returned through the existing TemporalResult
+contract, but is never assigned to the retained history signal or moments.
+Acceptance and metric diagnostic images are likewise presented in current receiver
+coordinates; categorical acceptance uses nearest sampling. Debug GI Accumulated
+therefore shows the render-facing accumulated signal before denoising, not a
+feedback copy of that image.
+
+With zero jitter, the current gather has a direct-load fast path and the history
+image is already in render coordinates: no presentation pass/image is allocated.
+With jitter, presentation adds one RGBA16F image at GI signal resolution per retained
+invocation, managed by TemporaryResourcePool and bounded by its normal retirement
+rules. Bindings, source images and outputs are retained in the acquired invocation.
+No per-frame device wait or CPU readback is introduced.
+
+The implementation uses private `temporal_stable_gi` shader variants with a 16-byte
+jitter suffix after the selected v1/v2/v3/v4/v5 uniform block. Existing shader
+interfaces and their block sizes remain unchanged. Only built-in prefixes,
+camera-depth DiffuseRadiance, enabled reprojection and clip-translation jitter use
+this path. Injected shader prefixes, explicit world-position profiles, visibility
+and reflection accumulation retain their existing contracts. History admission
+rejects changes between stable/legacy grids, signal/receiver extents, projections,
+metadata modes, generations and nonconsecutive or unsubmitted predecessors.
+
+`python3 tests/draw/temporal/stable_grid_reference.py` checks stationary contrast
+with rolling/frozen accumulation, noise reduction, geometry isolation, preserved
+real motion, source ownership and active branches of every private shader variant.
+These are CPU math/source checks; shader compilation and native Vulkan/Metal
+validation are separate and remain pending until explicitly performed.
