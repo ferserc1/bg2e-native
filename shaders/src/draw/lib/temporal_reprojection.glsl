@@ -207,8 +207,10 @@ void main()
     covered = covered && (!any(isnan(current)) && !any(isinf(current)));
     if (dataBlock.counts.x == 1u)
     {
+#if !TEMPORAL_STABLE_GI
         covered = covered && current.a > 0.5;
         current.a = 1.0;
+#endif
     }
     else
     {
@@ -243,6 +245,10 @@ void main()
 #endif
     vec4 result = current;
     float count = 1.0;
+#if TEMPORAL_STABLE_GI
+    bool hasCurrentGI = current.a > 0.5;
+    count = hasCurrentGI ? 1.0 : 0.0;
+#endif
     vec4 expectedPosition = texelFetch(sampler2D(expectedPositionImage,nearestSampler),sourcePixel,0);
     vec4 expectedNormal = texelFetch(sampler2D(expectedNormalImage,nearestSampler),sourcePixel,0);
     float expectedNormalLength = length(expectedNormal.xyz);
@@ -486,7 +492,11 @@ void main()
 #if TEMPORAL_ADAPTIVE
             // Freeze is literal outside the motion window; response never modifies a frozen pixel.
             bool frozen = dataBlock.counts.z != 0u && oldCount >= float(dataBlock.counts.y);
-            if (dataBlock.adaptive.w > 0.5 && !frozen)
+            if (dataBlock.adaptive.w > 0.5 && !frozen
+#if TEMPORAL_STABLE_GI
+                && hasCurrentGI
+#endif
+                )
             {
                 // Reactivity is measured against unclipped history, independently of confidence.
                 CurrentStatistics currentStatistics = gatherCurrentStatistics(ivec2(pixel),token,position,normal);
@@ -524,6 +534,13 @@ void main()
                 oldWeight = 1.0-alpha;
             }
 #endif
+#if TEMPORAL_STABLE_GI
+            // Only validated receiver history can fill a missing current sample.
+            if (!hasCurrentGI)
+            {
+                oldWeight = 1.0;
+            }
+#endif
 #if TEMPORAL_METRICS
             diagnosticAlpha = 1.0-oldWeight;
 #endif
@@ -544,6 +561,13 @@ void main()
             }
 #endif
             count = min(oldCount+1.0,float(dataBlock.counts.y));
+#if TEMPORAL_STABLE_GI
+            // Reusing history is not an additional observation.
+            if (!hasCurrentGI)
+            {
+                count = oldCount;
+            }
+#endif
 #if TEMPORAL_MOMENTS
             // Same accepted taps and effective color alpha; oldWeight=1 keeps frozen moments.
             resolvedMoments = mix(currentMoments,previousMoments,oldWeight);

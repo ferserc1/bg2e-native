@@ -111,8 +111,10 @@ void main()
     covered = covered && (!any(isnan(current)) && !any(isinf(current)));
     if (dataBlock.counts.x == 1u)
     {
+#if !TEMPORAL_STABLE_GI
         covered = covered && current.a > 0.5;
         current.a = 1.0;
+#endif
     }
     else
     {
@@ -124,6 +126,10 @@ void main()
     covered = covered && (!any(isnan(position)) && !any(isinf(position))) && (!any(isnan(normal)) && !any(isinf(normal)));
     vec4 result = current;
     float count = 1.0;
+#if TEMPORAL_STABLE_GI
+    bool hasCurrentGI = current.a > 0.5;
+    count = hasCurrentGI ? 1.0 : 0.0;
+#endif
     vec2 previousUV = uv;
     bool accepted = covered && dataBlock.rejection.w > 0.5;
     if (dataBlock.flags.x != 0u)
@@ -259,6 +265,13 @@ void main()
             float oldCount = min(previousNormal.w,float(dataBlock.counts.y));
             float oldWeight = dataBlock.counts.z != 0u && oldCount >= float(dataBlock.counts.y) ? 1.0 :
                 1.0-1.0/min(oldCount+1.0,float(dataBlock.counts.y));
+#if TEMPORAL_STABLE_GI
+            // Only validated receiver history can fill a missing current sample.
+            if (!hasCurrentGI)
+            {
+                oldWeight = 1.0;
+            }
+#endif
 #if TEMPORAL_SCALAR
             result = mix(current,previous,oldWeight);
 #else
@@ -276,6 +289,13 @@ void main()
             }
 #endif
             count = min(oldCount+1.0,float(dataBlock.counts.y));
+#if TEMPORAL_STABLE_GI
+            // Reusing history is not an additional observation.
+            if (!hasCurrentGI)
+            {
+                count = oldCount;
+            }
+#endif
         }
     }
     if (!covered)

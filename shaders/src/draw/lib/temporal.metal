@@ -115,8 +115,10 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     covered = covered && (!any((as_type<uint4>(current) & uint4(0x7f800000u)) == uint4(0x7f800000u)));
     if (dataBlock.counts.x == 1u)
     {
+#if !TEMPORAL_STABLE_GI
         covered = covered && current.a > 0.5;
         current.a = 1.0;
+#endif
     }
     else
     {
@@ -128,6 +130,10 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
     covered = covered && (!any((as_type<uint3>(position) & uint3(0x7f800000u)) == uint3(0x7f800000u))) && (!any((as_type<uint3>(normal) & uint3(0x7f800000u)) == uint3(0x7f800000u)));
     float4 result = current;
     float count = 1.0;
+#if TEMPORAL_STABLE_GI
+    bool hasCurrentGI = current.a > 0.5;
+    count = hasCurrentGI ? 1.0 : 0.0;
+#endif
     float2 previousUV = uv;
     bool accepted = covered && dataBlock.rejection.w > 0.5;
     if (dataBlock.flags.x != 0u)
@@ -263,6 +269,13 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
             float oldCount = min(previousNormal.w,float(dataBlock.counts.y));
             float oldWeight = dataBlock.counts.z != 0u && oldCount >= float(dataBlock.counts.y) ? 1.0 :
                 1.0-1.0/min(oldCount+1.0,float(dataBlock.counts.y));
+#if TEMPORAL_STABLE_GI
+            // Only validated receiver history can fill a missing current sample.
+            if (!hasCurrentGI)
+            {
+                oldWeight = 1.0;
+            }
+#endif
 #if TEMPORAL_SCALAR
             result = mix(current,previous,oldWeight);
 #else
@@ -280,6 +293,13 @@ kernel void compMain(uint2 pixel [[thread_position_in_grid]],
             }
 #endif
             count = min(oldCount+1.0,float(dataBlock.counts.y));
+#if TEMPORAL_STABLE_GI
+            // Reusing history is not an additional observation.
+            if (!hasCurrentGI)
+            {
+                count = oldCount;
+            }
+#endif
         }
     }
     if (!covered)

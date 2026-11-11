@@ -1324,7 +1324,7 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
     {
         auto* surfaceDepth = slot.gbuffer[6].get();
         auto resolveSignal = [&](pipeline::TemporalSignal kind, gpu::Image& signal, gpu::Image* material = nullptr,
-            float maxRoughness = 1.0f, std::shared_ptr<gpu::Image>* selectedOwner = nullptr)
+            float maxRoughness = 1.0f)
         {
             captureDebugSignal(frame,kind,RendererDebugStage::Original,signal,layer);
             pipeline::SurfaceInputs surface;
@@ -1368,18 +1368,6 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             gpu::GpuTimingScope denoiseTiming(frame.commandBuffer, "effect.denoise.record", layer, layer != 0);
             const auto filtered = _configuration.denoise->record({frame.commandBuffer,frame.frameSlot,frame.frameNumber,
                 {filteredKind,0,layer},*accumulated.image,surface,slot.camera.view,material,maxRoughness});
-            if (selectedOwner)
-            {
-                *selectedOwner = filtered.owner;
-                if (!*selectedOwner && filtered.image == accumulated.image)
-                {
-                    *selectedOwner = accumulated.owner;
-                }
-                if (!*selectedOwner && filtered.image == &signal)
-                {
-                    *selectedOwner = std::dynamic_pointer_cast<gpu::Image>(signal.weak_from_this().lock());
-                }
-            }
             return filtered.image;
         };
         std::vector<pipeline::ImageBinding> inputs;
@@ -1436,23 +1424,18 @@ std::shared_ptr<gpu::Image> RendererDeferred::recordLinear(const FrameContext& f
             auto* signal = slot.gi.get();
             if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination && _configuration.globalIllumination->enabled())
             {
-                std::shared_ptr<gpu::Image> selectedOwner;
-                signal = resolveSignal(pipeline::TemporalSignal::DiffuseRadiance,*signal,nullptr,1.0f,&selectedOwner);
-                if (signal == slot.gi.get())
+                // Reconstruct current samples onto receiver pixels before accumulating.
+                // Missing bilateral support retains alpha zero, rather than valid black.
+                std::shared_ptr<gpu::Image> reconstructed;
+                if (_giUpsampling && giUpsamplingCompatible() && slot.giUpsampled &&
+                    slot.gi->size() != _configuration.internalExtent)
                 {
-                    selectedOwner = slot.gi;
+                    reconstructed = recordGIUpsampling(frame.commandBuffer,slot.gi,slot.gbuffer[1],
+                        slot.gbuffer[6],glm::inverse(slot.jitteredProjection*slot.camera.view),slot.camera.view,
+                        slot.giUpsampled,frame.frameSlot,frame.frameNumber,layer);
+                    signal = reconstructed.get();
                 }
-                if (_giUpsampling && giUpsamplingCompatible() && slot.giUpsampled && signal &&
-                    selectedOwner && selectedOwner.get() == signal && signal->size() == slot.gi->size() &&
-                    signal->size() != _configuration.internalExtent)
-                {
-                    // Use the actual receiver depth captured with these normals,
-                    // including transparent surfaces in front of empty sky.
-                    signal = recordGIUpsampling(frame.commandBuffer,selectedOwner,slot.gbuffer[1],
-                        slot.gbuffer[6],
-                        glm::inverse(slot.jitteredProjection*slot.camera.view),slot.camera.view,
-                        slot.giUpsampled,frame.frameSlot,frame.frameNumber,layer).get();
-                }
+                signal = resolveSignal(pipeline::TemporalSignal::DiffuseRadiance,*signal);
             }
             if (_configuration.indirectLighting == IndirectLightingMode::GlobalIllumination && _configuration.globalIllumination->enabled())
             {
