@@ -109,7 +109,7 @@ void AppDelegate::initializeTransformInteractions()
                     }
                     command::Effects effects;
                     effects.lightmapSources = true;
-                    effects.renderHistories = true;
+                    // Renderer signatures classify transform changes and preserve motion history.
                     owner->applyCommandEffects(*owner->_commandRenderer, effects);
                 });
             // Stop prepared bake publication before opening an authored preview.
