@@ -11,6 +11,7 @@ macOS and Linux:
 
 ```sh
 bash scripts/package_macos.sh Debug /existing/package/directory "$VULKAN_SDK"
+bash scripts/package_macos.sh --identity "Developer ID Application: Example (TEAMID)" Release /existing/package/directory "$VULKAN_SDK"
 bash scripts/package_linux.sh Release /existing/package/directory "$VULKAN_SDK"
 ```
 
@@ -20,7 +21,7 @@ Use the CLI supported by the selected platform:
 | Platform | Script and generator | Archive | Optional behavior |
 |---|---|---|---|
 | Linux | package_linux.sh; Ninja | `.tar.gz` | `--allow-dirty` and `--overwrite` before positional arguments. |
-| macOS | package_macos.sh; Xcode | `.zip` | No dirty-check bypass or overwrite flag. |
+| macOS | package_macos.sh; Xcode | `.zip` | Optional `--identity NAME`; no dirty-check bypass or overwrite flag. |
 | Windows | package_windows.ps1; Visual Studio 17 2022, x64 | `.zip` | Optional `-VulkanSdk`; no dirty-check bypass or overwrite switch. |
 
 All platforms require initialized, matching submodules. Clean-checkout validation
@@ -56,7 +57,13 @@ directly into the destination package; failure can leave partial output to inspe
 These procedures do not promise atomic package replacement or power-loss durability.
 
 macOS retains the existing app bundle Vulkan/MoltenVK/SDL/resource rules and
-project-disabled code signing; it is not a signed distribution. Windows packages
+project-disabled build-time code signing. With `--identity NAME`, the packaging
+script signs all packaged Mach-O files (including embedded engine and third-party
+libraries), then nested bundles from the inside out, and verifies application
+signatures before creating the ZIP. The identity must already be installed and
+available in the signing keychain. Signing or verification failure aborts packaging.
+Without `--identity`, signing is skipped. This step does not perform notarization.
+Windows packages
 executables, engine DLL, resolved non-system imported DLLs, compiler redistributable
 runtime, shaders/assets and Debug PDBs. Import/static libraries and build
 intermediates are excluded. The engine uses /MD in both configurations, so Debug
@@ -66,6 +73,54 @@ dynamically loaded plugin/layer; compatible driver/runtime deployment still matt
 All scripts guard against a changed HEAD during the build. macOS/Windows and clean
 Linux builds also recheck the working tree. Native package/relocation validation
 remains project-lead work; source inspection is not a package execution result.
+
+## macOS signing identities
+
+Xcode uses signing identities stored in the macOS keychain. An identity consists
+of a signing certificate and its matching private key; installing only the
+certificate is not sufficient. Use Apple's `security` command-line tool to list
+valid identities available for code signing:
+
+```sh
+security find-identity -v -p codesigning
+```
+
+Example output (illustrative values):
+
+```text
+  1) 0123456789ABCDEF0123456789ABCDEF01234567 "Developer ID Application: Example Studio (ABCDE12345)"
+     1 valid identities found
+```
+
+Pass the complete name between the output's quotation marks to `--identity`,
+including the certificate type, organization name and parenthesized team ID.
+Keep it quoted as one shell argument. Do not pass the list index (`1)`), your
+Apple account email, or the team ID alone. For the example above, run from the
+repository root, using an existing destination outside the repository:
+
+```sh
+bash scripts/package_macos.sh \
+    --identity "Developer ID Application: Example Studio (ABCDE12345)" \
+    Release /existing/package/directory "$VULKAN_SDK"
+```
+
+The script passes this identity to `codesign --force --sign` for the installed
+native code and bundles, then runs `codesign --verify --deep --strict --verbose=2`
+on the applications before archiving. To inspect one resulting application's
+signature manually, substitute the actual package directory:
+
+```sh
+codesign --display --verbose=4 /existing/package/directory/bg2engine_0123456789ab/model_edit.app
+```
+
+Replace the illustrative `bg2engine_0123456789ab` with the generated directory name before running the
+command. If `security` reports `0 valid identities found`, make sure the intended
+certificate and private key are installed in an accessible, unlocked keychain.
+Use Xcode's account/certificate management or Keychain Access to inspect them,
+then rerun the listing. Omitting `--identity` skips the signing step entirely.
+
+See Apple's [distribution signing instructions](https://developer.apple.com/documentation/xcode/creating-distribution-signed-code-for-the-mac)
+for details about identity selection and command-line signing.
 
 ## Production draw/bake shader resources
 
