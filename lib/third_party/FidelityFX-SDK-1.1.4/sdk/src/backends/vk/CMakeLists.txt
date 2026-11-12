@@ -24,6 +24,12 @@ if(NOT ${FFX_API_VK})
     return()
 endif()
 
+# Functions capture policies when defined, so enable depfile transformation
+# before including the shader compilation helpers.
+if(POLICY CMP0116)
+    cmake_policy(SET CMP0116 NEW)
+endif()
+
 #include CMake custom command generator functions for compiling shaders.
 include("${FFX_GPU_PATH}/CMakeCompileShaders.txt")
 
@@ -445,10 +451,6 @@ else()
     set(FFX_SC_DEPENDENT_TARGET ffx_backend_vk_shaders_${FFX_PLATFORM_NAME})
     add_custom_target(${FFX_SC_DEPENDENT_TARGET})
     #add_dependencies(ffx_backend_vk_${FFX_PLATFORM_NAME} ${FFX_SC_DEPENDENT_TARGET})
-endif()
-
-if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.20.0")
-	cmake_policy(SET CMP0116 OLD)
 endif()
 
 # add pass shaders for all the components
