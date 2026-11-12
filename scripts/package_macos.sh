@@ -35,6 +35,16 @@ case "$config" in Debug|Release) ;; *) echo 'Configuration must be Debug or Rele
 [[ "$(uname -s)" == 'Darwin' ]] || { echo 'Run this script on macos.' >&2; exit 1; }
 sdk="${3:-${VULKAN_SDK:-}}"
 [[ -d "$sdk" ]] || { echo 'Specify a valid Vulkan SDK directory.' >&2; exit 1; }
+# The installer version directory contains the platform SDK under macOS/.
+if [[ ! -d "$sdk/include/vulkan" && -d "$sdk/macOS/include/vulkan" ]]; then
+    sdk="$sdk/macOS"
+fi
+sdk="$(cd -- "$sdk" && pwd -P)"
+[[ -f "$sdk/include/SDL2/SDL.h" ]] || {
+    printf 'SDL2 headers not found in %s/include/SDL2. Install the SDL2 component with the Vulkan SDK and select its macOS directory.\n' "$sdk" >&2
+    exit 1
+}
+printf 'Using Vulkan SDK: %s\n' "$sdk"
 command -v cmake >/dev/null
 if [[ -n "$identity" ]]; then
     command -v codesign >/dev/null

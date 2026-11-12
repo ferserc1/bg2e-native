@@ -74,6 +74,27 @@ All scripts guard against a changed HEAD during the build. macOS/Windows and cle
 Linux builds also recheck the working tree. Native package/relocation validation
 remains project-lead work; source inspection is not a package execution result.
 
+## macOS Vulkan SDK path and SDL2
+
+The macOS CMake modules expect the platform SDK directory containing
+`include/` and `lib/`, for example `~/VulkanSDK/1.4.313.1/macOS`.
+The packaging script also accepts the parent version directory
+(`~/VulkanSDK/1.4.313.1`): when the Vulkan headers are under its `macOS/`
+subdirectory, it selects that subdirectory and prints the resolved SDK path.
+This applies both to the optional SDK argument and to the `VULKAN_SDK`
+environment variable.
+
+Install SDL2 with the Vulkan SDK installer. The selected platform SDK must contain
+`include/SDL2/SDL.h` and the SDL2 dynamic library in `lib/`. Packaging uses the
+repository's `cmake/FindSDL2.cmake`, which searches the selected SDK on macOS
+and excludes default Homebrew locations. A CLion configuration should use the
+same platform SDK path. For example:
+
+```sh
+bash scripts/package_macos.sh Release /existing/package/directory \
+    "$HOME/VulkanSDK/1.4.313.1/macOS"
+```
+
 ## macOS signing identities
 
 Xcode uses signing identities stored in the macOS keychain. An identity consists
