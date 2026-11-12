@@ -53,11 +53,19 @@ fails validation. The output and intermediate multiplier are RGBA32F: HDR above
 one and above half-float range remains unclipped if float32 can represent it.
 Alpha is always one, independent of coverage/validity.
 
+Before dilation, GI runs a 7-by-7 bilateral filter on the completed multiplier.
+It admits only texels from the same nonzero chart, with compatible world normals
+and locally continuous world positions. Spatial, normal and luminance weights
+reduce noise while limiting smoothing across lighting edges. Singleton charts and
+uncovered texels retain their values. AO is unchanged. Filtering never modifies
+raw sums, counts or sample admission, and runs once after all requested updates.
+The paired composition shader profiles must include `filter_gi`.
+
 The dilation profile uses original R32_UINT charts and an RG32_UINT nearest-seed
 image. A horizontal scan finds the nearest covered original seed in each row; a
 vertical scan selects the globally nearest candidate within the requested
 Euclidean pixel radius. Ties use chart ID, then original row-major seed index.
-Covered interiors always retain their own composed value; uncovered padding
+During dilation, covered interiors retain their own filtered GI (or composed AO) value; uncovered padding
 copies one original texel, never an average or a previously dilated value. Thus
 adjacent charts cannot exchange interior values even with identical world guides.
 Uncovered pixels outside every radius remain neutral white. Radius zero is valid.
@@ -74,7 +82,7 @@ before subsequent sampled reads. Native Vulkan/Metal profiles share bindings,
 ## Integrated publication and typed pixels
 
 IntegratedLightmapBaker::record records raw effect, accumulation and, on the last
-update, composition plus dilation. completeFrame follows actual GPU completion,
+update, composition, GI filtering and dilation. completeFrame follows actual GPU completion,
 checks scene/target again, validates the final sums/counts/masks, then reads the
 same dilated GPU image. It marks Complete and publishes image/CPU pixels only if
 all checks succeed. The last counter increment also occurs after validation. A
