@@ -32,8 +32,8 @@ struct CompositionResult {
     uint64_t sourceGeneration = 0, targetGeneration = 0;
     LightmapMode mode = LightmapMode::RTGI;
 };
-// Normalizes exact raw averages, then extends nearest original chart texels into
-// uncovered padding only. No cross-chart averaging; original interiors are fixed.
+// Normalizes exact raw averages, filters GI within each chart using surface geometry,
+// then extends filtered chart texels into uncovered padding only.
 class BG2E_API LightmapCompositionPass {
   public:
     explicit LightmapCompositionPass(CompositionConfiguration configuration = {});
@@ -65,9 +65,9 @@ class BG2E_API LightmapCompositionPass {
     };
     CompositionConfiguration _configuration;
     gpu::Device* _device = nullptr;
-    std::array<std::shared_ptr<gpu::PipelineLayout>,4> _layouts;
-    std::array<std::shared_ptr<gpu::ComputePipeline>,4> _pipelines;
-    std::array<std::shared_ptr<gpu::ShaderModule>,4> _shaders;
+    std::array<std::shared_ptr<gpu::PipelineLayout>,5> _layouts;
+    std::array<std::shared_ptr<gpu::ComputePipeline>,5> _pipelines;
+    std::array<std::shared_ptr<gpu::ShaderModule>,5> _shaders;
     std::shared_ptr<gpu::Sampler> _nearest;
     std::vector<Slot> _slots;
 };

@@ -53,7 +53,8 @@ Device/Engine outlive contexts, retained results and preview registrations.
 | Raw effect | R16 AO visibility or RGBA16 GI incoming radiance/pi with validity alpha. Required RT/profile failures are job failures. |
 | Accumulation | RGBA32F raw sums and R32_UINT valid-update counts; equal frozen rays/update, no display EMA, denoise or reconstruction history. |
 | Composition | AO mean, or GI mean divided channelwise by environment irradiance/pi. Zero reference gives zero. No receiver albedo or repeated PI. |
-| Padding/result | RGBA32F multiplier; original interiors unchanged, padding copies one nearest original seed, outside radius neutral white. RGB and alpha are not coverage. |
+| GI filter | Completed RGBA32F multiplier, bilateral 7-by-7 neighborhood isolated by chart, normal and world position; raw history unchanged. AO bypasses filtering. |
+| Padding/result | RGBA32F multiplier; filtered interiors unchanged by dilation, padding copies one nearest original seed, outside radius neutral white. RGB and alpha are not coverage. |
 | CPU pixels | Tight top-row-first linear RGB32F or RGB8; only byte GI applies exposure before clamp/round. No gamma or file encoding. |
 | Display | RGBA16F G-buffer bakedMultiplier; consumer must reject nonfinite, negative or above-65504 values rather than silently clip. |
 
@@ -80,7 +81,8 @@ and a completed multiplier are separate views, both linear diagnostic data.
 
 Public UV surface, AO/GI, accumulator and composition owners are injectable with
 compatible interfaces. Mutable pass instances belong exclusively to one bake
-lifecycle. The current denoise profile lacks chart isolation and is rejected.
+lifecycle. Injected draw denoise profiles lack chart isolation and are rejected
+by the raw executor. Final GI composition has its own chart-isolated filter.
 See [raw executor](../api/bake/LightmapBakeExecutor.md) and the
 [construction tutorial](../tutorials/draw/12_lightmaps.md) for actual APIs.
 Both draw and bake paired native shader trees must be

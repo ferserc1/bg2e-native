@@ -262,8 +262,9 @@ void SceneLightmapWindow::drawContents()
     bg2e::ui::Text::separator("Bake settings");
     bg2e::ui::Value::comboBox("Signal", {"Ray traced AO", "Ray traced GI"}, _modeIndex);
     bg2e::ui::Value::comboBox("Resolution", {"128", "256", "512", "1024", "2048", "4096"}, _resolutionIndex);
-    bg2e::ui::Numeric::sliderInt("Completed samples", &_frames, 1, 512);
-    bg2e::ui::Numeric::sliderInt("Samples per pixel", &_samples, 1, 256);
+    bg2e::ui::Numeric::sliderInt("Accumulation iterations", &_frames, 1, 512);
+    bg2e::ui::Numeric::sliderInt("Samples per pixel", &_samples, 1, 64);
+    bg2e::ui::Text::text("Total path samples per texel: " + std::to_string(_frames * _samples));
     bg2e::ui::Value::comboBox("Lightmap output", {"PNG RGB8 linear", "Radiance HDR"}, _formatIndex);
     bg2e::ui::Numeric::sliderInt("GI bounces", &_bounces, 1, 8);
     bg2e::ui::Numeric::slider("AO radius", &_aoRadius, 0.001f, 10.0f);

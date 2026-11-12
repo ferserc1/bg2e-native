@@ -66,9 +66,11 @@ void LightmapCompositionPass::initialize(gpu::Device& device, gpu::BackendType b
     _layouts[1] = device.createPipelineLayout(giLayout);
     _layouts[2] = device.createPipelineLayout(detail::outputLayout(1,1));
     _layouts[3] = device.createPipelineLayout(detail::outputLayout(3,1));
+    _layouts[4] = device.createPipelineLayout(detail::outputLayout(4,1));
     gpu::ShaderLib library(_configuration.shaderRoot,backend);
-    const std::array<std::string,4> names{_configuration.shaderPrefix+"/ao",_configuration.shaderPrefix+"/gi",
-        _configuration.dilationPrefix+"/seed",_configuration.dilationPrefix+"/apply"};
+    const std::array<std::string,5> names{_configuration.shaderPrefix+"/ao",_configuration.shaderPrefix+"/gi",
+        _configuration.dilationPrefix+"/seed",_configuration.dilationPrefix+"/apply",
+        _configuration.shaderPrefix+"/filter_gi"};
     for (size_t i = 0; i < names.size(); ++i)
     {
         _shaders[i] = library.compute(names[i],&device);
@@ -160,8 +162,21 @@ CompositionResult LightmapCompositionPass::record(gpu::CommandBuffer& command, u
         detail::dispatch(command,*_pipelines[pipeline],*set,extent,inputs,{destination});
     };
     dispatch(gi ? 1 : 0,composeInputs,base);
+    auto filtered = base;
+    if (gi)
+    {
+        gpu::ImageDescription description;
+        description.debugName = "lightmap-gi-chart-filtered-multiplier";
+        description.size = extent;
+        description.format = gpu::PixelFormat::R32G32B32A32_SFLOAT;
+        description.usage = gpu::ImageUsage::Sampled | gpu::ImageUsage::Storage | gpu::ImageUsage::TransferSrc;
+        filtered = _device->createImage(description);
+        slot.images.push_back(filtered);
+        slot.images.push_back(accumulation.surface.images[0]);
+        dispatch(4,{base,charts,accumulation.surface.images[1],accumulation.surface.images[0]},filtered);
+    }
     dispatch(2,{charts},seed);
-    dispatch(3,{base,charts,seed},output);
+    dispatch(3,{filtered,charts,seed},output);
     return {output,accumulation.surface.sourceGeneration,accumulation.surface.targetGeneration,accumulation.mode};
 }
 
