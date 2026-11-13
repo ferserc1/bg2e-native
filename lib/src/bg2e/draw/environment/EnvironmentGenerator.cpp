@@ -27,6 +27,7 @@
 #include <bg2e/gpu/Sampler.hpp>
 
 #include <cmath>
+#include <memory>
 #include <numbers>
 #include <stdexcept>
 #include <utility>
@@ -83,7 +84,7 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::build(const st
         const size_t pixelCount = size_t(pixels->width()) * pixels->height();
         const bool srgbSource = !pixels->dataf() && pixels->colorType() == base::Color::TypeSRGB;
         const bool isHdr = pixels->dataf() != nullptr;
-        std::vector<float> sourcePixels(pixelCount * 4, 0.0f);
+        auto sourcePixels = std::make_unique<float[]>(pixelCount * 4);
         for (size_t i = 0; i < pixelCount; ++i)
         {
             for (uint32_t channel = 0; channel < 3; ++channel)
@@ -118,22 +119,15 @@ std::shared_ptr<const EnvironmentResources> EnvironmentGenerator::build(const st
         {
             throw std::runtime_error("Device cannot upload the linear environment format");
         }
-        if (srgbSource)
-        {
-            _configuration.sphere->setSourceSrgb(true);
-            source = device->createImage({.size = {pixels->width(), pixels->height()}, .format = format, .usage = usage,
-                .minMipSize = 0u,
-                .debugName = "Linear equirectangular environment source"});
-            source->upload({sourcePixels.data(), sourcePixels.size() * sizeof(float)});
-        }
-        else
-        {
-            _configuration.sphere->setSourceSrgb(false);
-            source = device->createImage({.size = {pixels->width(), pixels->height()}, .format = format, .usage = usage,
-                .minMipSize = 0u,
-                .debugName = "Linear equirectangular environment source"});
-            source->upload({sourcePixels.data(), sourcePixels.size() * sizeof(float)});
-        }
+        _configuration.sphere->setSourceSrgb(srgbSource);
+        source = device->createImage({.size = {pixels->width(), pixels->height()}, .format = format, .usage = usage,
+            .minMipSize = 0u,
+            .debugName = "Linear equirectangular environment source"});
+        base::Image uploadPixels(sourcePixels.release(), pixels->width(), pixels->height(), 4);
+        // upload() copies native bytes; uploadImage() converts float32 components
+        // to the selected storage format, including float16 for SDR sources.
+        // Preserve encoded SDR values here; the sphere shader decodes sRGB once.
+        source->uploadImage(&uploadPixels);
         // The sphere conversion shader filters encoded SDR samples before
         // decoding them, so mip generation would incorrectly average sRGB.
         // Keep one source level for both color spaces; the cube generator uses

@@ -4,6 +4,12 @@ Manual GPU checks for `EnvironmentGenerator::build(path)` and
 `EnvironmentComponent` scene loading. Run on Metal and Vulkan with deployed
 environment shaders. Do not add a build target or modify CMake for this check.
 
+First run `runSdrEnvironmentProbe` from [probe.hpp](probe.hpp) as described in
+[the probe instructions](README.md). It checks PNG file decoding, native float16
+upload packing, channel order and both branches of sRGB decoding. The source CPU
+floats must be converted to half components, never copied as float32 bytes into a
+half texture. SDR decoding is sRGB to linear, not the inverse transfer.
+
 1. Load an equirectangular JPEG or PNG with visibly distinct directions. Verify
    all cubemap faces and the skybox retain the expected orientation and colors.
 2. Inspect generated sky, irradiance and roughness-prefiltered resources. The

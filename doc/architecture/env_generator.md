@@ -87,16 +87,17 @@ Concrete classes:
 
 `EnvironmentResources` is the shared, validated resource bundle. `EnvironmentPass` defines the `resources()` output interface for environment passes. `SkyboxPass` defines `setCamera(view, projection)` and `setEnvironment(snapshot)` for the skybox layer independently of its implementation.
 
-## 3. Input: HDR file, GPU image, or procedural sky
+## 3. Input: SDR/HDR file, GPU image, or procedural sky
 
 Given a non-empty path, `EnvironmentGenerator::build(path)`:
 
 1. Normalizes the path and calls `db::loadImage()`.
-2. Requires floating-point pixel data and positive dimensions. It scans RGB channels and rejects non-finite values.
-3. Computes the maximum absolute RGB value. It selects float16 unless `maxAbsRGB * PI > 65000`, in which case it promotes the source to float32 to leave headroom for the PI factor in irradiance convolution.
-4. Queries `Device::formatCapabilities()` and requires support for sampling and transfers.
-5. Creates a linear 2D `gpu::Image`, uploads it through `Image::uploadImage()`, and generates mipmaps with `Image::generateMipmaps()`.
-6. Runs the equirectangular-to-cubemap, irradiance, specular, and BRDF stages.
+2. Requires readable RGB byte or floating-point pixels and positive dimensions. It scans RGB channels and rejects non-finite values.
+3. Normalizes SDR bytes to [0,1] and selects RGBA16F storage. Floating-point HDR inputs use RGBA32F to retain precision. Alpha is set to one.
+4. Queries `Device::formatCapabilities()` and requires support for the selected usages.
+5. Uploads the float32 CPU components through `Image::uploadImage()`, which converts them to the selected native storage format. Raw `upload()` does not perform float32-to-float16 conversion. The source has one mip level; encoded SDR values must not be averaged by linear mip generation.
+6. For an sRGB byte source, the sphere shader decodes sampled RGB to linear radiance exactly once using the sRGB transfer function. Float HDR sources bypass this decoding.
+7. Runs the equirectangular-to-cubemap, irradiance, specular, and BRDF stages.
 
 An explicit GPU source must be non-null, valid, belong to the same `Device`, be sampleable, use a linear HDR format, and be in `ShaderReadOnly`; it must be a 2D equirectangular image. This API does not interpret an sRGB display image as radiometric environment input.
 
@@ -146,14 +147,14 @@ This LUT depends on the shared analytical model rather than a particular sky ima
 
 After generating the four images, `EnvironmentGenerator` creates two samplers. The cubemap sampler uses linear min/mag filtering and linear mip filtering when the format supports it, or nearest otherwise; all three axes use `ClampToEdge`, and `maxLod` is the final specular mip. The BRDF sampler chooses linear/nearest based on support, uses one LOD, and uses nearest mip filtering.
 
-Float32 radiance handling also propagates to intermediate sky, irradiance, and specular outputs when the HDR input required float32. The requested format in the configuration is restored after each call, including on errors; promotion is the realized format for that generation. Final validation requires all images to be linear HDR (`R16G16B16A16_SFLOAT` or `R32G32B32A32_SFLOAT`), sampleable, valid, on the same device, and in `ShaderReadOnly`; it also checks that required resources are cubemaps and that mip counts are coherent.
+Float32 radiance handling also propagates to intermediate sky, irradiance, and specular outputs for floating-point HDR file inputs. The requested format in the configuration is restored after each call, including on errors; promotion is the realized format for that generation. Final validation requires all images to be linear HDR (`R16G16B16A16_SFLOAT` or `R32G32B32A32_SFLOAT`), sampleable, valid, on the same device, and in `ShaderReadOnly`; it also checks that required resources are cubemaps and that mip counts are coherent.
 
 ## 9. GPU APIs and command recording
 
 Generation is implemented using the low-level `bg2e::gpu` abstraction, without making the public `bg2e::draw` API depend directly on Vulkan objects. The concrete path uses:
 
 1. **Queries and allocation:** `gpu::Device::formatCapabilities()` and `renderingCapabilities()`; `createImage()` for the equirectangular source/LUT; `createCubeMap()` for cubemap outputs.
-2. **Upload:** `gpu::Image::uploadImage()` and `gpu::Image::generateMipmaps()` for HDR files.
+2. **Upload:** `gpu::Image::uploadImage()` packs SDR/HDR file pixels into the selected native format; the equirectangular source retains one mip level.
 3. **Shaders:** `gpu::ShaderLib` loads logical shader names for the active backend; `Device::createShaderModule()` is behind that service. A full-screen vertex shader and a fragment shader per `GenerationKind` are used.
 4. **Pipeline state:** `PipelineLayoutDescription` declares push constants and, when a source exists, sampled-image and sampler bindings. `Device::createPipelineLayout()` and `createGraphicsPipeline()` create the layout and pipeline. There is no vertex buffer: a triangle is drawn with `CommandBuffer::draw(3)`.
 5. **Inputs:** `Device::createSampler()`, `createResourceSet()`, `ResourceSet::setSampledImage()`, `setSampler()`, and `update()` bind the source for image conversion, irradiance, and specular. The procedural sky and BRDF LUT do not use a source image.

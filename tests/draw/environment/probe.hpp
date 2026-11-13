@@ -1,7 +1,27 @@
+/*
+ *    business grade graphic engine (bg2 engine)
+ *    Copyright (C) 2026  Fernando Serrano Carpena
+ *
+ *    This program is free software: you can redistribute it and/or modify
+ *    it under the terms of the GNU General Public License as published by
+ *    the Free Software Foundation, either version 3 of the License, or
+ *    (at your option) any later version.
+ *
+ *    This program is distributed in the hope that it will be useful,
+ *    but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *    GNU General Public License for more details.
+ *
+ *    You should have received a copy of the GNU General Public License
+ *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
 #pragma once
 
 #include <bg2e/draw/environment/all.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
+#include <bg2e/db/image.hpp>
+#include <array>
 #include <bg2e/gpu/Device.hpp>
 
 #include <cmath>
@@ -21,6 +41,7 @@ inline float environmentProbeHalf(uint16_t value)
     }
     return sign * (exponent == 0 ? std::ldexp(float(fraction), -24) : std::ldexp(1.0f + float(fraction) / 1024.0f, exponent - 15));
 }
+
 inline void checkConstantEnvironment(gpu::Image& image, float scale)
 {
     for (uint32_t mip = 0; mip < image.mipLevels(); ++mip)
@@ -50,6 +71,7 @@ inline void checkConstantEnvironment(gpu::Image& image, float scale)
         }
     }
 }
+
 // Initialized Engine, producers stopped, no active frame. The caller supplies
 // the deployed engine shader root and a path that does not exist.
 inline void runEnvironmentProbe(Engine& engine, const std::filesystem::path& shaderRoot,
@@ -126,4 +148,82 @@ inline void runEnvironmentProbe(Engine& engine, const std::filesystem::path& sha
     first->validate(engine.device());
     checkConstantEnvironment(*first->prefilteredSpecular, 1);
 }
+
+// Writes only the caller-supplied absent PNG path and removes it on exit.
+// Initialized Engine, producers stopped, no active frame, deployed shaders.
+inline void runSdrEnvironmentProbe(Engine& engine, const std::filesystem::path& shaderRoot,
+    const std::filesystem::path& pngPath)
+{
+    if (pngPath.extension() != ".png" || std::filesystem::exists(pngPath))
+    {
+        throw std::invalid_argument("SDR probe needs an absent .png path");
+    }
+    struct RemoveImage {
+        std::filesystem::path path;
+        ~RemoveImage()
+        {
+            std::error_code ignored;
+            std::filesystem::remove(path, ignored);
+        }
+    } removeImage{pngPath};
+    environment::EnvironmentGenerator generator(engine, shaderRoot);
+    for (const auto& tool : {generator.configuration().sphere, generator.configuration().defaultSky,
+        generator.configuration().irradiance, generator.configuration().specular, generator.configuration().brdf})
+    {
+        tool->settings().size = 8;
+        tool->settings().samples = 64;
+    }
+    // Rotate unequal channels and cover both branches of the sRGB transfer.
+    const std::array<std::array<uint8_t, 3>, 3> colors{{{8, 128, 255}, {255, 8, 128}, {128, 255, 8}}};
+    for (const auto& color : colors)
+    {
+        std::vector<uint8_t> pixels(16 * 8 * 3);
+        std::array<float, 3> linear;
+        for (size_t channel = 0; channel < 3; ++channel)
+        {
+            const float encoded = color[channel] / 255.0f;
+            linear[channel] = encoded <= 0.04045f ? encoded / 12.92f : std::pow((encoded + 0.055f) / 1.055f, 2.4f);
+        }
+        for (size_t i = 0; i < pixels.size(); ++i)
+        {
+            pixels[i] = color[i % 3];
+        }
+        db::saveImage(pngPath, pixels.data(), 16, 8, 3);
+        auto resources = generator.build(pngPath);
+        resources->validate(engine.device());
+        for (const auto& image : {resources->sky, resources->irradiance, resources->prefilteredSpecular})
+        {
+            const float scale = image == resources->irradiance ? 3.14159265f : 1.0f;
+            for (uint32_t mip = 0; mip < image->mipLevels(); ++mip)
+            {
+                for (uint32_t face = 0; face < image->arrayLayers(); ++face)
+                {
+                    std::vector<uint8_t> bytes;
+                    image->readPixels(bytes, {mip, 1, face, 1});
+                    const auto extent = image->mipExtent(mip);
+                    if (image->pixelFormat() != gpu::PixelFormat::R16G16B16A16_SFLOAT ||
+                        bytes.size() != size_t(extent.width) * extent.height * 8)
+                    {
+                        throw std::runtime_error("Unexpected SDR environment readback format/size");
+                    }
+                    for (size_t offset = 0; offset < bytes.size(); offset += 8)
+                    {
+                        for (size_t channel = 0; channel < 4; ++channel)
+                        {
+                            uint16_t half;
+                            std::memcpy(&half, bytes.data() + offset + channel * 2, 2);
+                            const float expected = channel < 3 ? linear[channel] * scale : 1.0f;
+                            if (std::abs(environmentProbeHalf(half) - expected) > 0.001f + 0.02f * expected)
+                            {
+                                throw std::runtime_error("SDR environment channel/linearization/energy regression");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    generator.cleanup();
+}
+
 }

@@ -6,6 +6,14 @@ The probe checks every face and authored mip of a constant radiance source: sky 
 
 Lead checklist:
 
+For the SDR regression, call `runSdrEnvironmentProbe(engine, engineShaderRoot,
+absentPngPath)` with an absent `.png` path in an existing writable directory. It
+writes/removes its test file, rotates distinct RGB values (8, 128, 255), and checks
+all faces/mips of sky, irradiance and prefiltered specular against independently
+computed sRGB-to-linear values (including irradiance PI). This catches both raw
+float32 bytes being misread as float16 and reversed sRGB conversion. Run the
+existing HDR probe as well to check the linear path remains unchanged.
+
 SDR JPEG/PNG and scene-load coverage: [SDR environment source checks](sdr_images.md).
 
 1. Compile bg2e and `draw_cubemap_render_pass` on available Vulkan/Metal. Run the probe and example 06. Validate deployed `draw/environment/*.spv`/`.metallib` discovery in development/app bundles/installed resources. No production rendering migration is part of this step.

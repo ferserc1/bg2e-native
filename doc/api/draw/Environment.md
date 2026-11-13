@@ -8,7 +8,7 @@ including PI, GGX-prefiltered roughness mips and the split-sum RG LUT have diffe
 meanings; do not gamma-correct them as ordinary color textures.
 
 `EnvironmentGenerator(Engine&, shaderRoot)` synchronously builds resources from
-an HDR path or a linear equirectangular GPU image. Empty path builds the default
+an SDR/HDR image path or a linear equirectangular GPU image. Empty path builds the default
 sky. Its public configuration accepts replacement sphere/default-sky/irradiance/
 specular/BRDF `CubemapRenderer` objects. `requestRebuild()` marks intent;
 `synchronize(EnvironmentComponent*)` consumes changes at a safe boundary.
@@ -23,10 +23,13 @@ roughness mips are authored separately: generic mip generation would overwrite
 their meaning. Skybox blur selects normalized prefiltered roughness, not a second
 color transfer operation.
 
-HDR file loading rejects nonfinite source pixels and promotes to float32 when
-maximum RGB magnitude times PI exceeds 65000. Float32 propagates through realized
-sky/irradiance/specular generation; requested settings are restored afterwards.
-This avoids float16 overflow before convolution without clamping radiance.
+File loading accepts RGB byte images and floating-point HDR images and rejects
+nonfinite source pixels. Byte inputs use RGBA16F storage, with float32 CPU values
+converted to native half components by `uploadImage()`. Sampled sRGB inputs are
+decoded to linear radiance once in the sphere shader. HDR file inputs use RGBA32F;
+float32 propagates through realized sky/irradiance/specular generation and requested
+settings are restored afterwards. This avoids float16 overflow before convolution
+without clamping radiance.
 `autumn_field_4k.hdr` exercises this case. The project lead confirmed the precision
 correction; this does not establish every backend/environment combination.
 
@@ -77,9 +80,11 @@ realizes the selected component. Both legacy `equirectangularTexture` and the
 The reflection picker has distinct Browse and Clear buttons. Clear or explicit
 empty selection removes the HDR source; cancelling Browse preserves it.
 
-Images must contain floating-point HDR data; an SDR JPEG is not an HDR merely
-because it appears in an Environment component. Failure retains the last good GPU
-snapshot and reports `environmentError` in Composer status/inspector. It does not
+Environment image files may be SDR JPEG/PNG/BMP/TGA or supported floating-point
+HDR formats. SDR provides normalized color rather than HDR dynamic range, but is
+a supported environment source for portable scene assets. Internal float IBL
+resources do not require distributing an HDR image. Failure retains the last good
+GPU snapshot and reports `environmentError` in Composer status/inspector. It does not
 silently replace the requested component or discard the user's edited colors.
 
 
