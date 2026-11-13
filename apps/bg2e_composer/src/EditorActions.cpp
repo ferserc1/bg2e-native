@@ -31,6 +31,7 @@
 
 #include <fstream>
 #include <bg2e/db/scene.hpp>
+#include <bg2e/app/MessageBox.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <set>
 #include <cmath>
@@ -141,13 +142,32 @@ void AppDelegate::processReadActions()
             else
             {
                 auto preset = _stage->environmentPreset();
-                _status = bg2e::db::saveScene(preset.get(), *_engine, action.path)
-                    ? "Environment preset saved" : "Environment preset save failed (see log)";
+                bg2e::db::SceneSaveReport report;
+                const bool saved = bg2e::db::saveScene(preset.get(), *_engine, action.path, nullptr, report);
+                _status = saved ? "Environment preset saved" : "Environment preset save failed";
+                if (!saved)
+                {
+                    bg2e::app::MessageBox::showError("Environment preset save failed", report.error);
+                }
+                else if (!report.warnings.empty())
+                {
+                    _status = "Environment preset saved partially";
+                    std::string details = "Recoverable preset data was saved. Some resources could not be included:";
+                    for (const auto& warning : report.warnings)
+                    {
+                        details += "\n" + warning;
+                    }
+                    bg2e::app::MessageBox::showWarning("Environment preset saved partially", details);
+                }
             }
         }
         catch (const std::exception& error)
         {
             _status = error.what();
+            if (action.kind != DeferredRead::Kind::CopyMaterial)
+            {
+                bg2e::app::MessageBox::showError("Environment preset save failed", _status);
+            }
         }
     }
 }

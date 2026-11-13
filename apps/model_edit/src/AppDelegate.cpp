@@ -332,6 +332,7 @@ void AppDelegate::analyzeBestView()
 }
 
 std::filesystem::path AppDelegate::chooseSavePath()
+try
 {
     auto path = bg2e::app::FileDialog::getSaveFilePath({{"Scene document", "json,bg2scene,bg2e"}, {"Single BG2 model", "bg2"}});
     if (!path.empty() && path.extension().empty())
@@ -339,6 +340,16 @@ std::filesystem::path AppDelegate::chooseSavePath()
         path.replace_extension(".json");
     }
     return path;
+}
+catch (const std::exception& error)
+{
+    bg2e::app::MessageBox::showError("Scene save destination unavailable", error.what());
+    return {};
+}
+catch (...)
+{
+    bg2e::app::MessageBox::showError("Scene save destination unavailable", "Could not select a destination for the scene.");
+    return {};
 }
 
 void AppDelegate::requestOpen(const std::filesystem::path& path)
@@ -390,6 +401,7 @@ void AppDelegate::saveDocument(bool saveAs)
 }
 
 bool AppDelegate::confirmClose()
+try
 {
     if (_pendingIo)
     {
@@ -422,10 +434,9 @@ bool AppDelegate::confirmClose()
     try
     {
         // MainLoop invokes this callback between frames, before command acquisition.
-        _engine->device()->waitIdle();
         if (!_stage->save(path))
         {
-            _status = "Save failed (see log)";
+            _status = "Save incomplete; document retained";
             return false;
         }
         return true;
@@ -433,8 +444,21 @@ bool AppDelegate::confirmClose()
     catch (const std::exception& error)
     {
         _status = std::string("Save failed: ") + error.what();
+        bg2e::app::MessageBox::showError("Scene save failed", _status);
         return false;
     }
+}
+catch (const std::exception& error)
+{
+    bg2e::app::MessageBox::showError("Could not prepare scene for closing",
+        std::string(error.what()) + "\n\nThe document remains open. Use Save or Save As to preserve recoverable data.");
+    return false;
+}
+catch (...)
+{
+    bg2e::app::MessageBox::showError("Could not prepare scene for closing",
+        "An unknown error occurred. The document remains open. Use Save or Save As to preserve recoverable data.");
+    return false;
 }
 
 void AppDelegate::prepareFrame()
@@ -453,12 +477,16 @@ void AppDelegate::prepareFrame()
         stopLightmapBake(true);
         auto operation = std::move(*_pendingIo);
         _pendingIo.reset();
+        bool saveAttempted = false;
         try
         {
             // Save includes all edits already requested by UI/input; opening must
             // consider their dirty notifications before offering to discard them.
             DefaultRenderLoopDelegate::prepareFrame();
-            _engine->device()->waitIdle();
+            if (operation.save.empty())
+            {
+                _engine->device()->waitIdle();
+            }
             std::shared_ptr<bg2e::scene::Node> candidate;
             if (!operation.open.empty())
             {
@@ -485,9 +513,10 @@ void AppDelegate::prepareFrame()
             }
             if (!operation.save.empty())
             {
+                saveAttempted = true;
                 if (!_stage->save(operation.save))
                 {
-                    _status = "Save failed (see log)";
+                    _status = "Save incomplete; document retained";
                     operation.open.clear();
                 }
                 else
@@ -510,6 +539,27 @@ void AppDelegate::prepareFrame()
         catch (const std::exception& error)
         {
             _status = std::string("File operation failed: ") + error.what();
+            if (!operation.save.empty() && !saveAttempted)
+            {
+                _stage->save(operation.save, true);
+            }
+            else
+            {
+                bg2e::app::MessageBox::showError("File operation failed", _status);
+            }
+        }
+        catch (...)
+        {
+            if (!operation.save.empty() && !saveAttempted)
+            {
+                _stage->save(operation.save, true);
+            }
+            else
+            {
+                bg2e::app::MessageBox::showError("File operation failed",
+                    "An unknown error occurred. The current document remains open.");
+            }
+            _status = "File operation failed; document retained";
         }
     }
     if (_selection && _stage && _selection->selectedNode() && !_stage->contains(_selection->selectedNode()))

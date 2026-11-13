@@ -8,7 +8,7 @@ and has not been compiled or run by the implementing agent.
 The probe checks quoted/backslash/newline JSON strings; a source-less GPU float
 texture with HDR values and two authored mips; standard HDR pixels; bakedGI/UV2,
 scale, linear color and sampler metadata after complete scene save/reload; and
-failure rollback when a custom component has no reference serializer. It also
+partial preservation when a custom component has no reference serializer. It also
 checks that temporary Drawable paths are restored. Run on available Vulkan and
 Metal backends, with appropriate deployment/runtime resources.
 
@@ -38,3 +38,9 @@ Additional project-lead checks:
    main file together with its sidecars, reopen, and verify relative paths.
 8. Confirm production model_edit and production PNG/HDR saves still work. Draw
    PNG/HDR sidecars use standard image decoding.
+
+The probe also verifies realized texture flags after repeated lightmap material
+snapshots, retained pending flags for a real source edit, and a partial save with
+a missing file texture that preserves mesh data and baked AO. A custom component
+without serialization support is now omitted with warnings instead of aborting
+the document. These updated checks have not been compiled or run by the agent.

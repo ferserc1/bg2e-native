@@ -212,19 +212,35 @@ void AppDelegate::processDocumentIo()
     _pendingIo.reset();
     std::shared_ptr<bg2e::scene::Node> candidate;
     bool published = false;
+    bool saveAttempted = false;
     try
     {
         using Kind = PendingIo::Kind;
         const bool replacing = operation.kind == Kind::Open || operation.kind == Kind::New;
-        if (!flushDocumentCommands(true, replacing))
+        const bool settled = flushDocumentCommands(true, replacing || operation.kind == Kind::Save);
+        if (!settled)
         {
+            if (operation.kind == Kind::Save)
+            {
+                _resourceAnalysis.reset();
+                saveAttempted = true;
+                _stage->save(operation.path, operation.destinationConfirmed, true);
+                _status = "Recovery save attempted; document remains open and modified";
+            }
+            else
+            {
+                bg2e::app::MessageBox::showWarning("Scene operation could not finish", _status);
+            }
             return;
         }
         if (operation.resourceCleanupPlan && (commandFaulted() || !sceneResourceAnalysis()))
         {
             throw std::runtime_error("The scene changed. Save and analyze resources again before cleanup.");
         }
-        _engine->device()->waitIdle();
+        if (operation.kind != Kind::Save)
+        {
+            _engine->device()->waitIdle();
+        }
         if (operation.kind == Kind::AnalyzeResources || operation.kind == Kind::CleanupResources)
         {
             if (operation.generation != document()->generation || _imports.busy() || _importPublicationPending)
@@ -281,9 +297,10 @@ void AppDelegate::processDocumentIo()
         if (operation.kind == Kind::Save)
         {
             _resourceAnalysis.reset();
+            saveAttempted = true;
             const bool saved = _stage->save(operation.path, operation.destinationConfirmed);
             sampleNavigation(false);
-            _status = saved ? "Saved " + document()->savePath.filename().string() : "Scene save cancelled or failed (see log)";
+            _status = saved ? "Saved " + document()->savePath.filename().string() : "Scene save incomplete or cancelled; document retained";
             return;
         }
         if (operation.kind == Kind::Export)
@@ -518,6 +535,12 @@ void AppDelegate::processDocumentIo()
     }
     catch (const std::exception& error)
     {
+        if (operation.kind == PendingIo::Kind::Save && !saveAttempted)
+        {
+            _stage->save(operation.path, operation.destinationConfirmed, true);
+            _status = std::string("Recovery save attempted after: ") + error.what();
+            return;
+        }
         if (operation.resourceCleanupPlan || operation.kind == PendingIo::Kind::CleanupResources ||
             operation.kind == PendingIo::Kind::AnalyzeResources)
         {
@@ -536,6 +559,19 @@ void AppDelegate::processDocumentIo()
         bg2e::app::MessageBox::showWarning("Scene operation failed", _status,
             {{0, "OK", bg2e::app::MessageBox::Return}});
         requestSceneFrame();
+    }
+    catch (...)
+    {
+        if (operation.kind == PendingIo::Kind::Save && !saveAttempted)
+        {
+            _stage->save(operation.path, operation.destinationConfirmed, true);
+        }
+        else
+        {
+            bg2e::app::MessageBox::showError("Scene operation failed",
+                "An unknown error occurred. The current document remains open.");
+        }
+        _status = "Scene operation failed; document retained";
     }
 }
 

@@ -435,8 +435,19 @@ void AppDelegate::analyzeBestView()
 }
 
 std::filesystem::path AppDelegate::chooseSavePath()
+try
 {
     return bg2e::db::getSceneSavePath();
+}
+catch (const std::exception& error)
+{
+    bg2e::app::MessageBox::showError("Scene save destination unavailable", error.what());
+    return {};
+}
+catch (...)
+{
+    bg2e::app::MessageBox::showError("Scene save destination unavailable", "Could not select a destination for the scene.");
+    return {};
 }
 
 void AppDelegate::requestOpen(const std::filesystem::path& path)
@@ -512,6 +523,7 @@ void AppDelegate::saveDocument(bool saveAs)
 }
 
 bool AppDelegate::confirmClose()
+try
 {
     if (_quitConfirmed)
     {
@@ -525,11 +537,8 @@ bool AppDelegate::confirmClose()
     {
         prepareFrame(); // Flush pending edits before deciding whether close needs a prompt.
     }
-    if (_stage && !flushDocumentCommands(true, true))
-    {
-        return false;
-    }
-    if (!_stage || !_stage->document().dirty)
+    const bool settled = !_stage || flushDocumentCommands(true, true);
+    if (!_stage || (!_stage->document().dirty && settled))
     {
         _quitConfirmed = true;
         return true;
@@ -554,16 +563,28 @@ bool AppDelegate::confirmClose()
     try
     {
         // MainLoop invokes this callback between frames, before command acquisition.
-        _engine->device()->waitIdle();
-        _quitConfirmed = _stage->save(path, _stage->document().savePath.empty());
+        _quitConfirmed = _stage->save(path, _stage->document().savePath.empty(), !settled);
         sampleNavigation(false);
         return _quitConfirmed;
     }
     catch (const std::exception& error)
     {
         _status = std::string("Save failed: ") + error.what();
+        bg2e::app::MessageBox::showError("Scene save failed", _status);
         return false;
     }
+}
+catch (const std::exception& error)
+{
+    bg2e::app::MessageBox::showError("Could not prepare scene for closing",
+        std::string(error.what()) + "\n\nThe document remains open. Use Save or Save As to preserve recoverable data.");
+    return false;
+}
+catch (...)
+{
+    bg2e::app::MessageBox::showError("Could not prepare scene for closing",
+        "An unknown error occurred. The document remains open. Use Save or Save As to preserve recoverable data.");
+    return false;
 }
 
 void AppDelegate::confirmQuitRequest()

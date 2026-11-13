@@ -77,6 +77,11 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
     live->materialAttributes().setIndirectTextureMode(base::MaterialAttributes::IndirectTextureMode::BakedGlobalIllumination);
     live->materialAttributes().setAoUVSet(1);
     live->materialAttributes().setAoScale(glm::vec2(2, 3));
+    // Lightmap commands snapshot twice before exchanging the prepared state.
+    auto prepared = live->snapshot()->snapshot();
+    require(prepared->texturesUpdated() && prepared->materialAttributes().isUpdated());
+    require(live->exchangeState(*prepared));
+    require(live->materialAttributes().isUpdated());
     const auto path = directory / "resource-round-trip.json";
     require(db::saveScene(node.get(), engine, path));
     require(node->getComponent<scene::DrawableComponent>()->resourcePath().empty());
@@ -122,7 +127,7 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
     }
     require(sharedImages == 1); // Both slots reuse the existing source filename.
 
-    // A failing custom serializer must leave the previous main and resources readable.
+    // A failing custom serializer cannot discard valid drawable data.
     class RejectExport final : public scene::Component {
       public:
         BG2E_COMPONENT_TYPE_NAME("RejectExport");
@@ -132,14 +137,34 @@ inline void runCompleteResourceIoProbe(Engine& engine, const std::filesystem::pa
             return std::make_shared<RejectExport>();
         }
     };
-    const auto before = db::readSceneDocument(path)->serialize();
     node->addComponent(new RejectExport());
-    require(!db::saveScene(node.get(), engine, path) && db::readSceneDocument(path)->serialize() == before &&
-        node->getComponent<scene::DrawableComponent>()->resourcePath().empty());
+    db::SceneSaveReport report;
+    require(db::saveScene(node.get(), engine, path, nullptr, report));
+    require(!report.warnings.empty() && report.error.empty());
+    require(node->getComponent<scene::DrawableComponent>()->resourcePath().empty());
     auto recovered = db::loadScene(path, engine);
     require(recovered->rootNode()->children().size() == 1);
-    recovered->rootNode()->children().at(0)->getComponent<scene::DrawableComponent>()->drawable()->cleanup();
+
+    // A failed file edit must not prevent geometry and a baked filesystem AO
+    // source from being saved, nor mutate the failed live edit while exporting.
+    auto missing = std::make_shared<base::Texture>(directory / "missing-edit.png");
+    output->material(0).setAlbedoTexture(missing);
+    auto pending = output->drawMaterial(0)->snapshot();
+    require(!pending->texturesUpdated() && !pending->materialAttributes().albedoTextureUpdated());
+    const auto partial = directory / "partial-texture-save.json";
+    require(db::saveScene(loaded->rootNode(), engine, partial, nullptr, report));
+    require(!report.warnings.empty() && report.error.empty());
+    require(output->material(0).albedoTexture() == missing);
+    auto partialScene = db::loadScene(partial, engine);
+    auto partialDrawable = partialScene->rootNode()->children().at(0)->children().at(0)->drawable()->drawable();
+    require(partialDrawable->mesh()->indices == output->mesh()->indices);
+    require(!partialDrawable->material(0).albedoTexture());
+    require(partialDrawable->material(0).aoTexture() &&
+        std::filesystem::is_regular_file(partialDrawable->material(0).aoTexture()->imageFilePath()));
+
     engine.device()->waitIdle();
+    partialDrawable->cleanup();
+    recovered->rootNode()->children().at(0)->drawable()->drawable()->cleanup();
     output->cleanup();
     drawable->cleanup();
 }

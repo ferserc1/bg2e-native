@@ -33,6 +33,7 @@ struct Document {
     std::filesystem::path savePath;
     std::shared_ptr<command::Dispatcher> commands;
     bool dirty = false;
+    bool incompleteSave = false;
     uint64_t generation = 0;
 
     // A legacy writer may already have changed the model before notification.
@@ -42,6 +43,10 @@ struct Document {
     void synchronizeDirty()
     {
         using namespace bg2e::app;
+        if (incompleteSave)
+        {
+            dirty = true;
+        }
         if (commands)
         {
             auto& history = commands->history();
@@ -53,7 +58,7 @@ struct Document {
                     pendingCompatibility = CommandCompatibility::Unspecified;
                 }
             }
-            dirty = history.dirty() || pendingCompatibility != CommandCompatibility::Unspecified;
+            dirty = incompleteSave || history.dirty() || pendingCompatibility != CommandCompatibility::Unspecified;
         }
     }
 
@@ -81,7 +86,7 @@ struct Document {
         {
             pendingCompatibility = CommandCompatibility::Unspecified;
         }
-        dirty = commands->history().dirty() || pendingCompatibility != CommandCompatibility::Unspecified;
+        dirty = incompleteSave || commands->history().dirty() || pendingCompatibility != CommandCompatibility::Unspecified;
         return result;
     }
 };

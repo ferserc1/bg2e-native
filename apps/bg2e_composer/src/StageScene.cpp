@@ -23,6 +23,7 @@
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/db/scene.hpp>
+#include <bg2e/app/MessageBox.hpp>
 #include <bg2e/db/scene_path.hpp>
 #include <bg2e/db/scene_save_dialog.hpp>
 #include <bg2e/db/image.hpp>
@@ -1006,24 +1007,27 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
     }
 }
 
-bool StageScene::save(const std::filesystem::path& path, bool destinationConfirmed)
+bool StageScene::save(const std::filesystem::path& path, bool destinationConfirmed, bool recoverySnapshot)
+try
 {
     if (!_document.root)
     {
-        std::fprintf(stderr, "Scene save rejected: no document is open.\n");
-        return false;
+        throw std::logic_error("No document is open");
+    }
+    std::vector<std::string> warnings;
+    if (recoverySnapshot)
+    {
+        warnings.push_back("An active edit could not be settled; saved the currently recoverable state");
     }
     if (_document.commands && (_document.commands->pending() ||
         _document.commands->history().transactionActive() || _document.commands->history().faulted()))
     {
-        std::fprintf(stderr, "Scene save rejected: document commands are not settled.\n");
-        return false;
+        warnings.push_back("Document commands are not settled; saved the currently recoverable state");
     }
     _document.synchronizeDirty();
     if (_document.pendingCompatibility != bg2e::app::CommandCompatibility::Unspecified)
     {
-        std::fprintf(stderr, "Scene save rejected: document changes could not be recorded.\n");
-        return false;
+        warnings.push_back("Some document changes could not be recorded in undo history");
     }
     const auto target = bg2e::db::inspectSceneSaveTarget(path);
     const bool current = !target.pathChanged && target.path == _document.savePath;
@@ -1034,27 +1038,67 @@ bool StageScene::save(const std::filesystem::path& path, bool destinationConfirm
     {
         return false;
     }
-    refreshCamera();
-    bg2e::scene::UpdateVisitor update;
-    update.update(_document.root.get(), 0);
-    if (!bg2e::db::saveScene(_document.root.get(), *_engine, committedPath))
+    try
     {
+        refreshCamera();
+        bg2e::scene::UpdateVisitor update;
+        update.update(_document.root.get(), 0);
+    }
+    catch (const std::exception& error)
+    {
+        warnings.push_back(std::string("Scene update failed before save: ") + error.what());
+    }
+    bg2e::db::SceneSaveReport report;
+    if (!bg2e::db::saveScene(_document.root.get(), *_engine, committedPath, nullptr, report))
+    {
+        throw std::runtime_error(report.error);
+    }
+    warnings.insert(warnings.end(), report.warnings.begin(), report.warnings.end());
+    _document.savePath = std::move(committedPath);
+    _document.incompleteSave = !warnings.empty();
+    // A partial snapshot must never authorize closing/replacing the live graph.
+    if (_document.incompleteSave)
+    {
+        _document.synchronizeDirty();
+        std::string details;
+        for (const auto& warning : warnings)
+        {
+            details += "\n" + warning;
+        }
+        bg2e::app::MessageBox::showWarning("Scene saved partially",
+            "Recoverable data was saved to:\n" + _document.savePath.string() +
+            "\n\nThe scene remains modified and open. Resolve these issues before closing or replacing it." + details);
         return false;
     }
-    // Commit metadata only after complete resource/main publication succeeds.
+    // Mark history saved only after complete resource/main publication succeeds.
     if (_document.commands)
     {
         const auto saved = _document.commands->history().markSaved();
         if (!saved.accepted())
         {
-            std::fprintf(stderr, "Scene was written, but its history could not be marked saved.\n");
+            _document.incompleteSave = true;
             _document.synchronizeDirty();
+            bg2e::app::MessageBox::showWarning("Scene saved; history incomplete",
+                "The scene was written, but its undo history could not be marked saved. The scene remains open and modified.");
             return false;
         }
     }
-    _document.savePath = std::move(committedPath);
     _document.synchronizeDirty();
     return true;
+}
+catch (const std::exception& error)
+{
+    bg2e::app::MessageBox::showError("Scene save failed",
+        "Could not save to:\n" + path.string() + "\n\n" + error.what() +
+        "\n\nThe document remains open. Try Save As with another location.");
+    return false;
+}
+catch (...)
+{
+    bg2e::app::MessageBox::showError("Scene save failed",
+        "An unknown error prevented saving to:\n" + path.string() +
+        "\n\nThe document remains open. Try Save As with another location.");
+    return false;
 }
 
 bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Node>>& nodes,

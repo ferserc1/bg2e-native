@@ -56,7 +56,9 @@ class StageScene {
         std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
     void adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::filesystem::path& source,
         std::shared_ptr<command::Dispatcher> commands, std::function<void(bool restoring)> rebind = {});
-    bool save(const std::filesystem::path& path, bool destinationConfirmed = false);
+    // Returns true only for a complete save. Partial saves show a warning and
+    // retain dirty state; failures show an error. Neither permits replacement.
+    bool save(const std::filesystem::path& path, bool destinationConfirmed = false, bool recoverySnapshot = false);
 
     // Call only at a stopped renderer boundary. Candidates stay detached until
     // publication; imports preserve the current document and its save path.

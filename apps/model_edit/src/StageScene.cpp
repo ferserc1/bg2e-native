@@ -22,6 +22,7 @@
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 #include <bg2e/db/scene.hpp>
+#include <bg2e/app/MessageBox.hpp>
 #include <bg2e/db/image.hpp>
 #include <bg2e/db/scene_bg2.hpp>
 #include <bg2e/db/scene_gltf.hpp>
@@ -352,36 +353,68 @@ void StageScene::adopt(std::shared_ptr<bg2e::scene::Node> candidate, const std::
     _scene->updateAll();
 }
 
-bool StageScene::save(const std::filesystem::path& path)
+bool StageScene::save(const std::filesystem::path& path, bool recoverySnapshot)
+try
 {
     if (!_document.root)
     {
         throw std::logic_error("Open a document before saving");
     }
+    bg2e::db::SceneSaveReport report;
     auto committedPath = std::filesystem::absolute(path).lexically_normal();
     const auto extension = path.extension().string();
     if (extension == ".bg2" || extension == ".vwglb")
     {
         if (!bg2e::db::storeDrawableBg2(path, *_engine, _document.root.get()))
         {
-            return false;
+            throw std::runtime_error("Could not save the BG2 model. Save as a scene document to preserve the graph.");
         }
     }
     else if (extension == ".json" || (extension == ".bg2scene" || extension == ".bg2e"))
     {
-        if (!bg2e::db::saveScene(_document.root.get(), *_engine, path))
+        if (!bg2e::db::saveScene(_document.root.get(), *_engine, path, nullptr, report))
         {
-            return false;
+            throw std::runtime_error(report.error);
         }
     }
     else
     {
         throw std::invalid_argument("Save as .json/.bg2scene to preserve the graph, or .bg2 for one model");
     }
+    if (recoverySnapshot)
+    {
+        report.warnings.push_back("An active edit could not be settled; saved the currently recoverable state");
+    }
     // Commit metadata after the resource transaction, including filesystem path allocation.
     _document.savePath = std::move(committedPath);
-    _document.dirty = false;
+    _document.dirty = !report.warnings.empty();
+    if (_document.dirty)
+    {
+        std::string details;
+        for (const auto& warning : report.warnings)
+        {
+            details += "\n" + warning;
+        }
+        bg2e::app::MessageBox::showWarning("Scene saved partially",
+            "Recoverable data was saved to:\n" + _document.savePath.string() +
+            "\n\nSome resources could not be saved. The document remains modified and open." + details);
+        return false;
+    }
     return true;
+}
+catch (const std::exception& error)
+{
+    bg2e::app::MessageBox::showError("Scene save failed",
+        "Could not save to:\n" + path.string() + "\n\n" + error.what() +
+        "\n\nThe document remains open. Try Save As with another location.");
+    return false;
+}
+catch (...)
+{
+    bg2e::app::MessageBox::showError("Scene save failed",
+        "An unknown error prevented saving to:\n" + path.string() +
+        "\n\nThe document remains open. Try Save As with another location.");
+    return false;
 }
 
 void StageScene::releaseRetired()

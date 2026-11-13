@@ -33,7 +33,7 @@ the normal platform generator so the app's new DocumentIo.cpp is discovered.
 
 | Scenario | Expected result |
 | Keep a property preview active, move the camera, then cancel the preview | No exception; camera change remains dirty, survives save/reopen, and is not undone by cancelling the property preview |
-| Request save while commands are unsettled | Save is rejected without terminating the app or clearing unsaved state |
+| Request save while commands are unsettled | Recoverable scene state is written; a modal warning appears and the document remains modified and open |
 |---|---|
 | Edit initial cube/camera, save, reopen three times | One editable root; camera/controller, names, flags, component priorities and independent resources retained; no editor floor/fill fixture exported |
 | Open a production scene with perspective/optical cameras | First enabled depth-first camera is active for draw and selection; authored FOV/near/far retained; missing projection gets 50 mm film / 55 mm lens optical fallback |
@@ -54,7 +54,7 @@ the normal platform generator so the app's new DocumentIo.cpp is discovered.
 | Drop a model vs scene file/folder | Model inserts; JSON/legacy scene or Name/Name.json folder replaces after dirty protection |
 | Save/Discard/Cancel before New/Close/Open, Save As cancellation | Save snapshots flushed edits; discard adopts replacement only after successful load; cancel or failed IO retains current document |
 | Save legacy/off-layout path; cancel redirected overwrite | Canonical Name/Name.json destination inspected and confirmed; cancel retains document/path/dirty state |
-| Missing texture or unsupported custom schema/resource serializer | Load/save reports failure; current scene or previous main/resources stay available; no false clean state |
+| Missing texture or unsupported custom schema/resource serializer | Save preserves recoverable geometry, components and children; omitted data is reported in a modal dialog and saveWarnings; no false clean state |
 | Clone a node with transforms/controller/custom components | Fresh node IDs and independent CPU/GPU state; runtime controller gestures not copied; sliced/shared/owned custom component clones fail explicitly |
 | Export one selected model with children | Only its own local mesh/material/joints exported; scene placement/components and descendants excluded; document remains dirty/clean as before |
 | Export multiple selected nodes | One Name/Name.bg2 per directly selected drawable; non-drawables skipped; bad/duplicate/reserved names or existing destination subfolders rejected before any model writes |
@@ -91,3 +91,21 @@ Manual check: open a scene with an orbit camera, leave it idle, save it, and run
 Scene Resources Manager analysis. Opening/saving must leave the document clean,
 and idle frames must not invalidate the resource analysis. Real camera movement
 must still mark the document dirty.
+
+## Partial save regressions
+
+The schema probe also checks throwing and empty component serializers, preserved
+siblings/descendants, persisted recovery warnings, a backup on partial overwrite,
+and an unwritable publication
+target. The resource IO probe checks the repeated material snapshots used by
+lightmap commands and saving geometry plus baked AO while another file texture
+edit has failed. These additions have not been compiled or executed by the agent.
+
+Manually generate/apply RTAO and RTGI, then Save and Save As. Reopen and verify
+UV selection, indirect mode and lightmap pixels. Repeat with a missing albedo
+source: a partial file must be written, a modal must describe the missing image,
+and the document must stay dirty. Exercise Save before Close, New and Open:
+a partial save must preserve the live document rather than close or replace it.
+Repeat with an active/faulted edit, a missing environment image/font/notice, and
+an unwritable destination. Failed writes must show an error dialog and preserve
+the previous scene. Cancelling an overwrite/save dialog must still cancel IO.

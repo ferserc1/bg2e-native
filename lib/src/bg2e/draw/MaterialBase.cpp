@@ -233,6 +233,19 @@ std::shared_ptr<MaterialBase> MaterialBase::snapshot() const
                 ? result->_realizedSettings[i]->revision() : 0;
         }
     }
+    // Cloning settings uses texture setters, which mark every legacy slot as
+    // pending. Shared realizations above already satisfy the matching sources.
+    // Restore only those flags; retain pending state for actual source edits.
+    result->_attributes.setUpdated();
+    for (size_t i = 0; i < getters.size(); ++i)
+    {
+        const auto settings = (result->_attributes.*getters[i])();
+        if (!result->_textures[i] || settings != result->_realizedSettings[i] ||
+            (settings && settings->revision() != result->_realizedSettingsRevisions[i]))
+        {
+            (result->_attributes.*setters[i])(settings);
+        }
+    }
     return result;
 }
 

@@ -43,6 +43,90 @@
 
 namespace bg2e::db {
 namespace {
+void warn(SceneSaveReport& report, const std::string& message)
+{
+    report.warnings.push_back(message);
+    std::fprintf(stderr, "Partial scene save: %s\n", message.c_str());
+}
+
+// Keep custom component serializers authoritative, but isolate their failures
+// so one broken resource cannot discard unrelated nodes and authored edits.
+std::shared_ptr<json::JsonNode> serializeRecoverable(scene::Node& node,
+    const std::filesystem::path& base, scene::SceneSaveProgress* progress, SceneSaveReport& report)
+{
+    using namespace json;
+    if (progress)
+    {
+        if (progress->callback)
+        {
+            try
+            {
+                progress->callback(node.name(), progress->saved, progress->total);
+            }
+            catch (...)
+            {
+                warn(report, "Scene save progress callback failed");
+            }
+        }
+        ++progress->saved;
+    }
+    JsonList components;
+    for (const auto& [type, component] : node.components())
+    {
+        if (component->ignoreSerialization())
+        {
+            continue;
+        }
+        try
+        {
+            auto value = component->serializeReferences(base);
+            if (!value || !ObjectReader(value).isValid())
+            {
+                throw std::runtime_error("Component serializer returned no object");
+            }
+            components.push_back(value);
+        }
+        catch (const std::exception& error)
+        {
+            warn(report, node.name() + "/" + component->typeName() + ": " + error.what());
+        }
+        catch (...)
+        {
+            warn(report, node.name() + "/" + component->typeName() + ": unknown serialization error");
+        }
+    }
+    JsonList children;
+    for (const auto& child : node.children())
+    {
+        children.push_back(serializeRecoverable(*child, base, progress, report));
+    }
+    return JSON(JsonObject{{"type", JSON("Node")}, {"name", JSON(node.name())},
+        {"enabled", JSON(node.enabled())}, {"steady", JSON(node.steady())},
+        {"components", JSON(components)}, {"children", JSON(children)}});
+}
+
+std::shared_ptr<json::JsonNode> sceneDocument(scene::Node& root,
+    const std::filesystem::path& base, scene::SceneProgressCallback callback, SceneSaveReport& report)
+{
+    scene::SceneSaveProgress progress;
+    progress.callback = callback;
+    const auto count = [](auto&& self, const scene::Node& node) -> int
+    {
+        int result = 1;
+        for (const auto& child : node.children())
+        {
+            result += self(self, *child);
+        }
+        return result;
+    };
+    progress.total = count(count, root);
+    using namespace json;
+    auto representation = serializeRecoverable(root, base, callback ? &progress : nullptr, report);
+    return JSON(JsonObject{{"fileType", JSON("bg2e::scene")},
+        {"version", JSON(JsonObject{{"major", JSON(1)}, {"minor", JSON(0)}, {"rev", JSON(0)}})},
+        {"scene", JSON(JsonList{representation})}});
+}
+
 // Unique resource generations avoid overwriting files referenced by the old
 // document. The main file is the only replacement and is published last.
 class Publication {
@@ -228,7 +312,7 @@ const TextureSetter Setters[] = {
     &base::MaterialAttributes::setRoughnessTexture, &base::MaterialAttributes::setNormalTexture,
     &base::MaterialAttributes::setAoTexture, &base::MaterialAttributes::setLightEmissionTexture};
 
-Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publication)
+Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publication, SceneSaveReport* report = nullptr)
 {
     auto* component = node.getComponent<scene::DrawableComponent>();
     auto drawable = component ? component->drawable() : nullptr;
@@ -241,9 +325,9 @@ Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publicati
     for (uint32_t sub = 0; sub < drawable->submeshesCount(); ++sub)
     {
         auto material = drawable->material(sub);
-        if (!material.isUpdated())
+        if (!report && !material.isUpdated())
         {
-            throw std::logic_error("Resolve pending or failed texture edits before exporting the document");
+            throw std::logic_error("Resolve pending or failed texture edits before exporting a BG2 model");
         }
         model.submeshNames.push_back(drawable->submeshName(sub));
         material.setGroupName(drawable->submeshGroupName(sub));
@@ -256,25 +340,44 @@ Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publicati
             {
                 continue;
             }
-            auto settings = draw::cloneTextureSettings(*authored);
-            std::filesystem::path path;
-            if (authored->type() == base::Texture::TypeFilesystem && !authored->imageFilePath().empty())
+            try
             {
-                path = publication.imageResource(authored->imageFilePath());
-            }
-            else
-            {
-                auto texture = live->texture(static_cast<draw::TextureSlot>(slot));
-                if (!texture || texture->engine() != &engine || !texture->image())
+                auto settings = draw::cloneTextureSettings(*authored);
+                std::filesystem::path path;
+                if (authored->type() == base::Texture::TypeFilesystem && !authored->imageFilePath().empty())
                 {
-                    throw std::invalid_argument("Export texture belongs to another context or has no image");
+                    path = publication.imageResource(authored->imageFilePath());
                 }
-                path = publication.resource(texture->image()->pixelFormat() == gpu::PixelFormat::R32G32B32A32_SFLOAT
-                    ? ".hdr" : ".png");
-                saveImage(path, *texture->image());
+                else
+                {
+                    if (!live->texturesUpdated())
+                    {
+                        throw std::runtime_error("Procedural texture has pending source edits; GPU image may be stale");
+                    }
+                    auto texture = live->texture(static_cast<draw::TextureSlot>(slot));
+                    if (!texture || texture->engine() != &engine || !texture->image())
+                    {
+                        throw std::invalid_argument("Export texture belongs to another context or has no image");
+                    }
+                    path = publication.resource(texture->image()->pixelFormat() == gpu::PixelFormat::R32G32B32A32_SFLOAT
+                        ? ".hdr" : ".png");
+                    saveImage(path, *texture->image());
+                }
+                settings->setImageFilePath(path.string());
+                (material.*Setters[slot])(settings);
             }
-            settings->setImageFilePath(path.string());
-            (material.*Setters[slot])(settings);
+            catch (const std::exception& error)
+            {
+                if (!report)
+                {
+                    throw;
+                }
+                warn(*report, node.name() + "/material " + std::to_string(sub) +
+                    "/texture " + std::to_string(slot) + ": " + error.what());
+                // Omit only the unavailable image; preserve geometry, scalar
+                // material values, and every other successfully exported slot.
+                (material.*Setters[slot])(nullptr);
+            }
         }
         model.materials.push_back(std::move(material));
         const auto transform = drawable->submeshTransform(sub);
@@ -322,258 +425,345 @@ Bg2Mesh snapshot(scene::Node& node, draw::Engine& engine, Publication& publicati
     return model;
 }
 
-bool stageGraph(scene::Node& node, draw::Engine& engine, Publication& publication, ReferenceRestore& restore)
+void stageGraph(scene::Node& node, draw::Engine& engine, Publication& publication, ReferenceRestore& restore,
+    SceneSaveReport& report)
 {
     if (auto component = node.getComponent<scene::DrawableComponent>(); component && !component->ignoreSerialization())
     {
-        if (component->requiresBg2Export())
+        try
         {
-            auto model = snapshot(node, engine, publication);
-            auto path = publication.resource(".bg2");
-            storeMeshBg2(path, &model);
-            restore.paths.emplace_back(component, std::move(path));
-            component->swapResourcePath(restore.paths.back().second);
-        }
-        else if (auto* text = dynamic_cast<scene::TextComponent*>(component))
-        {
-            auto attributes = text->material();
-            // Albedo is never inspected, cloned, evaluated or exported here.
-            for (uint32_t slot = 1; slot < 6; ++slot)
+            if (component->requiresBg2Export())
             {
-                const auto source = (attributes.*Getters[slot])();
-                if (!source || source->ignoreSerialization())
-                {
-                    continue;
-                }
-                auto settings = std::make_shared<base::Texture>(*source);
-                std::filesystem::path path;
-                if (source->type() == base::Texture::TypeFilesystem && !source->imageFilePath().empty())
-                {
-                    path = publication.externalResource(source->imageFilePath());
-                }
-                else
-                {
-                    std::unique_ptr<base::Image> pixels(settings->generateImage());
-                    if (!pixels || !pixels->isValid())
-                    {
-                        base::detail::textWarning("Cannot export an embedded text material image; scene save refused.");
-                        return false;
-                    }
-                    path = publication.resource(".png");
-                    saveImage(path, pixels->data(), pixels->width(), pixels->height(), pixels->channels());
-                }
-                settings->setImageFilePath(path.string());
-                (attributes.*Setters[slot])(settings);
+                auto model = snapshot(node, engine, publication, &report);
+                auto path = publication.resource(".bg2");
+                storeMeshBg2(path, &model);
+                restore.paths.emplace_back(component, publication.destination.parent_path() / path.filename());
+                component->swapResourcePath(restore.paths.back().second);
             }
-            // Install only at this stopped IO boundary. RAII restores the exact
-            // authored material (including revisions) on success and failure.
-            restore.materials.emplace_back(&text->material(), std::move(attributes));
-            using std::swap;
-            swap(text->material(), restore.materials.back().second);
+            else if (auto* text = dynamic_cast<scene::TextComponent*>(component))
+            {
+                auto attributes = text->material();
+                // Albedo is never inspected, cloned, evaluated or exported here.
+                for (uint32_t slot = 1; slot < 6; ++slot)
+                {
+                    const auto source = (attributes.*Getters[slot])();
+                    if (!source || source->ignoreSerialization())
+                    {
+                        continue;
+                    }
+                    try
+                    {
+                        auto settings = std::make_shared<base::Texture>(*source);
+                        std::filesystem::path path;
+                        if (source->type() == base::Texture::TypeFilesystem && !source->imageFilePath().empty())
+                        {
+                            path = publication.externalResource(source->imageFilePath());
+                        }
+                        else
+                        {
+                            std::unique_ptr<base::Image> pixels(settings->generateImage());
+                            if (!pixels || !pixels->isValid())
+                            {
+                                warn(report, node.name() + ": omitted unavailable embedded text material image");
+                                (attributes.*Setters[slot])(nullptr);
+                                continue;
+                            }
+                            path = publication.resource(".png");
+                            saveImage(path, pixels->data(), pixels->width(), pixels->height(), pixels->channels());
+                        }
+                        settings->setImageFilePath((publication.destination.parent_path() / path.filename()).string());
+                        (attributes.*Setters[slot])(settings);
+                    }
+                    catch (const std::exception& error)
+                    {
+                        warn(report, node.name() + "/text texture " + std::to_string(slot) + ": " + error.what());
+                        (attributes.*Setters[slot])(nullptr);
+                    }
+                }
+                // Install only at this stopped IO boundary. RAII restores the exact
+                // authored material (including revisions) on success and failure.
+                restore.materials.emplace_back(&text->material(), std::move(attributes));
+                using std::swap;
+                swap(text->material(), restore.materials.back().second);
+            }
+        }
+        catch (const std::exception& error)
+        {
+            warn(report, node.name() + ": resource snapshot failed; retaining authored references: " + error.what());
+        }
+        catch (...)
+        {
+            warn(report, node.name() + ": resource snapshot failed; retaining authored references");
         }
     }
     for (const auto& child : node.children())
     {
-        if (!stageGraph(*child, engine, publication, restore))
-        {
-            return false;
-        }
+        stageGraph(*child, engine, publication, restore, report);
     }
-    return true;
 }
 
 // External font/notice/environment files keep their original bytes/extensions.
 // Custom components still require their own explicit export contract.
-bool stageExternalReferences(const std::shared_ptr<json::JsonNode>& value, Publication& publication)
+void stageExternalReferences(const std::shared_ptr<json::JsonNode>& value, Publication& publication,
+    SceneSaveReport& report)
 {
     if (!value)
     {
-        return true;
+        return;
     }
     if (value->isObject())
     {
         auto& object = value->objectValue();
-        auto found = object.find("equirectangularTexture");
         const auto type = object.find("type");
-        if (type != object.end() && type->second->isString() && type->second->stringValue() == "Environment" &&
-            found != object.end() && found->second->isString() && !found->second->stringValue().empty())
+        const auto copyReference = [&](std::shared_ptr<json::JsonNode>& reference)
         {
-            auto source = publication.directory / found->second->stringValue();
-            const auto path = publication.resource(source.extension().string());
-            std::filesystem::copy_file(source, path);
-            found->second = json::JSON(path.filename().string());
-        }
-        if (type != object.end() && type->second->isString() && type->second->stringValue() == "TextFonts")
-        {
-            auto fonts = object.find("fonts");
-            if (fonts != object.end() && fonts->second && fonts->second->isList())
+            if (!reference || !reference->isString() || reference->stringValue().empty())
             {
-                for (const auto& font : fonts->second->listValue())
+                warn(report, "Missing external resource path");
+                return;
+            }
+            const auto source = publication.destination.parent_path() / reference->stringValue();
+            try
+            {
+                const auto path = publication.externalResource(source);
+                reference = json::JSON(path.filename().generic_string());
+            }
+            catch (const std::exception& error)
+            {
+                // Serialization already made this relative to the final scene.
+                // Retaining it allows the user to restore the missing resource.
+                warn(report, source.string() + ": " + error.what());
+            }
+        };
+        if (type != object.end() && type->second && type->second->isString())
+        {
+            if (type->second->stringValue() == "Environment")
+            {
+                const auto found = object.find("equirectangularTexture");
+                if (found != object.end() && found->second && found->second->isString() &&
+                    !found->second->stringValue().empty())
                 {
-                    json::ObjectReader reader(font);
-                    auto path = reader.getString("path");
-                    if (!path || path->empty())
+                    copyReference(found->second);
+                }
+            }
+            else if (type->second->stringValue() == "TextFonts")
+            {
+                const auto fonts = object.find("fonts");
+                if (fonts != object.end() && fonts->second && fonts->second->isList())
+                {
+                    for (const auto& font : fonts->second->listValue())
                     {
-                        base::detail::textWarning("Cannot package a font without its authored path; save refused.");
-                        return false;
-                    }
-                    const auto source = publication.directory / *path;
-                    std::set<std::filesystem::path> notices;
-                    if (auto supplied = reader.getArray("notices"))
-                    {
-                        for (size_t i = 0; i < supplied->size(); ++i)
+                        json::ObjectReader reader(font);
+                        const auto path = reader.getString("path");
+                        if (!path || path->empty())
                         {
-                            auto notice = supplied->getString(i);
-                            if (!notice || notice->empty())
-                            {
-                                base::detail::textWarning("Invalid supplied font notice path; save refused.");
-                                return false;
-                            }
-                            notices.insert(publication.directory / *notice);
+                            warn(report, "Font has no authored path");
+                            continue;
                         }
-                    }
-                    // Bundled tutorial font notices are adjacent. Recognize
-                    // common supplied licenses without claiming legal rights.
-                    if (notices.empty())
-                    {
-                        for (const char* name : {"OFL.txt", "LICENSE", "LICENSE.txt", "LICENSE.md",
-                            "COPYING", "NOTICE", "NOTICE.txt", "README.md"})
+                        const auto source = publication.destination.parent_path() / *path;
+                        std::set<std::filesystem::path> notices;
+                        if (auto supplied = reader.getArray("notices"))
                         {
-                            const auto notice = source.parent_path() / name;
-                            if (std::filesystem::is_regular_file(notice))
+                            for (size_t i = 0; i < supplied->size(); ++i)
                             {
-                                notices.insert(notice);
+                                auto notice = supplied->getString(i);
+                                if (notice && !notice->empty())
+                                {
+                                    notices.insert(publication.destination.parent_path() / *notice);
+                                }
+                                else
+                                {
+                                    warn(report, "Invalid supplied font notice path");
+                                }
                             }
                         }
+                        if (notices.empty())
+                        {
+                            for (const char* name : {"OFL.txt", "LICENSE", "LICENSE.txt", "LICENSE.md",
+                                "COPYING", "NOTICE", "NOTICE.txt", "README.md"})
+                            {
+                                const auto notice = source.parent_path() / name;
+                                std::error_code error;
+                                if (std::filesystem::is_regular_file(notice, error))
+                                {
+                                    notices.insert(notice);
+                                }
+                            }
+                        }
+                        if (notices.empty())
+                        {
+                            base::detail::textWarning("No supplied/adjacent font notices found for ", source.string(),
+                                "; verify redistribution rights and provide required notices.");
+                        }
+                        json::JsonList packaged;
+                        for (const auto& notice : notices)
+                        {
+                            auto reference = json::JSON(notice.generic_string());
+                            copyReference(reference);
+                            packaged.push_back(reference);
+                        }
+                        font->objectValue()["notices"] = json::JSON(packaged);
+                        copyReference(font->objectValue().at("path"));
                     }
-                    json::JsonList packaged;
-                    if (notices.empty())
-                    {
-                        base::detail::textWarning("No supplied/adjacent font notices found for ", source.string(),
-                            "; verify redistribution rights and provide required notices.");
-                    }
-                    for (const auto& notice : notices)
-                    {
-                        packaged.push_back(json::JSON(publication.externalResource(notice).filename().generic_string()));
-                    }
-                    const auto target = publication.externalResource(source);
-                    font->objectValue()["path"] = json::JSON(target.filename().generic_string());
-                    font->objectValue()["notices"] = json::JSON(packaged);
                 }
             }
         }
         for (auto& [key, child] : object)
         {
-            if (!stageExternalReferences(child, publication))
-            {
-                return false;
-            }
+            stageExternalReferences(child, publication, report);
         }
     }
     else if (value->isList())
     {
         for (auto& child : value->listValue())
         {
-            if (!stageExternalReferences(child, publication))
-            {
-                return false;
-            }
+            stageExternalReferences(child, publication, report);
         }
     }
-    return true;
+}
+
+void preservePreviousScene(Publication& publication, SceneSaveReport& report)
+{
+    if (report.warnings.empty())
+    {
+        return;
+    }
+    try
+    {
+        if (std::filesystem::is_regular_file(publication.destination))
+        {
+            const auto backup = publication.resource(".previous.json");
+            std::filesystem::copy_file(publication.destination, backup);
+            warn(report, "Previous scene preserved at: " +
+                (publication.destination.parent_path() / backup.filename()).string());
+        }
+    }
+    catch (const std::exception& error)
+    {
+        warn(report, std::string("Could not preserve the previous scene copy: ") + error.what());
+    }
+}
+
+void recordWarnings(const std::shared_ptr<json::JsonNode>& document, const SceneSaveReport& report)
+{
+    if (!report.warnings.empty())
+    {
+        json::JsonList warnings;
+        for (const auto& warning : report.warnings)
+        {
+            warnings.push_back(json::JSON(warning));
+        }
+        document->objectValue()["saveWarnings"] = json::JSON(warnings);
+    }
 }
 }
 
 bool saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
     scene::SceneProgressCallback onProgress) noexcept
+{
+    SceneSaveReport report;
+    return saveSceneReferences(root, filePath, onProgress, report);
+}
+
+bool saveSceneReferences(scene::Node* root, const std::filesystem::path& filePath,
+    scene::SceneProgressCallback onProgress, SceneSaveReport& report) noexcept
 try
 {
+    report = {};
     if (!root || filePath.empty())
     {
-        base::detail::textWarning("Scene reference save requires a root and path; save refused.");
-        return false;
+        throw std::invalid_argument("Scene reference save requires a root and path");
     }
     Publication publication(filePath);
-    scene::SceneSaveProgress progress;
-    progress.callback = onProgress;
-    const auto count = [](auto&& self, const scene::Node* node) -> int
-    {
-        int result = 1;
-        for (const auto& child : node->children())
-        {
-            result += self(self, child.get());
-        }
-        return result;
-    };
-    progress.total = count(count, root);
-    auto representation = root->serializeReferences(publication.destination.parent_path(), onProgress ? &progress : nullptr);
-    if (!representation)
-    {
-        base::detail::textWarning("Scene representation unavailable; destination unchanged.");
-        return false;
-    }
-    using namespace json;
-    auto document = JSON(JsonObject{
-        {"fileType", JSON("bg2e::scene")},
-        {"version", JSON(JsonObject{{"major", JSON(1)}, {"minor", JSON(0)}, {"rev", JSON(0)}})},
-        {"scene", JSON(JsonList{representation})}});
+    auto document = sceneDocument(*root, publication.destination.parent_path(), onProgress, report);
+    preservePreviousScene(publication, report);
+    recordWarnings(document, report);
     const auto main = publication.directory / publication.destination.filename();
     writeSceneDocument(document, main);
     publication.commit(main);
     return true;
 }
-catch (...)
+catch (const std::exception& error)
 {
-    base::detail::textWarning("Scene reference serialization/write failed; destination unchanged.");
+    report.error = error.what();
+    std::fprintf(stderr, "Scene reference save failed: %s\n", error.what());
     return false;
 }
-
+catch (...)
+{
+    report.error = "Unknown scene reference save error";
+    std::fprintf(stderr, "%s\n", report.error.c_str());
+    return false;
+}
 
 bool saveScene(scene::Node* root, draw::Engine& engine, const std::filesystem::path& path,
     scene::SceneProgressCallback progress) noexcept
+{
+    SceneSaveReport report;
+    return saveScene(root, engine, path, progress, report);
+}
+
+bool saveScene(scene::Node* root, draw::Engine& engine, const std::filesystem::path& path,
+    scene::SceneProgressCallback progress, SceneSaveReport& report) noexcept
 try
 {
+    report = {};
     if (!root || path.empty())
     {
-        throw std::invalid_argument("Complete scene export requires a root and output path");
+        throw std::invalid_argument("Scene save requires a root and output path");
     }
-    if (!engine.device())
-    {
-        throw std::invalid_argument("Resource export requires an initialized draw Engine");
-    }
-    engine.device()->waitIdle();
     Publication publication(path);
     ReferenceRestore restore;
-    if (!stageGraph(*root, engine, publication, restore))
+    try
     {
-        return false;
+        if (!engine.device())
+        {
+            throw std::invalid_argument("Resource export requires an initialized draw Engine");
+        }
+        engine.device()->waitIdle();
+        stageGraph(*root, engine, publication, restore, report);
     }
+    catch (const std::exception& error)
+    {
+        warn(report, std::string("Resource snapshot incomplete: ") + error.what());
+    }
+    catch (...)
+    {
+        warn(report, "Resource snapshot incomplete: unknown error");
+    }
+    auto document = sceneDocument(*root, publication.destination.parent_path(), progress, report);
+    try
+    {
+        stageExternalReferences(document, publication, report);
+    }
+    catch (const std::exception& error)
+    {
+        warn(report, std::string("External resource packaging incomplete: ") + error.what());
+    }
+    catch (...)
+    {
+        warn(report, "External resource packaging incomplete: unknown error");
+    }
+    preservePreviousScene(publication, report);
+    recordWarnings(document, report);
     const auto main = publication.directory / publication.destination.filename();
-    if (!saveSceneReferences(root, main, progress)) // Custom virtual serializers remain authoritative.
-    {
-        return false;
-    }
-    auto document = readSceneDocument(main);
-    if (!stageExternalReferences(document, publication))
-    {
-        return false;
-    }
     writeSceneDocument(document, main);
     publication.commit(main);
     return true;
 }
-
 catch (const std::exception& error)
 {
-    std::fprintf(stderr, "Resource export failed: %s\n", error.what());
+    report.error = error.what();
+    std::fprintf(stderr, "Scene save failed: %s\n", error.what());
+    return false;
+}
+catch (...)
+{
+    report.error = "Unknown scene save error";
+    std::fprintf(stderr, "%s\n", report.error.c_str());
     return false;
 }
 
-catch (...)
-{
-    std::fprintf(stderr, "Resource export failed: unknown error\n");
-    return false;
-}
 
 bool storeDrawableBg2(const std::filesystem::path& path, draw::Engine& engine, scene::Node* node) noexcept
 try

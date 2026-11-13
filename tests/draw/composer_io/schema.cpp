@@ -54,6 +54,69 @@ class SlicedTransform final : public bg2e::scene::TransformComponent {
     BG2E_COMPONENT_TYPE_NAME("ComposerInvalidSlicedTransform");
 };
 
+class FailedSaveComponent final : public bg2e::scene::TransformComponent {
+  public:
+    BG2E_COMPONENT_TYPE_NAME("FailedSaveComponent");
+
+    std::shared_ptr<bg2e::json::JsonNode> serializeReferences(const std::filesystem::path&) override
+    {
+        throw std::runtime_error("Simulated failed texture edit");
+    }
+};
+
+class EmptySaveComponent final : public bg2e::scene::TransformComponent {
+  public:
+    BG2E_COMPONENT_TYPE_NAME("EmptySaveComponent");
+
+    std::shared_ptr<bg2e::json::JsonNode> serializeReferences(const std::filesystem::path&) override
+    {
+        return nullptr;
+    }
+};
+
+void partialSave(const std::filesystem::path& directory)
+{
+    using namespace bg2e;
+    auto root = std::make_shared<scene::Node>("recoverable root");
+    auto broken = std::make_shared<scene::Node>("broken node");
+    broken->addComponent(new FailedSaveComponent());
+    broken->addChild(new scene::Node("preserved grandchild"));
+    root->addChild(broken);
+    auto empty = std::make_shared<scene::Node>("empty serializer");
+    empty->addComponent(new EmptySaveComponent());
+    root->addChild(empty);
+    root->addChild(new scene::Node("preserved sibling"));
+    db::SceneSaveReport report;
+    const auto path = directory / "partial-save.json";
+    require(db::saveSceneReferences(root.get(), path, nullptr, report), "One failed component aborted the scene save");
+    require(report.error.empty() && report.warnings.size() >= 2, "Partial save was not reported");
+    auto document = db::readSceneDocument(path);
+    require(document->objectValue().contains("saveWarnings"), "Recovery warnings were not persisted");
+    auto loaded = db::loadScene(path);
+    auto recovered = loaded->rootNode()->children().at(0);
+    require(recovered->name() == root->name() && recovered->children().size() == 3,
+        "Partial save lost root or siblings");
+    require(recovered->children().at(0)->children().at(0)->name() == "preserved grandchild",
+        "Failed parent component discarded its descendants");
+    const auto previous = document->serialize();
+    require(db::saveSceneReferences(root.get(), path, nullptr, report), "Repeated partial save failed");
+    bool backupFound = false;
+    for (const auto& entry : std::filesystem::directory_iterator(directory))
+    {
+        if (entry.path().filename().string().ends_with(".previous.json") &&
+            db::readSceneDocument(entry.path())->serialize() == previous)
+        {
+            backupFound = true;
+        }
+    }
+    require(backupFound, "Partial overwrite did not retain the previous document");
+    // A failed final publication must preserve a previous valid destination.
+    require(!db::saveSceneReferences(root.get(), directory, nullptr, report),
+        "Publishing over a directory unexpectedly succeeded");
+    require(!report.error.empty(), "Unrecoverable filesystem error was not reported");
+    require(db::readSceneDocument(path)->objectValue().contains("scene"), "Failed save damaged the prior scene");
+}
+
 void environmentSelection(const std::filesystem::path& directory)
 {
     using namespace bg2e;
@@ -257,6 +320,7 @@ int main(int argc, char** argv)
             throw std::invalid_argument("Usage: composer_schema_probe EXISTING_DISPOSABLE_DIRECTORY");
         }
         run(argv[1]);
+        partialSave(argv[1]);
         std::cout << "Composer schema and clone checks passed\n";
         return 0;
     }
