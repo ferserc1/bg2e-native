@@ -362,6 +362,8 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::string _viewpointStatus;
 
     std::shared_ptr<bg2e::bake::IntegratedBakerContext> _bakeContext;
+    std::shared_ptr<bg2e::scene::Scene> _bakeScene;
+    std::string _bakeWarning;
     std::shared_ptr<bg2e::bake::IntegratedLightmapBaker> _baker;
     struct BakeSubmission {
         uint32_t slot = 0;
@@ -372,6 +374,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     struct BakeTarget {
         std::weak_ptr<bg2e::scene::Node> node;
         std::shared_ptr<bg2e::draw::Drawable> drawable;
+        std::shared_ptr<bg2e::scene::Node> snapshot;
         std::optional<bg2e::bake::LightmapResult> result;
         std::optional<bg2e::bake::LightmapPixels> pixels;
     };
@@ -381,7 +384,6 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     uint64_t _bakeDocumentGeneration = 0;
     uint64_t _bakeJobToken = 0;
     bg2e::app::CommandDocumentState _bakeSourceState;
-    uint64_t _bakeRendererGeneration = 0;
     bool _bakeApplyQueued = false;
     bool _wasContinuousRendering = false;
 

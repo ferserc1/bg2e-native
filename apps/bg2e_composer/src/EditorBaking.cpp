@@ -28,6 +28,10 @@
 #include <bg2e/geo/UvAtlasValidator.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/scene/Scene.hpp>
+#include <bg2e/scene/TransformComponent.hpp>
+#include <bg2e/scene/LightComponent.hpp>
+#include <bg2e/scene/EnvironmentComponent.hpp>
 #include <cstdio>
 
 #include <atomic>
@@ -49,6 +53,47 @@ struct GeneratedImageSource {
         std::filesystem::remove_all(directory, ignored);
     }
 };
+
+// Capture only evaluated rendering inputs. Controllers and procedural component
+// updates must not write into the scene used by an in-progress bake.
+std::shared_ptr<bg2e::scene::Node> snapshotBakeNode(
+    const std::shared_ptr<bg2e::scene::Node>& source,
+    std::unordered_map<bg2e::scene::Node*, std::shared_ptr<bg2e::scene::Node>>& nodes)
+{
+    auto copy = std::make_shared<bg2e::scene::Node>(source->name());
+    nodes.emplace(source.get(), copy);
+    copy->setDisabled(source->disabled());
+    if (source->disabled())
+    {
+        return copy;
+    }
+    if (source->transform())
+    {
+        copy->addComponent(std::make_shared<bg2e::scene::TransformComponent>(source->transform()->matrix()));
+    }
+    if (auto* component = source->drawable())
+    {
+        auto drawable = component->drawable();
+        auto* text = dynamic_cast<bg2e::scene::TextComponent*>(component);
+        if (drawable && (!text || text->canRender()))
+        {
+            copy->addComponent(std::make_shared<bg2e::scene::DrawableComponent>(drawable->clone()));
+        }
+    }
+    if (auto* light = source->light())
+    {
+        copy->addComponent(light->clone());
+    }
+    if (auto* environment = source->environment())
+    {
+        copy->addComponent(environment->clone());
+    }
+    for (const auto& child : source->children())
+    {
+        copy->addChild(snapshotBakeNode(child, nodes));
+    }
+    return copy;
+}
 }
 
 void AppDelegate::render(const bg2e::draw::FrameContext& frame)
@@ -57,16 +102,16 @@ void AppDelegate::render(const bg2e::draw::FrameContext& frame)
     {
         return; // Do not record against an unrecovered scene/extraction.
     }
-    if (_bakeContext && _bakeRendererGeneration != rendererGeneration())
-    {
-        stopLightmapBake(true);
-        _status = "Bake cancelled because the renderer binding changed";
-    }
     DefaultRenderLoopDelegate::render(frame);
     if (!_baker || !_bakeContext || !_stage || !_stage->document().root ||
-        _bakeDocumentGeneration != _stage->document().generation || _bakeSubmission)
+        _bakeSubmission)
     {
         return;
+    }
+    if (_stage->document().commands &&
+        _stage->document().commands->history().documentState() != _bakeSourceState)
+    {
+        invalidateLightmapSources();
     }
 
     const auto progress = _baker->progress();
@@ -124,7 +169,7 @@ void AppDelegate::retireBakeFrame()
                 if (_bakeTargetIndex < _bakeTargets.size())
                 {
                     bg2e::bake::LightmapBakerConfiguration configuration;
-                    configuration.target = _bakeTargets[_bakeTargetIndex].node.lock();
+                    configuration.target = _bakeTargets[_bakeTargetIndex].snapshot;
                     configuration.settings = std::make_shared<bg2e::bake::LightmapSettings>(_bakeSettings);
                     _baker = _bakeContext->createBaker(std::move(configuration));
                     _bakeTarget = _bakeTargets[_bakeTargetIndex].node;
@@ -202,14 +247,17 @@ void AppDelegate::stopLightmapBake(bool cancelled)
     _bakeTargets.clear();
     _bakeTargetIndex = 0;
     _bakeDocumentGeneration = 0;
+    _bakeScene.reset();
+    _bakeWarning.clear();
 }
 
 void AppDelegate::invalidateLightmapSources()
 {
-    if (_baker || _bakeContext)
+    if (_bakeContext)
     {
-        stopLightmapBake(true);
-        _status = "Bake cancelled because the document sources changed";
+        _bakeWarning = "Warning: the document changed after this bake started. Baking uses the initial scene; "
+            "the lightmaps may not match the current document.";
+        _status = _bakeWarning;
     }
 }
 
@@ -385,6 +433,27 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
             try
             {
                 std::string warnings;
+                std::unordered_map<bg2e::scene::Node*, std::shared_ptr<bg2e::scene::Node>> snapshots;
+                auto snapshotRoot = snapshotBakeNode(owner->document()->root, snapshots);
+                if (snapshotRoot->transform())
+                {
+                    snapshotRoot->transform()->setMatrix(owner->document()->root->worldMatrix());
+                }
+                else
+                {
+                    snapshotRoot->addComponent(std::make_shared<bg2e::scene::TransformComponent>(
+                        owner->document()->root->worldMatrix()));
+                }
+                owner->_bakeScene = std::make_shared<bg2e::scene::Scene>();
+                owner->_bakeScene->setSceneRoot(snapshotRoot);
+                auto* sourceScene = owner->document()->root->scene();
+                if (sourceScene && sourceScene->hasExplicitMainEnvironment())
+                {
+                    auto* selected = sourceScene->mainEnvironment();
+                    auto found = selected ? snapshots.find(selected->ownerNode()) : snapshots.end();
+                    owner->_bakeScene->setMainEnvironment(found != snapshots.end()
+                        ? found->second->environment() : nullptr);
+                }
                 for (const auto& weakTarget : targets)
                 {
                     auto target = weakTarget.lock();
@@ -404,14 +473,19 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
                     {
                         warnings += " Warning: " + target->name() + ": " + validation.warning;
                     }
-                    owner->_bakeTargets.push_back({target, drawable, {}, {}});
+                    auto snapshot = snapshots.find(target.get());
+                    if (snapshot == snapshots.end() || snapshot->second->disabled())
+                    {
+                        throw std::invalid_argument(target->name() + ": bake target or ancestor is disabled");
+                    }
+                    owner->_bakeTargets.push_back({target, drawable, snapshot->second, {}, {}});
                 }
                 owner->_bakeSettings = settings;
                 bg2e::bake::BakerContextConfiguration contextConfiguration;
                 contextConfiguration.device = owner->_engine->device();
                 contextConfiguration.backend = owner->_engine->backendType();
                 contextConfiguration.frameSlots = owner->_engine->frameSlotCount();
-                contextConfiguration.sceneRoot = owner->document()->root;
+                contextConfiguration.sceneRoot = snapshotRoot;
                 if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(&renderer);
                     deferred && deferred->environmentGenerator())
                 {
@@ -420,14 +494,13 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
                 owner->_bakeContext = std::make_shared<bg2e::bake::IntegratedBakerContext>(
                     *owner->_engine, std::move(contextConfiguration));
                 bg2e::bake::LightmapBakerConfiguration bakerConfiguration;
-                bakerConfiguration.target = node;
+                bakerConfiguration.target = owner->_bakeTargets.front().snapshot;
                 bakerConfiguration.settings = std::make_shared<bg2e::bake::LightmapSettings>(settings);
                 owner->_baker = owner->_bakeContext->createBaker(std::move(bakerConfiguration));
                 owner->_bakeTarget = node;
                 owner->_bakeDocumentGeneration = generation;
                 owner->_bakeSourceState = owner->document()->commands->history().documentState();
                 ++owner->_bakeJobToken;
-                owner->_bakeRendererGeneration = owner->rendererGeneration();
                 owner->setContinuousRendering(true);
                 renderer.invalidateHistories();
                 owner->_status = "Lightmap bake started" + warnings;
@@ -470,7 +543,20 @@ bg2e::bake::BakeProgress AppDelegate::lightmapBakeProgress() const
         auto progress = _baker->progress();
         progress.status = "Target " + std::to_string(_bakeTargetIndex + 1) + " / " +
             std::to_string(_bakeTargets.size()) + ": " + progress.status;
+        if (!_bakeWarning.empty())
+        {
+            progress.status += " " + _bakeWarning;
+        }
         return progress;
+    }
+    if (!_bakeTargets.empty() && _bakeTargetIndex == _bakeTargets.size())
+    {
+        auto status = _status;
+        if (!_bakeWarning.empty() && status.find(_bakeWarning) == std::string::npos)
+        {
+            status += " " + _bakeWarning;
+        }
+        return {bg2e::bake::BakeState::Complete, 0, 0, 0, 0, std::move(status)};
     }
     auto* selected = _selection ? _selection->selectedNode() : nullptr;
     if (selected && lightmapResult(selected->shared_from_this()))
@@ -485,6 +571,16 @@ std::optional<bg2e::bake::LightmapResult> AppDelegate::lightmapResult(
 {
     if (target)
     {
+        if (document() && document()->generation == _bakeDocumentGeneration)
+        {
+            for (const auto& job : _bakeTargets)
+            {
+                if (job.node.lock() == target && job.result)
+                {
+                    return job.result;
+                }
+            }
+        }
         if (!document() || !_stage->contains(target.get()) || !target->drawable())
         {
             return std::nullopt;
@@ -523,11 +619,10 @@ void AppDelegate::applyLightmapBake()
         return;
     }
     const auto generation = _bakeDocumentGeneration;
-    const auto sourceState = _bakeSourceState;
     const auto jobToken = _bakeJobToken;
     const auto weak = weak_from_this();
     const auto context = std::weak_ptr<bg2e::bake::IntegratedBakerContext>(_bakeContext);
-    enqueueRendererUpdate(rendererGeneration(), [weak, generation, context, sourceState, jobToken](bg2e::draw::Renderer&)
+    enqueueRendererUpdate(rendererGeneration(), [weak, generation, context, jobToken](bg2e::draw::Renderer&)
     {
         auto owner = weak.lock();
         if (!owner || !owner->_bakeContext || owner->_bakeContext != context.lock() || !owner->_stage || !owner->document() ||
@@ -536,11 +631,11 @@ void AppDelegate::applyLightmapBake()
         {
             if (owner)
             {
-                owner->_status = "Completed lightmap is stale; generate it again before applying";
+                owner->_status = "Warning: baking completed, but the destination document changed. Results are retained.";
             }
             return;
         }
-        if (owner->document()->commands->history().documentState() != sourceState || owner->_bakeJobToken != jobToken)
+        if (owner->_bakeJobToken != jobToken)
         {
             owner->_status = "Completed lightmap source revision changed";
             return;
@@ -558,7 +653,10 @@ void AppDelegate::applyLightmapBake()
                 if (!target || !owner->_stage->contains(target.get()) || !component ||
                     component->drawable() != job.drawable || !job.result || !job.pixels)
                 {
-                    throw std::logic_error("Completed batch target or drawable is stale");
+                    owner->_bakeWarning = "Warning: baking completed, but a destination was removed or replaced. "
+                        "Results are retained without automatic application.";
+                    owner->_status = owner->_bakeWarning;
+                    return;
                 }
                 const auto& result = job.result;
                 if (result->sourceGeneration != owner->_bakeContext->sourceGeneration())
@@ -618,6 +716,11 @@ void AppDelegate::applyLightmapBake()
                 texture->load(settings);
                 textures.push_back(std::move(texture));
             }
+            // Preview the same RGB8/exposure or HDR conversion that will be applied.
+            for (size_t index = 0; index < owner->_bakeTargets.size(); ++index)
+            {
+                owner->_bakeTargets[index].result->image = textures[index]->imageResource();
+            }
             std::vector<command::material::PreparedMaterial> prepared;
             for (size_t index = 0; index < owner->_bakeTargets.size(); ++index)
             {
@@ -648,16 +751,15 @@ void AppDelegate::applyLightmapBake()
                     prepared.push_back(std::move(value));
                 }
             }
-            auto valid = [weak, sourceState, jobToken, context]
+            auto valid = [weak, generation, jobToken, context]
             {
                 auto active = weak.lock();
                 return active && active->document() && active->document()->commands &&
-                    active->document()->commands->history().documentState() == sourceState &&
+                    active->document()->generation == generation &&
                     active->_bakeJobToken == jobToken && active->_bakeContext == context.lock() && active->_bakeContext;
             };
             auto action = std::make_unique<command::material::EditMaterials>(owner->_stage, prepared, valid);
             command::Effects effects;
-            effects.lightmapSources = true;
             effects.renderHistories = true;
             auto finished = [weak](auto result)
             {
@@ -665,6 +767,10 @@ void AppDelegate::applyLightmapBake()
                 {
                     active->_status = result.status == bg2e::app::CommandStatus::Applied
                         ? "Lightmaps applied; save the scene to publish resources" : std::string(result.message);
+                    if (!active->_bakeWarning.empty())
+                    {
+                        active->_status += " " + active->_bakeWarning;
+                    }
                 }
             };
             auto admitted = owner->document()->commands->submit(std::move(action), command::Boundary::Conservative, effects,

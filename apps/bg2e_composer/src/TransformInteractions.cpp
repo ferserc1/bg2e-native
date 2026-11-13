@@ -112,8 +112,8 @@ void AppDelegate::initializeTransformInteractions()
                     // Renderer signatures classify transform changes and preserve motion history.
                     owner->applyCommandEffects(*owner->_commandRenderer, effects);
                 });
-            // Stop prepared bake publication before opening an authored preview.
-            owner->stopLightmapBake(true);
+            // Warn about an authored preview without interrupting the snapshot bake.
+            owner->invalidateLightmapSources();
             // Allocate resume callbacks before pausing any writer or beginning.
             std::vector<std::function<void()>> resume;
             auto navigation = owner->_stage->orbitCamera();

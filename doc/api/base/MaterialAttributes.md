@@ -69,9 +69,36 @@ emission also expose inversion (default false).
 `BakedGlobalIllumination`. The default is `AmbientOcclusion`; unsupported values
 throw `std::invalid_argument`.
 
-The AO slot, `aoScale`, and `aoUVSet` can carry a baked RGB indirect multiplier.
-Baked modes bypass scalar AO. Baked GI affects diffuse IBL only; baked AO
-affects all IBL.
+| Mode | Sampled components | Lighting interpretation |
+|------|--------------------|-------------------------|
+| `AmbientOcclusion` | One component selected by `aoChannel()` | Scalar AO, clamped to [0,1]. |
+| `BakedAmbientOcclusion` | RGB | Linear multiplier for all indirect IBL. |
+| `BakedGlobalIllumination` | RGB | Linear multiplier for diffuse IBL, including sheen; specular IBL/reflections are preserved. |
+
+All three modes use the same `aoTexture()`, `aoScale()` and `aoUVSet()` properties.
+There is no additional lightmap slot: ordinary AO and a baked map cannot occupy
+this slot simultaneously. Baked modes bypass scalar AO and read RGB regardless
+of the stored `aoChannel()` value. Direct lighting and emission remain separate.
+
+The mode belongs to the material, not to individual texels or the image alpha
+channel. The renderer propagates material flags to the G-buffer fragments drawn
+with that material; lighting uses those flags to select baked composition and
+bypass live AO/GI. An image, its UV set or its file extension never enables baked
+interpretation automatically.
+
+Component selection is independent of numeric precision: scalar AO does not
+necessarily mean one byte, and baked RGB does not require HDR. RGB8 baked GI is
+supported and is the default bake CPU output for browser/WebGL delivery using
+ordinary image files. RGB32F is optional for preserving HDR multipliers.
+
+Draw packing requires an opaque material, an assigned and realized AO texture
+with linear color interpretation, and `aoUVSet() == 1` (the second UV set, also
+called UV2 or `texCoord1`). The enum setter validates the mode; packing validates
+these resource/property combinations. Generic UV selectors are limited to 0/1
+and scalar channel selectors to 0–3 at packing time.
+See [Baked indirect maps](../draw/BakedIndirectMaps.md) for precision, rendering
+and export contracts, and [LightmapSettings](../bake/LightmapSettings.md) for the
+RGB8 default and exposure conversion.
 
 ## Change tracking
 

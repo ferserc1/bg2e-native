@@ -7,6 +7,19 @@ and publishes a current LightmapResult only after final GPU completion and stric
 readback validation. No camera, renderer initialization or production render API
 is needed by these Device-backed output primitives.
 
+## CPU output format
+
+`LightmapSettings::cpuFormat()` defaults to RGB8 for portable PNG lightmaps,
+including baked GI intended for browser/WebGL use. The float GPU computation does
+not require HDR image delivery. CPU output has three components per pixel and no
+alpha: RGB8 uses bytes; RGB32F uses floats.
+
+For RGB8 GI, each component is `floor(clamp(value * 2^exposureEV, 0, 1) * 255 + 0.5)`.
+Exposure is incorporated into the multiplier with no automatic inverse at sampling.
+AO ignores exposure. RGB32F ignores exposure and preserves finite nonnegative HDR
+values. [Baked indirect maps](../draw/BakedIndirectMaps.md#components-precision-and-portable-output)
+separates source precision, GPU intermediates and file encoding.
+
 ## Accumulation
 
 UvTemporalAccumulator accepts BakeSample and the immediately preceding completed
@@ -139,8 +152,7 @@ there is no chart-unsafe smoothing of raw averages. UV/result previews and
 material adoption are implemented by the [integrated example](../../tutorials/draw/12_lightmaps.md).
 GPU-only texture ownership is not image/model export. See
 [integrated lifecycle](IntegratedBakerContext.md),
-[manual output fixtures](../../../tests/bake/output/README.md), and
-[implementation handoff](../../../docs/render_to_draw/plan/milestone_04_lightmaps/accumulation-output.md).
+[manual output fixtures](../../../tests/bake/output/README.md).
 
 ## Standalone completed output and persisted resources
 

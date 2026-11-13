@@ -282,7 +282,7 @@ void AppDelegate::processImports()
             {
                 throw std::runtime_error("Import renderer targets are not bound");
             }
-            stopLightmapBake(true);
+            invalidateLightmapSources();
             _engine->device()->waitIdle();
             job->loader.setMessage("Realizing " + job->request.fileName);
             candidate = _stage->prepareImport(job->request.filePath, job->request.unitsScale,
@@ -398,7 +398,7 @@ void AppDelegate::processImports()
     }
     if (_imports.busy() && !_importPaused)
     {
-        stopLightmapBake(true);
+        invalidateLightmapSources();
         setImportPaused(true);
     }
     _imports.startNext(bg2e::app::MainLoop::current(), document()->commands->history().documentState());

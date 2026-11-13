@@ -21,8 +21,10 @@ Composer preserves the widget interaction ID and document generation in a
 `ValueEdit` admission record. Begin reserves exclusive CPU interaction dispatch
 before its deferred renderer callback captures the baseline. Discrete commands
 admitted afterwards wait until settlement. The first callback uses a
-conservative boundary to stop any running bake; subsequent updates use
-`enqueueCpuValueUpdate`. No live mutation runs during UI drawing.
+conservative boundary before capturing the edit baseline; subsequent updates use
+`enqueueCpuValueUpdate`. Beginning or updating an edit warns about a running bake
+without stopping it: Composer bakes an independent snapshot of the initial scene.
+No live mutation runs during UI drawing.
 
 Begin, Update and Commit acknowledge admission; actual failures are reported
 through the application status. The renderer update list preserves their FIFO
@@ -34,8 +36,10 @@ failed update cancels instead of recording a failed draft.
 
 The material guard permits the owning interaction to continue while its
 transaction is active. Other interactions cannot acquire it. Each applied
-preview and restoration invalidates render histories/lightmap sources and
-requests a scene frame. Dirty state includes an effective active preview,
+preview and restoration invalidates render histories, notifies the application's
+lightmap-source policy and requests a scene frame. In Composer that notification
+sets a persistent warning; accumulation continues against its private snapshot.
+Dirty state includes an effective active preview,
 although it has not yet become a history entry.
 
 ## Material controls

@@ -63,13 +63,13 @@ class SceneLightmapWindow final : public bg2e::ui::Window {
     std::shared_ptr<bg2e::gpu::Image> _previewResultImage;
     uint64_t _documentGeneration = UINT64_MAX;
     uint32_t _resolutionIndex = 2;
-    uint32_t _modeIndex = 0;
+    uint32_t _modeIndex = 1;
     uint32_t _formatIndex = 0;
     int _frames = 16;
     int _samples = 8;
     int _padding = 4;
     int _dilation = 4;
-    int _bounces = 2;
+    int _bounces = 3;
     float _aoRadius = 0.1f;
     float _maxDistance = 50.0f;
     float _rayBias = 0.0005f;

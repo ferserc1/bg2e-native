@@ -29,7 +29,14 @@ acknowledgement and failure recovery.
 
 UV2 and lightmap results are computed in private CPU/resource state. Their
 command is submitted with `CommandOrigin::PreparedResult`; the initial validator
-checks source token, document generation, original target and job identity.
+checks the operation's document generation, original target and job identity.
+UV2 retains its source-state validation. Lightmap baking instead captures a deep,
+independent snapshot of evaluated rendering inputs: document revision changes
+produce a warning without cancelling accumulation or rejecting the completed
+result solely for that revision. All batch targets finish before automatic
+adoption. A replaced document or removed/replaced drawable prevents automatic
+application, but completed results remain retained. Explicit cancellation and
+superseding jobs still prevent old work from publishing.
 Only after complete preparation does one command publish. Completion reports
 actual publication and fires once. Undo/redo rely on retained prepared values,
 not the expired UI token or mutable source files.

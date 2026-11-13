@@ -294,7 +294,17 @@ before material adoption; applying one map mid-batch would invalidate its baseli
 
 Draw Composer checks request/document generations and weak node membership independently of renderer generation. Graph/component intent callbacks queue work at the pre-acquisition boundary with the synchronization appropriate to the edit; they do not make a captured raw node safe after document replacement. Imports parse CPU inputs on owned readers and realize graph/images/GPU resources on the main thread. MainLoop workers are joined before graphics cleanup; app import/HTTP readers have their own stop/join lifecycle. See [draw import lifecycle](apps/composer/draw_import_lifecycle.md).
 
-Integrated scene baking freezes the batch source, finishes all targets, then prepares/adopts maps. Complete DB save publication and partial interactive material adoption have different guarantees; see [Composer](apps/draw_composer.md).
+Composer freezes the batch source by deep-copying evaluated geometry, textures,
+materials, transforms, lights and environment into an independent bake scene.
+Editing the document, navigating, importing or rebinding the renderer warns but
+does not cancel accumulation. The engine context's source-generation validation
+still applies to that unchanged private scene; it is not disabled globally.
+All targets finish before map preparation/adoption. A document revision change
+alone does not reject the result; a removed/replaced destination prevents automatic
+application while completed results remain retained. Explicit Cancel, a replacement
+bake and shutdown still stop the job. Snapshot resources increase CPU/GPU memory
+use. Complete DB save publication and partial interactive material adoption have
+different guarantees; see [Composer](apps/draw_composer.md#integrated-scene-baking).
 
 
 ## Standalone draw source freezing

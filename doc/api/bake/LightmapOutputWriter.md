@@ -59,6 +59,11 @@ writes. Resolvers are read-only CPU callbacks; keep producers stopped.
 
 ## Files, precision and complete model copies
 
+RGB8 is the default CPU output, including for GI; PNG is the default byte file
+format for portable browser/WebGL lightmaps. HDR is optional. Pixels are linear
+multipliers, so consumers must sample them without sRGB decoding. Baked AO/GI mode
+is material metadata, not an image-alpha flag.
+
 RGB8 uses selected PNG/JPEG/BMP/TGA without a second exposure conversion.
 Lossless formats are decoded and compared byte-for-byte; explicit JPEG is lossy
 and receives a dimension check. RGB32F writes standard Radiance RGBE `.hdr`,

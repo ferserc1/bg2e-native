@@ -36,6 +36,13 @@ changes. Generic direct `apply` does not enforce procedural ownership; editor
 mutation owners preflight all receivers and reject locked source changes before
 publishing anything. `doubleSided` is part of ordinary partial material patches.
 
+Unlike full MaterialSerializer parsing, MaterialModifier does not interpret
+`indirectTextureMode`. Its AO source/channel/UV/scale patches do not by themselves
+activate baked AO/GI. Set the mode explicitly through MaterialAttributes, or use
+DrawMaterialEditor's dedicated `queueIndirectMode` operation when editing through
+that owner. A generic AO patch also does not automatically reset an existing baked
+mode; the editor provides an explicit ordinary-AO reset policy.
+
 For draw targets, call at a stopped scene/GPU boundary. Texture load/update
 exceptions propagate, and a multi-submesh patch is not transactional: earlier
 patches may have applied. The caller should request redraw and reset relevant

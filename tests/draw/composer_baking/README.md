@@ -20,10 +20,17 @@ the supported platform generator. No new target or CMake configuration is added.
 5. Repeat with RGB8 and RGB32F, distinct resolutions and GI exposures. Verify
    linear PNG versus HDR archive sources, finite display limits, baked AO/GI
    metadata, all submesh slots and preservation of unrelated texture settings.
-6. Cancel during the first/last target and restart. Edit/delete/clone/reparent a
-   source, regenerate UV2, import/reimport, replace the document, resize/rebind the
-   renderer or quit with work in flight. Retire GPU work safely; never apply a
-   canceled batch or allow an old queued apply to affect the restarted job.
+6. Verify GI/512/16/8/3 defaults and the 30-iteration UI maximum. Switch AO/GI
+   and RGB8/HDR: hide irrelevant controls without resetting their values.
+   Start with unsaved edits and confirm baking proceeds. While baking the first
+   and last targets, navigate, edit materials/lights/transforms, regenerate UV2,
+   clone/reparent sources, import/reimport and resize/rebind. Accumulation must
+   continue against the initial snapshot with a persistent warning. Compare output
+   against an unchanged control bake with the same initial scene/settings.
+   Delete/replace a receiver or replace the document: the job must finish and
+   retain results without applying them to a stale destination. Explicitly cancel
+   and restart, then quit with work in flight: retire GPU work safely and never
+   let an old queued apply affect the restarted job.
 7. Save/Save as the completed scene, restart and load it. Verify every baked map,
    mode, UV and material identity. Exercise canceled save, unwritable destination,
    existing protected inputs and preparation failures. Failed saves must not mark

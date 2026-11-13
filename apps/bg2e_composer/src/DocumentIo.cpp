@@ -214,7 +214,6 @@ void AppDelegate::processDocumentIo()
     bool published = false;
     try
     {
-        stopLightmapBake(true);
         using Kind = PendingIo::Kind;
         const bool replacing = operation.kind == Kind::Open || operation.kind == Kind::New;
         if (!flushDocumentCommands(true, replacing))

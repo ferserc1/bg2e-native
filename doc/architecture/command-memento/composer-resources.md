@@ -69,7 +69,11 @@ prepared privately, then adopted: import stores a stable reimport mapping slot
 and old/new graph placement; UV2 uses `ReplaceGeometry`; lightmap prepares every
 file, texture and material definition before one batch command. Temp image source
 leases keep generated files alive across cleanup, undo and redo. The original
-job token/source generation guards only initial adoption. Replay remains valid
+job token/source generation guards only initial adoption. Lightmap jobs own an
+independent initial-scene snapshot; source edits warn without cancelling them.
+A changed document revision alone does not reject initial lightmap adoption, but
+a replaced document or removed/replaced drawable prevents automatic application
+and leaves completed results retained. Replay remains valid
 after the job has completed, while document/target generation and membership
 remain checked.
 

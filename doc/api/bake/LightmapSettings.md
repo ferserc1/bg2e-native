@@ -26,6 +26,13 @@ Each property has a getter named below and a corresponding `setX` setter.
 | cpuFormat | LightmapPixelFormat::RGB8 | RGB8 or RGB32F |
 | dilationPixels | 4 | 0–16384, also no greater than resolution |
 
+`RGB8` is the intentional library default for both RTGI and RTAO. It supports
+portable lightmaps delivered as ordinary PNG images for browser/WebGL consumers;
+baked GI does not require an HDR file. RGB8 stores three linear 8-bit components
+per pixel. For GI, exposure scales the multiplier before [0,1] clamp and rounding;
+there is no automatic inverse exposure at material sampling. RGB32F is an optional
+HDR output and ignores exposure. See [components and precision](../draw/BakedIndirectMaps.md#components-precision-and-portable-output).
+
 Setters reject invalid enum/range/nonfinite values. Call `validate()` after all
 paired edits: selected AO radius/GI distance must exceed twice the bias, and
 padding must not exceed resolution. Device/profile checks belong to preparation,

@@ -21,7 +21,13 @@ It supports the configured presentation slot indices, but serializes its own bak
 samples. Other presentation work may continue independently; final validation/readback is
 synchronous and can drain other Device submissions. Release the previous
 baker handle before creating another target, or use separately owned contexts.
-All methods are single-threaded. The service itself owns no viewport UI;
+All methods are single-threaded. Source checks apply to the configured scene,
+not an application's saved/dirty flag. Composer supplies an independent snapshot
+of evaluated scene resources so editing its document only warns while baking
+continues. This is an application policy, not relaxed context validation; edits
+to the configured scene itself still require invalidation/repreparation. See
+[Composer baking](../../apps/draw_composer.md#integrated-scene-baking).
+The service itself owns no viewport UI;
 [draw_lightmaps](../../apps/draw_lightmaps.md) supplies a concrete example scheduler
 and controls.
 
@@ -163,7 +169,7 @@ selection overlays or private renderer queues.
 
 See the [manual lifecycle fixture](../../../tests/bake/integrated/README.md),
 [UV surface contract](UvSurfacePass.md), and
-[M04-03 implementation handoff](../../../docs/render_to_draw/plan/milestone_04_lightmaps/integrated-context.md).
+[context implementation](../../../lib/src/bg2e/bake/IntegratedBakerContext.cpp).
 
 ## Shipped synchronous completion recipe
 

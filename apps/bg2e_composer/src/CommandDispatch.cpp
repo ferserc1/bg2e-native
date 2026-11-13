@@ -477,8 +477,8 @@ bool AppDelegate::valueEditIntent(bg2e::ui::EditPhase phase, uint64_t interactio
             {
                 if (phase == EditPhase::Begin)
                 {
-                    // Stop asynchronous resource publication before capturing the baseline.
-                    owner->stopLightmapBake(true);
+                    // Baking owns an independent snapshot; document edits only warn.
+                    owner->invalidateLightmapSources();
                     result = commands->beginCpuInteraction(prepare(), true);
                     if (result.accepted())
                     {

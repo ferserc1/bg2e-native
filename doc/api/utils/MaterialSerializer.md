@@ -28,6 +28,20 @@ ambientOcclussion (existing spelling) and lightEmissionTexture. Corresponding
 `<key>Settings` objects contain mag/min/u/v/w/color/mipmaps/minLod/maxLod/bias;
 UV/scale/channel/inversion are independent material fields.
 
+`indirectTextureMode` serializes as `ao`, `bakedAO` or `bakedGI`. Unknown string
+values throw; an absent field leaves the receiver's mode unchanged (the default
+on a new MaterialAttributes is ordinary AO). Parsing an AO texture/settings record
+in a baked mode forces its color interpretation to linear. Mode and pixel format
+are independent: a bakedGI source may be an ordinary RGB8 PNG or an HDR image.
+
+The historical spelling `ambientOcclussion` is part of the JSON contract. Its
+material fields are `ambientOcclussionScale`, `ambientOcclussionChannel` and
+`ambientOcclussionUV`. When restoring an AO texture/settings record without a UV
+field, the parser chooses 1 (the second UV set); a newly constructed
+MaterialAttributes instead starts with `aoUVSet() == 0`. Write the UV field
+explicitly when preserving an authored choice. In baked modes the stored channel
+selector does not change RGB sampling. See [indirect maps](../draw/BakedIndirectMaps.md).
+
 Textures marked ignoreSerialization omit their source key and uniqueTextures
 entry, but retain settings and UV/scale controls. A procedural owner **seeds its
 regenerated source in result before deserialization**: settings-only records

@@ -14,6 +14,13 @@ submission serial. Settings/geometry changes invalidate previous generations.
 Cancelled or incomplete work must not publish successful results. CPU pixel
 format, GPU precision and display conversion are separate contracts.
 
+The library CPU output defaults to RGB8, intentionally supporting browser/WebGL
+lightmaps distributed as ordinary PNG files. Baked GI supports this default;
+RGB32F/HDR is optional. Material `IndirectTextureMode` selects scalar AO versus
+RGB baked AO/GI independently of the numeric format. The mode applies to the
+material and is propagated to rendered G-buffer fragments, not stored as a
+per-texel marker or image-alpha mask. See [format and exposure details](../../api/draw/BakedIndirectMaps.md#components-precision-and-portable-output).
+
 Editors default to linear RGB8 PNG with GI exposure applied before clamp/round;
 AO and RGB32F ignore exposure. Optional HDR output uses standard Radiance RGBE,
 which preserves dynamic range with quantization. No proprietary texture codec is

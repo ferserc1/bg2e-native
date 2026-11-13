@@ -56,13 +56,24 @@ no empty filesystem texture is invented. Whole-component ignoreSerialization and
 | `setColorType` / `colorType` | Initially `Color::TypeSRGB`. |
 
 Address modes also include `AddressModeMirroredRepeat`, `AddressModeClampToEdge`,
-and `AddressModeClampToBorder`. `setAddressMode(mode)` changes U, V and W;
+and `AddressModeClampToBorder`. `setAddressMode(mode)` changes U and V;
 `setAddressMode(u, v)` changes those axes; the three-argument overload changes
 U, V, and W. Filters also include `FilterNearest` and `FilterLinear`.
 
 `revision()` changes when authored settings change and observes generator
 revisions. Copying shares generator ownership; assignment updates settings
 through revision tracking.
+
+## Pixel format is separate from color interpretation
+
+`Color::TypeLinear` versus `TypeSRGB` describes color interpretation, not component
+precision. `base::Image` provides byte (`data()`) or float (`dataf()`) storage;
+ordinary draw uploads choose RGBA8 UNORM or RGBA32F respectively. Texture settings
+do not expose a generic per-channel numeric-type selector.
+
+The material AO slot can sample one component for ordinary AO or RGB for baked
+AO/GI. Both baked modes support byte images; GI does not require HDR.
+See [baked indirect formats](../draw/BakedIndirectMaps.md#components-precision-and-portable-output).
 
 ## ProceduralTextureGenerator
 

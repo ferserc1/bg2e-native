@@ -166,9 +166,13 @@ Draw materials can mark their AO slot with
 [IndirectTextureMode](../draw/BakedIndirectMaps.md). Keep stored material metadata
 and the live GPU slot consistent when adopting a completed lightmap. The
 integrated example handles this explicitly; the general material editor does
-not become a bake scheduler or image exporter. Source edits invalidate bake
-generations at a stopped boundary. Retain unbaked originals if restart must
-regenerate independent UV2 and materials.
+not become a bake scheduler or image exporter. Bake invalidation policy belongs
+to the application. A context consuming a live scene must invalidate/reprepare
+its source generation after edits at a stopped boundary. Composer instead bakes
+a deep snapshot of initial rendering inputs: material/source edits set a warning
+without cancelling that job. Its completed result is not rejected solely because
+the document revision changed. See [Composer baking](../../apps/draw_composer.md#integrated-scene-baking).
+Retain unbaked originals if restart must regenerate independent UV2 and materials.
 
 
 ## Draw editor document guards and indirect/sampler controls
