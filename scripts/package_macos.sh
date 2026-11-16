@@ -24,12 +24,8 @@ done
 [[ ${#positional[@]} -ge 2 && ${#positional[@]} -le 3 ]] || { usage; exit 1; }
 set -- "${positional[@]}"
 repo="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
-status="$(git -C "$repo" status --porcelain=v1 --untracked-files=all --ignore-submodules=none)"
+status="$(git -C "$repo" status --porcelain=v1 --untracked-files=all)"
 [[ -z "$status" ]] || { printf 'Repository has pending changes:\n%s\n' "$status" >&2; exit 1; }
-submodules="$(git -C "$repo" submodule status --recursive)"
-if [[ "$submodules" =~ (^|$'\n')[+U-] ]]; then
-    echo 'Submodules must be initialized and match their committed revisions.' >&2; exit 1
-fi
 config="$1"
 case "$config" in Debug|Release) ;; *) echo 'Configuration must be Debug or Release.' >&2; exit 1;; esac
 [[ "$(uname -s)" == 'Darwin' ]] || { echo 'Run this script on macos.' >&2; exit 1; }
@@ -65,7 +61,7 @@ cmake -S "$repo" -B "$build" -G 'Xcode' \
     "-DVULKAN_SDK=$sdk" "-DPRODUCT_DIR=$build/bin/macos" "-DCMAKE_BUILD_TYPE=$config" \
     -DBG2E_BUILD_EXAMPLES=OFF -DBG2E_BUILD_TESTS=OFF -DBG2E_PACKAGE_APPS=ON
 cmake --build "$build" --config "$config" --target bg2e_distribution --parallel
-status="$(git -C "$repo" status --porcelain=v1 --untracked-files=all --ignore-submodules=none)"
+status="$(git -C "$repo" status --porcelain=v1 --untracked-files=all)"
 [[ -z "$status" && "$(git -C "$repo" rev-parse HEAD)" == "$commit" ]] || { echo 'Repository changed during build; package aborted.' >&2; exit 1; }
 mkdir -- "$package"
 cmake --install "$build" --config "$config" --prefix "$package" --component Distribution

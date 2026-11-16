@@ -33,7 +33,7 @@ Create `doc/tutorials/text/README.md`, linked from appropriate documentation nav
 
 Cover:
 
-- Required tools/platform prerequisites, obtaining the repository/submodules, Vulkan SDK configuration and where the tutorial files live.
+- Required tools/platform prerequisites, obtaining the repository, Vulkan SDK configuration and where the tutorial files live.
 - How to create the tutorial directory, CMake target, source file and required asset paths from scratch. Include user-run configuration/build/run instructions appropriate to supported platforms/generators, but do not run them as the agent.
 - Each necessary include, application/delegate role, engine lifecycle, window creation, render loop and cleanup.
 - Nodes, components, transforms, camera placement, procedural floor, text-plane orientation/size and the relationship between logical paragraph size, world size and bitmap resolution.

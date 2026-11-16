@@ -19,7 +19,7 @@ No knowledge of the engine's application, rendering, or UI lifecycle is assumed.
 
 ## Prerequisites and project layout
 
-Use a checkout of bg2e-native with its submodules and normal platform dependencies
+Use a checkout of bg2e-native with its normal platform dependencies
 installed, a C++20 compiler, CMake, and a valid Vulkan SDK. The engine build needs
 the SDK even when using Metal on macOS. No application shaders, models, or textures
 are required. You should understand C++ classes, exceptions, and pointers; the

@@ -42,7 +42,7 @@ Helper scripts live in `scripts/`. They are not part of the CMake build; run the
 
 ### Packaging (engine + apps distribution)
 
-Builds a clean, self-contained package named `bg2engine_<12-char-HEAD-hash>` containing `libbg2e.so`/`.dll`, shaders and assets — no external system libraries. Requires a **clean git checkout** (no pending changes, submodules matching), a valid `VULKAN_SDK`, and a destination **outside the repo**. Builds in a fresh temp tree with `-DBG2E_PACKAGE_APPS=ON`, installs the Distribution component, strips all `.so` except `libbg2e.so` (Linux), writes `build-info.json`, and emits both an unpacked folder and an archive (`.tar.gz` on Linux/macOS, `.zip` on Windows).
+Builds a clean, self-contained package named `bg2engine_<12-char-HEAD-hash>` containing `libbg2e.so`/`.dll`, shaders and assets — no external system libraries. Requires a **clean git checkout** (no pending changes), a valid `VULKAN_SDK`, and a destination **outside the repo**. Builds in a fresh temp tree with `-DBG2E_PACKAGE_APPS=ON`, installs the Distribution component, strips all `.so` except `libbg2e.so` (Linux), writes `build-info.json`, and emits both an unpacked folder and an archive (`.tar.gz` on Linux/macOS, `.zip` on Windows).
 
 | Script | Usage |
 |--------|-------|
@@ -74,7 +74,7 @@ Rebuilds the bg2e library and refreshes headers + current-platform lib inside a 
 - `apps/model_edit/` — model editor application
 - `examples/{01_setup..16_offscreen_scene_render_cli}/` — progressive engine examples
 - `shaders/src/` — GLSL sources (compiled to `.spv` at build time via `glslang`)
-- `lib/third_party/` — vendored deps: bg2-io, bg2-scene, imgui, nativefiledialog, stb_image, tinyobj, cgltf (git submodules)
+- `lib/third_party/` — vendored deps: bg2-io, bg2-scene, imgui, nativefiledialog, stb_image, tinyobj, cgltf
 - `assets/` — textures, HDR envmaps, test models (.bg2, .glb, .obj)
 - `bin/{linux|macos|windows}/` — runtime output (binary + shaders + assets)
 

@@ -24,7 +24,7 @@ Use the CLI supported by the selected platform:
 | macOS | package_macos.sh; Xcode | `.zip` | Optional `--identity NAME`; no dirty-check bypass or overwrite flag. |
 | Windows | package_windows.ps1; Visual Studio 17 2022, x64 | `.zip` | Optional `-VulkanSdk`; no dirty-check bypass or overwrite switch. |
 
-All platforms require initialized, matching submodules. Clean-checkout validation
+Clean-checkout validation
 includes staged, unstaged and untracked changes, excluding ignored files. Linux
 can explicitly bypass the working-tree check with --allow-dirty; its package name
 and build-info still identify HEAD and do not encode uncommitted modifications.

@@ -123,7 +123,7 @@ Ray tracing shaders (`.rgen`, `.rmiss`, `.rchit`, `.rahit`, `.rint`) are compile
 
 ### Third-party dependencies (vendored in `lib/third_party/`)
 
-bg2-io, bg2-scene, imgui, nativefiledialog, stb_image, tinyobj, cgltf (git submodules).
+bg2-io, bg2-scene, imgui, nativefiledialog, stb_image, tinyobj, cgltf.
 
 External: GLM, Vulkan SDK + VMA, SDL2, GTK3/Wayland (Linux only).
 

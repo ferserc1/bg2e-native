@@ -36,9 +36,8 @@ See the [repository prerequisites](../../../README.md#all-platforms) and
 details. From a terminal, obtain the source and vendored dependencies:
 
 ```sh
-git clone --recurse-submodules https://github.com/ferserc1/bg2e-native.git
+git clone https://github.com/ferserc1/bg2e-native.git
 cd bg2e-native
-git submodule update --init --recursive
 ```
 
 Commands below are **for you to run**. No configuration, build or application

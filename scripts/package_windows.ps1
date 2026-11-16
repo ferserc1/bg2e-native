@@ -21,10 +21,8 @@ function Invoke-Checked {
 }
 $repo = Split-Path -Parent $PSScriptRoot
 # Read-only preflight must precede directory creation and every build command.
-$status = @(Invoke-Checked git @('-C', $repo, 'status', '--porcelain=v1', '--untracked-files=all', '--ignore-submodules=none'))
+$status = @(Invoke-Checked git @('-C', $repo, 'status', '--porcelain=v1', '--untracked-files=all'))
 if ($status.Count) { throw "Repository has pending changes. Commit or resolve them first:`n$($status -join "`n")" }
-$submodules = @(Invoke-Checked git @('-C', $repo, 'submodule', 'status', '--recursive'))
-if ($submodules | Where-Object { $_ -match '^[+U-]' }) { throw 'Submodules must be initialized and match their committed revisions.' }
 $commit = (Invoke-Checked git @('-C', $repo, 'rev-parse', 'HEAD')).Trim()
 $buildId = (Invoke-Checked git @('-C', $repo, 'rev-parse', '--short=12', 'HEAD')).Trim()
 if ($env:OS -ne 'Windows_NT') { throw 'Run this script on Windows.' }
@@ -47,7 +45,7 @@ Invoke-Checked cmake @('-S', $repo, '-B', $build, '-G', 'Visual Studio 17 2022',
     "-DVULKAN_SDK=$VulkanSdk", "-DPRODUCT_DIR=$products", '-DBG2E_BUILD_EXAMPLES=OFF',
     '-DBG2E_BUILD_TESTS=OFF', '-DBG2E_PACKAGE_APPS=ON')
 Invoke-Checked cmake @('--build', $build, '--config', $Configuration, '--target', 'bg2e_distribution', '--parallel')
-$status = @(Invoke-Checked git @('-C', $repo, 'status', '--porcelain=v1', '--untracked-files=all', '--ignore-submodules=none'))
+$status = @(Invoke-Checked git @('-C', $repo, 'status', '--porcelain=v1', '--untracked-files=all'))
 $currentCommit = (Invoke-Checked git @('-C', $repo, 'rev-parse', 'HEAD')).Trim()
 if ($status.Count -or $currentCommit -ne $commit) { throw 'Repository changed during the build; package aborted.' }
 $null = New-Item -ItemType Directory -Path $package

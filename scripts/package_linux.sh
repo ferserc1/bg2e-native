@@ -82,17 +82,12 @@ esac
 # Packaging normally requires a reproducible, clean checkout. --allow-dirty is
 # useful for local test packages that intentionally include uncommitted changes.
 repository_status="$(
-    git -C "$repo" status --porcelain=v1 --untracked-files=all --ignore-submodules=none
+    git -C "$repo" status --porcelain=v1 --untracked-files=all
 )"
 if [[ "$allow_dirty" == false && -n "$repository_status" ]]; then
     printf 'Repository has pending changes:\n%s\n' "$repository_status" >&2
     printf 'Pass --allow-dirty to package these changes anyway.\n' >&2
     exit 1
-fi
-
-submodule_status="$(git -C "$repo" submodule status --recursive)"
-if [[ "$submodule_status" =~ (^|$'\n')[+U-] ]]; then
-    die 'Submodules must be initialized and match their committed revisions.'
 fi
 
 readonly commit="$(git -C "$repo" rev-parse HEAD)"
@@ -143,7 +138,7 @@ cmake --build "$build" \
 # A clean build must remain clean. For an explicitly dirty build, at least guard
 # against switching commits while binaries are being produced.
 repository_status="$(
-    git -C "$repo" status --porcelain=v1 --untracked-files=all --ignore-submodules=none
+    git -C "$repo" status --porcelain=v1 --untracked-files=all
 )"
 current_commit="$(git -C "$repo" rev-parse HEAD)"
 if [[ "$current_commit" != "$commit" || ("$allow_dirty" == false && -n "$repository_status") ]]; then

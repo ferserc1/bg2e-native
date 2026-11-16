@@ -22,7 +22,7 @@ its command-line parser, helper functions, scene and error handling.
 
 ## Before you start: project, tools and assets
 
-Use a bg2e-native checkout with its dependencies/submodules present, C++20 compiler,
+Use a bg2e-native checkout with its dependencies present, C++20 compiler,
 CMake and Vulkan SDK. Metal also requires Apple's shader compiler on macOS. A
 supported GPU and driver are required even though no window appears: headless
 rendering is not CPU rendering. Start in the repository root and work in
