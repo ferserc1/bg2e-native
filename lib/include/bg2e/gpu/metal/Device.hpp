@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Device.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 #include <bg2e/gpu/metal/Queue.hpp>
@@ -75,6 +76,8 @@ class Device : public gpu::Device {
     }
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     ResourceArrayCapabilities _resourceArrayCapabilities;
     RenderingCapabilities _renderingCapabilities;
     RayTracingCapabilities _rayTracingCapabilities;

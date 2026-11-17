@@ -16,6 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/vk/FidelityFXBridge.hpp>
 #include <algorithm>
 #include <cmath>
@@ -274,6 +275,7 @@ FfxErrorCode observeCreate(FfxInterface* backend, FfxEffect effect,
 }
 #endif
 struct FidelityFXBridge::State {
+    detail::DiagnosticIdentity generation;
     std::string status = "Not initialized";
     bool valid = false;
     bool contextCreated = false;
@@ -323,6 +325,7 @@ bool FidelityFXBridge::available() const
 
 void FidelityFXBridge::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "fsr.cleanup", _state->generation.value);
 #ifdef BG2E_DRAW_HAS_FFX
     if (_state->device)
     {
@@ -353,6 +356,11 @@ void FidelityFXBridge::cleanup()
 bool FidelityFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D output, uint32_t frameSlots)
 {
     cleanup();
+    _state->generation = detail::DiagnosticIdentity{};
+    detail::DiagnosticScope diagnosticScope("vk", "fsr.initialize", _state->generation.value);
+    bg2e_deep_trace("vk", "fsr.configuration", "generation=" << _state->generation.value
+        << " sdkAvailable=" << sdkAvailable() << " input=" << internal.width << 'x' << internal.height
+        << " output=" << output.width << 'x' << output.height << " slots=" << frameSlots);
     _state->internal = internal;
     _state->output = output;
     _state->status = "FidelityFX SDK is unavailable in this build";
@@ -448,7 +456,9 @@ bool FidelityFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D o
         originalCreate = description.backendInterface.fpCreateBackendContext;
         observedCreation = &_state->contextCreated;
         description.backendInterface.fpCreateBackendContext = observeCreate;
+        bg2e_deep_trace("vk", "fsr.create.enter", "generation=" << _state->generation.value);
         error = ffxFsr3UpscalerContextCreate(&_state->context, &description);
+        bg2e_deep_trace("vk", "fsr.create.return", "generation=" << _state->generation.value << " result=" << error);
         originalCreate = previousCreate;
         observedCreation = previousObservation;
         if (error != FFX_OK)
@@ -611,7 +621,11 @@ bool FidelityFXBridge::record(const FidelityFXDispatch& input)
     dispatch.cameraFar = input.farPlane;
     dispatch.cameraFovAngleVertical = input.verticalFov;
     dispatch.viewSpaceToMetersFactor = 1;
+    bg2e_deep_trace("vk", "fsr.dispatch.enter", "generation=" << _state->generation.value
+        << " command=" << command->_diagnosticIdentity.value << " reset=" << input.reset << " jitter=" << input.jitterX << ',' << input.jitterY);
     const auto error = ffxFsr3UpscalerContextDispatch(&_state->context, &dispatch);
+    bg2e_deep_trace("vk", "fsr.dispatch.return", "generation=" << _state->generation.value
+        << " command=" << command->_diagnosticIdentity.value << " result=" << error);
     // SDK unregister restores external resources to their registered states.
     // Generic tracking therefore remains ShaderReadOnly/General respectively.
     input.command.transition(&input.output, ImageLayout::ShaderReadOnly);

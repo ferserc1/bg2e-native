@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/metal/Surface.hpp>
 #include <bg2e/gpu/metal/common.hpp>
@@ -65,6 +66,8 @@ class WindowSurface : public gpu::WindowSurface, public Surface {
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     void* _metalView = nullptr;
     MetalLayerHandle _layer = nullptr;
     uint32_t _imageCount = 0;

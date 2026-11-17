@@ -1,9 +1,9 @@
 /*
- *    business grade graphic engine (bg2e engine)
+ *    business grade graphic engine (bg2 engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of GNU General Public License as published by
+ *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  *
@@ -34,10 +34,31 @@ bool Instance::s_debugLayerAvailable = false;
 
 static VKAPI_ATTR VkBool32 VKAPI_CALL bg2e_mainDebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-    VkDebugUtilsMessageTypeFlagsEXT /*messageType*/,
+    VkDebugUtilsMessageTypeFlagsEXT messageType,
     const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
     void* /*pUserData*/)
 {
+    if (messageSeverity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
+    {
+        base::Log::trace("vk", "validation", [&](std::ostream& trace)
+        {
+            trace << "severity=" << messageSeverity << " type=" << messageType
+                << " id=" << pCallbackData->messageIdNumber
+                << " name=" << (pCallbackData->pMessageIdName ? pCallbackData->pMessageIdName : "")
+                << " message=" << (pCallbackData->pMessage ? pCallbackData->pMessage : "");
+            const auto count = std::min(pCallbackData->objectCount, 16u);
+            for (uint32_t i = 0; i < count; ++i)
+            {
+                const auto& object = pCallbackData->pObjects[i];
+                trace << " object[" << i << "]=" << object.objectType << ':' << object.objectHandle
+                    << ':' << (object.pObjectName ? object.pObjectName : "unnamed");
+            }
+            if (count < pCallbackData->objectCount)
+            {
+                trace << " [object list truncated]";
+            }
+        }, true);
+    }
     if (messageSeverity > VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT)
     {
         std::cerr << "Validation layer: " << pCallbackData->pMessage << std::endl;
@@ -93,6 +114,7 @@ bool Instance::debugModeEnabled() const
 
 void Instance::create(SDL_Window* sdlWindow)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Instance.create", _diagnosticIdentity.value);
     std::vector<const char*> requiredLayers;
     if (!Instance::getRequiredLayers(requiredLayers))
     {
@@ -133,11 +155,19 @@ void Instance::create(SDL_Window* sdlWindow)
         createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
     }
 
-    VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &_instance));
+    bg2e_deep_trace("vk", "instance.create.enter", "instance=" << _diagnosticIdentity.value
+        << " validationAvailable=" << s_debugLayerAvailable << " validationRequested=" << !requiredLayers.empty()
+        << " messengerRequested=" << (createInfo.pNext != nullptr));
+    for (const auto* layer : requiredLayers)
+    {
+        bg2e_deep_trace("vk", "instance.layer", layer);
+    }
+    VK_ASSERT(detail::diagnosticResult("vk", "vkCreateInstance", vkCreateInstance(&createInfo, nullptr, &_instance)));
+    bg2e_deep_trace("vk", "instance.create.return", "instance=" << _diagnosticIdentity.value);
 
     if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
     {
-        VK_ASSERT(createDebugMessenger());
+        VK_ASSERT(detail::diagnosticResult("vk", "createDebugMessenger", createDebugMessenger()));
     }
 
     loadInstanceExtensions(_instance, false);
@@ -145,6 +175,7 @@ void Instance::create(SDL_Window* sdlWindow)
 
 void Instance::create()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Instance.create", _diagnosticIdentity.value);
     std::vector<const char*> requiredLayers;
     if (!Instance::getRequiredLayers(requiredLayers))
     {
@@ -184,11 +215,19 @@ void Instance::create()
         createInfo.pNext = reinterpret_cast<VkDebugUtilsMessengerCreateInfoEXT*>(&debugCreateInfo);
     }
 
-    VK_ASSERT(vkCreateInstance(&createInfo, nullptr, &_instance));
+    bg2e_deep_trace("vk", "instance.create.enter", "instance=" << _diagnosticIdentity.value
+        << " validationAvailable=" << s_debugLayerAvailable << " validationRequested=" << !requiredLayers.empty()
+        << " messengerRequested=" << (createInfo.pNext != nullptr));
+    for (const auto* layer : requiredLayers)
+    {
+        bg2e_deep_trace("vk", "instance.layer", layer);
+    }
+    VK_ASSERT(detail::diagnosticResult("vk", "vkCreateInstance", vkCreateInstance(&createInfo, nullptr, &_instance)));
+    bg2e_deep_trace("vk", "instance.create.return", "instance=" << _diagnosticIdentity.value);
 
     if (base::Log::isDebug() && Instance::s_debugLayerAvailable)
     {
-        VK_ASSERT(createDebugMessenger());
+        VK_ASSERT(detail::diagnosticResult("vk", "createDebugMessenger", createDebugMessenger()));
     }
 
     loadInstanceExtensions(_instance, true);
@@ -196,6 +235,7 @@ void Instance::create()
 
 void Instance::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Instance.cleanup", _diagnosticIdentity.value);
     if (_instance != VK_NULL_HANDLE)
     {
         if (_debugMessenger != VK_NULL_HANDLE)

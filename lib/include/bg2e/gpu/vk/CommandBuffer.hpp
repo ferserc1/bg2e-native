@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/CommandBuffer.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 #include <bg2e/gpu/vk/CommandPoolState.hpp>
@@ -109,6 +110,11 @@ class CommandBuffer : public gpu::CommandBuffer {
     }
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+    uint64_t _diagnosticDraws = 0, _diagnosticDispatches = 0, _diagnosticCopies = 0;
+    uint64_t _diagnosticSurface = 0, _diagnosticFrame = 0;
+    uint32_t _diagnosticSlot = 0;
+
     friend class Device;
     friend class WindowSurface;
     friend class OffscreenSurface;
@@ -126,6 +132,7 @@ class CommandBuffer : public gpu::CommandBuffer {
     }
 
     friend class Queue;
+    friend class FidelityFXBridge;
     std::shared_ptr<detail::CompletionRecord> _completion;
     std::shared_ptr<gpu::SurfaceFrame> _submissionFrame;
     bool _executable = false;

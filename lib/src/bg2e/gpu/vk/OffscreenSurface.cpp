@@ -31,6 +31,7 @@ OffscreenSurface::~OffscreenSurface() = default;
 
 void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "OffscreenSurface.createRenderTarget", _diagnosticIdentity.value);
     _device = device;
     _vkDevice = dynamic_cast<vk::Device*>(device);
 
@@ -47,13 +48,16 @@ void OffscreenSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevi
 
 void OffscreenSurface::resize(const Size2D& size)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "OffscreenSurface.resize", _diagnosticIdentity.value);
     if (_device)
     {
         _device->waitIdle();
     }
     if (_frame)
     {
+        bg2e_deep_trace("vk", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         _frame->waitForSubmissions();
+        bg2e_deep_trace("vk", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
     }
     ++_generation;
     _frameAcquired = false;
@@ -72,13 +76,16 @@ void OffscreenSurface::resize(const Size2D& size)
 
 void OffscreenSurface::releaseRenderTarget()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "OffscreenSurface.releaseRenderTarget", _diagnosticIdentity.value);
     if (_device && _device->isValid())
     {
         _device->waitIdle();
     }
     if (_frame)
     {
+        bg2e_deep_trace("vk", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         _frame->waitForSubmissions();
+        bg2e_deep_trace("vk", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
     }
     _frameAcquired = false;
     _frame.reset();
@@ -88,6 +95,7 @@ void OffscreenSurface::releaseRenderTarget()
 
 void OffscreenSurface::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "OffscreenSurface.cleanup", _diagnosticIdentity.value);
     releaseRenderTarget();
 }
 
@@ -127,6 +135,7 @@ gpu::Image* OffscreenSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "OffscreenSurface.beginFrame", _diagnosticIdentity.value);
     if (_frameAcquired)
     {
         throw std::logic_error("Offscreen surface already has an acquired frame");
@@ -135,23 +144,32 @@ std::shared_ptr<gpu::SurfaceFrame> OffscreenSurface::beginFrame()
     {
         return nullptr;
     }
+    bg2e_deep_trace("vk", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
     _frame->waitForSubmissions();
+    bg2e_deep_trace("vk", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
     _frameAcquired = true;
     return _frame;
 }
 
 void OffscreenSurface::present(gpu::CommandBuffer* cmd)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "OffscreenSurface.present", _diagnosticIdentity.value);
     auto* command = dynamic_cast<vk::CommandBuffer*>(cmd);
     if (!command || !_frame || !_frameAcquired)
     {
         throw std::logic_error("Invalid offscreen frame association");
     }
     command->associateFrame(_frame);
+    command->_diagnosticSurface = _diagnosticIdentity.value;
+    command->_diagnosticFrame = _frameCounter;
+    command->_diagnosticSlot = currentFrameIndex();
+    bg2e_deep_trace("vk", "frame.associate", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter
+        << " slot=" << currentFrameIndex() << " command=" << command->_diagnosticIdentity.value);
 }
 
 void OffscreenSurface::endFrame(gpu::SurfaceFrame* frame)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "OffscreenSurface.endFrame", _diagnosticIdentity.value);
     if (!_frameAcquired || !_frame || frame != _frame.get() || !frame->hasSubmissions())
     {
         throw std::logic_error("Offscreen endFrame requires a submitted frame");

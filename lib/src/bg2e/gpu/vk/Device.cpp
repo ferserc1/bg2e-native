@@ -86,6 +86,7 @@ namespace vk {
 
 void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Device.create", _diagnosticIdentity.value);
     _submissions = std::make_shared<detail::SubmissionState>();
     _timingIdentity = detail::nextTimingIdentity();
     auto* vkPhysDevice = dynamic_cast<vk::PhysicalDevice*>(physicalDevice);
@@ -165,6 +166,9 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
         throw std::runtime_error("Synchronization 2 not supported");
     }
 
+    bg2e_deep_trace("vk", "device.identity", "device=" << _diagnosticIdentity.value
+        << " name=" << vkPhysDevice->properties()->name << " vendor=" << vkPhysDevice->properties()->vendor
+        << " id=" << vkPhysDevice->properties()->id);
     _renderingCapabilities = vkPhysDevice->properties()->rendering;
 
     VkPhysicalDeviceProperties bindingProperties{};
@@ -299,7 +303,7 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
         createInfo.ppEnabledLayerNames = requiredLayers.data();
     }
 
-    VK_ASSERT(vkCreateDevice(vkPhysDevice->handle(), &createInfo, nullptr, &_device));
+    VK_ASSERT(detail::diagnosticResult("vk", "vkCreateDevice", vkCreateDevice(vkPhysDevice->handle(), &createInfo, nullptr, &_device)));
 
     VkPhysicalDeviceSubgroupProperties subgroups{};
     subgroups.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_SUBGROUP_PROPERTIES;
@@ -365,7 +369,7 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
     allocatorInfo.instance = vkInst->vkInstanceHnd();
     allocatorInfo.flags = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
-    VK_ASSERT(vmaCreateAllocator(&allocatorInfo, &_allocator));
+    VK_ASSERT(detail::diagnosticResult("vk", "vmaCreateAllocator", vmaCreateAllocator(&allocatorInfo, &_allocator)));
 
     if (surface)
     {
@@ -375,11 +379,12 @@ void Device::create(gpu::Instance* instance, gpu::PhysicalDevice* physicalDevice
 
 void Device::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Device.cleanup", _diagnosticIdentity.value);
     if (_device != VK_NULL_HANDLE)
     {
         _submissions->drain([this]
                             {
-                                auto result = vkDeviceWaitIdle(_device);
+                                auto result = detail::diagnosticResult("vk", "vkDeviceWaitIdle", vkDeviceWaitIdle(_device));
                                 if (result != VK_SUCCESS)
                                 {
                                     throw std::runtime_error("Vulkan device cleanup wait failed");
@@ -428,13 +433,14 @@ void Device::cleanup()
 
 void Device::waitIdle()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Device.waitIdle", _diagnosticIdentity.value);
     if (_device == VK_NULL_HANDLE)
     {
         return;
     }
     _submissions->drain([this]
                         {
-                            auto result = vkDeviceWaitIdle(_device);
+                            auto result = detail::diagnosticResult("vk", "vkDeviceWaitIdle", vkDeviceWaitIdle(_device));
                             if (result != VK_SUCCESS)
                             {
                                 throw std::runtime_error("vkDeviceWaitIdle failed: " + std::to_string(result));

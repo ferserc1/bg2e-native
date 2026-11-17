@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
@@ -41,6 +42,8 @@ class Instance : public gpu::Instance {
     void cleanup() override;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     bool _debugMode = false;
     std::string _applicationName = "bg2 engine Metal Application";
 

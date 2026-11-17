@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/OffscreenSurface.hpp>
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/gpu/metal/Surface.hpp>
@@ -58,6 +59,8 @@ class OffscreenSurface : public gpu::OffscreenSurface, public Surface {
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     std::unique_ptr<metal::Image> _colorImage;
     std::shared_ptr<metal::SurfaceFrame> _frame;
     bool _frameAcquired = false;

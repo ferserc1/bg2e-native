@@ -16,18 +16,67 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/metal/MetalFXBridge.hpp>
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/gpu/metal/CommandBuffer.hpp>
 #include <bg2e/gpu/metal/Image.hpp>
 #import <MetalFX/MetalFX.h>
+#include "Diagnostics.hpp"
+#include <algorithm>
 #include <atomic>
 #include <cmath>
 #include <vector>
 #include <stdexcept>
 
 namespace bg2e::gpu::metal {
+
+void logCommandBufferCompletion(MTL::CommandBuffer* command, uint64_t submission, uint64_t identity) noexcept
+{
+    if (!base::Log::deepDebugEnabled())
+    {
+        return;
+    }
+    @autoreleasepool
+    {
+        id<MTLCommandBuffer> native = reinterpret_cast<id<MTLCommandBuffer>>(command);
+        base::Log::trace("metal", "submission.complete", [&](std::ostream& trace)
+        {
+            trace << "submission=" << submission << " command=" << identity << " status=" << native.status;
+            NSError* error = native.error;
+            if (error)
+            {
+                trace << " domain=" << (error.domain.UTF8String ?: "") << " code=" << error.code
+                    << " description=" << (error.localizedDescription.UTF8String ?: "");
+                NSArray<id<MTLCommandBufferEncoderInfo>>* encoders = error.userInfo[MTLCommandBufferEncoderInfoErrorKey];
+                const auto count = std::min<NSUInteger>(encoders.count, 16);
+                for (NSUInteger index = 0; index < count; ++index)
+                {
+                    id<MTLCommandBufferEncoderInfo> encoder = encoders[index];
+                    trace << " encoder[" << index << "]=" << (encoder.label.UTF8String ?: "")
+                        << " state=" << encoder.errorState;
+                    NSArray<NSString*>* signposts = encoder.debugSignposts;
+                    const auto signpostCount = std::min<NSUInteger>(signposts.count, 8);
+                    for (NSUInteger signpost = 0; signpost < signpostCount; ++signpost)
+                    {
+                        trace << " signpost=" << (signposts[signpost].UTF8String ?: "");
+                    }
+                    if (signpostCount < signposts.count)
+                    {
+                        trace << " [signposts truncated]";
+                    }
+                }
+                if (count < encoders.count)
+                {
+                    trace << " [encoder list truncated]";
+                }
+            }
+        });
+    }
+}
+
 struct MetalFXBridge::State {
+    const uint64_t generation = base::Log::nextDiagnosticIdentity();
     struct Slot {
         id<MTLTexture> color = nil, depth = nil, motion = nil, output = nil;
         std::shared_ptr<const detail::RecordingCompletion> recording;
@@ -49,19 +98,22 @@ struct MetalFXBridge::State {
 
     ~State()
     {
+        bg2e_deep_trace("metal", "metalfx.destroy", "generation=" << generation);
         [scaler release];
     }
 };
 
 namespace {
-id<MTLTexture> makeTexture(id<MTLDevice> device, Size2D size, MTLPixelFormat format, MTLTextureUsage usage)
+id<MTLTexture> makeTexture(id<MTLDevice> device, Size2D size, MTLPixelFormat format, MTLTextureUsage usage, const std::string& name)
 {
     MTLTextureDescriptor* descriptor = [MTLTextureDescriptor texture2DDescriptorWithPixelFormat:format
         width:size.width height:size.height mipmapped:NO];
     descriptor.storageMode = MTLStorageModePrivate;
     descriptor.resourceOptions = MTLResourceStorageModePrivate | MTLResourceHazardTrackingModeTracked;
     descriptor.usage = usage;
-    return [device newTextureWithDescriptor:descriptor];
+    id<MTLTexture> result = [device newTextureWithDescriptor:descriptor];
+    result.label = [NSString stringWithUTF8String:name.c_str()];
+    return result;
 }
 
 id<MTLTexture> texture(gpu::Image& image, gpu::Device* device, Size2D size, gpu::PixelFormat format)
@@ -114,6 +166,14 @@ bool MetalFXBridge::supportsDevice(const gpu::Device& device)
 bool MetalFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D output, uint32_t frameSlots)
 {
     cleanup();
+    struct InitializationTrace {
+        MetalFXBridge* bridge;
+
+        ~InitializationTrace()
+        {
+            bg2e_deep_trace("metal", "metalfx.initialize.return", "status=" << bridge->status());
+        }
+    } initializationTrace{this};
     if (!supportsDevice(device))
     {
         _status = "MetalFX temporal scaling requires macOS 13+ and a supported Metal device; bilinear reconstruction active";
@@ -133,6 +193,9 @@ bool MetalFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D outp
                 state->device = &device;
                 state->internal = internal;
                 state->output = output;
+                bg2e_deep_trace("metal", "metalfx.initialize", "generation=" << state->generation
+                    << " input=" << internal.width << 'x' << internal.height << " output=" << output.width << 'x' << output.height
+                    << " slots=" << frameSlots << " autoExposure=1 inputContentProperties=0 formats=RGBA16F,R32F,RG16F,RGBA16F");
                 id<MTLDevice> native = reinterpret_cast<id<MTLDevice>>(dynamic_cast<metal::Device&>(device).handle());
                 // Scale is output / input. Older OS versions expose no limits;
                 // admit the conservative 1x..2x range and still require creation to succeed.
@@ -166,7 +229,9 @@ bool MetalFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D outp
                 descriptor.inputContentPropertiesEnabled = NO;
                 @try
                 {
+                    bg2e_deep_trace("metal", "metalfx.create.enter", "generation=" << state->generation);
                     state->scaler = [descriptor newTemporalScalerWithDevice:native];
+                    bg2e_deep_trace("metal", "metalfx.create.return", "generation=" << state->generation << " valid=" << (state->scaler != nil));
                 }
                 @finally
                 {
@@ -180,17 +245,19 @@ bool MetalFXBridge::initialize(gpu::Device& device, Size2D internal, Size2D outp
                 for (uint32_t index = 0; index < frameSlots; ++index)
                 {
                     auto slot = std::make_unique<State::Slot>();
+                    const auto prefix = "metalfx-generation-" + std::to_string(state->generation) + "-slot-" + std::to_string(index);
                     // Query actual native requirements instead of imposing them
                     // on every renderer-owned texture. All copies stay on GPU.
-                    slot->color = makeTexture(native,internal,MTLPixelFormatRGBA16Float,state->scaler.colorTextureUsage);
-                    slot->depth = makeTexture(native,internal,MTLPixelFormatR32Float,state->scaler.depthTextureUsage);
-                    slot->motion = makeTexture(native,internal,MTLPixelFormatRG16Float,state->scaler.motionTextureUsage);
-                    slot->output = makeTexture(native,output,MTLPixelFormatRGBA16Float,state->scaler.outputTextureUsage);
+                    slot->color = makeTexture(native,internal,MTLPixelFormatRGBA16Float,state->scaler.colorTextureUsage,prefix + "-input-color");
+                    slot->depth = makeTexture(native,internal,MTLPixelFormatR32Float,state->scaler.depthTextureUsage,prefix + "-input-depth");
+                    slot->motion = makeTexture(native,internal,MTLPixelFormatRG16Float,state->scaler.motionTextureUsage,prefix + "-input-motion");
+                    slot->output = makeTexture(native,output,MTLPixelFormatRGBA16Float,state->scaler.outputTextureUsage,prefix + "-output-color");
                     if (!slot->color || !slot->depth || !slot->motion || !slot->output)
                     {
                         _status = "MetalFX private texture allocation failed; bilinear reconstruction active";
                         return false;
                     }
+                    bg2e_deep_trace("metal", "metalfx.slot.create", "generation=" << state->generation << " slot=" << index << " name=" << prefix);
                     state->slots.push_back(std::move(slot));
                 }
                 _state = std::move(state);
@@ -237,7 +304,11 @@ bool MetalFXBridge::record(const MetalFXDispatch& dispatch)
     {
         throw std::invalid_argument("MetalFX requires a valid recording outside encoder scopes and a valid acquired slot/jitter");
     }
+    const auto generation = _state->generation;
+    const auto slotIndex = dispatch.slot;
     auto& slot = *_state->slots.at(dispatch.slot);
+    bg2e_deep_trace("metal", "metalfx.slot.inspect", "generation=" << generation << " slot=" << slotIndex
+        << " previousRecording=" << (slot.recording != nullptr) << " sameRecording=" << (slot.recording == recording));
     if (slot.recording && slot.recording != recording && !slot.recording->retired())
     {
         throw std::logic_error("MetalFX slot is still in flight");
@@ -253,6 +324,7 @@ bool MetalFXBridge::record(const MetalFXDispatch& dispatch)
     {
         throw std::invalid_argument("MetalFX command buffer and textures must use the same device");
     }
+    const auto commandIdentity = command->_diagnosticIdentity.value;
     slot.recording = recording;
     if (@available(macOS 13.0, *))
     {
@@ -272,6 +344,7 @@ bool MetalFXBridge::record(const MetalFXDispatch& dispatch)
                 }
                 @try
                 {
+                    upload.label = @"metalfx-input-copy-encoder";
                     copy(upload,color,slot.color,internal);
                     copy(upload,depth,slot.depth,internal);
                     copy(upload,motion,slot.motion,internal);
@@ -294,7 +367,10 @@ bool MetalFXBridge::record(const MetalFXDispatch& dispatch)
                 scaler.motionVectorScaleY = 1.0f;
                 scaler.depthReversed = NO;
                 scaler.reset = dispatch.reset;
+                bg2e_deep_trace("metal", "metalfx.encode.enter", "generation=" << generation << " slot=" << slotIndex
+                    << " command=" << commandIdentity << " reset=" << dispatch.reset << " jitter=" << dispatch.jitterX << ',' << dispatch.jitterY);
                 [scaler encodeToCommandBuffer:native];
+                bg2e_deep_trace("metal", "metalfx.encode.return", "generation=" << generation << " slot=" << slotIndex << " command=" << commandIdentity);
                 dispatch.command.transition(&dispatch.output,ImageLayout::TransferDst);
                 id<MTLBlitCommandEncoder> download = [native blitCommandEncoder];
                 if (!download)
@@ -305,6 +381,7 @@ bool MetalFXBridge::record(const MetalFXDispatch& dispatch)
                 }
                 @try
                 {
+                    download.label = @"metalfx-output-copy-encoder";
                     copy(download,slot.output,result,output);
                 }
                 @finally
@@ -321,6 +398,9 @@ bool MetalFXBridge::record(const MetalFXDispatch& dispatch)
                     if (completed.status == MTLCommandBufferStatusError)
                     {
                         failed->store(true);
+                        bg2e_deep_trace("metal", "metalfx.completion.failure", "generation=" << generation << " slot=" << slotIndex
+                            << " command=" << commandIdentity << " domain=" << (completed.error.domain.UTF8String ?: "")
+                            << " code=" << completed.error.code << " description=" << (completed.error.localizedDescription.UTF8String ?: ""));
                     }
                 }];
                 return true;
@@ -329,6 +409,7 @@ bool MetalFXBridge::record(const MetalFXDispatch& dispatch)
             {
                 _status = std::string("MetalFX encoding failed: ") + ([[exception reason] UTF8String] ?: "Unknown native error");
                 _state->encodingFailed = true;
+                bg2e_deep_trace("metal", "metalfx.encode.exception", "generation=" << generation << " slot=" << slotIndex << " command=" << commandIdentity << " status=" << _status);
             }
         }
     }

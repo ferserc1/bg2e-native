@@ -40,6 +40,10 @@ ImageUsage Image::usage() const
 
 void Image::buildImage(metal::Device* device, const ImageDescription& description)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Image.buildImage", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "image.create", "resource=" << _diagnosticIdentity.value << " name=" << description.debugName
+        << " size=" << description.size.width << 'x' << description.size.height
+        << " format=" << static_cast<int>(description.format) << " usage=" << static_cast<uint32_t>(description.usage));
     gpu::Image::validateDescription(description);
     if (!device || !device->isValid() || !device->formatCapabilities(description.format).supports(description.usage))
     {
@@ -89,7 +93,7 @@ void Image::buildImage(metal::Device* device, const ImageDescription& descriptio
     {
         throw std::runtime_error("Metal image allocation failed for the requested format/usage/mips");
     }
-    if (base::Log::isDebug() && !_debugName.empty())
+    if (!_debugName.empty())
     {
         _texture->setLabel(NS::String::string(_debugName.c_str(), NS::UTF8StringEncoding));
     }
@@ -101,6 +105,7 @@ void Image::buildTargetImage(metal::Device* device, const Size2D& size, PixelFor
         .usage = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst,
         .debugName = debugName});
 }
+
 void Image::buildDepthImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     buildImage(device, {.size = size, .format = format,
@@ -111,6 +116,7 @@ void Image::buildSampledImage(metal::Device* device, const Size2D& size, PixelFo
 {
     buildImage(device, {.size = size, .format = format, .usage = usage, .debugName = debugName});
 }
+
 void Image::buildStorageImage(metal::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     buildImage(device, {.size = size, .format = format,
@@ -157,16 +163,25 @@ TextureHandle Image::subresourceView(const ImageSubresourceRange& range)
     {
         throw std::runtime_error("Metal subresource texture view creation failed");
     }
+    const auto viewName = _debugName + "-view-mip-" + std::to_string(range.baseMipLevel) + "-layer-" + std::to_string(range.baseArrayLayer) + "-mips-" + std::to_string(range.mipCount) + "-layers-" + std::to_string(range.layerCount);
+    result->setLabel(NS::String::string(viewName.c_str(), NS::UTF8StringEncoding));
+    bg2e_deep_trace("metal", "image.view", "resource=" << _diagnosticIdentity.value << " name=" << viewName);
     _subresourceViews.emplace(key, result);
     return result;
 }
 
 void Image::initFromDrawableTexture(metal::Device* device, TextureHandle texture, PixelFormat format, const Size2D& size)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Image.initFromDrawableTexture", _diagnosticIdentity.value);
     cleanup();
     _device = device;
     DeviceResource::_device = device;
     _texture = texture;
+    _debugName = "surface-drawable-color-image";
+    if (_texture)
+    {
+        _texture->setLabel(NS::String::string(_debugName.c_str(), NS::UTF8StringEncoding));
+    }
     _size = size;
     _pixelFormat = format;
     _imageType = ImageType::Image2D;
@@ -193,6 +208,7 @@ bool Image::isValidCubemapFaceMip(uint32_t face, uint32_t mipLevel) const
 {
     return isCubemap() && isValid() && face < 6 && mipLevel < _mipLevels;
 }
+
 Image::CubemapFaceMipTarget Image::cubemapFaceMipTarget(uint32_t face, uint32_t mipLevel) const
 {
     if (!isValidCubemapFaceMip(face, mipLevel))
@@ -215,6 +231,7 @@ void Image::resize(const Size2D& size)
 
 void Image::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Image.cleanup", _diagnosticIdentity.value);
     for (const auto& entry : _subresourceViews)
     {
         entry.second->release();
@@ -390,6 +407,7 @@ void Image::uploadRGBA8(const void* pixels, const Size2D& size)
     }
     upload({pixels, size_t(width()) * height() * 4});
 }
+
 void Image::uploadImage(const base::Image* image)
 {
     gpu::Image::uploadImage(image);
@@ -399,64 +417,82 @@ void Image::uploadImage(const base::Image* image)
 
 void Image::buildImage(metal::Device*, const ImageDescription&)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Image.buildImage", _diagnosticIdentity.value);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::buildTargetImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::buildDepthImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::buildSampledImage(metal::Device*, const Size2D&, PixelFormat, const std::string&, ImageUsage)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::buildStorageImage(metal::Device*, const Size2D&, PixelFormat, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::buildCubemapImage(metal::Device*, const Size2D&, PixelFormat, TextureUsageEnum, uint32_t, const std::string&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 TextureHandle Image::subresourceView(const ImageSubresourceRange&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::resize(const Size2D&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::initFromDrawableTexture(metal::Device*, TextureHandle, PixelFormat, const Size2D&)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Image.initFromDrawableTexture", _diagnosticIdentity.value);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 bool Image::isValidCubemapFaceMip(uint32_t, uint32_t) const
 {
     return false;
 }
+
 Image::CubemapFaceMipTarget Image::cubemapFaceMipTarget(uint32_t, uint32_t) const
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Image.cleanup", _diagnosticIdentity.value);
     resetLayoutTracking();
 }
+
 bool Image::isValid() const
 {
     return false;
 }
+
 void Image::upload(const ImageUploadDescription&, ImageLayout)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::readPixels(std::vector<uint8_t>&, const ImageSubresourceRange&, ImageLayout)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::readPixelsRGBA8(std::vector<uint8_t>&, ImageLayout)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
@@ -466,10 +502,12 @@ void Image::readPixelsDepth32(std::vector<float>&, ImageLayout)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::uploadRGBA8(const void*, const Size2D&)
 {
     throw std::runtime_error("Metal backend is not available on this platform");
 }
+
 void Image::uploadImage(const base::Image*)
 {
     throw std::runtime_error("Metal backend is not available on this platform");

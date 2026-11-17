@@ -102,6 +102,10 @@ ImageUsage genericUsage(VkImageUsageFlags usage)
 
 void Image::buildImage(vk::Device* device, const ImageDescription& description)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Image.buildImage", _diagnosticIdentity.value);
+    bg2e_deep_trace("vk", "image.create", "resource=" << _diagnosticIdentity.value << " name=" << description.debugName
+        << " size=" << description.size.width << 'x' << description.size.height
+        << " format=" << static_cast<int>(description.format) << " usage=" << static_cast<uint32_t>(description.usage));
     gpu::Image::validateDescription(description);
     if (!device || !device->isValid() || !device->formatCapabilities(description.format).supports(description.usage))
     {
@@ -147,7 +151,7 @@ void Image::buildImage(vk::Device* device, const ImageDescription& description)
     VmaAllocationCreateInfo allocation{};
     allocation.usage = VMA_MEMORY_USAGE_AUTO;
     allocation.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
-    VK_ASSERT(vmaCreateImage(device->allocator(), &info, &allocation, &_image, &_allocation, nullptr));
+    VK_ASSERT(detail::diagnosticResult("vk", "vmaCreateImage", vmaCreateImage(device->allocator(), &info, &allocation, &_image, &_allocation, nullptr)));
     if (hasFlag(description.usage, ImageUsage::Sampled | ImageUsage::Storage | ImageUsage::ColorAttachment | ImageUsage::DepthStencil))
     {
         createView();
@@ -165,11 +169,13 @@ void Image::buildTargetImage(vk::Device* device, const Size2D& size, PixelFormat
         .usage = ImageUsage::ColorAttachment | ImageUsage::Sampled | ImageUsage::TransferSrc | ImageUsage::TransferDst,
         .debugName = debugName});
 }
+
 void Image::buildDepthImage(vk::Device* device, const Size2D& size, PixelFormat format, const std::string& debugName)
 {
     buildImage(device, {.size = size, .format = format,
         .usage = ImageUsage::DepthStencil | ImageUsage::Sampled, .debugName = debugName});
 }
+
 void Image::buildSampledImage(vk::Device* device, const Size2D& size, PixelFormat format, VkImageUsageFlags usage, const std::string& debugName)
 {
     buildImage(device, {.size = size, .format = format, .usage = genericUsage(usage), .debugName = debugName});
@@ -192,7 +198,7 @@ void Image::createView()
     info.viewType = isCubemap() ? VK_IMAGE_VIEW_TYPE_CUBE : VK_IMAGE_VIEW_TYPE_2D;
     info.subresourceRange.levelCount = _mipLevels;
     info.subresourceRange.layerCount = arrayLayers();
-    VK_ASSERT(vkCreateImageView(_device->handle(), &info, nullptr, &_imageView));
+    VK_ASSERT(detail::diagnosticResult("vk", "vkCreateImageView", vkCreateImageView(_device->handle(), &info, nullptr, &_imageView)));
     setObjectName(_device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(_imageView), _debugName + "-view");
 }
 
@@ -226,7 +232,7 @@ VkImageView Image::subresourceView(const ImageSubresourceRange& range, bool atta
         info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     }
     VkImageView result = VK_NULL_HANDLE;
-    VK_ASSERT(vkCreateImageView(_device->handle(), &info, nullptr, &result));
+    VK_ASSERT(detail::diagnosticResult("vk", "vkCreateImageView", vkCreateImageView(_device->handle(), &info, nullptr, &result)));
     setObjectName(_device->handle(), VK_OBJECT_TYPE_IMAGE_VIEW, reinterpret_cast<uint64_t>(result),
         _debugName + "-mip-" + std::to_string(range.baseMipLevel) + "-count-" + std::to_string(range.mipCount) +
         "-layer-" + std::to_string(range.baseArrayLayer) + "-count-" + std::to_string(range.layerCount) +
@@ -246,6 +252,7 @@ VkImageView Image::cubemapFaceMipView(uint32_t face, uint32_t mipLevel) const
 
 void Image::initFromSwapchainImage(vk::Device* device, VkImage image, PixelFormat format, const Size2D& size, const std::string& debugName, VkImageUsageFlags usage)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Image.initFromSwapchainImage", _diagnosticIdentity.value);
     requireDebugName(debugName);
     cleanup();
     _device = device;
@@ -279,6 +286,7 @@ void Image::resize(const Size2D& size)
 
 void Image::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Image.cleanup", _diagnosticIdentity.value);
     for (const auto& entry : _subresourceViews)
     {
         vkDestroyImageView(_device->handle(), entry.second, nullptr);
@@ -316,7 +324,7 @@ void Image::upload(const ImageUploadDescription& description, ImageLayout finalL
     allocationInfo.usage = VMA_MEMORY_USAGE_CPU_TO_GPU;
     allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     VmaAllocationInfo mapped{};
-    VK_ASSERT(vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped));
+    VK_ASSERT(detail::diagnosticResult("vk", "vmaCreateBuffer", vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped)));
     nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(buffer), _debugName + "-upload-staging-buffer");
     vmaSetAllocationName(_device->allocator(), allocation, (_debugName + "-upload-staging-buffer").c_str());
     for (uint32_t row = 0; row < extent.height; ++row)
@@ -369,7 +377,7 @@ void Image::readPixels(std::vector<uint8_t>& data, const ImageSubresourceRange& 
     allocationInfo.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
     allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     VmaAllocationInfo mapped{};
-    VK_ASSERT(vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped));
+    VK_ASSERT(detail::diagnosticResult("vk", "vmaCreateBuffer", vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped)));
     nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(buffer), _debugName + "-color-readback-buffer");
     vmaSetAllocationName(_device->allocator(), allocation, (_debugName + "-color-readback-buffer").c_str());
     try
@@ -425,7 +433,7 @@ void Image::readPixelsDepth32(std::vector<float>& data, ImageLayout finalLayout)
     allocationInfo.usage = VMA_MEMORY_USAGE_GPU_TO_CPU;
     allocationInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
     VmaAllocationInfo mapped{};
-    VK_ASSERT(vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped));
+    VK_ASSERT(detail::diagnosticResult("vk", "vmaCreateBuffer", vmaCreateBuffer(_device->allocator(), &info, &allocationInfo, &buffer, &allocation, &mapped)));
     nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(buffer), _debugName + "-depth-readback-buffer");
     vmaSetAllocationName(_device->allocator(), allocation, (_debugName + "-depth-readback-buffer").c_str());
     try
@@ -460,6 +468,7 @@ void Image::uploadRGBA8(const void* pixels, const Size2D& size)
     }
     upload({pixels, size_t(width()) * height() * 4});
 }
+
 void Image::uploadImage(const base::Image* image)
 {
     gpu::Image::uploadImage(image);

@@ -16,6 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/base/Log.hpp>
 #include "AppDelegate.hpp"
 #include "EditorUi.hpp"
 
@@ -45,21 +46,38 @@ class Application final : public bg2e::app::Application {
 
 int main(int argc, char** argv)
 {
+    struct DiagnosticSession {
+        bool active = false;
+
+        ~DiagnosticSession()
+        {
+            if (active)
+            {
+                bg2e::base::Log::shutdownDeepDebug();
+            }
+        }
+    } diagnostics;
     try
     {
         bg2e::draw::EngineConfig configuration;
         bool backendSet = false;
+        bool deepDebug = false;
         for (int i = 1; i < argc; ++i)
         {
             const std::string_view option(argv[i]);
             if (option == "--help" || option == "-h")
             {
-                std::cout << "Usage: bg2e_composer [--backend vulkan|metal]\n";
+                std::cout << "Usage: bg2e_composer [--backend vulkan|metal] [--deep-debug]\n";
                 return 0;
+            }
+            if (option == "--deep-debug" && !deepDebug)
+            {
+                deepDebug = true;
+                continue;
             }
             if (option != "--backend" || backendSet || i+1 >= argc)
             {
-                throw std::invalid_argument("Expected one --backend vulkan|metal option");
+                throw std::invalid_argument("Expected --backend vulkan|metal and/or one --deep-debug flag");
             }
             const std::string_view backend(argv[++i]);
             if (backend == "vulkan")
@@ -75,6 +93,12 @@ int main(int argc, char** argv)
                 throw std::invalid_argument("Unsupported backend: expected vulkan or metal");
             }
             backendSet = true;
+        }
+        if (deepDebug)
+        {
+            bg2e::base::Log::initializeDeepDebug();
+            diagnostics.active = true;
+            bg2e_deep_trace("composer", "startup", "backend=" << static_cast<int>(configuration.backend));
         }
         bg2e::app::MainLoop loop("org.bg2e.apps.draw.bg2e-composer");
         bg2e_composer::Application application;
@@ -102,6 +126,7 @@ int main(int argc, char** argv)
     }
     catch (const std::exception& error)
     {
+        bg2e_deep_trace("composer", "fatal", error.what());
         std::cerr << "bg2e_composer: " << error.what() << '\n';
         return 1;
     }

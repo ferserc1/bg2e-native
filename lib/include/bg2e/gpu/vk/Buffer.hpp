@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Buffer.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 
@@ -62,6 +63,8 @@ class Buffer : public gpu::Buffer {
     VkDeviceAddress deviceAddress() const;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     void uploadWithStaging(const void* data, uint64_t byteSize, VkBufferUsageFlags vkUsage, BufferUsage gpuUsage);
     void createMappedBuffer(const void* data, uint64_t byteSize, VkBufferUsageFlags vkUsage, BufferUsage gpuUsage, const char* debugTag);
     void updateMappedBuffer(const void* data, uint64_t byteSize, const char* debugTag);

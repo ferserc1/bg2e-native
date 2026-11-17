@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Queue.hpp>
 #include <bg2e/gpu/detail/SubmissionTimingState.hpp>
 #include <bg2e/gpu/vk/common.hpp>
@@ -53,6 +54,8 @@ class Queue : public gpu::Queue {
     SubmissionTimingBatch pollSubmissionTimings() const noexcept override;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     std::shared_ptr<detail::SubmissionTimingState> _timings;
     VkQueue _queue{VK_NULL_HANDLE};
     uint32_t _familyIndex{UINT32_MAX};

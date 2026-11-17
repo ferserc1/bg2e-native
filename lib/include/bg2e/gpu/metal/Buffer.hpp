@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Buffer.hpp>
 #include <bg2e/gpu/metal/common.hpp>
 
@@ -56,6 +57,8 @@ class Buffer : public gpu::Buffer {
 #endif
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     metal::Device* _device = nullptr;
     std::string _debugName;
 

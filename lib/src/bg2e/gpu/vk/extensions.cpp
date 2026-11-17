@@ -80,6 +80,8 @@ void loadInstanceExtensions(VkInstance instance, bool offscreen)
     cmdBlitImage2 = loadExtension<PFN_vkCmdBlitImage2KHR>(instance, "vkCmdBlitImage2KHR");
 
     setDebugUtilsObjectName = loadExtension<PFN_vkSetDebugUtilsObjectNameEXT>(instance, "vkSetDebugUtilsObjectNameEXT", true);
+    bg2e_deep_trace("vk", "diagnostics.facilities", "nativeNaming=" << (setDebugUtilsObjectName != nullptr)
+        << " validationActivation=unchanged; no additional validation requested by deep debug");
 }
 
 void loadDeviceExtensions(const PhysicalDevice& physDev, VkDevice device, bool offscreen)

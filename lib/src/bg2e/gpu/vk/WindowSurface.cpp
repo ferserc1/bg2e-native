@@ -37,6 +37,7 @@ namespace vk {
 
 void WindowSurface::create(gpu::Instance* instance)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.create", _diagnosticIdentity.value);
     auto* vkInst = dynamic_cast<vk::Instance*>(instance);
     _vkInstance = vkInst->vkInstanceHnd();
     _window = instance->window();
@@ -52,6 +53,7 @@ void WindowSurface::create(gpu::Instance* instance)
 
 void WindowSurface::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.cleanup", _diagnosticIdentity.value);
     releaseRenderTarget();
     if (_surface != VK_NULL_HANDLE)
     {
@@ -91,6 +93,7 @@ SDL_Window* WindowSurface::sdlWindow() const
 
 void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.createRenderTarget", _diagnosticIdentity.value);
     _device = device;
     _physicalDevice = physicalDevice;
 
@@ -194,7 +197,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
     createInfo.oldSwapchain = _swapchain;
 
     VkSwapchainKHR oldSwapchain = _swapchain;
-    VK_ASSERT(vkCreateSwapchainKHR(vkDev, &createInfo, nullptr, &_swapchain));
+    VK_ASSERT(detail::diagnosticResult("vk", "vkCreateSwapchainKHR", vkCreateSwapchainKHR(vkDev, &createInfo, nullptr, &_swapchain)));
     nameObject(vkDev, VK_OBJECT_TYPE_SWAPCHAIN_KHR, reinterpret_cast<uint64_t>(_swapchain), "window-swapchain");
     if (oldSwapchain != VK_NULL_HANDLE)
     {
@@ -256,6 +259,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
 
 void WindowSurface::resize(const Size2D& size)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.resize", _diagnosticIdentity.value);
     if (_device && _device->isValid())
     {
         _device->waitIdle();
@@ -274,6 +278,7 @@ void WindowSurface::resize(const Size2D& size)
 
 void WindowSurface::releaseRenderTarget()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.releaseRenderTarget", _diagnosticIdentity.value);
     if (_device && _device->isValid())
     {
         _device->waitIdle();
@@ -282,7 +287,9 @@ void WindowSurface::releaseRenderTarget()
     {
         if (frame)
         {
+            bg2e_deep_trace("vk", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
             frame->waitForSubmissions();
+            bg2e_deep_trace("vk", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         }
     }
     _frameAcquired = false;
@@ -365,6 +372,7 @@ gpu::Image* WindowSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.beginFrame", _diagnosticIdentity.value);
     if (_frameAcquired)
     {
         throw std::logic_error("Vulkan surface already has an acquired frame");
@@ -394,16 +402,22 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
         }
         auto frame = _frames[_currentFrame];
         // Latch old records before the fence can be reset by a later submit.
+        bg2e_deep_trace("vk", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         frame->waitForSubmissions();
+        bg2e_deep_trace("vk", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         VkDevice device = vkDevice()->handle();
+        bg2e_deep_trace("vk", "surface.wait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << _currentFrame);
         auto result = vkWaitForFences(device, 1, &_inFlight[_currentFrame], VK_TRUE, UINT64_MAX);
+        bg2e_deep_trace("vk", "surface.wait.return", "surface=" << _diagnosticIdentity.value << " result=" << result);
         if (result != VK_SUCCESS)
         {
             throw std::runtime_error("Vulkan frame-slot wait failed");
         }
         uint32_t imageIndex = 0;
+        bg2e_deep_trace("vk", "surface.acquire.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << _currentFrame);
         result = acquireNextImage(device, _swapchain, UINT64_MAX,
                                   _imageAvailable[_currentFrame], VK_NULL_HANDLE, &imageIndex);
+        bg2e_deep_trace("vk", "surface.acquire.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << _currentFrame << " result=" << result << " image=" << imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
         {
             resize({uint32_t(width), uint32_t(height)});
@@ -424,7 +438,9 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
         }
         if (_imagesInFlight[imageIndex])
         {
+            bg2e_deep_trace("vk", "surface.imageWait.enter", "surface=" << _diagnosticIdentity.value << " image=" << imageIndex);
             result = vkWaitForFences(device, 1, &_imagesInFlight[imageIndex], VK_TRUE, UINT64_MAX);
+            bg2e_deep_trace("vk", "surface.imageWait.return", "surface=" << _diagnosticIdentity.value << " image=" << imageIndex << " result=" << result);
             if (result != VK_SUCCESS)
             {
                 throw std::runtime_error("Vulkan image-use wait failed");
@@ -452,17 +468,24 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 
 void WindowSurface::present(gpu::CommandBuffer* cmd)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.present", _diagnosticIdentity.value);
     auto* command = dynamic_cast<vk::CommandBuffer*>(cmd);
     if (!command || !_frameAcquired)
     {
         throw std::logic_error("Vulkan present requires an acquired frame");
     }
     command->associateFrame(_frames[_currentFrame]);
+    command->_diagnosticSurface = _diagnosticIdentity.value;
+    command->_diagnosticFrame = _frameCounter;
+    command->_diagnosticSlot = currentFrameIndex();
+    bg2e_deep_trace("vk", "frame.associate", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter
+        << " slot=" << currentFrameIndex() << " command=" << command->_diagnosticIdentity.value);
     command->setPresentFrame(_frames[_currentFrame].get());
 }
 
 void WindowSurface::endFrame(gpu::SurfaceFrame* frame)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "WindowSurface.endFrame", _diagnosticIdentity.value);
     if (!_frameAcquired || frame != _frames[_currentFrame].get() || !frame->hasSubmissions())
     {
         throw std::logic_error("Vulkan endFrame requires a submitted acquired frame");

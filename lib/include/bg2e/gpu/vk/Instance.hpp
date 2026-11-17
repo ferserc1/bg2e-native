@@ -1,9 +1,9 @@
 /*
- *    business grade graphic engine (bg2e engine)
+ *    business grade graphic engine (bg2 engine)
  *    Copyright (C) 2026  Fernando Serrano Carpena
  *
  *    This program is free software: you can redistribute it and/or modify
- *    it under the terms of GNU General Public License as published by
+ *    it under the terms of the GNU General Public License as published by
  *    the Free Software Foundation, either version 3 of the License, or
  *    (at your option) any later version.
  *
@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Instance.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 
@@ -54,6 +55,8 @@ class Instance : public gpu::Instance {
     bool getRequiredExtensions(std::vector<const char*>& requiredExtensions) const;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     VkInstance _instance = VK_NULL_HANDLE;
     VkDebugUtilsMessengerEXT _debugMessenger = VK_NULL_HANDLE;
 

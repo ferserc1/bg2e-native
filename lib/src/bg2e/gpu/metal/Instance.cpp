@@ -51,17 +51,20 @@ bool Instance::debugModeEnabled() const
 
 void Instance::create(SDL_Window* window)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Instance.create", _diagnosticIdentity.value);
     _presentationMode = PresentationMode::Windowed;
     _window = window;
 }
 
 void Instance::create()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Instance.create", _diagnosticIdentity.value);
     _presentationMode = PresentationMode::Offscreen;
 }
 
 void Instance::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Instance.cleanup", _diagnosticIdentity.value);
     _window = nullptr;
     _presentationMode = PresentationMode::Undefined;
 }
@@ -85,26 +88,36 @@ Instance::Instance()
 void Instance::setApplicationName(const std::string&)
 {
 }
+
 const std::string& Instance::applicationName() const
 {
     return _applicationName;
 }
+
 void Instance::enableDebugMode(bool)
 {
 }
+
 bool Instance::debugModeEnabled() const
 {
     return false;
 }
+
 void Instance::create(SDL_Window* window)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Instance.create", _diagnosticIdentity.value);
 }
+
 void Instance::create()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Instance.create", _diagnosticIdentity.value);
 }
+
 void Instance::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Instance.cleanup", _diagnosticIdentity.value);
 }
+
 void Instance::assertMetalSupport()
 {
 }

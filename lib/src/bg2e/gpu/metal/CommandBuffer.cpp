@@ -188,6 +188,16 @@ MTL::Winding metalFrontFaceWinding(gpu::FrontFace frontFace)
     return MTL::WindingCounterClockwise;
 }
 
+namespace {
+NS::String* encoderLabel(MTL::CommandBuffer* command, const char* role)
+{
+    auto* label = command->label();
+    const auto prefix = label && label->utf8String() ? label->utf8String() : "native-command-buffer";
+    const auto name = std::string(prefix) + '-' + role + '-' + std::to_string(base::Log::nextDiagnosticIdentity());
+    return NS::String::string(name.c_str(), NS::UTF8StringEncoding);
+}
+}
+
 CommandBuffer::CommandBuffer(metal::Device* device, MTL::CommandBuffer* cmd)
     : _device(device), _cmd(cmd)
 {
@@ -223,6 +233,11 @@ CommandBuffer::~CommandBuffer()
 
 void CommandBuffer::begin()
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        _diagnosticDraws = _diagnosticDispatches = _diagnosticCopies = 0;
+    }
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.begin", _diagnosticIdentity.value);
     if (_recording || _submitted)
     {
         throw std::logic_error("Metal command buffer cannot begin again");
@@ -403,6 +418,8 @@ void CommandBuffer::omitBlitTiming() noexcept
 
 void CommandBuffer::end()
 {
+    bg2e_deep_trace("metal", "command.summary", "command=" << _diagnosticIdentity.value << " draws=" << _diagnosticDraws << " dispatches=" << _diagnosticDispatches << " copies=" << _diagnosticCopies);
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.end", _diagnosticIdentity.value);
     if (!_recording || _passDesc)
     {
         throw std::logic_error("Metal command buffer must close its render scope before end");
@@ -447,6 +464,7 @@ void CommandBuffer::transition(gpu::Image* image, ImageLayout newLayout, const I
 
 void CommandBuffer::beginRendering(const RenderingDescription& description)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (!_recording || hasActiveScope() || !_device)
     {
         throw std::logic_error("Attachment rendering requires recording outside another scope");
@@ -542,6 +560,7 @@ void CommandBuffer::beginRendering(const RenderingDescription& description)
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (!_recording || hasActiveScope())
     {
         throw std::logic_error("Rendering requires recording outside another active scope");
@@ -584,6 +603,7 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 
 void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t mipLevel)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     RenderingDescription description;
     description.colors.push_back({colorImage});
     description.colors.back().subresource = {mipLevel, 1, 0, 1};
@@ -592,6 +612,7 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t mipLevel)
 
 void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     RenderingDescription description;
     description.colors.push_back({colorImage});
     description.colors.back().subresource = {mipLevel, 1, 0, 1};
@@ -605,6 +626,7 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImag
 
 void CommandBuffer::beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (!cubemap || !cubemap->isValid() || static_cast<uint32_t>(face) >= 6)
     {
         throw std::invalid_argument("Cubemap rendering requires a valid cube and face");
@@ -668,6 +690,7 @@ void CommandBuffer::clearDepth(float depth)
 
 void CommandBuffer::endRendering()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.endRendering", _diagnosticIdentity.value);
     // If the encoder was never created (clear-only frame, e.g. example 04),
     // create it now so the clear LoadAction still resolves, then end it.
     if (!_encoder && _passDesc && _cmd)
@@ -676,6 +699,7 @@ void CommandBuffer::endRendering()
         _encoder = _cmd->renderCommandEncoder(_passDesc);
         if (_encoder)
         {
+            _encoder->setLabel(encoderLabel(_cmd, "clear-encoder"));
             _encoder->retain(); // Balance the scope's owned release.
         }
     }
@@ -736,6 +760,7 @@ void CommandBuffer::ensureRenderEncoder()
     _encoder = _cmd->renderCommandEncoder(_passDesc);
     if (_encoder)
     {
+        _encoder->setLabel(encoderLabel(_cmd, "render-encoder"));
         _encoder->retain(); // Native result is autoreleased.
     }
     if (!_encoder)
@@ -802,6 +827,10 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
 
 void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDraws;
+    }
     ensureRenderEncoder();
 
     MTL::PrimitiveType primType = MTL::PrimitiveTypeTriangle;
@@ -829,6 +858,7 @@ void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t 
 
 void CommandBuffer::beginCompute()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginCompute", _diagnosticIdentity.value);
     if (_computeEncoder)
     {
         throw std::runtime_error("metal::CommandBuffer::beginCompute: a compute scope is already active");
@@ -846,10 +876,12 @@ void CommandBuffer::beginCompute()
     {
         throw std::runtime_error("metal::CommandBuffer::beginCompute: failed to create compute encoder");
     }
+    _computeEncoder->setLabel(encoderLabel(_cmd, "compute-encoder"));
 }
 
 void CommandBuffer::endCompute()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.endCompute", _diagnosticIdentity.value);
     if (!_computeEncoder)
     {
         throw std::runtime_error("metal::CommandBuffer::endCompute: no active compute scope; call beginCompute() first");
@@ -880,6 +912,10 @@ void CommandBuffer::bindPipeline(gpu::ComputePipeline* pipeline)
 
 void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDispatches;
+    }
     if (!_computeEncoder)
     {
         throw std::runtime_error("metal::CommandBuffer::dispatch: no active compute scope; call beginCompute() first");
@@ -1083,6 +1119,10 @@ void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
                                 uint32_t firstIndex, int32_t vertexOffset,
                                 uint32_t firstInstance)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDraws;
+    }
     ensureRenderEncoder();
 
     if (!_boundIndexBuffer)
@@ -1130,6 +1170,10 @@ void CommandBuffer::copyImage(gpu::Image* source, gpu::Image* destination)
 
 void CommandBuffer::copyImage(const ImageView& source, const ImageView& destination)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticCopies;
+    }
     if (!_recording || hasActiveScope() || !_device || !_cmd)
     {
         throw std::logic_error("Image copies require recording outside active scopes");
@@ -1144,6 +1188,10 @@ void CommandBuffer::copyImage(const ImageView& source, const ImageView& destinat
     const auto extent = source.image->mipExtent(source.range.baseMipLevel);
     omitBlitTiming();
     auto* encoder = _cmd->blitCommandEncoder();
+    if (encoder)
+    {
+        encoder->setLabel(encoderLabel(_cmd, "blit-encoder"));
+    }
     if (!encoder)
     {
         throw std::runtime_error("Metal copy blit encoder creation failed");
@@ -1168,6 +1216,10 @@ void CommandBuffer::generateMipmaps(gpu::Image* image, ImageLayout finalLayout)
         transition(image, ImageLayout::TransferDst, {1, image->mipLevels() - 1, 0, image->arrayLayers()});
         omitBlitTiming();
         auto* encoder = _cmd->blitCommandEncoder();
+        if (encoder)
+        {
+            encoder->setLabel(encoderLabel(_cmd, "blit-encoder"));
+        }
         if (!encoder)
         {
             throw std::runtime_error("Metal mipmap blit encoder creation failed");
@@ -1319,6 +1371,11 @@ CommandBuffer::~CommandBuffer()
 
 void CommandBuffer::begin()
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        _diagnosticDraws = _diagnosticDispatches = _diagnosticCopies = 0;
+    }
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.begin", _diagnosticIdentity.value);
 }
 
 void CommandBuffer::timingIntervalMarker(uint32_t index, bool) noexcept
@@ -1333,6 +1390,8 @@ SubmissionTimingStatus CommandBuffer::requestSubmissionTiming(const SubmissionTi
 
 void CommandBuffer::end()
 {
+    bg2e_deep_trace("metal", "command.summary", "command=" << _diagnosticIdentity.value << " draws=" << _diagnosticDraws << " dispatches=" << _diagnosticDispatches << " copies=" << _diagnosticCopies);
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.end", _diagnosticIdentity.value);
 }
 
 bool CommandBuffer::hasActiveScope() const
@@ -1347,6 +1406,10 @@ void CommandBuffer::transition(gpu::Image*, ImageLayout, const ImageSubresourceR
 
 void CommandBuffer::copyImage(const ImageView&, const ImageView&)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticCopies;
+    }
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
@@ -1361,11 +1424,13 @@ void CommandBuffer::transition(gpu::Image*, ImageLayout)
 
 void CommandBuffer::beginRendering(const RenderingDescription&)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame*)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (_attachmentRendering)
     {
         throw std::logic_error("Close attachment rendering before opening another scope");
@@ -1375,6 +1440,7 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame*)
 
 void CommandBuffer::beginRendering(gpu::Image*, uint32_t)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (_attachmentRendering)
     {
         throw std::logic_error("Close attachment rendering before opening another scope");
@@ -1384,6 +1450,7 @@ void CommandBuffer::beginRendering(gpu::Image*, uint32_t)
 
 void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (_attachmentRendering)
     {
         throw std::logic_error("Close attachment rendering before opening another scope");
@@ -1393,6 +1460,7 @@ void CommandBuffer::beginRendering(gpu::Image*, gpu::Image*, uint32_t)
 
 void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (_attachmentRendering)
     {
         throw std::logic_error("Close attachment rendering before opening another scope");
@@ -1402,14 +1470,17 @@ void CommandBuffer::beginRendering(gpu::CubeMap*, CubemapFace, uint32_t)
 
 void CommandBuffer::endRendering()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.endRendering", _diagnosticIdentity.value);
 }
 
 void CommandBuffer::beginCompute()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.beginCompute", _diagnosticIdentity.value);
 }
 
 void CommandBuffer::endCompute()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "CommandBuffer.endCompute", _diagnosticIdentity.value);
 }
 
 void CommandBuffer::clearColor(uint32_t, const gpu::Color&)
@@ -1426,6 +1497,10 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline*)
 
 void CommandBuffer::draw(uint32_t, uint32_t, uint32_t, uint32_t)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDraws;
+    }
 }
 
 void CommandBuffer::bindPipeline(gpu::ComputePipeline*)
@@ -1434,6 +1509,10 @@ void CommandBuffer::bindPipeline(gpu::ComputePipeline*)
 
 void CommandBuffer::dispatch(uint32_t, uint32_t, uint32_t)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDispatches;
+    }
 }
 
 void CommandBuffer::pushConstants(ShaderStage, uint32_t, uint32_t, const void*)
@@ -1458,6 +1537,10 @@ void CommandBuffer::bindIndexBuffer(gpu::Buffer*, uint64_t)
 
 void CommandBuffer::drawIndexed(uint32_t, uint32_t, uint32_t, int32_t, uint32_t)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDraws;
+    }
 }
 
 void CommandBuffer::copyImage(gpu::Image*, gpu::Image*)

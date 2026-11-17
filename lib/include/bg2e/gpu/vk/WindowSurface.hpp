@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/WindowSurface.hpp>
 #include <bg2e/gpu/vk/Surface.hpp>
 #include <bg2e/gpu/vk/common.hpp>
@@ -66,6 +67,8 @@ class WindowSurface : public gpu::WindowSurface, public Surface {
     void createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* physicalDevice) override;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     VkSurfaceKHR _surface{VK_NULL_HANDLE};
     VkInstance _vkInstance{VK_NULL_HANDLE};
     SDL_Window* _window{nullptr};

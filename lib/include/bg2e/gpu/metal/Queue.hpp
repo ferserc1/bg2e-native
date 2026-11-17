@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Queue.hpp>
 #include <bg2e/gpu/detail/SubmissionTimingState.hpp>
 #include <bg2e/gpu/metal/common.hpp>
@@ -59,6 +60,8 @@ class Queue : public gpu::Queue {
     SubmissionTimingBatch pollSubmissionTimings() const noexcept override;
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     std::shared_ptr<detail::SubmissionTimingState> _timings;
     CommandQueueHandle _commandQueue = nullptr;
     std::shared_ptr<detail::SubmissionState> _submissions;

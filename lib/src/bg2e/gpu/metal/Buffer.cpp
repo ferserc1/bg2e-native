@@ -43,6 +43,7 @@ Buffer::~Buffer()
 
 void Buffer::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Buffer.cleanup", _diagnosticIdentity.value);
     if (_buffer)
     {
         _buffer->release();
@@ -56,7 +57,7 @@ bool Buffer::isValid() const
 }
 
 static void uploadBufferData(metal::Device* device, MTL::Buffer*& outBuffer,
-                             const void* data, uint64_t byteSize)
+                             const void* data, uint64_t byteSize, const std::string& debugName)
 {
     if (outBuffer)
     {
@@ -70,6 +71,7 @@ static void uploadBufferData(metal::Device* device, MTL::Buffer*& outBuffer,
     {
         throw std::runtime_error("metal::Buffer: failed to allocate staging buffer");
     }
+    staging->setLabel(NS::String::string((debugName + "-upload-staging-buffer").c_str(), NS::UTF8StringEncoding));
     std::memcpy(staging->contents(), data, byteSize);
 
     // Device-local (private)
@@ -80,10 +82,12 @@ static void uploadBufferData(metal::Device* device, MTL::Buffer*& outBuffer,
         throw std::runtime_error("metal::Buffer: failed to allocate device-local buffer");
     }
 
+    outBuffer->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
     device->immediateSubmit([&](gpu::CommandBuffer* cmd)
                             {
                                 MTL::CommandBuffer* mtlCmd = dynamic_cast<metal::CommandBuffer*>(cmd)->handle();
                                 MTL::BlitCommandEncoder* blit = mtlCmd->blitCommandEncoder();
+                                blit->setLabel(NS::String::string((debugName + "-upload-encoder").c_str(), NS::UTF8StringEncoding));
                                 blit->copyFromBuffer(staging, 0, outBuffer, 0, byteSize);
                                 blit->endEncoding();
                             });
@@ -93,7 +97,9 @@ static void uploadBufferData(metal::Device* device, MTL::Buffer*& outBuffer,
 
 void Buffer::createVertexBuffer(const void* data, uint64_t byteSize)
 {
-    uploadBufferData(_device, _buffer, data, byteSize);
+    detail::DiagnosticScope resourceScope("metal", "buffer.createVertexBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
+    uploadBufferData(_device, _buffer, data, byteSize, _debugName);
     _usage = BufferUsage::Vertex;
     _byteSize = byteSize;
 
@@ -105,8 +111,10 @@ void Buffer::createVertexBuffer(const void* data, uint64_t byteSize)
 
 void Buffer::createIndexBuffer(const std::vector<uint32_t>& indices)
 {
+    detail::DiagnosticScope resourceScope("metal", "buffer.createIndexBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
     uint64_t byteSize = indices.size() * sizeof(uint32_t);
-    uploadBufferData(_device, _buffer, indices.data(), byteSize);
+    uploadBufferData(_device, _buffer, indices.data(), byteSize, _debugName);
     _usage = BufferUsage::Index;
     _byteSize = byteSize;
 
@@ -119,7 +127,7 @@ void Buffer::createIndexBuffer(const std::vector<uint32_t>& indices)
 // Uniform/storage buffers use a CPU-visible (shared) allocation so that the
 // contents can be updated directly each frame without a staging copy.
 static void createSharedBuffer(metal::Device* device, MTL::Buffer*& outBuffer,
-                               const void* data, uint64_t byteSize)
+                               const void* data, uint64_t byteSize, const std::string& debugName)
 {
     if (outBuffer)
     {
@@ -132,6 +140,7 @@ static void createSharedBuffer(metal::Device* device, MTL::Buffer*& outBuffer,
     {
         throw std::runtime_error("metal::Buffer: failed to allocate shared buffer");
     }
+    outBuffer->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
     if (data)
     {
         std::memcpy(outBuffer->contents(), data, byteSize);
@@ -140,7 +149,9 @@ static void createSharedBuffer(metal::Device* device, MTL::Buffer*& outBuffer,
 
 void Buffer::createUniformBuffer(const void* data, uint64_t byteSize)
 {
-    createSharedBuffer(_device, _buffer, data, byteSize);
+    detail::DiagnosticScope resourceScope("metal", "buffer.createUniformBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
+    createSharedBuffer(_device, _buffer, data, byteSize, _debugName);
     _usage = BufferUsage::Uniform;
     _byteSize = byteSize;
 
@@ -152,8 +163,10 @@ void Buffer::createUniformBuffer(const void* data, uint64_t byteSize)
 
 void Buffer::createStorageBuffer(const void* data, uint64_t byteSize)
 {
+    detail::DiagnosticScope resourceScope("metal", "buffer.createStorageBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
     base::CpuProfileScope profile("metal.buffer.createStorage");
-    createSharedBuffer(_device, _buffer, data, byteSize);
+    createSharedBuffer(_device, _buffer, data, byteSize, _debugName);
     _usage = BufferUsage::Storage;
     _byteSize = byteSize;
 
@@ -193,6 +206,7 @@ void Buffer::updateStorageBuffer(const void* data, uint64_t byteSize)
 
 void Buffer::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Buffer.cleanup", _diagnosticIdentity.value);
 }
 
 bool Buffer::isValid() const
@@ -202,21 +216,29 @@ bool Buffer::isValid() const
 
 void Buffer::createVertexBuffer(const void*, uint64_t)
 {
+    detail::DiagnosticScope resourceScope("metal", "buffer.createVertexBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void Buffer::createIndexBuffer(const std::vector<uint32_t>&)
 {
+    detail::DiagnosticScope resourceScope("metal", "buffer.createIndexBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void Buffer::createUniformBuffer(const void*, uint64_t)
 {
+    detail::DiagnosticScope resourceScope("metal", "buffer.createUniformBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void Buffer::createStorageBuffer(const void*, uint64_t)
 {
+    detail::DiagnosticScope resourceScope("metal", "buffer.createStorageBuffer", _diagnosticIdentity.value);
+    bg2e_deep_trace("metal", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 

@@ -90,6 +90,7 @@ Buffer::~Buffer()
 
 void Buffer::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Buffer.cleanup", _diagnosticIdentity.value);
     if (_buffer != VK_NULL_HANDLE && _device != nullptr)
     {
         vmaDestroyBuffer(_device->allocator(), _buffer, _allocation);
@@ -175,6 +176,8 @@ void Buffer::createMappedBuffer(const void* data, uint64_t byteSize,
                                 VkBufferUsageFlags vkUsage, BufferUsage gpuUsage,
                                 const char* debugTag)
 {
+    bg2e_deep_trace("vk", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
+    detail::DiagnosticScope diagnosticScope("vk", "Buffer.createMappedBuffer", _diagnosticIdentity.value);
     cleanup();
 
     // Host-visible, persistently mapped buffer. Suitable for small dynamic data
@@ -192,6 +195,7 @@ void Buffer::createMappedBuffer(const void* data, uint64_t byteSize,
     VmaAllocationInfo allocOut{};
     VkResult result = vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
                                       &_buffer, &_allocation, &allocOut);
+    bg2e_deep_trace("vk", "buffer.allocation.result", "resource=" << _diagnosticIdentity.value << " name=" << _debugName << " bytes=" << byteSize << " result=" << result);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error(std::string("vk::Buffer::") + debugTag + ": vmaCreateBuffer failed");
@@ -229,6 +233,8 @@ void Buffer::updateMappedBuffer(const void* data, uint64_t byteSize, const char*
 void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,
                                VkBufferUsageFlags vkUsage, BufferUsage gpuUsage)
 {
+    bg2e_deep_trace("vk", "buffer.create", "resource=" << _diagnosticIdentity.value << " name=" << _debugName);
+    detail::DiagnosticScope diagnosticScope("vk", "Buffer.uploadWithStaging", _diagnosticIdentity.value);
     cleanup();
 
     // Staging buffer: CPU-writable, used only for the upload
@@ -245,8 +251,8 @@ void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,
     stagingAllocCI.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
 
     VmaAllocationInfo stagingAllocOut{};
-    VK_ASSERT(vmaCreateBuffer(_device->allocator(), &stagingInfo, &stagingAllocCI,
-                              &stagingBuffer, &stagingAlloc, &stagingAllocOut));
+    VK_ASSERT(detail::diagnosticResult("vk", "vmaCreateBuffer", vmaCreateBuffer(_device->allocator(), &stagingInfo, &stagingAllocCI,
+                              &stagingBuffer, &stagingAlloc, &stagingAllocOut)));
 
     nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(stagingBuffer), _debugName + "-upload-staging-buffer");
     vmaSetAllocationName(_device->allocator(), stagingAlloc, (_debugName + "-upload-staging-buffer").c_str());
@@ -262,8 +268,8 @@ void Buffer::uploadWithStaging(const void* data, uint64_t byteSize,
     allocCI.usage = VMA_MEMORY_USAGE_AUTO;
     allocCI.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    VK_ASSERT(vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
-                              &_buffer, &_allocation, nullptr));
+    VK_ASSERT(detail::diagnosticResult("vk", "vmaCreateBuffer", vmaCreateBuffer(_device->allocator(), &bufInfo, &allocCI,
+                              &_buffer, &_allocation, nullptr)));
 
     nameObject(_device->handle(), VK_OBJECT_TYPE_BUFFER, reinterpret_cast<uint64_t>(_buffer), _debugName);
     vmaSetAllocationName(_device->allocator(), _allocation, _debugName.c_str());

@@ -23,6 +23,8 @@
 #include <bg2e/gpu/metal/Device.hpp>
 #include <bg2e/base/Log.hpp>
 
+#include "Diagnostics.hpp"
+
 #include <stdexcept>
 
 namespace bg2e {
@@ -38,6 +40,7 @@ Queue::Queue(CommandQueueHandle commandQueue)
 
 Queue::~Queue()
 {
+    bg2e_deep_trace("metal", "queue.destroy", "queue=" << _diagnosticIdentity.value);
     if (_timings)
     {
         _timings->close();
@@ -50,7 +53,7 @@ Queue::~Queue()
 }
 
 Queue::Queue(Queue&& other) noexcept
-    : _timings(std::move(other._timings)), _commandQueue(other._commandQueue), _submissions(std::move(other._submissions)), _device(other._device)
+    : _diagnosticIdentity(other._diagnosticIdentity), _timings(std::move(other._timings)), _commandQueue(other._commandQueue), _submissions(std::move(other._submissions)), _device(other._device)
 {
     other._commandQueue = nullptr;
     other._device = nullptr;
@@ -68,6 +71,7 @@ Queue& Queue::operator=(Queue&& other) noexcept
         {
             _timings->close();
         }
+        _diagnosticIdentity = other._diagnosticIdentity;
         _timings = std::move(other._timings);
         _commandQueue = other._commandQueue;
         _device = other._device;
@@ -90,6 +94,7 @@ bool Queue::isValid() const
 
 void Queue::setDevice(metal::Device* device)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Queue.setDevice", _diagnosticIdentity.value);
     _device = device;
     _submissions = device->submissionState();
     try
@@ -110,6 +115,7 @@ void Queue::setDevice(metal::Device* device)
 
 std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& debugName) const
 {
+    detail::DiagnosticScope diagnosticScope("metal", "queue.createCommandBuffer", _diagnosticIdentity.value);
     requireDebugName(debugName);
     if (!_submissions)
     {
@@ -121,19 +127,34 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
         throw std::runtime_error("metal::Queue::createCommandBuffer: queue not initialized");
     }
 
-    MTL::CommandBuffer* mtlCmd = _commandQueue->commandBuffer();
+    MTL::CommandBuffer* mtlCmd = nullptr;
+    if (base::Log::deepDebugEnabled())
+    {
+        auto* descriptor = MTL::CommandBufferDescriptor::alloc()->init();
+        descriptor->setRetainedReferences(true);
+        descriptor->setErrorOptions(MTL::CommandBufferErrorOptionEncoderExecutionStatus);
+        mtlCmd = _commandQueue->commandBuffer(descriptor);
+        descriptor->release();
+    }
+    else
+    {
+        mtlCmd = _commandQueue->commandBuffer();
+    }
     if (!mtlCmd)
     {
         throw std::runtime_error("metal::Queue::createCommandBuffer: failed to create command buffer");
     }
 
-    if (base::Log::isDebug() && !debugName.empty())
+    if (!debugName.empty())
     {
         mtlCmd->setLabel(NS::String::string(debugName.c_str(), NS::UTF8StringEncoding));
     }
 
     auto command = std::make_shared<metal::CommandBuffer>(_device, mtlCmd);
     command->_timingState = _timings;
+    bg2e_deep_trace("metal", "command.create", "queue=" << _diagnosticIdentity.value
+        << " command=" << command->_diagnosticIdentity.value << " name=" << debugName
+        << " encoderExecutionStatus=" << base::Log::deepDebugEnabled());
     return command;
 }
 
@@ -167,6 +188,8 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
             }
         }
     } timingFailure{command->_submissionTiming};
+    const uint64_t submission = base::Log::deepDebugEnabled() ? base::Log::nextDiagnosticIdentity() : 0;
+    const uint64_t commandIdentity = command->_diagnosticIdentity.value;
     auto* handle = command->handle();
     handle->retain();
     auto native = std::shared_ptr<MTL::CommandBuffer>(handle, [](MTL::CommandBuffer* value)
@@ -174,7 +197,7 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
                                                           value->release();
                                                       });
     auto record = std::make_shared<detail::CompletionRecord>(
-        [native]
+        [native, submission, commandIdentity]
         {
             auto status = native->status();
             if (status == MTL::CommandBufferStatusError)
@@ -183,11 +206,14 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
             }
             return status == MTL::CommandBufferStatusCompleted;
         },
-        [native]
+        [native, submission, commandIdentity]
         {
             base::CpuProfileScope waitProfile("metal.queue.waitUntilCompleted");
             base::CpuProfileScope::count("metal.queue.completionWaits", 1);
+            bg2e_deep_trace("metal", "submission.wait.enter", "submission=" << submission << " command=" << commandIdentity);
             native->waitUntilCompleted();
+            bg2e_deep_trace("metal", "submission.wait.return", "submission=" << submission
+                << " command=" << commandIdentity << " status=" << native->status());
             if (native->status() == MTL::CommandBufferStatusError)
             {
                 throw std::runtime_error("Metal command buffer execution failed");
@@ -214,7 +240,19 @@ void Queue::submit(gpu::CommandBuffer* cmd) const
         {
             command->_submissionFrame->trackSubmission(record);
         }
+        if (base::Log::deepDebugEnabled())
+        {
+            handle->addCompletedHandler(MTL::HandlerFunction([submission, commandIdentity](MTL::CommandBuffer* completed)
+            {
+                logCommandBufferCompletion(completed, submission, commandIdentity);
+            }));
+        }
+        bg2e_deep_trace("metal", "submission.commit.enter", "queue=" << _diagnosticIdentity.value
+            << " submission=" << submission << " record=" << record->id << " command=" << commandIdentity
+            << " surface=" << command->_diagnosticSurface << " frame=" << command->_diagnosticFrame
+            << " slot=" << command->_diagnosticSlot);
         handle->commit();
+        bg2e_deep_trace("metal", "submission.commit.return", "submission=" << submission << " command=" << commandIdentity);
     }
     catch (...)
     {
@@ -235,17 +273,20 @@ Queue::Queue(CommandQueueHandle)
 
 void Queue::setDevice(metal::Device* device)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Queue.setDevice", _diagnosticIdentity.value);
     _device = device;
     _submissions = device->submissionState();
 }
 
 Queue::~Queue()
 {
+    bg2e_deep_trace("metal", "queue.destroy", "queue=" << _diagnosticIdentity.value);
 }
 
 Queue::Queue(Queue&&) noexcept
 {
 }
+
 Queue& Queue::operator=(Queue&&) noexcept
 {
     return *this;

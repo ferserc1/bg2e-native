@@ -40,6 +40,7 @@ namespace metal {
 
 void WindowSurface::create(gpu::Instance* instance)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.create", _diagnosticIdentity.value);
     SDL_Window* window = instance->window();
     if (!window)
     {
@@ -61,6 +62,7 @@ void WindowSurface::create(gpu::Instance* instance)
 
 void WindowSurface::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.cleanup", _diagnosticIdentity.value);
     releaseRenderTarget();
     if (_metalView)
     {
@@ -75,6 +77,7 @@ uint32_t WindowSurface::width() const
 {
     return _size.width;
 }
+
 uint32_t WindowSurface::height() const
 {
     return _size.height;
@@ -87,6 +90,7 @@ bool WindowSurface::isValid() const
 
 void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice* /*physicalDevice*/)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.createRenderTarget", _diagnosticIdentity.value);
     _device = device;
     _metalDevice = dynamic_cast<metal::Device*>(device);
 
@@ -106,6 +110,7 @@ void WindowSurface::createRenderTarget(gpu::Device* device, gpu::PhysicalDevice*
 
 void WindowSurface::resize(const Size2D& size)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.resize", _diagnosticIdentity.value);
     if (_device)
     {
         _device->waitIdle();
@@ -114,7 +119,9 @@ void WindowSurface::resize(const Size2D& size)
     {
         if (frame)
         {
+            bg2e_deep_trace("metal", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
             frame->waitForSubmissions();
+            bg2e_deep_trace("metal", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         }
         frame.reset();
     }
@@ -137,6 +144,7 @@ void WindowSurface::resize(const Size2D& size)
 
 void WindowSurface::releaseRenderTarget()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.releaseRenderTarget", _diagnosticIdentity.value);
     if (_device && _device->isValid())
     {
         _device->waitIdle();
@@ -145,7 +153,9 @@ void WindowSurface::releaseRenderTarget()
     {
         if (frame)
         {
+            bg2e_deep_trace("metal", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
             frame->waitForSubmissions();
+            bg2e_deep_trace("metal", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         }
         frame.reset();
     }
@@ -157,18 +167,22 @@ uint32_t WindowSurface::imageCount() const
 {
     return _imageCount;
 }
+
 uint32_t WindowSurface::inFlightFrames() const
 {
     return 2;
 }
+
 uint32_t WindowSurface::currentFrameIndex() const
 {
     return _currentFrameIndex;
 }
+
 gpu::Image* WindowSurface::colorImage(uint32_t /*index*/) const
 {
     return nullptr;
 }
+
 gpu::Image* WindowSurface::depthImage() const
 {
     return _depthImage.get();
@@ -176,6 +190,7 @@ gpu::Image* WindowSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.beginFrame", _diagnosticIdentity.value);
     if (_currentFrame)
     {
         throw std::logic_error("Metal surface already has an acquired frame");
@@ -188,11 +203,15 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
     if (slot)
     {
         base::CpuProfileScope profile("metal.surface.waitSlotSubmissions");
+        bg2e_deep_trace("metal", "surface.slotWait.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
         slot->waitForSubmissions();
+        bg2e_deep_trace("metal", "surface.slotWait.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << currentFrameIndex());
     }
     slot.reset();
     base::CpuProfileScope profile("metal.surface.nextDrawable");
+    bg2e_deep_trace("metal", "surface.acquire.enter", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << _currentFrameIndex);
     auto* drawable = _layer->nextDrawable();
+    bg2e_deep_trace("metal", "surface.acquire.return", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter << " slot=" << _currentFrameIndex << " drawable=" << (drawable != nullptr));
     profile.next("metal.surface.wrapDrawable");
     if (!drawable)
     {
@@ -211,17 +230,24 @@ std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 
 void WindowSurface::present(gpu::CommandBuffer* cmd)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.present", _diagnosticIdentity.value);
     auto* command = dynamic_cast<metal::CommandBuffer*>(cmd);
     if (!command || !_currentFrame || !_currentFrame->isValid())
     {
         throw std::logic_error("Metal presentation requires a valid acquired frame and command buffer");
     }
     command->associateFrame(_currentFrame);
+    command->_diagnosticSurface = _diagnosticIdentity.value;
+    command->_diagnosticFrame = _frameCounter;
+    command->_diagnosticSlot = currentFrameIndex();
+    bg2e_deep_trace("metal", "frame.associate", "surface=" << _diagnosticIdentity.value << " frame=" << _frameCounter
+        << " slot=" << currentFrameIndex() << " command=" << command->_diagnosticIdentity.value);
     command->handle()->presentDrawable(_currentFrame->drawable());
 }
 
 void WindowSurface::endFrame(gpu::SurfaceFrame* frame)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.endFrame", _diagnosticIdentity.value);
     if (!_currentFrame || frame != _currentFrame.get() || !frame->hasSubmissions())
     {
         throw std::logic_error("Metal endFrame requires a submitted acquired frame");
@@ -235,20 +261,25 @@ void WindowSurface::endFrame(gpu::SurfaceFrame* frame)
 
 void WindowSurface::create(gpu::Instance*)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.create", _diagnosticIdentity.value);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void WindowSurface::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.cleanup", _diagnosticIdentity.value);
 }
+
 uint32_t WindowSurface::width() const
 {
     return 0;
 }
+
 uint32_t WindowSurface::height() const
 {
     return 0;
 }
+
 bool WindowSurface::isValid() const
 {
     return false;
@@ -256,34 +287,41 @@ bool WindowSurface::isValid() const
 
 void WindowSurface::createRenderTarget(gpu::Device*, gpu::PhysicalDevice*)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.createRenderTarget", _diagnosticIdentity.value);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void WindowSurface::resize(const Size2D&)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.resize", _diagnosticIdentity.value);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void WindowSurface::releaseRenderTarget()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.releaseRenderTarget", _diagnosticIdentity.value);
 }
 
 uint32_t WindowSurface::imageCount() const
 {
     return 0;
 }
+
 uint32_t WindowSurface::inFlightFrames() const
 {
     return 0;
 }
+
 uint32_t WindowSurface::currentFrameIndex() const
 {
     return 0;
 }
+
 gpu::Image* WindowSurface::colorImage(uint32_t) const
 {
     return nullptr;
 }
+
 gpu::Image* WindowSurface::depthImage() const
 {
     return nullptr;
@@ -291,13 +329,18 @@ gpu::Image* WindowSurface::depthImage() const
 
 std::shared_ptr<gpu::SurfaceFrame> WindowSurface::beginFrame()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.beginFrame", _diagnosticIdentity.value);
     return nullptr;
 }
+
 void WindowSurface::present(gpu::CommandBuffer*)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.present", _diagnosticIdentity.value);
 }
+
 void WindowSurface::endFrame(gpu::SurfaceFrame*)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "WindowSurface.endFrame", _diagnosticIdentity.value);
 }
 
 #endif

@@ -91,6 +91,11 @@ CommandBuffer::CommandBuffer(vk::Device* device, VkCommandBuffer cmd, VkCommandP
 
 void CommandBuffer::begin()
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        _diagnosticDraws = _diagnosticDispatches = _diagnosticCopies = 0;
+    }
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.begin", _diagnosticIdentity.value);
     if (_recording)
     {
         throw std::logic_error("Vulkan command buffer is already recording");
@@ -108,19 +113,21 @@ void CommandBuffer::begin()
     {
         throw std::logic_error("Vulkan command pool is closed");
     }
-    VK_ASSERT(vkResetCommandBuffer(_cmd, 0));
+    VK_ASSERT(detail::diagnosticResult("vk", "vkResetCommandBuffer", vkResetCommandBuffer(_cmd, 0)));
     _completion.reset();
     _submissionFrame.reset();
     _presentFrame = nullptr;
     _executable = false;
     auto beginInfo = Info::commandBufferBeginInfo();
-    VK_ASSERT(vkBeginCommandBuffer(_cmd, &beginInfo));
+    VK_ASSERT(detail::diagnosticResult("vk", "vkBeginCommandBuffer", vkBeginCommandBuffer(_cmd, &beginInfo)));
     _recording = true;
     beginRecordingCompletion();
 }
 
 void CommandBuffer::end()
 {
+    bg2e_deep_trace("vk", "command.summary", "command=" << _diagnosticIdentity.value << " draws=" << _diagnosticDraws << " dispatches=" << _diagnosticDispatches << " copies=" << _diagnosticCopies);
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.end", _diagnosticIdentity.value);
     if (!_recording || _renderingActive || _computeActive)
     {
         throw std::logic_error("Vulkan command buffer must close active scopes before end");
@@ -133,7 +140,7 @@ void CommandBuffer::end()
         const auto queries = std::static_pointer_cast<TimingQueries>(_submissionTiming->resource);
         vkCmdWriteTimestamp(_cmd, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, queries->pool, 1);
     }
-    VK_ASSERT(vkEndCommandBuffer(_cmd));
+    VK_ASSERT(detail::diagnosticResult("vk", "vkEndCommandBuffer", vkEndCommandBuffer(_cmd)));
     _recording = false;
     _executable = true;
 }
@@ -294,6 +301,7 @@ void CommandBuffer::materializeRenderPass()
 
 void CommandBuffer::beginRendering(const RenderingDescription& description)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (!_recording || _renderingActive || _computeActive || !_device)
     {
         throw std::logic_error("Attachment rendering requires recording outside another scope");
@@ -325,6 +333,7 @@ void CommandBuffer::beginRendering(const RenderingDescription& description)
 
 void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (!_recording || _renderingActive || _computeActive)
     {
         throw std::logic_error("Rendering requires recording outside another active scope");
@@ -343,6 +352,7 @@ void CommandBuffer::beginRendering(gpu::SurfaceFrame* frame)
 
 void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t mipLevel)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     RenderingDescription description;
     description.colors.push_back({colorImage});
     description.colors.back().subresource = {mipLevel, 1, 0, 1};
@@ -351,6 +361,7 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, uint32_t mipLevel)
 
 void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImage, uint32_t mipLevel)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     RenderingDescription description;
     description.colors.push_back({colorImage});
     description.colors.back().subresource = {mipLevel, 1, 0, 1};
@@ -364,6 +375,7 @@ void CommandBuffer::beginRendering(gpu::Image* colorImage, gpu::Image* depthImag
 
 void CommandBuffer::beginRendering(gpu::CubeMap* cubemap, CubemapFace face, uint32_t mipLevel)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.beginRendering", _diagnosticIdentity.value);
     if (!cubemap || !cubemap->isValid() || static_cast<uint32_t>(face) >= 6)
     {
         throw std::invalid_argument("Cubemap rendering requires a valid cube and face");
@@ -585,6 +597,7 @@ void CommandBuffer::flushPendingRendering()
 
 void CommandBuffer::endRendering()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.endRendering", _diagnosticIdentity.value);
     flushPendingRendering();
     if (_renderingEmitted)
     {
@@ -600,6 +613,7 @@ void CommandBuffer::endRendering()
 
 void CommandBuffer::beginCompute()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.beginCompute", _diagnosticIdentity.value);
     // Vulkan does not require a dedicated compute encoder, but the scope is
     // tracked for API consistency with the Metal backend.
     if (_renderingActive)
@@ -615,6 +629,7 @@ void CommandBuffer::beginCompute()
 
 void CommandBuffer::endCompute()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "CommandBuffer.endCompute", _diagnosticIdentity.value);
     if (!_computeActive)
     {
         throw std::runtime_error("vk::CommandBuffer::endCompute: no active compute scope; call beginCompute() first");
@@ -692,6 +707,10 @@ void CommandBuffer::bindPipeline(gpu::GraphicsPipeline* pipeline)
 
 void CommandBuffer::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDraws;
+    }
     flushPendingRendering();
     vkCmdDraw(_cmd, vertexCount, instanceCount, firstVertex, firstInstance);
 }
@@ -715,6 +734,10 @@ void CommandBuffer::bindPipeline(gpu::ComputePipeline* pipeline)
 
 void CommandBuffer::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDispatches;
+    }
     if (!_computeActive)
     {
         throw std::runtime_error("vk::CommandBuffer::dispatch: no active compute scope; call beginCompute() first");
@@ -816,6 +839,10 @@ void CommandBuffer::drawIndexed(uint32_t indexCount, uint32_t instanceCount,
                                 uint32_t firstIndex, int32_t vertexOffset,
                                 uint32_t firstInstance)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticDraws;
+    }
     flushPendingRendering();
     vkCmdDrawIndexed(_cmd, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 }
@@ -827,6 +854,10 @@ void CommandBuffer::copyImage(gpu::Image* source, gpu::Image* destination)
 
 void CommandBuffer::copyImage(const ImageView& source, const ImageView& destination)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticCopies;
+    }
     if (!_recording || _renderingActive || _computeActive || !_device)
     {
         throw std::logic_error("Image copies require recording outside active scopes");
@@ -876,6 +907,10 @@ void CommandBuffer::generateMipmaps(gpu::Image* image, ImageLayout finalLayout)
 
 void CommandBuffer::blitImage(gpu::Image* source, gpu::Image* destination)
 {
+    if (base::Log::deepDebugEnabled())
+    {
+        ++_diagnosticCopies;
+    }
     auto* nativeSource = dynamic_cast<vk::Image*>(source);
     auto* nativeDestination = dynamic_cast<vk::Image*>(destination);
     if (!_recording || _renderingActive || _computeActive || !nativeSource || !nativeDestination ||

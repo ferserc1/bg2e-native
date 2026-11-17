@@ -18,7 +18,12 @@
 
 #pragma once
 
+#include <cstdint>
+#include <utility>
 #include <iostream>
+#include <functional>
+#include <memory>
+#include <ostream>
 
 #include <bg2e/common.hpp>
 #include <bg2e/base/PlatformTools.hpp>
@@ -38,9 +43,33 @@ class BG2E_API Log {
 
     static bool isDebug();
 
-    Log(Level l) : _level{l}
+    // Starts a new exclusive session. Throws on initialization failure.
+    // An empty path resolves the executable directory using PlatformTools.
+    static void initializeDeepDebug(const std::filesystem::path& directory = {});
+    static void shutdownDeepDebug() noexcept;
+    static bool deepDebugEnabled() noexcept;
+    static uint64_t nextDiagnosticIdentity() noexcept;
+
+    template <typename Writer>
+    static void trace(const char* backend, const char* event, Writer&& writer, bool repeated = false) noexcept
     {
+        if (deepDebugEnabled())
+        {
+            try
+            {
+                writeTrace(backend, event, std::forward<Writer>(writer), repeated);
+            }
+            catch (...)
+            {
+                reportTraceFailure();
+            }
+        }
     }
+
+    Log(Level l);
+    ~Log();
+    Log(const Log& other);
+    Log& operator=(const Log& other);
 
     template <typename T>
     Log& operator<<(const T& value)
@@ -50,8 +79,30 @@ class BG2E_API Log {
         {
             out_fn << value;
         }
+        if (_level == Level::Warning || _level == Level::Error)
+        {
+            if (auto* capture = captureStream())
+            {
+                try
+                {
+                    *capture << value;
+                }
+                catch (...)
+                {
+                    reportTraceFailure();
+                }
+            }
+        }
         return *this;
     }
+
+  private:
+    struct Capture;
+    std::unique_ptr<Capture> _capture;
+    std::ostream* captureStream() noexcept;
+    static void writeTrace(const char* backend, const char* event,
+        const std::function<void(std::ostream&)>& writer, bool repeated);
+    static void reportTraceFailure() noexcept;
 
   protected:
     Level _level;
@@ -65,3 +116,7 @@ class BG2E_API Log {
 #define bg2e_log_error bg2e::base::Log(bg2e::base::Log::Level::Error)
 #define bg2e_log_debug bg2e::base::Log(bg2e::base::Log::Level::Debug)
 #define bg2e_log_end "\n"
+
+// Payloads are evaluated only while the persistent diagnostic session is active.
+#define bg2e_deep_trace(backend, event, payload) \
+    ::bg2e::base::Log::trace(backend, event, [&](std::ostream& trace) { trace << payload; })

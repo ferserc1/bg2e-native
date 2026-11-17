@@ -57,6 +57,7 @@ FormatCapabilities Device::formatCapabilities(PixelFormat format) const
 
 void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDevice, gpu::Surface* surface)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Device.create", _diagnosticIdentity.value);
     _submissions = std::make_shared<detail::SubmissionState>();
     _timingIdentity = detail::nextTimingIdentity();
     auto* metalPhysDevice = dynamic_cast<metal::PhysicalDevice*>(physicalDevice);
@@ -67,6 +68,9 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
 
     _device = metalPhysDevice->metalDevice();
     _device->retain();
+    bg2e_deep_trace("metal", "device.identity", "device=" << _diagnosticIdentity.value
+        << " name=" << metalPhysDevice->properties()->name << " vendor=" << metalPhysDevice->properties()->vendor
+        << " id=" << metalPhysDevice->properties()->id);
     _renderingCapabilities = metalPhysDevice->properties()->rendering;
     _rayTracingCapabilities = metalPhysDevice->properties()->rayTracing;
     const bool tier2 = _device->argumentBuffersSupport() == MTL::ArgumentBuffersTier2;
@@ -102,7 +106,6 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
         throw std::runtime_error("metal::Device::create: failed to create command queues");
     }
 
-    if (base::Log::isDebug())
     {
         gfxQueue->setLabel(NS::String::string("Graphics Queue", NS::UTF8StringEncoding));
         presentQueue->setLabel(NS::String::string("Present Queue", NS::UTF8StringEncoding));
@@ -125,6 +128,7 @@ void Device::create(gpu::Instance* /*instance*/, gpu::PhysicalDevice* physicalDe
 
 void Device::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Device.cleanup", _diagnosticIdentity.value);
     if (_device)
     {
         _submissions->drain({}, true);
@@ -145,6 +149,7 @@ void Device::cleanup()
 
 void Device::waitIdle()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Device.waitIdle", _diagnosticIdentity.value);
     base::CpuProfileScope profile("metal.device.waitIdle");
     if (_device)
     {
@@ -163,10 +168,12 @@ const gpu::Queue& Device::graphicsQueue() const
 {
     return _graphicsQueue;
 }
+
 const gpu::Queue& Device::presentQueue() const
 {
     return _presentQueue;
 }
+
 const gpu::Queue& Device::transferQueue() const
 {
     return _transferQueue;
@@ -279,15 +286,18 @@ void Device::immediateSubmit(std::function<void(gpu::CommandBuffer*)>&& function
 
 void Device::create(gpu::Instance*, gpu::PhysicalDevice*, gpu::Surface*)
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Device.create", _diagnosticIdentity.value);
     throw std::runtime_error("Metal backend is not available on this platform");
 }
 
 void Device::cleanup()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Device.cleanup", _diagnosticIdentity.value);
 }
 
 void Device::waitIdle()
 {
+    detail::DiagnosticScope diagnosticScope("metal", "Device.waitIdle", _diagnosticIdentity.value);
 }
 
 bool Device::isValid() const
@@ -299,10 +309,12 @@ const gpu::Queue& Device::graphicsQueue() const
 {
     return _graphicsQueue;
 }
+
 const gpu::Queue& Device::presentQueue() const
 {
     return _presentQueue;
 }
+
 const gpu::Queue& Device::transferQueue() const
 {
     return _transferQueue;

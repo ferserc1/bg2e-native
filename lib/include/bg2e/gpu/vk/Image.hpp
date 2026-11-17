@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/gpu/detail/DeepDebug.hpp>
 #include <bg2e/gpu/Image.hpp>
 #include <bg2e/gpu/vk/common.hpp>
 #include <vector>
@@ -98,6 +99,8 @@ class Image : public gpu::Image {
         const std::string& debugName);
 
   private:
+    detail::DiagnosticIdentity _diagnosticIdentity;
+
     void createView();
 
 

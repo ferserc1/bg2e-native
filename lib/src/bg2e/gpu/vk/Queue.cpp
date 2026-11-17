@@ -16,6 +16,7 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/base/Log.hpp>
 #include <bg2e/gpu/vk/Queue.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/gpu/vk/Device.hpp>
@@ -30,6 +31,7 @@ namespace bg2e::gpu::vk {
 namespace {
 void check(VkResult result, const char* operation)
 {
+    bg2e_deep_trace("vk", "native.result", "operation=" << operation << " result=" << result);
     if (result != VK_SUCCESS)
     {
         throw std::runtime_error(std::string(operation) + ": Vulkan result " + std::to_string(result));
@@ -58,6 +60,7 @@ VkQueue Queue::handle() const
 
 void Queue::initCommandPool(VkDevice device, vk::Device* gpuDevice)
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Queue.initCommandPool", _diagnosticIdentity.value);
     _device = device;
     _gpuDevice = gpuDevice;
     _submissions = gpuDevice->submissionState();
@@ -102,6 +105,7 @@ void Queue::initCommandPool(VkDevice device, vk::Device* gpuDevice)
 
 void Queue::destroyCommandPool()
 {
+    detail::DiagnosticScope diagnosticScope("vk", "Queue.destroyCommandPool", _diagnosticIdentity.value);
     if (_timings)
     {
         _timings->close();
@@ -119,6 +123,7 @@ void Queue::destroyCommandPool()
 
 std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string& debugName) const
 {
+    detail::DiagnosticScope diagnosticScope("vk", "queue.createCommandBuffer", _diagnosticIdentity.value);
     requireDebugName(debugName);
     if (!_submissions)
     {
@@ -167,6 +172,9 @@ std::shared_ptr<gpu::CommandBuffer> Queue::createCommandBuffer(const std::string
         name.pObjectName = debugName.c_str();
         nameObject(_device, name.objectType, name.objectHandle, name.pObjectName);
     }
+    bg2e_deep_trace("vk", "command.create", "queue=" << _diagnosticIdentity.value
+        << " command=" << command->_diagnosticIdentity.value << " name=" << debugName
+        << " nativeNaming=" << (setDebugUtilsObjectName != nullptr));
     return command;
 }
 
@@ -226,23 +234,30 @@ void Queue::submit(gpu::CommandBuffer* command) const
                                                   delete value;
                                               });
     }
+    const uint64_t submission = base::Log::deepDebugEnabled() ? base::Log::nextDiagnosticIdentity() : 0;
+    const uint64_t commandIdentity = cmd->_diagnosticIdentity.value;
     auto record = std::make_shared<detail::CompletionRecord>(
-        [device = _device, fence, ownedFence, allocation = cmd->_allocation]
+        [device = _device, fence, ownedFence, allocation = cmd->_allocation, submission, commandIdentity]
         {
             auto result = vkGetFenceStatus(device, fence);
             if (result == VK_NOT_READY)
             {
                 return false;
             }
+            bg2e_deep_trace("vk", "submission.status", "submission=" << submission << " command=" << commandIdentity << " result=" << result);
             check(result, "vkGetFenceStatus");
             return true;
         },
-        [device = _device, fence, ownedFence, allocation = cmd->_allocation]
+        [device = _device, fence, ownedFence, allocation = cmd->_allocation, submission, commandIdentity]
         {
-            check(vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX), "vkWaitForFences");
+            bg2e_deep_trace("vk", "submission.wait.enter", "submission=" << submission << " command=" << commandIdentity);
+            const auto result = vkWaitForFences(device, 1, &fence, VK_TRUE, UINT64_MAX);
+            bg2e_deep_trace("vk", "submission.wait.return", "submission=" << submission << " command=" << commandIdentity << " result=" << result);
+            check(result, "vkWaitForFences");
         },
-        [ticket = cmd->_submissionTiming](bool success)
+        [ticket = cmd->_submissionTiming, submission, commandIdentity](bool success)
         {
+            bg2e_deep_trace("vk", "submission.complete", "submission=" << submission << " command=" << commandIdentity << " success=" << success);
             if (ticket)
             {
                 ticket->complete(success);
@@ -261,6 +276,9 @@ void Queue::submit(gpu::CommandBuffer* command) const
         {
             cmd->_submissionFrame->trackSubmission(record);
         }
+        bg2e_deep_trace("vk", "submission.submit.enter", "queue=" << _diagnosticIdentity.value
+            << " submission=" << submission << " record=" << record->id << " command=" << commandIdentity
+            << " surface=" << cmd->_diagnosticSurface << " frame=" << cmd->_diagnosticFrame << " slot=" << cmd->_diagnosticSlot);
         if (presenting)
         {
             check(vkResetFences(_device, 1, &fence), "vkResetFences");
@@ -280,6 +298,7 @@ void Queue::submit(gpu::CommandBuffer* command) const
         _submissions->cancel(record, std::current_exception());
         throw;
     }
+    bg2e_deep_trace("vk", "submission.submit.return", "submission=" << submission << " command=" << commandIdentity);
     timingFailure.accepted = true;
     cmd->publishRecordingSubmission(record);
     cmd->_executable = false;
@@ -290,7 +309,9 @@ void Queue::submit(gpu::CommandBuffer* command) const
         auto swapchain = frame->swapchain();
         auto index = frame->imageIndex();
         auto info = Info::presentInfo(swapchain, semaphore, index);
+        bg2e_deep_trace("vk", "present.enter", "submission=" << submission << " command=" << commandIdentity << " image=" << index);
         auto result = queuePresent(_queue, &info);
+        bg2e_deep_trace("vk", "present.return", "submission=" << submission << " command=" << commandIdentity << " result=" << result);
         if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR)
         {
             frame->requestRecreate();
