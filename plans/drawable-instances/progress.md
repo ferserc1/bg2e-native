@@ -461,3 +461,12 @@ The user confirmed that instance lightmaps work, approved copying the selected o
 - No compilation or runtime tests were run. No new graphics verification is claimed.
 
 Steps 01–10 are user-accepted and step 11 documentation is delivered. Final documentation review remains with the user. Exact next step: **None**; no remaining implementation/documentation task is scheduled in this plan.
+
+
+### Post-completion correction: Model Edit material patch compilation
+
+The user reported a full-project compilation failure in Model Edit's material-patch action. That deferred callback still locked SelectionItem::mesh directly, yielding the const identity reference introduced for shared renderables, and passed it to MaterialModifier::apply(Drawable&, index).
+
+The action now captures the complete SelectionItem and calls lockMesh() when its queued edit executes, matching the other Model Edit material actions. This yields validated mutable owner access while checking component/node membership, resource identity and submesh bounds. MaterialModifier signatures and instance read-only geometry restrictions remain unchanged. No const cast or API change was introduced.
+
+No compilation or runtime tests were run, following the standing instruction. `git diff --check` passes. User full-project compilation is pending for this correction.

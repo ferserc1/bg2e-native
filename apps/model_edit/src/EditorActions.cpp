@@ -312,14 +312,13 @@ void AppDelegate::applyMaterialPatch(const std::filesystem::path& path)
         }
         for (const auto& item : _selection->selectedItems())
         {
-            const auto identity = item->mesh;
-            const auto submesh = item->submesh;
-            queueNodeEdit(item->node, [identity, submesh, patch](auto& node)
+            const auto target = *item;
+            queueNodeEdit(target.node, [target, patch](auto&)
             {
-                auto mesh = identity.lock();
-                if (mesh && node.drawable() && node.drawable()->drawable() == mesh && submesh < mesh->submeshesCount())
+                auto mesh = target.lockMesh();
+                if (mesh)
                 {
-                    patch.apply(*mesh, submesh);
+                    patch.apply(*mesh, target.submesh);
                 }
             });
         }
