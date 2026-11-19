@@ -48,6 +48,7 @@ class BG2E_API LightmapBakeExecutor {
     void cleanup();
 
     std::shared_ptr<const UvSurfaceGeometry> prepareGeometry(std::shared_ptr<draw::Drawable> drawable);
+    std::shared_ptr<const UvSurfaceGeometry> prepareGeometry(std::shared_ptr<scene::DrawableRenderComponent> receiver);
     std::shared_ptr<draw::pipeline::TracingSnapshot> prepareFrame(uint32_t slot, uint64_t serial,
         const draw::RenderQueue& queue);
     BakeSample record(const UvSurfaceInput& input, uint32_t sampleIndex,

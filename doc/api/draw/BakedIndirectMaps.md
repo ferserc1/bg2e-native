@@ -96,3 +96,14 @@ interactive half-float display range; their file integrity does not promise the
 G-buffer can display those values without its independent range checks. Original
 material ownership remains unchanged. [Generic complete DB IO](../db/DrawResourceIO.md)
 and whole-batch manifest publication have distinct policies.
+
+## Independent instance lightmaps
+
+Each DrawableInstanceComponent owns independent material definitions and native
+material bindings. Applying a map changes that instance's AO-slot source and
+bakedAO/bakedGI metadata, without editing cache originals or another receiver.
+Complete scene saving packages these images in each instance's material JSON and
+exports shared geometry once per used resource. Composer's material command
+retains generated source leases and before/after paths for undo/redo and cleanup
+protection. Creating from an edited owner captures its unsaved baked material;
+creating from the cache uses original defaults.

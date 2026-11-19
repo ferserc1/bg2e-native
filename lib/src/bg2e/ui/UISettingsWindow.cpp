@@ -123,6 +123,7 @@ void UISettingsWindow::drawUI()
         {"Directional Light", GizmoType::DirectionalLight},
         {"Sun Light", GizmoType::SunLight},
         {"Environment", GizmoType::Environment},
+        {"Drawable Instance", GizmoType::DrawableInstance},
     };
 
     for (auto& entry : types)

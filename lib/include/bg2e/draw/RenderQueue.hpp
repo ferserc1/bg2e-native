@@ -26,9 +26,12 @@
 namespace bg2e::scene {
 class Node;
 class EnvironmentComponent;
+class DrawableRenderComponent;
 }
 
 namespace bg2e::draw {
+class DrawableUsageLease;
+
 enum class RenderQueueType
 {
     Opaque, Transparent, SolidTransparent
@@ -40,6 +43,8 @@ class BG2E_API RenderQueue {
         std::string nodeId;
         uint32_t objectId = 0;
         uint32_t submeshIndex = 0;
+        // Declared before geometry so destruction releases borrowed BLAS first.
+        std::shared_ptr<DrawableUsageLease> resourceLease;
         std::shared_ptr<Drawable::DrawMesh> drawMesh;
         std::shared_ptr<MaterialBase> drawMaterial;
         std::array<std::shared_ptr<Texture>, 6> textures;
@@ -59,7 +64,9 @@ class BG2E_API RenderQueue {
     };
 
     void beginFrame(Engine& engine);
-    void enqueue(scene::Node& node, const std::shared_ptr<Drawable>& drawable, uint32_t submesh, const glm::mat4& world);
+    void enqueue(scene::Node& node, const std::shared_ptr<const Drawable>& drawable, uint32_t submesh, const glm::mat4& world);
+    void enqueue(scene::Node& node, const scene::DrawableRenderComponent& component,
+        uint32_t submesh, const glm::mat4& world);
     void sort(const glm::vec3& cameraPosition);
     // Omit transparent receivers and tracing instances from this extracted frame.
     void excludeTransparent();
@@ -74,6 +81,9 @@ class BG2E_API RenderQueue {
     void clear();
 
   private:
+    void enqueueResource(scene::Node& node, const std::shared_ptr<const Drawable>& resource,
+        uint32_t submesh, const glm::mat4& world, const scene::DrawableRenderComponent* effective);
+
     Engine* _engine = nullptr;
     std::vector<Item> _items;
     std::vector<Item> _opaque;

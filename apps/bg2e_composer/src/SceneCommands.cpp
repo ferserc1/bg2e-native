@@ -23,6 +23,7 @@
 #include "command/component/TextCommands.hpp"
 
 #include <bg2e/app/PreferencesStore.hpp>
+#include <bg2e/app/MessageBox.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <stdexcept>
 #include <cstdio>
@@ -198,9 +199,8 @@ void AppDelegate::selectTreeNode(std::weak_ptr<bg2e::scene::Node> node, bool add
 void AppDelegate::selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t submesh, bool additive)
 {
     auto target = node.lock();
-    auto* component = target ? target->drawable() : nullptr;
-    auto mesh = component ? component->drawable() : nullptr;
-    if (!mesh || submesh >= mesh->submeshesCount())
+    auto* component = target ? target->drawableRender() : nullptr;
+    if (!component || !component->geometry() || submesh >= component->submeshesCount())
     {
         return;
     }
@@ -209,17 +209,13 @@ void AppDelegate::selectNode(std::weak_ptr<bg2e::scene::Node> node, uint32_t sub
     {
         return;
     }
-    bg2e::manipulation::SelectionItem item;
-    item.node = target;
-    item.drawable = std::static_pointer_cast<bg2e::scene::DrawableComponent>(component->shared_from_this());
-    item.mesh = mesh;
-    item.submesh = submesh;
-    item.selectionIdentifier = selectable->identifier(submesh);
+    auto item = bg2e::manipulation::SelectionItem::forRenderable(*target, *component, submesh);
     selectPickedItem(item, additive);
 }
 
 
 bg2e::app::CommandResult AppDelegate::editSubmeshMetadata(command::scene::MetadataRequest request)
+try
 {
     for (const auto& target : request.targets)
     {
@@ -232,9 +228,23 @@ bg2e::app::CommandResult AppDelegate::editSubmeshMetadata(command::scene::Metada
     }
     command::Effects effects;
     effects.renderHistories = true;
-    effects.lightmapSources = request.field == command::scene::MetadataField::Visibility;
+    effects.lightmapSources = request.field == command::scene::MetadataField::Visibility ||
+        request.field == command::scene::MetadataField::SubmeshTransform || request.field == command::scene::MetadataField::DrawableTransform;
     return submitSceneCommand(std::make_unique<command::scene::EditMetadata>(_stage, std::move(request)),
         effects, command::Boundary::CpuValue);
+}
+
+catch (const std::exception& error)
+{
+    _status = error.what();
+    bg2e::app::MessageBox::showError("Submesh property edit rejected", _status);
+    return {bg2e::app::CommandStatus::Rejected, "Submesh property edit rejected; previous values retained"};
+}
+catch (...)
+{
+    _status = "Submesh property edit rejected; previous values retained";
+    bg2e::app::MessageBox::showError("Submesh property edit rejected", _status);
+    return {bg2e::app::CommandStatus::Rejected, "Submesh property edit rejected; previous values retained"};
 }
 
 
@@ -296,6 +306,12 @@ void AppDelegate::componentAction(const std::shared_ptr<bg2e::scene::Component>&
     using command::component::Action;
     if (!settleEditDrafts())
     {
+        return;
+    }
+    if (auto owner = std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(component);
+        owner && intent.objectPath.empty() && intent.action == "Swap Drawable")
+    {
+        replaceOwnerDrawable(owner);
         return;
     }
     Action action;

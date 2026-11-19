@@ -23,12 +23,13 @@
 
 namespace bg2e_composer::command::scene {
 
-enum class MetadataField { Name, Group, Visibility };
+enum class MetadataField { Name, Group, Visibility, SubmeshTransform, DrawableTransform };
 struct MetadataRequest {
     std::vector<bg2e::manipulation::SelectionItem> targets;
     MetadataField field = MetadataField::Name;
     std::string text;
     bool visible = true;
+    glm::mat4 transform{1};
 };
 
 class EditMetadata final : public bg2e::app::Command {
@@ -42,7 +43,7 @@ class EditMetadata final : public bg2e::app::Command {
     bg2e::app::CommandResult redo() noexcept override;
 
   private:
-    struct Value { std::string text; bool visible = true; };
+    struct Value { std::string text; bool visible = true; glm::mat4 transform{1}; };
     std::weak_ptr<StageScene> _stage;
     MetadataRequest _request;
     std::vector<Value> _before, _after;

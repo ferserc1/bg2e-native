@@ -30,7 +30,8 @@ manifest. Repeated/incomplete commit and wrong format/resolution/identity reject
 ## Plans and protected inputs
 
 Target contains identity, inputModelPath and shared node. Identities must be
-nonempty/unique; all targets are attached draw Drawables under one scene root.
+nonempty/unique; targets are loaded owners or instance receivers attached under
+one scene root.
 CPU geometry must agree with uploaded geometry. OutputPaths contains identity,
 imagePath, metadataPath and optional modelPath. Names combine target index and a
 sanitized identity inside a fresh unique generation, preventing path/case collisions.
@@ -77,7 +78,10 @@ uvSet 1, indirectMultiplierRGB, bakedAO/bakedGI, CPU/storage format, conversion,
 exposure, nearest-chart dilation and requested settings. Validity/chart coverage
 is not inferred from alpha one or neutral white. See [LightmapOutput](LightmapOutput.md).
 
-Optional model copies clone independent CPU/GPU mesh/material/native texture
+Optional model copies require owner targets; requesting them for an instance
+rejects during preflight. Instance jobs export image/metadata entries and persist
+application through their independent scene materials. Owner model copies clone
+independent CPU/GPU mesh/material/native texture
 owners, set the actual staged map on the AO slot with linear color/UV2/scale one/
 channel zero and explicit baked AO/GI mode, then update clone materials. Complete
 `db::storeDrawableBg2(path, engine, node)` copies assigned image sources and materializes GPU-only textures as PNG/HDR;
@@ -124,3 +128,13 @@ Sources: [header](../../../lib/include/bg2e/bake/LightmapOutputWriter.hpp),
 [implementation](../../../lib/src/bg2e/bake/LightmapOutputWriter.cpp),
 [native complete IO](../db/DrawResourceIO.md),
 [independent inspector](../../../tests/bake/product/README.md).
+
+## Resident dependencies
+
+Preflight protects independent instance model/material paths and all reachable
+resident cache dependency snapshots, including originals and retained versions.
+The writer holds Job leases. Its source signature includes cache scope identities
+and content generations, so later cache content changes invalidate the plan.
+Output identity remains per receiver node; geometry/BLAS retention is per resource.
+These checks extend existing strict source validation, without allowing partial
+batch publication or silently dropping required bake inputs.

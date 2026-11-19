@@ -16,6 +16,8 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/scene/drawable_resources.hpp>
+#include "Receiver.hpp"
 #include <bg2e/bake/StandaloneBakerContext.hpp>
 #include <bg2e/bake/LightmapCompositionPass.hpp>
 #include <bg2e/base/CpuProfile.hpp>
@@ -27,6 +29,7 @@
 #include <bg2e/draw/environment/EnvironmentGenerator.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <array>
 #include <cstring>
@@ -92,6 +95,7 @@ bool sameQueue(const draw::RenderQueue& a, const draw::RenderQueue& b)
 // Shared validity/ownership survives the context handle, so late baker handles
 // fail explicitly. Mutable execution resources remain exclusive to one target.
 struct StandaloneBakeState {
+    scene::DrawableResourceRetention resourceUses;
     BakerContextConfiguration configuration;
     draw::Engine* engine = nullptr;
     StandaloneBakerContext::State lifecycle = StandaloneBakerContext::State::Created;
@@ -222,10 +226,10 @@ struct StandaloneLightmapBaker::Impl {
             }
             found = found || ancestor == state->configuration.sceneRoot.get();
         }
-        auto* component = node->drawable();
-        auto drawable = component ? component->drawable() : nullptr;
+        auto* component = node->drawableRender();
+        auto drawable = component ? detail::receiverResource(*component) : nullptr;
         const auto world = node->worldMatrix();
-        if (!found || !drawable || !geometry || drawable != geometry->target || drawable->drawMesh() != geometry->drawMesh ||
+        if (!found || !drawable || !geometry || component != geometry->receiver.get() || drawable != geometry->resource || drawable->drawMesh() != geometry->drawMesh ||
             std::memcmp(&world,&nodeWorld,sizeof(glm::mat4)) != 0)
         {
             throw std::logic_error("Standalone bake target was removed, replaced, reloaded or transformed");
@@ -325,6 +329,13 @@ void StandaloneBakerContext::prepareScene(std::shared_ptr<scene::Node> root,
     auto configuration = _state->configuration;
     configuration.sceneRoot = std::move(root);
     configuration.validate();
+    scene::DrawableComponent::prepareResources(configuration.sceneRoot.get(), *_state->engine);
+    scene::DrawableInstanceComponent::prepareResources(configuration.sceneRoot.get(), *_state->engine);
+    auto retained = scene::retainDrawableResources(*configuration.sceneRoot, draw::DrawableUse::Job, "standalone-bake-context");
+    if (!retained.diagnostic.ok())
+    {
+        throw std::runtime_error(retained.diagnostic.message);
+    }
     auto queue = _state->extract(configuration.sceneRoot.get());
     if (environment)
     {
@@ -349,6 +360,7 @@ void StandaloneBakerContext::prepareScene(std::shared_ptr<scene::Node> root,
     }
     _state->configuration = std::move(configuration);
     _state->baseline = std::move(queue);
+    _state->resourceUses = std::move(retained);
     _state->blasGenerations = std::move(blasGenerations);
     _state->environmentGenerations = _state->environmentIdentity();
     _state->lifecycle = State::SceneReady;
@@ -414,6 +426,7 @@ void StandaloneBakerContext::cleanup()
     }
     _state->lifecycle = State::Cleaned;
     _state->baseline.clear();
+    _state->resourceUses = {};
     _state->blasGenerations.clear();
     _state->configuration.sceneRoot.reset();
     _state->configuration.environment.reset();
@@ -521,8 +534,8 @@ void StandaloneLightmapBaker::resetAccumulation()
     _impl->checkJob();
     state.checkSources();
     configuration().validate();
-    auto* component = configuration().target->drawable();
-    auto drawable = component ? component->drawable() : nullptr;
+    auto* component = configuration().target->drawableRender();
+    auto drawable = component ? detail::receiverResource(*component) : nullptr;
     if (!drawable || !drawable->isLoaded() || drawable->engine() != state.engine)
     {
         throw std::invalid_argument("Standalone target needs a loaded same-Engine draw Drawable");
@@ -540,7 +553,7 @@ void StandaloneLightmapBaker::resetAccumulation()
     {
         _impl->executor = std::make_unique<LightmapBakeExecutor>(state.configuration);
         _impl->executor->initialize(_impl->frozen);
-        _impl->geometry = _impl->executor->prepareGeometry(drawable);
+        _impl->geometry = _impl->executor->prepareGeometry(std::dynamic_pointer_cast<scene::DrawableRenderComponent>(component->shared_from_this()));
         _impl->nodeWorld = configuration().target->worldMatrix();
         _impl->checkTarget();
         AccumulationConfiguration accumulation;

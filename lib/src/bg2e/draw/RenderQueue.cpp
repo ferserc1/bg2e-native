@@ -37,7 +37,21 @@ void RenderQueue::beginFrame(Engine& engine)
     _engine = &engine;
 }
 
-void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& drawable, uint32_t submesh, const glm::mat4& world)
+void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<const Drawable>& drawable, uint32_t submesh, const glm::mat4& world)
+{
+    enqueueResource(node, drawable, submesh, world, nullptr);
+}
+
+
+void RenderQueue::enqueue(scene::Node& node, const scene::DrawableRenderComponent& component,
+    uint32_t submesh, const glm::mat4& world)
+{
+    enqueueResource(node, component.renderResource(), submesh, world, &component);
+}
+
+
+void RenderQueue::enqueueResource(scene::Node& node, const std::shared_ptr<const Drawable>& drawable,
+    uint32_t submesh, const glm::mat4& world, const scene::DrawableRenderComponent* effective)
 {
     if (!_engine || !drawable || !drawable->isLoaded() || drawable->engine() != _engine || !drawable->drawMesh())
     {
@@ -53,12 +67,13 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
     {
         throw std::invalid_argument("Draw mesh buffers are stale or belong to another device");
     }
-    const auto material = drawable->drawMaterial(submesh);
+    const auto material = effective ? effective->drawMaterial(submesh) : drawable->drawMaterial(submesh);
     if (!material || material->engine() != _engine)
     {
         throw std::invalid_argument("Draw material belongs to an incompatible context");
     }
-    if (!drawable->submeshVisibility(submesh) || !material->materialAttributes().visible())
+    if (!(effective ? effective->submeshVisibility(submesh) : drawable->submeshVisibility(submesh)) ||
+        !material->materialAttributes().visible())
     {
         return;
     }
@@ -87,15 +102,16 @@ void RenderQueue::enqueue(scene::Node& node, const std::shared_ptr<Drawable>& dr
     item.nodeId = node.identifier();
     item.objectId = uint32_t(_items.size()) + 1;
     item.submeshIndex = submesh;
+    item.resourceLease = effective ? effective->retainFrameResources() : nullptr;
     item.drawMesh = drawable->drawMesh();
     item.drawMaterial = material;
     item.materialData = packMaterial(*material, &item.materialRevisions);
     // Text's alpha source is essential: descriptor-capacity fallback must omit
     // its visibility contribution, never replace the glyph mask with a quad.
-    const auto* text = dynamic_cast<scene::TextComponent*>(node.drawable());
+    const auto* text = dynamic_cast<scene::TextComponent*>(node.drawableRender());
     item.materialData.emissionAlpha.z = text && text->drawable().get() == drawable.get() ? 1.0f : 0.0f;
     item.worldMatrix = world;
-    item.rayTracingEnabled = drawable->rayTracingEnabled();
+    item.rayTracingEnabled = effective ? effective->rayTracingEnabled() : drawable->rayTracingEnabled();
     if (submesh < drawable->rayTracingMeshes().size())
     {
         item.tracingMesh = drawable->rayTracingMesh(submesh);

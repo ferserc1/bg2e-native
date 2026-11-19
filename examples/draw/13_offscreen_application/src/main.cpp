@@ -48,6 +48,7 @@ struct Options {
     std::optional<gpu::Size2D> internalExtent;
     std::optional<float> scale;
     fs::path graphicsConfig;
+    fs::path cachedModel;
     draw::UnknownSettingPolicy unknownSettings = draw::UnknownSettingPolicy::Reject;
     bool help = false;
 };
@@ -152,6 +153,14 @@ Options parseOptions(int argc, char** argv)
                 throw std::invalid_argument("--backend expects vulkan or metal");
             }
         }
+        else if (option == "--cached-model")
+        {
+            options.cachedModel = value();
+            if (options.cachedModel.empty())
+            {
+                throw std::invalid_argument("--cached-model requires a BG2 path");
+            }
+        }
         else if (option == "--graphics-config")
         {
             options.graphicsConfig = value();
@@ -198,6 +207,7 @@ void printUsage(const char* executable)
         << "  --scale N                        internal scale from 0.25 to 1\n"
         << "  --frames N                       completed samples, 1 to 1048576\n"
         << "  --backend vulkan|metal           GPU backend\n"
+        << "  --cached-model FILE              reuse one resident BG2 in two independent instances\n"
         << "  --graphics-config FILE           exported draw settings JSON\n"
         << "  --skip-unknown-settings          skip unavailable/unknown exported targets\n"
         << "  --help                           show this help\n"
@@ -325,6 +335,8 @@ class OffscreenScene final : public draw::DefaultOffscreenApplicationDelegate {
             }
         }
         _drawables.clear();
+        _cachedJob = {};
+        _cachedContext.reset();
         if (error)
         {
             std::rethrow_exception(error);
@@ -354,6 +366,51 @@ class OffscreenScene final : public draw::DefaultOffscreenApplicationDelegate {
     std::shared_ptr<scene::Node> createScene() override
     {
         auto root = std::make_shared<scene::Node>("Offscreen deferred scene");
+        if (!_options.cachedModel.empty())
+        {
+            // Cache loading and job retention precede any scene-node binding.
+            _cachedContext = _engine->createDrawableCache();
+            const auto first = db::loadCachedDrawableBg2(_options.cachedModel, *_cachedContext);
+            const auto second = db::loadCachedDrawableBg2(_options.cachedModel, *_cachedContext);
+            if (!first || !second)
+            {
+                throw std::runtime_error(!first ? first.diagnostic.message : second.diagnostic.message);
+            }
+            if (first.handle != second.handle || _cachedContext->entries().size() != 1)
+            {
+                throw std::logic_error("Repeated offscreen cache load did not reuse its resident identity");
+            }
+            auto retained = _cachedContext->retain(first.handle, draw::DrawableUse::Job, "offscreen-cached-model-job");
+            if (!retained)
+            {
+                throw std::runtime_error(retained.diagnostic.message);
+            }
+            _cachedJob = std::move(retained.lease);
+            root->setDrawableCacheContext(_cachedContext);
+            for (uint32_t index = 0; index < 2; ++index)
+            {
+                auto instance = std::make_shared<scene::DrawableInstanceComponent>();
+                const auto bound = instance->setResource(*_cachedContext, first.handle);
+                if (!bound.ok())
+                {
+                    throw std::runtime_error(bound.message);
+                }
+                for (uint32_t sub = 0; sub < instance->submeshesCount(); ++sub)
+                {
+                    instance->material(sub).setRoughness(index ? 0.8f : 0.2f);
+                }
+                instance->prepareResources(*_engine);
+                if (!instance->resourcesLoaded())
+                {
+                    throw std::runtime_error("Offscreen instance appearance could not be prepared");
+                }
+                auto node = std::make_shared<scene::Node>("Cached instance " + std::to_string(index));
+                node->addComponent(scene::TransformComponent::makeTranslated({index ? 3.0f : -3.0f, 0, -3}));
+                node->addComponent(std::move(instance));
+                root->addChild(node);
+            }
+            std::cout << "Offscreen cache: one resident model, two instances, one retained job\n";
+        }
         root->addComponent(new scene::EnvironmentComponent(base::PlatformTools::assetPath(), "HDR_multi_nebulae_1.hdr"));
 
         auto model = std::make_shared<draw::Drawable>();
@@ -471,6 +528,8 @@ class OffscreenScene final : public draw::DefaultOffscreenApplicationDelegate {
         return node;
     }
 
+    std::shared_ptr<draw::DrawableCache> _cachedContext;
+    draw::DrawableUsageLease _cachedJob;
     Options _options;
     fs::path _outputFile;
     std::vector<std::shared_ptr<draw::Drawable>> _drawables;

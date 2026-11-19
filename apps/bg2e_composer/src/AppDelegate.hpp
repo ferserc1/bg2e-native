@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <bg2e/scene/drawable_resources.hpp>
 #include "StageScene.hpp"
 #include "command/scene/MetadataCommands.hpp"
 #include "command/geometry/GeometryCommands.hpp"
@@ -38,6 +39,7 @@
 #include <bg2e/bake/LightmapPixels.hpp>
 #include <bg2e/scene/InputVisitor.hpp>
 #include <bg2e/ui/Loader.hpp>
+#include <bg2e/ui/DrawableInstancesWindow.hpp>
 
 #include <optional>
 #include <exception>
@@ -131,6 +133,15 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     const bg2e::db::SceneResourceAnalysis* sceneResourceAnalysis() const;
     bool sceneResourceOperationAvailable() const;
 
+    const bg2e::ui::DrawableBrowserSnapshot& drawableBrowserSnapshot() const;
+    void loadDrawableIntoCache();
+    void unloadCachedDrawable(bg2e::draw::DrawableResourceHandle handle);
+    void createDrawableInstance(bg2e::draw::DrawableResourceHandle handle);
+    void createDrawableInstanceFromOwner();
+    void rebindSelectedDrawableInstance(bg2e::draw::DrawableResourceHandle handle);
+    void removeSelectedDrawableInstance();
+    bool canCreateDrawableInstanceFromOwner() const;
+
 
     std::shared_ptr<bg2e::manipulation::SelectionManager> selection() const
     {
@@ -177,6 +188,8 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const std::string& typeName);
 
     void editGeometry(command::geometry::Operation operation);
+    bool geometryEditAvailable() const;
+    void replaceOwnerDrawable(std::weak_ptr<bg2e::scene::DrawableComponent> target);
     void duplicateSelection();
     bool materialEditIntent(bg2e::ui::EditPhase phase, uint64_t interaction,
         const bg2e::ui::MaterialEditTargets& targets, const bg2e::ui::MaterialEditIntent& intent);
@@ -269,13 +282,15 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::filesystem::path chooseSavePath();
 
     struct PendingIo {
-        enum class Kind { Open, Save, New, Export, AnalyzeResources, CleanupResources };
+        enum class Kind { Open, Save, New, Export, AnalyzeResources, CleanupResources, LoadDrawable, UnloadDrawable };
         Kind kind = Kind::Open;
         std::filesystem::path path;
+        bg2e::draw::DrawableResourceHandle drawable;
         uint64_t generation = 0;
         std::weak_ptr<bg2e::scene::Node> parent;
         std::vector<std::weak_ptr<bg2e::scene::Node>> targets;
         std::optional<bg2e::db::SceneCleanupPlan> resourceCleanupPlan;
+        std::vector<std::shared_ptr<bg2e::draw::DrawableCache>> resourceCleanupContexts;
         bool ignoreResourceWarnings = false;
         bool batch = false;
         bool destinationConfirmed = false;
@@ -289,6 +304,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
         };
         std::vector<Resource> resources;
         size_t nextResource = 0;
+        std::vector<std::string> resourceWarnings;
     };
     void queueSceneCommand(std::function<std::unique_ptr<bg2e::app::Command>()> prepare,
         command::Effects effects = {.lightmapSources = true, .renderHistories = true});
@@ -344,6 +360,8 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::string _importStatus;
 
     void processDocumentIo();
+    void refreshDrawableBrowser() noexcept;
+    void queueDrawableCommand(std::function<std::unique_ptr<bg2e::app::Command>()> prepare);
     bool saveBeforeReplace();
     bool _preparing = false;
     bool _asyncLoadInProgress = false;
@@ -353,7 +371,10 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     bool _quitConfirmed = false;
     std::function<void()> _quit;
     std::optional<PendingIo> _pendingIo;
+    bg2e::ui::DrawableBrowserSnapshot _drawableBrowser;
+    bg2e::draw::DrawableResourceHandle _lastLoadedDrawable;
     std::optional<bg2e::db::SceneResourceAnalysis> _resourceAnalysis;
+    std::vector<std::weak_ptr<bg2e::draw::DrawableCache>> _resourceAnalysisContexts;
     bg2e::app::CommandDocumentState _resourceAnalysisState;
     uint64_t _resourceAnalysisGeneration = 0;
     std::filesystem::path _resourceAnalysisSavePath;
@@ -361,6 +382,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::string _lastEnvironmentError;
     std::string _viewpointStatus;
 
+    bg2e::scene::DrawableResourceRetention _bakeResourceUses;
     std::shared_ptr<bg2e::bake::IntegratedBakerContext> _bakeContext;
     std::shared_ptr<bg2e::scene::Scene> _bakeScene;
     std::string _bakeWarning;
@@ -373,7 +395,9 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::weak_ptr<bg2e::scene::Node> _bakeTarget;
     struct BakeTarget {
         std::weak_ptr<bg2e::scene::Node> node;
-        std::shared_ptr<bg2e::draw::Drawable> drawable;
+        std::shared_ptr<bg2e::scene::DrawableRenderComponent> renderable;
+        std::shared_ptr<const void> resourceIdentity;
+        uint64_t geometryVersion = 0;
         std::shared_ptr<bg2e::scene::Node> snapshot;
         std::optional<bg2e::bake::LightmapResult> result;
         std::optional<bg2e::bake::LightmapPixels> pixels;

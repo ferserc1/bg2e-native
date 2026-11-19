@@ -46,15 +46,15 @@ void SelectableComponent::update(float)
         return;
     }
 
-    auto component = ownerNode()->drawable();
-    std::shared_ptr<void> drawableIdentity;
-    std::shared_ptr<void> meshIdentity;
+    auto component = ownerNode()->drawableRender();
+    std::shared_ptr<const void> drawableIdentity;
+    std::shared_ptr<const void> meshIdentity;
     uint32_t count = 0;
-    if (auto drawable = component ? component->drawable() : nullptr)
+    if (component)
     {
-        drawableIdentity = drawable;
-        meshIdentity = drawable->mesh();
-        count = drawable->submeshesCount();
+        drawableIdentity = component->geometryIdentity();
+        meshIdentity = component->geometry();
+        count = meshIdentity ? component->submeshesCount() : 0;
     }
     if (_drawableIdentity.lock() != drawableIdentity || _meshIdentity.lock() != meshIdentity || count != _submeshCount)
     {

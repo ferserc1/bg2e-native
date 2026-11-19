@@ -582,7 +582,7 @@ void EnvironmentComponent::collectDependencyIssues(const ComponentValidationCont
 
 std::optional<ComponentIssue> TextComponent::checkCompatibility(const Component& other) const
 {
-    const auto* drawable = dynamic_cast<const DrawableComponent*>(&other);
+    const auto* drawable = dynamic_cast<const DrawableRenderComponent*>(&other);
     if (&other != this && drawable && drawable->isSceneGeometry())
     {
         return ComponentIssue{"text.drawable.overlap", ComponentIssueSeverity::Warning,

@@ -70,3 +70,15 @@ Sources: [header](../../../lib/include/bg2e/bake/StandaloneBakeSceneAssembler.hp
 [implementation](../../../lib/src/bg2e/bake/StandaloneBakeSceneAssembler.cpp),
 [shared scene contracts](../scene/index.md),
 [opt-in assembly probe](../../../tests/bake/assembly/README.md).
+
+## Instance receivers
+
+Prefab targets may include DrawableInstanceComponent nodes. Each retains its
+resource identity and independent material/transform state, and receives a distinct
+hierarchy/name/sibling outputIdentity even when geometry is shared. Instances
+require `loadTargetGpuResources=true` and an initialized Engine; CPU-only loading
+is rejected for them. Existing UV2 is validated without changing shared geometry.
+Supplying atlas options for an instance rejects the candidate with an owner-only
+UV2 diagnostic. Generate the shared owner's UV2 before assembling the prefab.
+Image/metadata manifest output accepts instance targets; optional BG2 model-copy
+output remains owner-only.

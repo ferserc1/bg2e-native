@@ -70,10 +70,12 @@ and old/new graph placement; UV2 uses `ReplaceGeometry`; lightmap prepares every
 file, texture and material definition before one batch command. Temp image source
 leases keep generated files alive across cleanup, undo and redo. The original
 job token/source generation guards only initial adoption. Lightmap jobs own an
-independent initial-scene snapshot; source edits warn without cancelling them.
+independent appearance/placement/lighting snapshot. Registered owners are captured
+as instances retaining shared raster/BLAS; ordinary appearance edits warn, while
+shared geometry replacement invalidates configured-source checks.
 A changed document revision alone does not reject initial lightmap adoption, but
-a replaced document or removed/replaced drawable prevents automatic application
-and leaves completed results retained. Replay remains valid
+removed/replaced receivers or changed geometry prevent automatic application.
+Successful New/Open retires old jobs and their queued application eligibility. Replay remains valid
 after the job has completed, while document/target generation and membership
 remain checked.
 
@@ -82,3 +84,22 @@ an atomic snapshot/hash of all referenced dependencies. Redo uses captured
 prepared scene data rather than reloading. If preparation or admission fails,
 there is no partial authored publication. GPU/device incompatibility and
 unsupported custom payloads reject explicitly.
+
+## Explicit resource identity retention
+
+`scene::retainDrawableResources` aggregates component appearance paths and retains
+History/Job/Frame uses once per shared resource identity. Independent instance
+SceneInstance leases remain alive with retained nodes/components. Material commands
+retain the union of before/after texture paths even when those textures cease to
+be current. Generated image source owners survive with cloned settings.
+
+SceneInstance geometry is accounted by shared resource identity, not charged as
+another raster/BLAS clone for every appearance. Components, native materials and
+source payloads remain separately retained/accounted. Handle copies and browser
+snapshots do not register uses. A deleted instance retained by history still
+prevents unloading the resource; it does not enter the live TLAS.
+
+Cache residency changes are nonhistorical. Complete scene saves coordinate one
+model export per identity, and internal cleanup reload transfers reviewed cache
+contexts while retiring old history. True New/Open uses fresh scopes. See
+[drawable ownership](../drawable_caches_and_instances.md).

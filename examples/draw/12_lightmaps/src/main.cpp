@@ -369,7 +369,11 @@ class SceneDelegate final : public draw::DefaultRenderLoopDelegate {
         _useBaked = false;
         for (size_t i = 0; i < replacements.size(); ++i)
         {
-            _targets[i]->drawable()->setDrawable(replacements[i]);
+            const auto assigned = _targets[i]->drawable()->setDrawable(replacements[i]);
+            if (!assigned.ok())
+            {
+                throw std::runtime_error(assigned.message);
+            }
         }
 
         deferred->invalidateHistories();

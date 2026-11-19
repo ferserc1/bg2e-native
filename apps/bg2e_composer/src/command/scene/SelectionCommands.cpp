@@ -56,7 +56,7 @@ CommandResult SetSelection::execute() noexcept
         auto stage = _stage.lock();
         auto selection = _selection.lock();
         auto node = _node.lock();
-        if (!stage || !selection || (!_clear && !node) || (node && !stage->contains(node.get()) && node != stage->fillLightNode()) || (_item && !_item->lockMesh()))
+        if (!stage || !selection || (!_clear && !node) || (node && !stage->contains(node.get()) && node != stage->fillLightNode()) || (_item && _item->expired()))
         {
             return {CommandStatus::Rejected, "Selection target is stale"};
         }
@@ -69,13 +69,13 @@ CommandResult SetSelection::execute() noexcept
             {
                 selected = std::any_of(_after.items.begin(), _after.items.end(), [&](const auto& item)
                 {
-                    return item.node.lock() == node && item.mesh.lock() == _item->mesh.lock() && item.submesh == _item->submesh;
+                    return item.node.lock() == node && item.drawable.lock() == _item->drawable.lock() && item.submesh == _item->submesh;
                 });
                 if (selected)
                 {
                     std::erase_if(_after.items, [&](const auto& item)
                     {
-                        return item.node.lock() == node && item.mesh.lock() == _item->mesh.lock() && item.submesh == _item->submesh;
+                        return item.node.lock() == node && item.drawable.lock() == _item->drawable.lock() && item.submesh == _item->submesh;
                     });
                 }
                 else
@@ -119,7 +119,7 @@ CommandResult SetSelection::execute() noexcept
         {
             const auto& a = _before.items[i];
             const auto& b = _after.items[i];
-            same = a.node.lock() == b.node.lock() && a.mesh.lock() == b.mesh.lock() && a.submesh == b.submesh;
+            same = a.node.lock() == b.node.lock() && a.drawable.lock() == b.drawable.lock() && a.submesh == b.submesh;
         }
         if (same)
         {

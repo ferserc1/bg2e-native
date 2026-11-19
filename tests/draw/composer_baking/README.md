@@ -24,20 +24,32 @@ the supported platform generator. No new target or CMake configuration is added.
    and RGB8/HDR: hide irrelevant controls without resetting their values.
    Start with unsaved edits and confirm baking proceeds. While baking the first
    and last targets, navigate, edit materials/lights/transforms, regenerate UV2,
-   clone/reparent sources, import/reimport and resize/rebind. Accumulation must
-   continue against the initial snapshot with a persistent warning. Compare output
-   against an unchanged control bake with the same initial scene/settings.
-   Delete/replace a receiver or replace the document: the job must finish and
-   retain results without applying them to a stale destination. Explicitly cancel
+   clone/reparent sources, import/reimport and resize/rebind. Appearance and
+   placement snapshots should remain independent with a persistent source warning.
+   Shared geometry replacement may invalidate accumulation; verify safe failure
+   and retained submitted resources. Removed/replaced receivers must not receive
+   stale maps. Successful New/Open retires the old job and queued application. Explicitly cancel
    and restart, then quit with work in flight: retire GPU work safely and never
    let an old queued apply affect the restarted job.
 7. Save/Save as the completed scene, restart and load it. Verify every baked map,
    mode, UV and material identity. Exercise canceled save, unwritable destination,
    existing protected inputs and preparation failures. Failed saves must not mark
    clean; failed bake preparation must not change receiver materials. If an
-   adoption setter fails, the error must report possible partial edits and keep
-   the scene dirty and usable.
+   prepared material batch is rejected, receivers remain unchanged. Exercise
+   undo/redo after successful application and the existing history fault path.
 8. Check Vulkan and Metal where available, missing required RT/native profiles,
    raster/no-RT editing fallback, shared graphics controls, production Composer
    and draw_model_edit regressions. Report actual coverage without inferring it
    from this checklist or static review.
+
+## Shared-resource receivers
+
+- Bake two instances of one BG2 in distinct placements; verify independent AO/GI
+  maps, material edits, source ownership, undo/redo and save/reopen.
+- Generate UV2 on the owner; the instance action explains the owner-only rule.
+- Edit owner materials without saving, create an instance from that owner and
+  verify the current appearance is captured. Later edits remain independent.
+  Creation from the cache still uses originals.
+- Standalone prefab instances require device-backed loading and existing UV2.
+  Check distinct output identities, image/metadata output, and preflight rejection
+  of instance model copies. No expected result here claims an executed probe.

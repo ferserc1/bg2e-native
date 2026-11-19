@@ -28,7 +28,7 @@
 
 namespace bg2e::scene {
 class BoundingBox;
-class DrawableComponent;
+class DrawableRenderComponent;
 class Node;
 class Scene;
 }
@@ -97,7 +97,7 @@ struct ViewSample {
 struct AnalyzedSubmesh {
     uint32_t identifier = 0;
     std::weak_ptr<scene::Node> node;
-    std::weak_ptr<scene::DrawableComponent> drawable;
+    std::weak_ptr<scene::DrawableRenderComponent> drawable;
     uint32_t submesh = 0;
 };
 

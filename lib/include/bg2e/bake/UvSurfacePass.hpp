@@ -24,6 +24,9 @@
 #include <array>
 #include <filesystem>
 
+namespace bg2e::scene { class DrawableRenderComponent; }
+namespace bg2e::draw { class DrawableUsageLease; }
+
 namespace bg2e::bake {
 struct UvSurfaceConfiguration {
     std::filesystem::path shaderRoot;
@@ -32,7 +35,10 @@ struct UvSurfaceConfiguration {
 };
 // Treat as immutable from preparation until all submitted users complete.
 struct UvSurfaceGeometry {
-    std::shared_ptr<draw::Drawable> target;
+    std::shared_ptr<draw::Drawable> target; // Legacy direct-Drawable preparation.
+    std::shared_ptr<const draw::Drawable> resource;
+    std::shared_ptr<scene::DrawableRenderComponent> receiver;
+    std::shared_ptr<draw::DrawableUsageLease> resourceUse;
     std::shared_ptr<draw::Drawable::DrawMesh> drawMesh;
     UvSurfaceMesh packed;
     std::shared_ptr<gpu::Buffer> vertices;
@@ -72,6 +78,7 @@ class BG2E_API UvSurfacePass {
     virtual void initialize(gpu::Device& device, gpu::BackendType backend, uint32_t slots);
     // Stopped producer boundary: validates actual uploaded mesh and builds immutable packed buffer.
     virtual std::shared_ptr<const UvSurfaceGeometry> prepare(std::shared_ptr<draw::Drawable> target);
+    virtual std::shared_ptr<const UvSurfaceGeometry> prepare(std::shared_ptr<scene::DrawableRenderComponent> receiver);
     virtual void beginFrame(uint32_t slot, uint64_t serial); // Retire this completed slot once.
     virtual UvSurfaceResult record(const UvSurfaceInput& input); // Fresh output/descriptors per target.
     virtual void cleanup(); // Drains before releasing owned GPU resources.

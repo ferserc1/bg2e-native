@@ -53,7 +53,7 @@ size_t multiply(size_t a, size_t b)
     return a * b;
 }
 
-size_t drawableBytes(const std::shared_ptr<bg2e::draw::Drawable>& drawable)
+size_t drawableBytes(const std::shared_ptr<const bg2e::draw::Drawable>& drawable)
 {
     if (!drawable)
     {
@@ -141,6 +141,72 @@ size_t drawableBytes(const std::shared_ptr<bg2e::draw::Drawable>& drawable)
     return bytes;
 }
 
+size_t instanceBytes(const bg2e::scene::DrawableInstanceComponent& component)
+{
+    size_t bytes = sizeof(component);
+    std::set<const bg2e::gpu::Image*> images;
+    std::set<const void*> sources;
+    using Attributes = bg2e::base::MaterialAttributes;
+    using Getter = std::shared_ptr<bg2e::base::Texture> (Attributes::*)() const;
+    const std::array<Getter, 6> getters{&Attributes::albedoTexture, &Attributes::metalnessTexture,
+        &Attributes::roughnessTexture, &Attributes::normalTexture, &Attributes::aoTexture, &Attributes::lightEmissionTexture};
+    for (uint32_t sub = 0; sub < std::max(component.submeshesCount(), component.retainedMaterialCount()); ++sub)
+    {
+        bytes = add(bytes, 65536);
+        if (sub < component.submeshesCount())
+        {
+            bytes = add(bytes, component.submeshName(sub).capacity() + component.submeshGroupName(sub).capacity());
+            for (auto getter : getters)
+            {
+                const auto settings = (component.effectiveMaterial(sub).*getter)();
+                if (settings && settings->sourceOwner() && sources.insert(settings->sourceOwner().get()).second)
+                {
+                    bytes = add(bytes, settings->sourceBytes());
+                }
+            }
+        }
+        if (sub >= component.retainedMaterialCount())
+        {
+            continue;
+        }
+        for (unsigned slot = 0; slot < 6; ++slot)
+        {
+            auto texture = component.drawMaterial(sub)->texture(static_cast<bg2e::draw::TextureSlot>(slot));
+            if (texture && texture->base()->sourceOwner() && sources.insert(texture->base()->sourceOwner().get()).second)
+            {
+                bytes = add(bytes, texture->base()->sourceBytes());
+            }
+            auto* image = texture ? texture->image() : nullptr;
+            if (image && images.insert(image).second)
+            {
+                const auto texelBytes = bg2e::gpu::pixelFormatBytes(image->pixelFormat());
+                if (!texelBytes)
+                {
+                    throw std::invalid_argument("The retained image format has no payload size contract");
+                }
+                size_t storage = 0;
+                uint32_t width = image->width(), height = image->height();
+                for (uint32_t level = 0; level < image->mipLevels(); ++level)
+                {
+                    storage = add(storage, multiply(multiply(width, height), texelBytes));
+                    width = std::max(1u, width / 2);
+                    height = std::max(1u, height / 2);
+                }
+                storage = multiply(storage, image->arrayLayers());
+                if (texture->base()->type() == bg2e::base::Texture::TypeProcedural ||
+                    texture->base()->imageFilePath().empty())
+                {
+                    // Owning pixel snapshots can keep decoded RGBA32F data in
+                    // addition to the native image; filesystem sources do not.
+                    storage = add(storage, multiply(multiply(image->width(), image->height()), 32));
+                }
+                bytes = add(bytes, add(storage, 65536));
+            }
+        }
+    }
+    return bytes;
+}
+
 size_t componentBytes(const std::shared_ptr<bg2e::scene::Component>& component, bool preparedEnvironment = false)
 {
     if (!supportedComponent(*component))
@@ -182,7 +248,11 @@ size_t componentBytes(const std::shared_ptr<bg2e::scene::Component>& component, 
     {
         bytes = add(bytes, environment->environmentImage().capacity());
     }
-    if (auto drawable = std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(component))
+    if (auto instance = std::dynamic_pointer_cast<bg2e::scene::DrawableInstanceComponent>(component))
+    {
+        bytes = add(bytes, instanceBytes(*instance));
+    }
+    else if (auto drawable = std::dynamic_pointer_cast<bg2e::scene::DrawableRenderComponent>(component))
     {
         bytes = add(bytes, drawableBytes(drawable->drawable()));
     }
@@ -220,7 +290,7 @@ bool supportedComponent(const bg2e::scene::Component& component)
 {
     using namespace bg2e::scene;
     const auto& type = typeid(component);
-    return type == typeid(TransformComponent) || type == typeid(DrawableComponent) ||
+    return type == typeid(TransformComponent) || type == typeid(DrawableComponent) || type == typeid(DrawableInstanceComponent) ||
         type == typeid(TextComponent) || type == typeid(TextFontComponent) ||
         type == typeid(CameraComponent) || type == typeid(LightComponent) ||
         type == typeid(EnvironmentComponent) || type == typeid(OrbitCameraComponent) ||
@@ -292,6 +362,20 @@ size_t SceneRetention::growthBytes() const
 
 void SceneRetention::refreshBudget()
 {
+    auto retained = node ? bg2e::scene::retainDrawableResources(*node, bg2e::draw::DrawableUse::History, "command-history") :
+        bg2e::scene::retainDrawableResources(*component, bg2e::draw::DrawableUse::History, "command-history");
+    if (!retained.diagnostic.ok())
+    {
+        throw std::runtime_error(retained.diagnostic.message);
+    }
+    for (size_t i = 0; i < retained.identities.size(); ++i)
+    {
+        if (std::find(_resourceIdentities.begin(), _resourceIdentities.end(), retained.identities[i]) == _resourceIdentities.end())
+        {
+            _resourceIdentities.push_back(retained.identities[i]);
+            _resourceUses.push_back(std::move(retained.leases[i]));
+        }
+    }
     bytes = currentBytes();
 }
 
@@ -308,9 +392,21 @@ void SceneRetention::release(StageScene& stage)
     }
     if (component && !component->ownerNode())
     {
-        if (auto drawable = std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(component))
+        if (auto text = std::dynamic_pointer_cast<bg2e::scene::TextComponent>(component))
         {
-            if (drawable->drawable())
+            text->releaseResources();
+        }
+        else if (auto instance = std::dynamic_pointer_cast<bg2e::scene::DrawableInstanceComponent>(component))
+        {
+            const auto released = instance->releaseResources();
+            if (!released.ok())
+            {
+                throw std::runtime_error(released.message);
+            }
+        }
+        else if (auto drawable = std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(component))
+        {
+            if (drawable->drawable() && !drawable->resourceHandle().valid())
             {
                 drawable->drawable()->cleanup();
             }

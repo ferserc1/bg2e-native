@@ -33,6 +33,7 @@
 
 #include <bg2e/scene/TransformComponent.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
@@ -183,6 +184,25 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
         }
         return nullptr;
     }
+
+    inline DrawableInstanceComponent* drawableInstance()
+    {
+        return getComponent<DrawableInstanceComponent>();
+    }
+
+    inline DrawableRenderComponent* drawableRender()
+    {
+        for (const auto& component : orderedComponents())
+        {
+            auto* renderable = dynamic_cast<DrawableRenderComponent*>(component.get());
+            if (renderable && renderable->isSceneGeometry())
+            {
+                return renderable;
+            }
+        }
+        return nullptr;
+    }
+
     inline CameraComponent* camera()
     {
         return getComponent<CameraComponent>();
@@ -195,6 +215,14 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
     {
         return getComponent<LightComponent>();
     }
+
+    // Nearest explicit document scope, inherited by children. Independent of UI.
+    std::shared_ptr<draw::DrawableCache> drawableCacheContext() const;
+    void setDrawableCacheContext(std::shared_ptr<draw::DrawableCache> cache);
+    // Internal document reloads retain prior library residency independently of
+    // newly loaded owners. True New/Open starts with no retained contexts.
+    void retainDrawableCacheContext(std::shared_ptr<draw::DrawableCache> cache);
+    const std::vector<std::shared_ptr<draw::DrawableCache>>& retainedDrawableCacheContexts() const noexcept;
 
     void accept(NodeVisitor* visitor);
     void acceptReverse(NodeVisitor* visitor);
@@ -234,6 +262,8 @@ class BG2E_API Node : public std::enable_shared_from_this<Node> {
   protected:
     std::vector<std::shared_ptr<Node>> _children;
     Node* _parent = nullptr;
+    std::shared_ptr<draw::DrawableCache> _drawableCacheContext;
+    std::vector<std::shared_ptr<draw::DrawableCache>> _retainedDrawableCaches;
     Scene* _scene = nullptr;
 
     std::unordered_map<std::string, std::shared_ptr<Component>> _components;

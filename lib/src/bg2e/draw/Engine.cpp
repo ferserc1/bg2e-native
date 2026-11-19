@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/Engine.hpp>
+#include <bg2e/draw/DrawableCache.hpp>
 
 #include <bg2e/gpu/Backend.hpp>
 #include <bg2e/gpu/Instance.hpp>
@@ -29,6 +30,8 @@
 #include <bg2e/gpu/Factory.hpp>
 
 #include <exception>
+#include <algorithm>
+#include <vector>
 #include <stdexcept>
 
 namespace bg2e {
@@ -43,6 +46,8 @@ struct Engine::Impl {
     std::unique_ptr<gpu::Device> device;
     std::unique_ptr<gpu::Surface> surface;
     std::unique_ptr<gpu::CleanupManager> cleanupManager;
+    std::shared_ptr<DrawableCache> drawableCache;
+    std::vector<std::weak_ptr<DrawableCache>> drawableCaches;
     EngineConfig config;
     bool initialized = false;
     bool instanceCreationStarted = false;
@@ -51,6 +56,8 @@ struct Engine::Impl {
 
     void reset()
     {
+        drawableCache.reset();
+        drawableCaches.clear();
         cleanupManager.reset();
         surface.reset();
         device.reset();
@@ -178,6 +185,7 @@ void Engine::initialize(SDL_Window* window, gpu::Size2D extent, gpu::Backend& ba
         }
         _impl->cleanupManager = std::make_unique<gpu::CleanupManager>(_impl->surface.get());
         _impl->initialized = true;
+        _impl->drawableCache = createDrawableCache();
     }
     catch (...)
     {
@@ -224,6 +232,17 @@ void Engine::cleanup()
                     _impl->device->waitIdle();
                 });
     }
+    // Cache handles and pinned history/job realizations are invalidated while
+    // their native buffers/materials/BLAS can still release against this device.
+    for (const auto& weak : _impl->drawableCaches)
+    {
+        if (const auto cache = weak.lock())
+        {
+            cache->shutdown();
+        }
+    }
+    _impl->drawableCache.reset();
+    _impl->drawableCaches.clear();
     if (_impl->cleanupManager)
     {
         attempt([&]
@@ -341,6 +360,29 @@ gpu::CleanupManager& Engine::cleanupManager()
         throw std::logic_error("draw::Engine is not initialized.");
     }
     return *_impl->cleanupManager.get();
+}
+
+
+DrawableCache& Engine::drawableCache()
+{
+    if (!_impl->initialized || !_impl->drawableCache)
+    {
+        throw std::logic_error("draw::Engine drawable cache is not initialized.");
+    }
+    return *_impl->drawableCache;
+}
+
+
+std::shared_ptr<DrawableCache> Engine::createDrawableCache()
+{
+    if (!_impl->initialized || _impl->cleaning)
+    {
+        throw std::logic_error("A drawable cache requires an active engine resource boundary");
+    }
+    auto cache = std::shared_ptr<DrawableCache>(new DrawableCache(*this));
+    std::erase_if(_impl->drawableCaches, [](const auto& weak) { return weak.expired(); });
+    _impl->drawableCaches.push_back(cache);
+    return cache;
 }
 
 }

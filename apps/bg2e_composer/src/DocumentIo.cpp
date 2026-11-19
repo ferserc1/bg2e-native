@@ -24,6 +24,8 @@
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/db/scene.hpp>
+#include <bg2e/db/drawable_cache.hpp>
+#include <bg2e/scene/drawable_resources.hpp>
 
 #include <cmath>
 #include <algorithm>
@@ -33,6 +35,62 @@
 #include <bg2e/db/scene_path.hpp>
 
 namespace bg2e_composer {
+namespace {
+
+bg2e::db::SceneResourceProtection resourceProtection(const bg2e::scene::Node& root,
+    const std::shared_ptr<bg2e::draw::MaterialBase>& clipboard,
+    std::vector<std::shared_ptr<bg2e::draw::DrawableCache>>& contexts)
+{
+    bg2e::scene::collectDrawableCacheContexts(root, contexts);
+    bg2e::db::SceneResourceProtection result;
+    for (const auto& cache : contexts)
+    {
+        if (!cache->active())
+        {
+            throw std::runtime_error("A reviewed drawable context is no longer active");
+        }
+        result.cacheGenerations.emplace(cache->scopeIdentity(), cache->contentGeneration());
+        const auto dependencies = cache->dependencies();
+        result.roots.files.insert(result.roots.files.end(), dependencies.files.begin(), dependencies.files.end());
+        result.roots.models.insert(result.roots.models.end(), dependencies.models.begin(), dependencies.models.end());
+        result.roots.warnings.insert(result.roots.warnings.end(), dependencies.warnings.begin(), dependencies.warnings.end());
+    }
+    if (clipboard)
+    {
+        bg2e::draw::DrawableDependencies dependencies;
+        bg2e::draw::appendMaterialDependencies(clipboard->materialAttributes(), dependencies);
+        result.roots.files.insert(result.roots.files.end(), dependencies.files.begin(), dependencies.files.end());
+    }
+    const auto canonicalize = [](auto& values)
+    {
+        std::sort(values.begin(), values.end());
+        values.erase(std::unique(values.begin(), values.end()), values.end());
+    };
+    canonicalize(result.roots.files);
+    canonicalize(result.roots.models);
+    canonicalize(result.roots.warnings);
+    return result;
+}
+
+
+void carryProtection(const bg2e::db::SceneResourceProtection& reviewed, bg2e::db::SceneResourceProtection& current)
+{
+    // Retiring history/clipboard must not enlarge the confirmed deletion list.
+    current.roots.files.insert(current.roots.files.end(), reviewed.roots.files.begin(), reviewed.roots.files.end());
+    current.roots.models.insert(current.roots.models.end(), reviewed.roots.models.begin(), reviewed.roots.models.end());
+    current.roots.warnings.insert(current.roots.warnings.end(), reviewed.roots.warnings.begin(), reviewed.roots.warnings.end());
+    const auto deduplicate = [](auto& values)
+    {
+        std::sort(values.begin(), values.end());
+        values.erase(std::unique(values.begin(), values.end()), values.end());
+    };
+    deduplicate(current.roots.files);
+    deduplicate(current.roots.models);
+    deduplicate(current.roots.warnings);
+}
+
+}
+
 
 void AppDelegate::asyncLoadGuarded(std::function<void(bg2e::ui::Loader*)> loadFn,
     glm::vec4 clearColor, std::function<void(std::exception_ptr)> onComplete)
@@ -171,6 +229,23 @@ const bg2e::db::SceneResourceAnalysis* AppDelegate::sceneResourceAnalysis() cons
     {
         return nullptr;
     }
+    if (_resourceAnalysisContexts.size() != _resourceAnalysis->protection.cacheGenerations.size())
+    {
+        return nullptr;
+    }
+    for (const auto& weak : _resourceAnalysisContexts)
+    {
+        const auto cache = weak.lock();
+        if (!cache || !cache->active())
+        {
+            return nullptr;
+        }
+        const auto found = _resourceAnalysis->protection.cacheGenerations.find(cache->scopeIdentity());
+        if (found == _resourceAnalysis->protection.cacheGenerations.end() || found->second != cache->contentGeneration())
+        {
+            return nullptr;
+        }
+    }
     return &*_resourceAnalysis;
 }
 
@@ -241,6 +316,48 @@ void AppDelegate::processDocumentIo()
         {
             _engine->device()->waitIdle();
         }
+        if (operation.kind == Kind::LoadDrawable || operation.kind == Kind::UnloadDrawable)
+        {
+            if (operation.generation != document()->generation || _imports.busy() || _importPublicationPending || lightmapBakeActive())
+            {
+                throw std::runtime_error("The drawable request belongs to a replaced or busy document");
+            }
+            if (operation.kind == Kind::LoadDrawable)
+            {
+                auto cache = document()->root->drawableCacheContext();
+                if (!cache || !cache->active())
+                {
+                    cache = _engine->createDrawableCache();
+                    document()->root->setDrawableCacheContext(cache);
+                }
+                const auto loaded = bg2e::db::loadCachedDrawableBg2(operation.path, *cache);
+                if (!loaded)
+                {
+                    throw std::runtime_error(loaded.diagnostic.message);
+                }
+                _lastLoadedDrawable = loaded.handle;
+                _status = "Drawable resident: " + operation.path.filename().string();
+            }
+            else
+            {
+                const auto cache = operation.drawable.context();
+                if (!cache || &cache->engine() != _engine)
+                {
+                    throw std::runtime_error("The drawable resource is no longer available in this engine");
+                }
+                const auto unloaded = cache->unload(operation.drawable);
+                if (!unloaded)
+                {
+                    throw std::runtime_error(unloaded.diagnostic.message);
+                }
+                _status = "Unused drawable unloaded";
+            }
+            _resourceAnalysis.reset();
+            _resourceAnalysisContexts.clear();
+            // Residency changes deliberately do not create commands or modify
+            // document dirty state. Logical unload guards are checked again here.
+            return;
+        }
         if (operation.kind == Kind::AnalyzeResources || operation.kind == Kind::CleanupResources)
         {
             if (operation.generation != document()->generation || _imports.busy() || _importPublicationPending)
@@ -265,7 +382,10 @@ void AppDelegate::processDocumentIo()
                 {
                     throw std::runtime_error("Save the scene before analyzing its resources.");
                 }
-                _resourceAnalysis = bg2e::db::SceneResourceManager::analyze(document()->savePath);
+                std::vector<std::shared_ptr<bg2e::draw::DrawableCache>> contexts;
+                const auto protection = resourceProtection(*document()->root, _clipboard, contexts);
+                _resourceAnalysis = bg2e::db::SceneResourceManager::analyze(document()->savePath, protection);
+                _resourceAnalysisContexts.assign(contexts.begin(), contexts.end());
                 _resourceAnalysisSavePath = document()->savePath;
                 _resourceAnalysisGeneration = document()->generation;
                 _resourceAnalysisState = document()->commands->history().documentState();
@@ -279,8 +399,9 @@ void AppDelegate::processDocumentIo()
                     _resourceAnalysis.reset();
                     throw std::runtime_error("The scene changed. Save and analyze resources again.");
                 }
+                const auto protection = resourceProtection(*document()->root, _clipboard, operation.resourceCleanupContexts);
                 operation.resourceCleanupPlan = bg2e::db::SceneResourceManager::createCleanupPlan(*analysis,
-                    operation.ignoreResourceWarnings);
+                    protection, operation.ignoreResourceWarnings);
                 // Complete saves deliberately restore authored live source paths.
                 // Reload the persisted snapshot transactionally before removing any
                 // old source, so future saves use only the surviving packaged files.
@@ -403,6 +524,10 @@ void AppDelegate::processDocumentIo()
                 operation.candidate = candidate;
                 // Own a registry across incremental component loads. All font
                 // declarations must be ready before the first text resource.
+                if (!candidate->drawableCacheContext())
+                {
+                    candidate->setDrawableCacheContext(_engine->createDrawableCache());
+                }
                 operation.resourceScene = std::make_shared<bg2e::scene::Scene>();
                 operation.resourceScene->setSceneRoot(candidate);
                 operation.resourceScene->prepareTextFonts();
@@ -424,7 +549,39 @@ void AppDelegate::processDocumentIo()
             {
                 const auto& resource = operation.resources[operation.nextResource];
                 _sceneLoader.setMessage("Loading " + resource.nodeName + "...");
-                resource.component->loadResources(*_engine);
+                auto* renderable = dynamic_cast<bg2e::scene::DrawableRenderComponent*>(resource.component.get());
+                const auto* ownerReference = dynamic_cast<bg2e::scene::DrawableComponent*>(resource.component.get());
+                const auto priorPath = ownerReference ? ownerReference->resourcePath() : std::filesystem::path{};
+                try
+                {
+                    resource.component->loadResources(*_engine);
+                    if (ownerReference && !priorPath.empty() && ownerReference->resourcePath() != priorPath)
+                    {
+                        operation.resourceWarnings.push_back(resource.nodeName +
+                            ": duplicate model source was separated into an independent owner destination: " +
+                            ownerReference->resourcePath().string());
+                    }
+                    if (const auto* owner = dynamic_cast<bg2e::scene::DrawableComponent*>(resource.component.get());
+                        owner && owner->hasPendingExport())
+                    {
+                        operation.resourceWarnings.push_back(resource.nodeName +
+                            ": independent model copy could not be completely published; the in-memory resource is retained. Save the complete scene before closing.");
+                    }
+                    if (renderable && renderable->isSceneGeometry() && !renderable->resourcesLoaded())
+                    {
+                        operation.resourceWarnings.push_back(resource.nodeName +
+                            ": model or material resources are unavailable; references and authored properties were retained.");
+                    }
+                }
+                catch (const std::exception& error)
+                {
+                    if (!renderable || !renderable->isSceneGeometry())
+                    {
+                        throw;
+                    }
+                    operation.resourceWarnings.push_back(resource.nodeName + ": " + error.what() +
+                        "; model reference retained. Other scene resources continue loading.");
+                }
                 ++operation.nextResource;
                 _sceneLoader.setProgress(static_cast<float>(operation.nextResource) / operation.resources.size());
                 _pendingIo = std::move(operation);
@@ -441,6 +598,18 @@ void AppDelegate::processDocumentIo()
         {
             operation.resourceScene->releaseSceneRoot();
             operation.resourceScene.reset();
+        }
+        if (operation.resourceCleanupPlan && document()->root)
+        {
+            for (const auto& cache : operation.resourceCleanupContexts)
+            {
+                candidate->retainDrawableCacheContext(cache);
+            }
+        }
+        if (operation.resourceCleanupPlan && !operation.resourceWarnings.empty())
+        {
+            throw std::runtime_error("Cleanup reload has unresolved drawable resources; no files were deleted. " +
+                operation.resourceWarnings.front());
         }
         _stage->prepareTools(candidate);
         // Prepare all command ownership/callback storage before publication.
@@ -468,9 +637,9 @@ void AppDelegate::processDocumentIo()
                     {
                         if (auto node = item.node.lock(); node && _stage->contains(node.get()))
                         {
-                            if (auto mesh = item.lockMesh(); mesh && node->drawable())
+                            if (!item.expired() && node->drawableRender())
                             {
-                                _selection->addToSelectedItems(node.get(), node->drawable(), item.submesh);
+                                _selection->addToSelectedItems(node.get(), node->drawableRender(), item.submesh);
                             }
                             else
                             {
@@ -505,7 +674,10 @@ void AppDelegate::processDocumentIo()
         }
         _clipboard.reset();
         _viewpointStatus.clear();
-        invalidateLightmapSources();
+        // Publication succeeded and submitted work was drained at the boundary.
+        // Old document jobs must not retain its cache or apply into this scene.
+        stopLightmapBake(true);
+        _bakeApplyQueued = false;
         // The new document owns its EnvironmentComponent, but environment
         // generation runs at Renderer::prepareFrame's stopped boundary.
         requestSceneFrame();
@@ -516,10 +688,25 @@ void AppDelegate::processDocumentIo()
             _sceneResourceLoad = false;
             bg2e::app::MainLoop::current()->resumeScene();
         }
+        if (!operation.resourceWarnings.empty())
+        {
+            std::string warnings;
+            for (const auto& warning : operation.resourceWarnings)
+            {
+                warnings += warning + "\n";
+            }
+            _status = "Scene opened with resource warnings; unresolved references were retained";
+            bg2e::app::MessageBox::showWarning("Scene resource warnings", warnings,
+                {{0, "OK", bg2e::app::MessageBox::Return}});
+        }
         if (operation.resourceCleanupPlan)
         {
             _resourceAnalysis.reset();
-            const auto result = bg2e::db::SceneResourceManager::executeCleanup(*operation.resourceCleanupPlan);
+            auto contexts = operation.resourceCleanupContexts;
+            auto protection = resourceProtection(*document()->root, {}, contexts);
+            carryProtection(operation.resourceCleanupPlan->analysis().protection, protection);
+            const auto rebound = bg2e::db::SceneResourceManager::rebindCleanupPlan(*operation.resourceCleanupPlan, protection);
+            const auto result = bg2e::db::SceneResourceManager::executeCleanup(rebound, protection);
             _status = "Deleted " + std::to_string(result.deleted.size()) + " unused scene files";
             if (!result.errors.empty())
             {

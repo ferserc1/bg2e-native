@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/bake/LightmapBakeExecutor.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/gpu/Image.hpp>
 #include <stdexcept>
 #include <utility>
@@ -164,6 +165,30 @@ std::shared_ptr<const UvSurfaceGeometry> LightmapBakeExecutor::prepareGeometry(s
     }
     return _surface->prepare(std::move(drawable));
 }
+
+std::shared_ptr<const UvSurfaceGeometry> LightmapBakeExecutor::prepareGeometry(
+    std::shared_ptr<scene::DrawableRenderComponent> receiver)
+{
+    if (!_initialized)
+    {
+        throw std::logic_error("Initialize bake executor before geometry preparation");
+    }
+    if (const auto owner = std::dynamic_pointer_cast<scene::DrawableComponent>(receiver))
+    {
+        // Existing supplied surface passes retain their direct-owner hook.
+        const auto prepared = _surface->prepare(owner->drawable());
+        if (!prepared)
+        {
+            throw std::runtime_error("UV surface pass returned no owner geometry");
+        }
+        auto geometry = std::make_shared<UvSurfaceGeometry>(*prepared);
+        geometry->receiver = std::move(receiver);
+        geometry->resource = owner->drawable();
+        return geometry;
+    }
+    return _surface->prepare(std::move(receiver));
+}
+
 
 std::shared_ptr<draw::pipeline::TracingSnapshot> LightmapBakeExecutor::prepareFrame(
     uint32_t slot, uint64_t serial, const draw::RenderQueue& queue)

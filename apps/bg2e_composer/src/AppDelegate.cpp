@@ -169,6 +169,14 @@ void AppDelegate::queueInput(std::function<void()> event)
 
 void AppDelegate::keyDown(const bg2e::app::KeyEvent& keyEvent)
 {
+    // Capture modifiers before deferring input: they may have been released by
+    // the time the graphics queue runs. Editor shortcuts must not also fly the
+    // camera (notably Ctrl/Cmd+S followed by its queued key-up after saving).
+    if (keyEvent.key() != bg2e::app::KeyEvent::KeyEscape &&
+        (bg2e::app::Keyboard::controlPressed() || bg2e::app::Keyboard::superPressed()))
+    {
+        return;
+    }
     queueInput([this, keyEvent]
     {
         if (keyEvent.key() == bg2e::app::KeyEvent::KeyEscape)
@@ -688,6 +696,7 @@ void AppDelegate::prepareFrame()
     {
         _stage->releaseRetired(); // Renderer references were released before GPU resource cleanup.
     }
+    refreshDrawableBrowser();
     if (_quitPending)
     {
         confirmQuitRequest();

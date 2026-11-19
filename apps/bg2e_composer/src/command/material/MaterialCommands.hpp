@@ -54,6 +54,7 @@ class EditMaterials final : public bg2e::app::Command {
         std::weak_ptr<bg2e::draw::MaterialBase> live;
         std::shared_ptr<bg2e::draw::MaterialBase> alternate;
         bg2e::base::MaterialAttributes definition;
+        bg2e::draw::DrawableUsageLease dependencies;
         uint64_t expectedRevision = 0;
         uint64_t expectedDefinition = 0;
         uint32_t expectedSourcePolicy = 0;

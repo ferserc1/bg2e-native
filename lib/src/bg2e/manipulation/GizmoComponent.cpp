@@ -25,6 +25,7 @@
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/geo/sphere.hpp>
+#include <bg2e/geo/cube.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/app/MainLoop.hpp>
 #include <bg2e/app/MessageBox.hpp>
@@ -47,6 +48,7 @@ std::unordered_map<GizmoType, float> GizmoComponent::_gizmoScales = {
     {GizmoType::SunLight, 0.08f},
     {GizmoType::Environment, 0.08f},
     {GizmoType::Transform, 0.25f},
+    {GizmoType::DrawableInstance, 0.05f},
 };
 
 std::unordered_map<GizmoType, float> GizmoComponent::_gizmoOpacities = {
@@ -57,6 +59,7 @@ std::unordered_map<GizmoType, float> GizmoComponent::_gizmoOpacities = {
     {GizmoType::SunLight, 0.6f},
     {GizmoType::Environment, 0.6f},
     {GizmoType::Transform, 1.0f},
+    {GizmoType::DrawableInstance, 0.6f},
 };
 
 std::unordered_map<GizmoType, bool> GizmoComponent::_gizmoVisible = {
@@ -67,6 +70,7 @@ std::unordered_map<GizmoType, bool> GizmoComponent::_gizmoVisible = {
     {GizmoType::SunLight, true},
     {GizmoType::Environment, true},
     {GizmoType::Transform, true},
+    {GizmoType::DrawableInstance, false},
 };
 
 std::unordered_map<GizmoType, float> GizmoComponent::_gizmoScaleSensitivity = {
@@ -150,6 +154,10 @@ GizmoType GizmoComponent::resolveGizmoType() const
         return GizmoType::Environment;
     }
 
+    if (node->drawableInstance())
+    {
+        return GizmoType::DrawableInstance;
+    }
     return GizmoType::None;
 }
 
@@ -157,13 +165,13 @@ void GizmoComponent::loadGizmo(GizmoType type)
 {
     if (auto resource = getDrawGizmo(type))
     {
-        setDrawable(resource);
+        (void)setDrawable(resource);
     }
 }
 
 void GizmoComponent::unloadGizmo()
 {
-    setDrawable(nullptr);
+    (void)setDrawable(nullptr);
 }
 
 void GizmoComponent::ensureTransformGizmoLoaded()
@@ -176,6 +184,44 @@ std::shared_ptr<draw::Drawable> GizmoComponent::transformDrawable() const
     auto it = _drawGizmoCache.find(GizmoType::Transform);
     return it != _drawGizmoCache.end() ? it->second : nullptr;
 }
+
+namespace {
+std::shared_ptr<geo::MeshPNUUT> instanceCages()
+{
+    auto result = std::make_shared<geo::MeshPNUUT>();
+    const float side = 0.34f, thickness = 0.012f;
+    for (const auto center : {glm::vec3(-0.1f, -0.1f, -0.08f), glm::vec3(0.1f, 0.1f, 0.08f)})
+    {
+        for (int axis = 0; axis < 3; ++axis)
+        {
+            for (const float a : {-0.5f, 0.5f})
+            {
+                for (const float b : {-0.5f, 0.5f})
+                {
+                    glm::vec3 size(thickness), offset = center;
+                    size[axis] = side;
+                    offset[(axis + 1) % 3] += a * side;
+                    offset[(axis + 2) % 3] += b * side;
+                    std::unique_ptr<geo::MeshPNUUT> bar(geo::createCube(size.x, size.y, size.z));
+                    const auto first = static_cast<uint32_t>(result->vertices.size());
+                    for (auto vertex : bar->vertices)
+                    {
+                        vertex.position += offset;
+                        result->vertices.push_back(vertex);
+                    }
+                    for (const auto index : bar->indices)
+                    {
+                        result->indices.push_back(first + index);
+                    }
+                }
+            }
+        }
+    }
+    result->submeshes.push_back({0, static_cast<uint32_t>(result->indices.size())});
+    return result;
+}
+}
+
 
 std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
 {
@@ -206,6 +252,9 @@ std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
     case GizmoType::Environment:
         parsed.reset(db::loadMeshBg2(assets, "environment.bg2"));
         break;
+    case GizmoType::DrawableInstance:
+        mesh = instanceCages();
+        break;
     case GizmoType::PointLight:
         mesh.reset(geo::createSphere(0.5f, 10, 10));
         break;
@@ -217,6 +266,7 @@ std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
         mesh = parsed->mesh;
     }
     auto resource = std::make_shared<draw::Drawable>();
+    resource->setName(type == GizmoType::DrawableInstance ? "drawable-instance-gizmo" : "scene-tool-gizmo");
     resource->setMesh(mesh);
     resource->setRayTracingEnabled(false);
     for (uint32_t i = 0; i < resource->submeshesCount(); ++i)
@@ -254,7 +304,11 @@ std::shared_ptr<draw::Drawable> GizmoComponent::getDrawGizmo(GizmoType type)
 void GizmoComponent::cleanupDrawResources()
 {
     cancelTransform();
-    clearDrawable();
+    const auto cleared = clearDrawable();
+    if (!cleared.ok())
+    {
+        throw std::runtime_error(cleared.message);
+    }
     _drawGizmoCache.clear();
     _transformSubmeshIds.clear();
     _currentGizmoType = GizmoType::None;

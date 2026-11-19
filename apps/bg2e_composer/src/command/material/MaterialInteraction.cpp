@@ -17,6 +17,7 @@
  */
 
 #include "MaterialInteraction.hpp"
+#include "MaterialTargets.hpp"
 
 #include <set>
 #include <stdexcept>
@@ -213,16 +214,16 @@ class MaterialInteraction final : public CommandTransaction {
                 return {CommandStatus::Rejected, "Material interaction requires document targets"};
             }
             std::set<draw::MaterialBase*> seen;
-            std::set<std::pair<draw::Drawable*, uint32_t>> receivers;
+            std::set<std::pair<bg2e::scene::DrawableRenderComponent*, uint32_t>> receivers;
             for (const auto& item : _selection.selection)
             {
                 auto node = item.node.lock();
-                auto mesh = item.lockMesh();
+                auto mesh = item.lockRenderable();
                 if (mesh && !receivers.emplace(mesh.get(), item.submesh).second)
                 {
                     continue;
                 }
-                auto material = mesh && mesh->isLoaded() ? mesh->drawMaterial(item.submesh) : nullptr;
+                auto material = mesh && mesh->resourcesLoaded() ? mesh->drawMaterial(item.submesh) : nullptr;
                 const auto* instance = material.get();
                 if (!node || !stage->contains(node.get()) || !material ||
                     typeid(*instance) != typeid(draw::MaterialBase) || !seen.insert(material.get()).second)
@@ -230,7 +231,7 @@ class MaterialInteraction final : public CommandTransaction {
                     return {CommandStatus::Rejected, "Material target is stale, shared or custom"};
                 }
                 State state{Values::capture(material->materialAttributes()),
-                    Values::capture(mesh->materialDefinition(item.submesh))};
+                    Values::capture(authoredMaterial(item))};
                 _targets.push_back({item, material, state, state});
             }
             return {};
@@ -257,9 +258,9 @@ class MaterialInteraction final : public CommandTransaction {
             for (const auto& target : _targets)
             {
                 auto material = target.material.lock();
-                auto mesh = target.item.lockMesh();
+                auto mesh = target.item.lockRenderable();
                 const auto& live = material->materialAttributes();
-                const auto& definition = mesh->materialDefinition(target.item.submesh);
+                const auto& definition = authoredMaterial(target.item);
                 // Propose against CPU values only; never copy metadata strings,
                 // texture settings or retained sources for a slider update.
                 const Attributes empty;
@@ -356,9 +357,9 @@ class MaterialInteraction final : public CommandTransaction {
         for (const auto& target : _targets)
         {
             auto node = target.item.node.lock();
-            auto mesh = target.item.lockMesh();
+            auto mesh = target.item.lockRenderable();
             auto material = target.material.lock();
-            if (!stage || !node || !stage->contains(node.get()) || !mesh || !mesh->isLoaded() ||
+            if (!stage || !node || !stage->contains(node.get()) || !mesh || !mesh->resourcesLoaded() ||
                 !material || mesh->drawMaterial(target.item.submesh) != material)
             {
                 return false;
@@ -370,7 +371,8 @@ class MaterialInteraction final : public CommandTransaction {
     static void write(const Target& target, const State& state)
     {
         state.live.write(target.material.lock()->materialAttributes());
-        state.definition.write(target.item.lockMesh()->materialDefinition(target.item.submesh));
+        state.definition.write(authoredMaterial(target.item));
+        target.item.materialEdited();
     }
 
     CommandResult restore(bool forward) noexcept
@@ -386,7 +388,7 @@ class MaterialInteraction final : public CommandTransaction {
             for (const auto& target : _targets)
             {
                 recovery.push_back({Values::capture(target.material.lock()->materialAttributes()),
-                    Values::capture(target.item.lockMesh()->materialDefinition(target.item.submesh))});
+                    Values::capture(authoredMaterial(target.item))});
             }
             for (const auto& target : _targets)
             {

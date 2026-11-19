@@ -21,6 +21,7 @@
 #include <bg2e/db/image.hpp>
 #include <bg2e/db/file.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
+#include <bg2e/db/drawable_cache.hpp>
 #include <bg2e/db/mesh_obj.hpp>
 #include <bg2e/db/scene.hpp>
 #include <bg2e/db/scene_bg2.hpp>

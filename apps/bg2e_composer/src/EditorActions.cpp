@@ -38,6 +38,30 @@
 
 namespace bg2e_composer {
 
+bool AppDelegate::geometryEditAvailable() const
+{
+    if (!document() || !_selection || !valueEditAvailable())
+    {
+        return false;
+    }
+    bool found = false;
+    for (const auto& item : _selection->selectedItems())
+    {
+        if (!item || item->expired())
+        {
+            continue;
+        }
+        const auto node = item->node.lock();
+        if (!item->lockMesh() || (node && node->getComponent<bg2e::scene::TextComponent>()))
+        {
+            return false;
+        }
+        found = true;
+    }
+    return found;
+}
+
+
 void AppDelegate::editGeometry(command::geometry::Operation operation)
 {
     if (!_selection || !document() || !document()->root || commandFaulted() || !settleEditDrafts())
@@ -49,6 +73,11 @@ void AppDelegate::editGeometry(command::geometry::Operation operation)
         std::vector<bg2e::manipulation::SelectionItem> targets;
         for (const auto& item : _selection->selectedItems())
         {
+            if (item && item->lockRenderable() && !item->lockMesh())
+            {
+                bg2e::app::MessageBox::showInfo("Shared instance geometry", "Instance geometry is read-only. Edit the owning model or change the instance's submesh transform instead.");
+                return;
+            }
             if (item && item->lockMesh())
             {
                 targets.push_back(*item);
@@ -131,10 +160,10 @@ void AppDelegate::processReadActions()
             if (action.kind == DeferredRead::Kind::CopyMaterial)
             {
                 auto node = action.target.node.lock();
-                auto mesh = action.target.lockMesh();
-                if (node && _stage->contains(node.get()) && mesh)
+                auto material = action.target.lockMaterial();
+                if (node && _stage->contains(node.get()) && material)
                 {
-                    auto prepared = mesh->drawMaterial(action.target.submesh)->clone();
+                    auto prepared = material->clone();
                     _clipboard = std::move(prepared);
                     _status = "Material copied";
                 }

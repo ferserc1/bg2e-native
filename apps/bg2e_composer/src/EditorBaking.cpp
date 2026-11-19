@@ -45,6 +45,17 @@
 namespace bg2e_composer {
 
 namespace {
+std::shared_ptr<const bg2e::draw::Drawable> bakeResource(const bg2e::scene::DrawableRenderComponent& component)
+{
+    if (const auto* instance = dynamic_cast<const bg2e::scene::DrawableInstanceComponent*>(&component))
+    {
+        const auto cache = instance->resourceHandle().context();
+        return cache ? cache->resolve(instance->resourceHandle()) : nullptr;
+    }
+    return component.drawable();
+}
+
+
 struct GeneratedImageSource {
     std::filesystem::path directory;
     ~GeneratedImageSource()
@@ -58,7 +69,8 @@ struct GeneratedImageSource {
 // updates must not write into the scene used by an in-progress bake.
 std::shared_ptr<bg2e::scene::Node> snapshotBakeNode(
     const std::shared_ptr<bg2e::scene::Node>& source,
-    std::unordered_map<bg2e::scene::Node*, std::shared_ptr<bg2e::scene::Node>>& nodes)
+    std::unordered_map<bg2e::scene::Node*, std::shared_ptr<bg2e::scene::Node>>& nodes,
+    std::string& warnings)
 {
     auto copy = std::make_shared<bg2e::scene::Node>(source->name());
     nodes.emplace(source.get(), copy);
@@ -71,7 +83,45 @@ std::shared_ptr<bg2e::scene::Node> snapshotBakeNode(
     {
         copy->addComponent(std::make_shared<bg2e::scene::TransformComponent>(source->transform()->matrix()));
     }
-    if (auto* component = source->drawable())
+    if (auto* instance = source->drawableInstance())
+    {
+        if (auto cloned = instance->clone())
+        {
+            copy->addComponent(std::move(cloned));
+        }
+        else
+        {
+            warnings += " Warning: " + source->name() + ": instance occluder could not be captured.";
+        }
+    }
+    else if (auto* owner = source->drawable(); owner && owner->resourceHandle().valid() && owner->resourcesLoaded())
+    {
+        const auto cache = owner->resourceHandle().context();
+        auto instance = std::make_shared<bg2e::scene::DrawableInstanceComponent>();
+        const auto bound = instance->setResource(*cache, owner->resourceHandle());
+        if (!bound.ok())
+        {
+            throw std::runtime_error(bound.message);
+        }
+        const auto drawable = owner->drawable();
+        instance->setTransform(drawable->transform());
+        instance->setRayTracingEnabled(owner->rayTracingEnabled());
+        for (uint32_t sub = 0; sub < owner->submeshesCount(); ++sub)
+        {
+            instance->setMaterial(owner->effectiveMaterial(sub), sub);
+            instance->setSubmeshTransform(drawable->localSubmeshTransform(sub), sub);
+            instance->setSubmeshName(owner->submeshName(sub), sub);
+            instance->setSubmeshGroupName(owner->submeshGroupName(sub), sub);
+            instance->setSubmeshVisibility(owner->submeshVisibility(sub), sub);
+        }
+        instance->prepareResources(cache->engine());
+        if (!instance->resourcesLoaded())
+        {
+            throw std::runtime_error("Cannot capture owner appearance for bake: " + source->name());
+        }
+        copy->addComponent(std::move(instance));
+    }
+    else if (auto* component = source->drawableRender())
     {
         auto drawable = component->drawable();
         auto* text = dynamic_cast<bg2e::scene::TextComponent*>(component);
@@ -90,7 +140,7 @@ std::shared_ptr<bg2e::scene::Node> snapshotBakeNode(
     }
     for (const auto& child : source->children())
     {
-        copy->addChild(snapshotBakeNode(child, nodes));
+        copy->addChild(snapshotBakeNode(child, nodes, warnings));
     }
     return copy;
 }
@@ -239,6 +289,7 @@ void AppDelegate::stopLightmapBake(bool cancelled)
         }
         _bakeContext.reset();
     }
+    _bakeResourceUses = {};
     if (hadContext)
     {
         setContinuousRendering(_wasContinuousRendering);
@@ -277,6 +328,14 @@ std::shared_ptr<bg2e::app::SafeUpdateToken> AppDelegate::regenerateUv2(std::weak
     const std::weak_ptr<bg2e::app::SafeUpdateToken> cancelled = token;
     const auto expected = document()->commands->history().documentState();
     auto node = target.lock();
+    if (node && node->drawableInstance())
+    {
+        if (completion)
+        {
+            completion({false, "Generate UV2 on the shared geometry owner before baking this instance"});
+        }
+        return {};
+    }
     auto drawable = node && node->drawable() ? node->drawable()->drawable() : nullptr;
     const auto raster = drawable ? std::weak_ptr<bg2e::draw::Drawable::DrawMesh>(drawable->drawMesh()) : std::weak_ptr<bg2e::draw::Drawable::DrawMesh>{};
     const auto weak = weak_from_this();
@@ -378,11 +437,12 @@ void AppDelegate::startLightmapBatch(bool wholeScene, const bg2e::bake::Lightmap
     std::function<void(const std::shared_ptr<bg2e::scene::Node>&)> collect;
     collect = [&](const auto& node)
     {
-        if (!node || !seen.insert(node.get()).second)
+        if (!node || node->disabled() || !seen.insert(node.get()).second)
         {
             return;
         }
-        if (auto component = node->drawable(); component && component->drawable())
+        if (auto component = node->drawableRender(); component && (node->drawable() || node->drawableInstance()) &&
+            component->isSceneGeometry() && component->geometry())
         {
             targets.push_back(node);
         }
@@ -428,13 +488,21 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
             const bool wasContinuous = owner->_bakeContext
                 ? owner->_wasContinuousRendering : owner->continuousRendering();
             owner->stopLightmapBake(true);
+            auto resourceUses = bg2e::scene::retainDrawableResources(*owner->document()->root,
+                bg2e::draw::DrawableUse::Job, "composer-lightmap-job");
+            if (!resourceUses.diagnostic.ok())
+            {
+                owner->_status = resourceUses.diagnostic.message;
+                return;
+            }
+            owner->_bakeResourceUses = std::move(resourceUses);
             owner->_bakeApplyQueued = false;
             owner->_wasContinuousRendering = wasContinuous;
             try
             {
                 std::string warnings;
                 std::unordered_map<bg2e::scene::Node*, std::shared_ptr<bg2e::scene::Node>> snapshots;
-                auto snapshotRoot = snapshotBakeNode(owner->document()->root, snapshots);
+                auto snapshotRoot = snapshotBakeNode(owner->document()->root, snapshots, warnings);
                 if (snapshotRoot->transform())
                 {
                     snapshotRoot->transform()->setMatrix(owner->document()->root->worldMatrix());
@@ -457,9 +525,10 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
                 for (const auto& weakTarget : targets)
                 {
                     auto target = weakTarget.lock();
-                    auto component = target ? target->drawable() : nullptr;
-                    auto drawable = component ? component->drawable() : nullptr;
-                    if (!target || !owner->_stage->contains(target.get()) || !drawable || !drawable->isLoaded())
+                    auto component = target ? target->drawableRender() : nullptr;
+                    auto drawable = component ? bakeResource(*component) : nullptr;
+                    if (!target || !owner->_stage->contains(target.get()) || !drawable || (!target->drawable() && !target->drawableInstance()) ||
+                        !component->isSceneGeometry() || !component->resourcesLoaded())
                     {
                         throw std::logic_error("A batch target is no longer loaded in this document");
                     }
@@ -474,11 +543,17 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
                         warnings += " Warning: " + target->name() + ": " + validation.warning;
                     }
                     auto snapshot = snapshots.find(target.get());
-                    if (snapshot == snapshots.end() || snapshot->second->disabled())
+                    if (snapshot == snapshots.end() || snapshot->second->disabled() || !snapshot->second->drawableRender())
                     {
                         throw std::invalid_argument(target->name() + ": bake target or ancestor is disabled");
                     }
-                    owner->_bakeTargets.push_back({target, drawable, snapshot->second, {}, {}});
+                    BakeTarget job;
+                    job.node = target;
+                    job.renderable = std::dynamic_pointer_cast<bg2e::scene::DrawableRenderComponent>(component->shared_from_this());
+                    job.resourceIdentity = component->geometryIdentity();
+                    job.geometryVersion = drawable->geometryVersion();
+                    job.snapshot = snapshot->second;
+                    owner->_bakeTargets.push_back(std::move(job));
                 }
                 owner->_bakeSettings = settings;
                 bg2e::bake::BakerContextConfiguration contextConfiguration;
@@ -503,6 +578,7 @@ void AppDelegate::startLightmapTargets(std::vector<std::weak_ptr<bg2e::scene::No
                 ++owner->_bakeJobToken;
                 owner->setContinuousRendering(true);
                 renderer.invalidateHistories();
+                owner->_bakeWarning = warnings;
                 owner->_status = "Lightmap bake started" + warnings;
             }
             catch (const std::exception& error)
@@ -581,12 +657,12 @@ std::optional<bg2e::bake::LightmapResult> AppDelegate::lightmapResult(
                 }
             }
         }
-        if (!document() || !_stage->contains(target.get()) || !target->drawable())
+        if (!document() || !_stage->contains(target.get()) || !target->drawableRender())
         {
             return std::nullopt;
         }
-        auto drawable = target->drawable()->drawable();
-        if (!drawable || !drawable->isLoaded() || !drawable->submeshesCount())
+        auto* drawable = target->drawableRender();
+        if (!drawable || !drawable->resourcesLoaded() || !drawable->submeshesCount())
         {
             return std::nullopt;
         }
@@ -597,6 +673,10 @@ std::optional<bg2e::bake::LightmapResult> AppDelegate::lightmapResult(
             return std::nullopt;
         }
         bg2e::bake::LightmapResult result;
+        if (!material->aoTexture() || !material->aoTexture()->imageResource())
+        {
+            return std::nullopt;
+        }
         result.image = material->aoTexture()->imageResource();
         result.extent = result.image->size();
         result.uvSet = material->materialAttributes().aoUVSet();
@@ -649,9 +729,11 @@ void AppDelegate::applyLightmapBake()
             for (const auto& job : owner->_bakeTargets)
             {
                 auto target = job.node.lock();
-                auto component = target ? target->drawable() : nullptr;
-                if (!target || !owner->_stage->contains(target.get()) || !component ||
-                    component->drawable() != job.drawable || !job.result || !job.pixels)
+                auto component = target ? target->drawableRender() : nullptr;
+                const auto resource = component ? bakeResource(*component) : nullptr;
+                if (!target || !owner->_stage->contains(target.get()) || component != job.renderable.get() || !resource ||
+                    component->geometryIdentity() != job.resourceIdentity || resource->geometryVersion() != job.geometryVersion ||
+                    !component->resourcesLoaded() || !job.result || !job.pixels)
                 {
                     owner->_bakeWarning = "Warning: baking completed, but a destination was removed or replaced. "
                         "Results are retained without automatic application.";
@@ -727,17 +809,14 @@ void AppDelegate::applyLightmapBake()
                 const auto& job = owner->_bakeTargets[index];
                 const auto& result = job.result;
                 const auto& texture = textures[index];
-                const auto& drawable = job.drawable;
+                const auto& drawable = job.renderable;
                 for (uint32_t submesh = 0; submesh < drawable->submeshesCount(); ++submesh)
                 {
                     command::material::PreparedMaterial value;
-                    value.target.node = job.node;
-                    value.target.drawable = std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(job.node.lock()->drawable()->shared_from_this());
-                    value.target.mesh = drawable;
-                    value.target.submesh = submesh;
+                    value.target = bg2e::manipulation::SelectionItem::forRenderable(*job.node.lock(), *drawable, submesh);
                     value.material = drawable->drawMaterial(submesh)->snapshot();
                     value.material->setTexture(bg2e::draw::TextureSlot::AmbientOcclusion, texture);
-                    value.definition = bg2e::draw::cloneMaterialAttributes(drawable->materialDefinition(submesh));
+                    value.definition = bg2e::draw::cloneMaterialAttributes(*value.target.lockMaterialDefinition());
                     value.definition.setAoTexture(bg2e::draw::cloneTextureSettings(*texture->base()));
                     const auto mode = result->mode == bg2e::bake::LightmapMode::RTAO
                         ? bg2e::base::MaterialAttributes::IndirectTextureMode::BakedAmbientOcclusion

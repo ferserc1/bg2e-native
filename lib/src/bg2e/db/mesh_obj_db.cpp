@@ -491,6 +491,10 @@ std::shared_ptr<draw::Drawable> loadDrawableObj(const ObjMesh& model, draw::Engi
     }
     auto result = std::make_shared<draw::Drawable>();
     result->setName(model.name);
+    if (!model.sourcePaths.empty())
+    {
+        result->setImportSource(model.sourcePaths.front());
+    }
     result->setMesh(std::make_shared<geo::MeshPNUUT>(*model.mesh));
     for (uint32_t i = 0; i < result->submeshesCount(); ++i)
     {

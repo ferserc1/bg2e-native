@@ -94,7 +94,11 @@ std::shared_ptr<SafeUpdateToken> Uv2SafeReload::regenerateDraw(
                 {
                     return;
                 }
-                component->setDrawable(std::move(generated.drawable));
+                const auto assigned = component->setDrawable(std::move(generated.drawable));
+                if (!assigned.ok())
+                {
+                    throw std::runtime_error(assigned.message);
+                }
                 result = {true,"",generated.atlas.width,generated.atlas.height,
                     generated.atlas.chartCount,generated.atlas.utilization};
             }

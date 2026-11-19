@@ -525,20 +525,16 @@ void OrbitCameraComponent::centerOnTarget(bg2e::scene::Node* target)
     else
     {
         _distance = _initialDistance;
-        const auto centerDrawable = [&](const auto& drawable)
+        if (const auto* component = target->drawableRender())
         {
-            if (drawable && drawable->mesh())
+            if (const auto mesh = component->geometry())
             {
-                geo::AABoundingBox bbox(drawable->mesh());
+                geo::AABoundingBox<geo::MeshPNUUT> bbox(*mesh);
                 if (bbox.isValid())
                 {
                     _distance = std::max({bbox.max().x, bbox.max().y, bbox.max().z}) * 2.0f;
                 }
             }
-        };
-        if (auto component = target->drawable())
-        {
-            centerDrawable(component->drawable());
         }
 
         _rotation.x = 45.0f;

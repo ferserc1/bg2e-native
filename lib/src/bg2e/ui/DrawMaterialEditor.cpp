@@ -514,7 +514,7 @@ void DrawMaterialEditor::onEditRequested(EditIntentHandler handler)
                     {
                         for (const auto& item : selection->selectedItems())
                         {
-                            if (item && item->lockMesh())
+                            if (item && item->lockMaterial())
                             {
                                 targets.selection.push_back(*item);
                             }
@@ -543,9 +543,11 @@ void DrawMaterialEditor::onEditRequested(EditIntentHandler handler)
                         auto validate = sourceEditValidator(intent);
                         for (const auto& item : _impl->targets.selection)
                         {
-                            if (auto mesh = item.lockMesh(); mesh && mesh->isLoaded())
+                            if (auto material = item.lockMaterial())
                             {
-                                if (!validate(mesh.get(), mesh->drawMaterial(item.submesh).get(), item.submesh))
+                                auto* definition = item.lockMaterialDefinition();
+                                if (!validateMaterialSourceEdit(material->materialAttributes(), intent) ||
+                                    !definition || !validateMaterialSourceEdit(*definition, intent))
                                 {
                                     _state->error = "Texture source is owned by its component; edit ignored.";
                                     return false;
@@ -756,7 +758,7 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
     {
         for (const auto& item : selection->selectedItems())
         {
-            if (item && item->lockMesh())
+            if (item && item->lockMaterial())
             {
                 targets.push_back(*item);
             }
@@ -808,6 +810,7 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
                 std::shared_ptr<draw::Drawable> drawable;
                 std::shared_ptr<draw::MaterialBase> material;
                 uint32_t submesh;
+                manipulation::SelectionItem appearance;
             };
             std::vector<Receiver> receivers;
             for (const auto& target : targets)
@@ -819,12 +822,12 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
                     belongs = belongs || ancestor == root.get();
                 }
                 auto drawable = target.lockMesh();
-                if (!belongs || !drawable || !drawable->isLoaded() || drawable->engine() != state->engine)
+                auto material = target.lockMaterial();
+                if (!belongs || !material || material->engine() != state->engine)
                 {
                     continue;
                 }
-                auto material = drawable->drawMaterial(target.submesh);
-                receivers.push_back({drawable, material, target.submesh});
+                receivers.push_back({drawable, material, target.submesh, target});
             }
             if (auto material = direct.lock(); material && material->engine() == state->engine)
             {
@@ -841,12 +844,45 @@ bool DrawMaterialEditor::queueEdit(std::function<void(draw::Drawable*, draw::Mat
                         state->error = "Texture source is owned by its component; edit ignored.";
                         return;
                     }
+                    if (!receiver.drawable && !receiver.appearance.drawable.expired())
+                    {
+                        auto* definition = receiver.appearance.lockMaterialDefinition();
+                        if (!definition)
+                        {
+                            throw std::runtime_error("Instance material target changed");
+                        }
+                        auto policy = receiver.material->snapshot();
+                        policy->setMaterialAttributes(*definition);
+                        if (!validate(nullptr, policy.get(), receiver.submesh))
+                        {
+                            state->error = "Texture source is owned by its component; edit ignored.";
+                            return;
+                        }
+                    }
                 }
             }
             for (const auto& receiver : receivers)
             {
                 touched = true; // Other failures still require invalidation.
-                operation(receiver.drawable.get(), receiver.material.get(), receiver.submesh);
+                if (!receiver.drawable && !receiver.appearance.drawable.expired())
+                {
+                    auto prepared = receiver.material->snapshot();
+                    operation(nullptr, prepared.get(), receiver.submesh);
+                    auto definition = draw::cloneMaterialAttributes(prepared->materialAttributes());
+                    auto* authored = receiver.appearance.lockMaterialDefinition();
+                    if (!authored)
+                    {
+                        throw std::runtime_error("Instance material target changed");
+                    }
+                    receiver.material->exchangeState(*prepared);
+                    using std::swap;
+                    swap(*authored, definition);
+                    receiver.appearance.materialEdited();
+                }
+                else
+                {
+                    operation(receiver.drawable.get(), receiver.material.get(), receiver.submesh);
+                }
             }
             if (!touched)
             {
@@ -897,7 +933,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         {
             for (const auto& item : selection->selectedItems())
             {
-                if (item && item->lockMesh())
+                if (item && item->lockMaterial())
                 {
                     current.push_back(*item);
                 }
@@ -911,7 +947,7 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         for (size_t i = 0; same && i < current.size(); ++i)
         {
             same = current[i].node.lock() == frozen.selection[i].node.lock() &&
-                current[i].lockMesh() == frozen.selection[i].lockMesh() &&
+                current[i].lockRenderable() == frozen.selection[i].lockRenderable() &&
                 current[i].submesh == frozen.selection[i].submesh;
         }
         if (!same || (_state->guard && !_state->guard()))
@@ -948,13 +984,16 @@ bool DrawMaterialEditor::draw(UserInterface& ui)
         {
             if (item)
             {
-                if (auto mesh = item->lockMesh(); mesh && mesh->isLoaded())
+                if (auto selected = item->lockMaterial())
                 {
-                    includeSourcePolicy(mesh->drawMaterial(item->submesh)->materialAttributes());
-                    includeSourcePolicy(mesh->materialDefinition(item->submesh));
+                    includeSourcePolicy(selected->materialAttributes());
+                    if (auto* definition = item->lockMaterialDefinition())
+                    {
+                        includeSourcePolicy(*definition);
+                    }
                     if (!material)
                     {
-                        material = mesh->drawMaterial(item->submesh);
+                        material = selected;
                     }
                     ++selectedCount;
                 }

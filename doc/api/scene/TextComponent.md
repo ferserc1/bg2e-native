@@ -2,7 +2,7 @@
 
 **Header:** `<bg2e/scene/TextComponent.hpp>` · **Namespace:** `bg2e::scene`
 
-Final `DrawableComponent`, factory/JSON type **`Text`**. Owns exactly one procedural
+Final `DrawableRenderComponent`, factory/JSON type **`Text`**. Owns exactly one procedural
 quad/submesh, one conventional material and an independent cached text generator.
 It uses the current draw renderer, not a separate font-rendering backend.
 
@@ -10,7 +10,7 @@ It uses the current draw renderer, not a separate font-rendering backend.
 
 ```cpp
 TextComponent();
-bool requiresBg2Export() const override; // false
+bool requiresBg2Export() const; // false; not inherited from DrawableComponent
 base::Text& text();
 const base::Text& text() const;
 void setText(const base::Text& value) noexcept;

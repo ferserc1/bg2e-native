@@ -17,6 +17,7 @@
  */
 
 #include "MaterialCommands.hpp"
+#include "MaterialTargets.hpp"
 
 #include <bg2e/gpu/Common.hpp>
 #include <bg2e/draw/ShaderData.hpp>
@@ -39,6 +40,42 @@ using Getter = std::shared_ptr<base::Texture> (Attributes::*)() const;
 const std::array<Getter, 6> getters{&Attributes::albedoTexture, &Attributes::metalnessTexture,
     &Attributes::roughnessTexture, &Attributes::normalTexture, &Attributes::aoTexture,
     &Attributes::lightEmissionTexture};
+
+draw::DrawableUsageLease retainMaterialDependencies(const manipulation::SelectionItem& item,
+    const Attributes& live, const Attributes& alternate, const Attributes& definition)
+{
+    draw::DrawableResourceHandle handle;
+    const auto renderable = item.lockRenderable();
+    if (const auto owner = std::dynamic_pointer_cast<scene::DrawableComponent>(renderable))
+    {
+        handle = owner->resourceHandle();
+    }
+    else if (const auto instance = std::dynamic_pointer_cast<scene::DrawableInstanceComponent>(renderable))
+    {
+        handle = instance->resourceHandle();
+    }
+    const auto cache = handle.context();
+    if (!cache)
+    {
+        return {}; // Text has no shared drawable identity.
+    }
+    draw::DrawableDependencies dependencies;
+    draw::appendMaterialDependencies(live, dependencies);
+    draw::appendMaterialDependencies(alternate, dependencies);
+    draw::appendMaterialDependencies(authoredMaterial(item), dependencies);
+    draw::appendMaterialDependencies(definition, dependencies);
+    auto retained = cache->retain(handle, draw::DrawableUse::History,
+        "material-history:" + handle.identifier(), {}, [dependencies]()
+        {
+            return dependencies;
+        });
+    if (!retained)
+    {
+        throw std::runtime_error(retained.diagnostic.message);
+    }
+    return std::move(retained.lease);
+}
+
 
 uint32_t sourcePolicy(const Attributes& live, const Attributes& definition)
 {
@@ -289,14 +326,14 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const bg2e::ui::Ma
     {
         throw std::invalid_argument("Composer material edits require selected document submeshes");
     }
-    std::set<std::pair<bg2e::draw::Drawable*, uint32_t>> seen;
+    std::set<std::pair<bg2e::scene::DrawableRenderComponent*, uint32_t>> seen;
     std::set<bg2e::draw::MaterialBase*> owners;
     _memory.localBytes = sizeof(*this) + targets.selection.size() * sizeof(Target) * 2;
     for (const auto& item : targets.selection)
     {
         auto node = item.node.lock();
-        auto mesh = item.lockMesh();
-        if (!node || !owner->contains(node.get()) || !mesh || !mesh->isLoaded())
+        auto mesh = item.lockRenderable();
+        if (!node || !owner->contains(node.get()) || !mesh || !mesh->resourcesLoaded())
         {
             throw std::invalid_argument("Material target is stale");
         }
@@ -324,11 +361,11 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const bg2e::ui::Ma
             throw std::invalid_argument("Realize pending material sources before editing with history");
         }
         target.expectedRevision = live->materialAttributes().revision();
-        target.expectedDefinition = mesh->materialDefinition(item.submesh).revision();
-        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), mesh->materialDefinition(item.submesh));
+        target.expectedDefinition = authoredMaterial(item).revision();
+        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), authoredMaterial(item));
         // Validate the actual receivers before a paste can replace their policy.
         if (!bg2e::ui::validateMaterialSourceEdit(live->materialAttributes(), intent) ||
-            !bg2e::ui::validateMaterialSourceEdit(mesh->materialDefinition(item.submesh), intent))
+            !bg2e::ui::validateMaterialSourceEdit(authoredMaterial(item), intent))
         {
             _targets.clear();
             _effective = false;
@@ -339,10 +376,10 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const bg2e::ui::Ma
         {
             throw std::invalid_argument("Material clipboard belongs to another device");
         }
-        target.definition = bg2e::draw::cloneMaterialAttributes(paste ? paste->materialAttributes() : mesh->materialDefinition(item.submesh));
+        target.definition = bg2e::draw::cloneMaterialAttributes(paste ? paste->materialAttributes() : authoredMaterial(item));
         if (paste)
         {
-            preserveLockedSources(*target.alternate, target.definition, *live, mesh->materialDefinition(item.submesh));
+            preserveLockedSources(*target.alternate, target.definition, *live, authoredMaterial(item));
         }
         _effective = apply(*target.alternate, target.definition, intent) || paste || _effective;
         if (!target.alternate->texturesUpdated())
@@ -354,13 +391,15 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const bg2e::ui::Ma
         target.alternate->materialAttributes().setVisible(live->materialAttributes().visible());
         (void)bg2e::draw::packMaterial(*target.alternate);
         // Submesh metadata has its own commands and must survive material paste.
-        target.definition.setName(mesh->materialDefinition(item.submesh).name());
-        target.definition.setGroupName(mesh->materialDefinition(item.submesh).groupName());
-        target.definition.setVisible(mesh->materialDefinition(item.submesh).visible());
-        accountDefinition(_memory, mesh->materialDefinition(target.item.submesh));
+        target.definition.setName(authoredMaterial(item).name());
+        target.definition.setGroupName(authoredMaterial(item).groupName());
+        target.definition.setVisible(authoredMaterial(item).visible());
+        accountDefinition(_memory, authoredMaterial(target.item));
         accountDefinition(_memory, target.definition);
         account(_memory, live);
         account(_memory, target.alternate);
+        target.dependencies = retainMaterialDependencies(target.item, live->materialAttributes(),
+            target.alternate->materialAttributes(), target.definition);
         _targets.push_back(std::move(target));
     }
 }
@@ -380,8 +419,8 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const std::vector<
     for (const auto& value : prepared)
     {
         auto node = value.target.node.lock();
-        auto mesh = value.target.lockMesh();
-        if (!node || !owner->contains(node.get()) || !mesh || !mesh->isLoaded() || !value.material)
+        auto mesh = value.target.lockRenderable();
+        if (!node || !owner->contains(node.get()) || !mesh || !mesh->resourcesLoaded() || !value.material)
         {
             throw std::invalid_argument("Prepared material receiver is stale");
         }
@@ -401,16 +440,18 @@ EditMaterials::EditMaterials(std::weak_ptr<StageScene> stage, const std::vector<
         target.item = value.target;
         target.live = live;
         target.expectedRevision = live->materialAttributes().revision();
-        target.expectedDefinition = mesh->materialDefinition(value.target.submesh).revision();
-        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), mesh->materialDefinition(value.target.submesh));
+        target.expectedDefinition = authoredMaterial(value.target).revision();
+        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), authoredMaterial(value.target));
         target.alternate = value.material->snapshot();
         target.definition = bg2e::draw::cloneMaterialAttributes(value.definition);
-        preserveLockedSources(*target.alternate, target.definition, *live, mesh->materialDefinition(value.target.submesh));
+        preserveLockedSources(*target.alternate, target.definition, *live, authoredMaterial(value.target));
         (void)bg2e::draw::packMaterial(*target.alternate);
-        accountDefinition(_memory, mesh->materialDefinition(target.item.submesh));
+        accountDefinition(_memory, authoredMaterial(target.item));
         accountDefinition(_memory, target.definition);
         account(_memory, live);
         account(_memory, target.alternate);
+        target.dependencies = retainMaterialDependencies(target.item, live->materialAttributes(),
+            target.alternate->materialAttributes(), target.definition);
         _targets.push_back(std::move(target));
     }
     _effective = true;
@@ -465,27 +506,28 @@ bg2e::app::CommandResult EditMaterials::exchange(bool applied) noexcept
     for (const auto& target : _targets)
     {
         auto node = target.item.node.lock();
-        auto mesh = target.item.lockMesh();
+        auto mesh = target.item.lockRenderable();
         auto live = target.live.lock();
         if (!stage || !node || !stage->contains(node.get()) || !mesh || !live ||
             mesh->drawMaterial(target.item.submesh) != live || live->engine() != target.alternate->engine() ||
             live->materialAttributes().revision() != target.expectedRevision ||
-            mesh->materialDefinition(target.item.submesh).revision() != target.expectedDefinition ||
-            sourcePolicy(live->materialAttributes(), mesh->materialDefinition(target.item.submesh)) != target.expectedSourcePolicy)
+            authoredMaterial(target.item).revision() != target.expectedDefinition ||
+            sourcePolicy(live->materialAttributes(), authoredMaterial(target.item)) != target.expectedSourcePolicy)
         {
             return {CommandStatus::Rejected, "Prepared material target changed"};
         }
     }
     for (auto& target : _targets)
     {
-        auto mesh = target.item.lockMesh();
+        auto mesh = target.item.lockRenderable();
         auto live = target.live.lock();
         live->exchangeState(*target.alternate);
         using std::swap;
-        swap(mesh->materialDefinition(target.item.submesh), target.definition);
+        swap(authoredMaterial(target.item), target.definition);
+        target.item.materialEdited();
         target.expectedRevision = live->materialAttributes().revision();
-        target.expectedDefinition = mesh->materialDefinition(target.item.submesh).revision();
-        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), mesh->materialDefinition(target.item.submesh));
+        target.expectedDefinition = authoredMaterial(target.item).revision();
+        target.expectedSourcePolicy = sourcePolicy(live->materialAttributes(), authoredMaterial(target.item));
     }
     _applied = applied;
     return {CommandStatus::Applied, {}};

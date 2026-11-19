@@ -107,7 +107,7 @@ void GizmoAndSelectionRenderer::collectDrawNodes(scene::Node* root)
     setIgnoreDisabled(ignored);
 }
 
-bool GizmoAndSelectionRenderer::cacheLines(const std::shared_ptr<draw::Drawable>& drawable)
+bool GizmoAndSelectionRenderer::cacheLines(const std::shared_ptr<const draw::Drawable>& drawable)
 {
     if (!drawable || !drawable->isLoaded())
     {
@@ -210,9 +210,9 @@ bool GizmoAndSelectionRenderer::prepareFrame()
         {
             continue;
         }
-        if (auto* component = node->drawable())
+        if (auto* component = node->drawableRender())
         {
-            changed = cacheLines(component->drawable()) || changed;
+            changed = cacheLines(component->renderResource()) || changed;
         }
         if (auto* gizmo = node->getComponent<GizmoComponent>())
         {

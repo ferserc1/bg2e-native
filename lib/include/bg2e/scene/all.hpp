@@ -24,7 +24,10 @@
 #include <bg2e/scene/Component.hpp>
 #include <bg2e/scene/ComponentIssues.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
+#include <bg2e/scene/DrawableRenderComponent.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
+#include <bg2e/scene/drawable_resources.hpp>
 #include <bg2e/scene/DrawableRegistry.hpp>
 #include <bg2e/scene/BoundingBox.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>

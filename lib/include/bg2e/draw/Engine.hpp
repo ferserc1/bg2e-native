@@ -41,6 +41,8 @@ class CleanupManager;
 
 namespace draw {
 
+class DrawableCache;
+
 // Experimental draw engine. Owns the GPU context and global lifecycle.
 // The SDL window and shared Instance wrapper are borrowed. Factory backends
 // are retained; caller-owned backends must outlive the Engine. Engine controls
@@ -68,6 +70,9 @@ class BG2E_API Engine {
     gpu::OffscreenSurface* offscreenSurface() const;
     uint32_t frameSlotCount() const;
     gpu::CleanupManager& cleanupManager();
+    DrawableCache& drawableCache();
+    // Independent residency scope on this same device, tracked through shutdown.
+    std::shared_ptr<DrawableCache> createDrawableCache();
 
   private:
     void initialize(SDL_Window* window, gpu::Size2D extent, gpu::Backend& backend,

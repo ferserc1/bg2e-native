@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/draw/Engine.hpp>
 #include <bg2e/json/NodeReader.hpp>
 #include <bg2e/scene/ComponentFactoryRegistry.hpp>
 #include <bg2e/utils/utils.hpp>
@@ -235,6 +236,8 @@ std::shared_ptr<Node> Node::clone() const
     // A freshly constructed node already gets its own unique identifier; only the
     // user-visible state (name, enabled/steady flags) is carried over.
     auto copy = std::make_shared<Node>(_name);
+    copy->_drawableCacheContext = drawableCacheContext();
+    copy->_retainedDrawableCaches = _retainedDrawableCaches;
     copy->_disabled = _disabled;
     copy->_steady = _steady;
 
@@ -497,8 +500,40 @@ void Node::deserialize(std::shared_ptr<json::JsonNode> jsonData, const std::file
     loadResources(engine, progress);
 }
 
+std::shared_ptr<draw::DrawableCache> Node::drawableCacheContext() const
+{
+    return _drawableCacheContext ? _drawableCacheContext : _parent ? _parent->drawableCacheContext() : nullptr;
+}
+
+
+void Node::setDrawableCacheContext(std::shared_ptr<draw::DrawableCache> cache)
+{
+    _drawableCacheContext = std::move(cache);
+}
+
+
+void Node::retainDrawableCacheContext(std::shared_ptr<draw::DrawableCache> cache)
+{
+    if (cache && cache != drawableCacheContext() &&
+        std::find(_retainedDrawableCaches.begin(), _retainedDrawableCaches.end(), cache) == _retainedDrawableCaches.end())
+    {
+        _retainedDrawableCaches.push_back(std::move(cache));
+    }
+}
+
+
+const std::vector<std::shared_ptr<draw::DrawableCache>>& Node::retainedDrawableCacheContexts() const noexcept
+{
+    return _retainedDrawableCaches;
+}
+
+
 void Node::loadResources(draw::Engine& engine, SceneLoadProgress* progress)
 {
+    if (!drawableCacheContext() || !drawableCacheContext()->active())
+    {
+        setDrawableCacheContext(engine.createDrawableCache());
+    }
     if (auto* owner = scene())
     {
         // First pass covers all declarations in the owning scene, including
@@ -548,6 +583,11 @@ std::shared_ptr<json::JsonNode> Node::serializeReferences(const std::filesystem:
         auto compData = comp.second->serializeReferences(basePath);
         if (!compData || !json::ObjectReader(compData).isValid())
         {
+            if (comp.second->typeName() == "DrawableInstance")
+            {
+                bg2e_log_warning << "Cannot preserve drawable instance data in node " << _name << bg2e_log_end;
+                return nullptr;
+            }
             if (comp.second->typeName() == "Text" || comp.second->typeName() == "TextFonts")
             {
                 bg2e_log_warning << "Cannot preserve editable text/font data in node " << _name << bg2e_log_end;

@@ -38,18 +38,27 @@ namespace manipulation {
 
 struct BG2E_API SelectionItem {
     std::weak_ptr<scene::Node> node;
-    std::weak_ptr<scene::DrawableComponent> drawable;
+    std::weak_ptr<scene::DrawableRenderComponent> drawable;
     uint32_t submesh = 0;
     PickKind kind = PickKind::Drawable;
 
-    std::weak_ptr<draw::Drawable> mesh;
+    // Legacy editing source is absent for geometry-sharing instances.
+    std::weak_ptr<const draw::Drawable> mesh;
+    std::weak_ptr<const void> resourceIdentity;
     uint32_t selectionIdentifier = 0;
+
+    static SelectionItem forRenderable(scene::Node& node, scene::DrawableRenderComponent& component, uint32_t submesh);
 
     // Locks validate membership/resource replacement as well as weak lifetime.
 
     [[nodiscard]] std::shared_ptr<draw::Drawable> lockMesh() const;
+    // Appearance editing validates the same identity without exposing geometry.
+    [[nodiscard]] std::shared_ptr<scene::DrawableRenderComponent> lockRenderable() const;
+    [[nodiscard]] std::shared_ptr<draw::MaterialBase> lockMaterial() const;
+    [[nodiscard]] base::MaterialAttributes* lockMaterialDefinition() const;
+    void materialEdited() const noexcept;
     [[nodiscard]] scene::Node* nodePtr() const;
-    [[nodiscard]] scene::DrawableComponent* drawablePtr() const;
+    [[nodiscard]] scene::DrawableRenderComponent* drawablePtr() const;
 
     [[nodiscard]] draw::Drawable* meshPtr() const;
     [[nodiscard]] bool expired() const;
@@ -251,7 +260,7 @@ class BG2E_API SelectionManager {
         }
         return nullptr;
     }
-    [[nodiscard]] inline scene::DrawableComponent* selectedDrawable() const
+    [[nodiscard]] inline scene::DrawableRenderComponent* selectedDrawable() const
     {
         return selectedItem() ? selectedItem()->drawablePtr() : nullptr;
     }
@@ -285,11 +294,11 @@ class BG2E_API SelectionManager {
     // Node-level selection. Returns true if the node appears in the unique
     // selected-nodes list (regardless of which/how many submeshes are selected).
     bool isSelected(const scene::Node* node);
-    bool isSelected(const scene::Node* node, const scene::DrawableComponent* drawable, uint32_t submesh);
+    bool isSelected(const scene::Node* node, const scene::DrawableRenderComponent* drawable, uint32_t submesh);
 
     bool isSelected(const scene::Node* node, const draw::Drawable* drawable, uint32_t submesh);
 
-    bool addToSelectedItems(scene::Node* node, scene::DrawableComponent* drawable, uint32_t submesh);
+    bool addToSelectedItems(scene::Node* node, scene::DrawableRenderComponent* drawable, uint32_t submesh);
     // Node-level selection overload. If the node owns a DrawableComponent it is
     // selected at submesh level (submesh 0) so it also highlights in the 3D view.
     // Otherwise the node is registered as a node-only selection. Node-only objects
@@ -300,7 +309,7 @@ class BG2E_API SelectionManager {
     bool addNodeToSelection(scene::Node* node);
     void removeFromSelectedItems(scene::Node* node);
     void removeFromSelectedItems(scene::Node* node, uint32_t submesh);
-    void removeFromSelectedItems(scene::DrawableComponent* drawable, uint32_t submesh);
+    void removeFromSelectedItems(scene::DrawableRenderComponent* drawable, uint32_t submesh);
 
     [[nodiscard]] inline bool clearSelectionOnEmptyPick() const
     {

@@ -1,26 +1,38 @@
-# DrawableComponent export policy
+# DrawableComponent ownership and export
 
-**Header:** `<bg2e/scene/DrawableComponent.hpp>` · **Namespace:** `bg2e::scene`
+Header: `<bg2e/scene/DrawableComponent.hpp>`; namespace `bg2e::scene`.
+Direct base: [DrawableRenderComponent](DrawableRenderComponent.md).
 
-The base component owns a draw::Drawable and optional model source reference;
-see [scene contracts](index.md). It now also exposes:
+This is the exclusive authored owner of a `draw::Drawable` cache identity. Use
+`Node::drawable()` for owners; generic rendering uses `Node::drawableRender()`.
+[TextComponent](TextComponent.md) and [DrawableInstanceComponent](DrawableInstanceComponent.md)
+are sibling classes and are not returned as owners.
 
-```cpp
-virtual bool requiresBg2Export() const;
-```
+`drawable()` returns the owner's mutable realization, or a const Drawable through
+a const component. `setDrawable()` publishes replacement geometry within the
+current identity, updating instances through its geometry revision. It returns
+DrawableCacheDiagnostic: check failure and preserve the previous owner.
+`rebindResource(cache, handle)` explicitly selects another identity. A second owner
+claim, foreign resource or cross-device assignment rejects; clear/release at the
+old boundary before rebinding another device. `clearDrawable()` releases the
+component's claim, not the cache's entire resident entry.
 
-Default true. This is a **read-only virtual query**, not a mutable permission.
-Complete scene exporters inspect it before creating a mesh snapshot, collecting
-model textures, allocating a BG2 path or changing resourcePath. False skips model
-export only: the component's virtual serializer still runs.
+`resourceHandle()`, `resourcePath()`, `sourcePath()`, `hasPendingExport()` and
+`assignmentDiagnostic()` expose identity/source/publication state. Source paths
+can exist without a realized model. `clone()` creates independent geometry and a
+separate identity/destination, rather than another instance of this owner.
+Duplicate legacy owner paths similarly preserve independence and retain pending
+export state if physical copying fails. Dependency issues report pending copies,
+assignment/load failures and unresolved resources.
 
-[TextComponent](TextComponent.md) overrides false and embeds editable paragraph/
-material data. It must not be wrapped in a plain DrawableComponent to bypass the
-policy, baked as a model, or have its generated albedo exported. Custom procedural
-subclasses need their own representation/resource contract.
+`requiresBg2Export() const` is a read-only virtual query, default true. Complete
+export checks it before allocating BG2 assets. False skips model export while the
+component serializer still runs; custom procedural subclasses need their own
+representation. Whole-component `ignoreSerialization` instead omits the component.
+Text has its own serializer and exclusion checks; it does not inherit this query.
 
-This differs from inherited `Component::ignoreSerialization()` /
-`setIgnoreSerialization(bool)`, which excludes the **entire component**.
-It also differs from texture ignoreSerialization, which omits only a source asset
-while retaining UV/sampling fields. Node's exact-then-subclass component lookup
-still lets TextComponent participate in draw/picking/material workflows.
+Normal scene saves coordinate one model per used resource identity, using owner
+properties when present or cache originals when ownerless. Instances serialize
+independent appearance and cannot independently export the shared model.
+See [complete IO](../db/DrawResourceIO.md) and
+[ownership architecture](../../architecture/drawable_caches_and_instances.md).

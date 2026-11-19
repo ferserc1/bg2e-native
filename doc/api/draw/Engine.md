@@ -95,3 +95,13 @@ The [default offscreen delegate](DefaultOffscreenApplicationDelegate.md) adds
 settings/scene ownership and exact accumulation to this context. Its
 [FrameAccumulator](FrameAccumulator.md) is synchronous; applications needing only
 headless Device-backed passes can use Engine without the camera renderer.
+
+## Resident drawable contexts
+
+`drawableCache()` returns the Engine's default device-backed cache by reference.
+`createDrawableCache()` returns a separate shared context for document/job scopes.
+Keep resource mutations serialized with stopped producers. Services track current
+and displaced native realizations; Engine cleanup invalidates handles and invokes
+weak payload release hooks before destroying Device. User-held native references
+must also retire before that point. No scene tree or Composer is needed to use
+the service. See [DrawableCache](DrawableCache.md).

@@ -66,3 +66,12 @@ For a complete job see the [standalone tutorial](../../tutorials/draw/standalone
 and [batch API](StandaloneBakeBatch.md). Sources:
 [header](../../../lib/include/bg2e/bake/StandaloneBakerContext.hpp),
 [implementation](../../../lib/src/bg2e/bake/StandaloneBakerContext.cpp).
+
+## Shared-geometry receivers
+
+Targets may be DrawableInstanceComponent nodes. The context checks receiver and
+shared-resource identity separately, retains Job uses and projects independent
+receiver transforms onto existing UV2. Replacing/removing a receiver, replacing
+shared native geometry or changing sources invalidates the job. Raster buffers
+and BLAS are retained per resource; output/material identity remains per node.
+No Composer or UI is required, but the initialized Engine/Device is required.

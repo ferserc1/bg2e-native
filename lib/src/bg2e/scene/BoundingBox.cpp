@@ -44,45 +44,32 @@ void BoundingBox::processNode(Node* node, const Options& options)
         return;
     }
 
-    auto drawableComponent = node->drawable();
-    const auto processDrawable = [&](const auto& drawable)
+    if (const auto* component = node->drawableRender())
     {
-        auto mesh = drawable ? drawable->mesh() : nullptr;
-
+        const auto mesh = component->geometry();
         if (mesh)
         {
-            const auto worldMatrix = node->worldMatrix() * drawable->transform();
-            const auto submeshCount = drawable->submeshesCount();
-
+            const auto world = node->worldMatrix();
             if (mesh->submeshes.empty())
             {
                 geo::AABoundingBox<geo::MeshPNUUT> box(*mesh);
-                addSubmesh(box, worldMatrix);
+                addSubmesh(box, world * component->transform());
             }
             else
             {
-                const auto count = std::min(
-                    submeshCount,
-                    static_cast<uint32_t>(mesh->submeshes.size()));
-
-                for (uint32_t submeshIndex = 0; submeshIndex < count; ++submeshIndex)
+                const auto count = std::min(component->submeshesCount(), static_cast<uint32_t>(mesh->submeshes.size()));
+                for (uint32_t i = 0; i < count; ++i)
                 {
-                    if (!options.includeInvisibleSubmeshes && (!drawable->submeshVisibility(submeshIndex) ||
-                        !drawable->material(submeshIndex).visible()))
+                    if (!options.includeInvisibleSubmeshes &&
+                        (!component->submeshVisibility(i) || !component->effectiveMaterial(i).visible()))
                     {
                         continue;
                     }
-
-                    geo::AABoundingBox<geo::MeshPNUUT> box(*mesh, submeshIndex);
-                    auto transform = worldMatrix * drawable->localSubmeshTransform(submeshIndex);
-                    addSubmesh(box, transform);
+                    geo::AABoundingBox<geo::MeshPNUUT> box(*mesh, i);
+                    addSubmesh(box, world * component->submeshTransform(i));
                 }
             }
         }
-    };
-    if (drawableComponent)
-    {
-        processDrawable(drawableComponent->drawable());
     }
 
     for (const auto& child : node->children())

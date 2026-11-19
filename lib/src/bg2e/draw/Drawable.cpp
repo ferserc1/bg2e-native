@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/draw/Drawable.hpp>
+#include <cstdio>
 #include <bg2e/draw/ImageLoadContext.hpp>
 #include <bg2e/base/CpuProfile.hpp>
 
@@ -73,6 +74,7 @@ void Drawable::setMesh(std::shared_ptr<Mesh> mesh)
         }
     }
     _mesh = std::move(mesh);
+    ++_geometryVersion;
     _attributes.resize(_mesh->submeshes.size());
     if (_engine)
     {
@@ -156,6 +158,7 @@ void Drawable::load(Engine* engine, ImageLoadContext& context, std::function<voi
     buildDrawMesh();
     updateMaterials(context, std::move(onTextureLoaded));
     buildRayTracingMeshes();
+    ++_geometryVersion;
 }
 
 void Drawable::buildDrawMesh()
@@ -250,6 +253,7 @@ void Drawable::reload()
     buildDrawMesh();
     updateMaterials();
     buildRayTracingMeshes();
+    ++_geometryVersion;
 }
 
 void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
@@ -268,6 +272,7 @@ void Drawable::applyModifier(geo::Modifier<Mesh>* modifier)
     }
     modifier->setMesh(_mesh.get());
     modifier->apply();
+    ++_geometryVersion;
     if (_engine)
     {
         reload();
@@ -357,6 +362,7 @@ bool Drawable::exchangeGeometry(PreparedGeometry& prepared) noexcept
     }
     _drawMesh.swap(prepared.raster);
     _tracing.swap(prepared.tracing);
+    ++_geometryVersion;
     return true;
 }
 
@@ -369,6 +375,8 @@ std::shared_ptr<Drawable> Drawable::clone() const
     }
     auto result = std::make_shared<Drawable>();
     result->_name = _name;
+    result->_importSource = _importSource;
+    result->_resourceClone = true;
     result->_transform = _transform;
     result->_attributes = _attributes;
     result->_rayTracingEnabled = _rayTracingEnabled;
@@ -409,6 +417,11 @@ std::shared_ptr<Drawable> Drawable::clone() const
 
 void Drawable::cleanup()
 {
+    if (cacheUsage().registered)
+    {
+        std::fprintf(stderr, "Drawable '%s' remains resident in its resource cache; detach users and unload the cache entry explicitly.\n", _name.c_str());
+        return;
+    }
     if (_engine)
     {
         {

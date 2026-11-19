@@ -23,10 +23,10 @@ and resource compatibility are rechecked.
 
 On document replacement Composer settles drafts and previews, cancels stale
 queued document publications, waits for command completion and drains renderer
-work before releasing retained resources. A running lightmap bake owns an
-independent initial-scene snapshot and continues with a warning; it cannot
-publish into a replacement document. Shutdown stops the bake and retires its GPU
-work before releasing resources. Plugin leases keep code loaded while a command's virtual
+work before releasing retained resources. Successful New/Open stops the prior
+lightmap job and invalidates queued application; failed candidate publication
+keeps the old document and its job. Shutdown retires bake GPU work before
+releasing resources. Plugin leases keep code loaded while a command's virtual
 destructor or callback may run. Deferred resource release must finish before the
 device/engine owner is destroyed. These are caller-owned lifecycle boundaries;
 the generic app core cannot infer a GPU fence.

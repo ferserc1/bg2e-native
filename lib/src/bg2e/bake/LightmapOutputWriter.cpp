@@ -17,6 +17,8 @@
  */
 
 #include <bg2e/bake/LightmapOutputWriter.hpp>
+#include <bg2e/scene/drawable_resources.hpp>
+#include "Receiver.hpp"
 #include <bg2e/db/file.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
 #include <bg2e/db/mesh_obj.hpp>
@@ -154,27 +156,42 @@ std::string sceneSignature(scene::Node* root, draw::Engine& engine, draw::Render
         {
             append(s, c.get());
             append(s, c->ignoreSerialization());
-            if (auto component = dynamic_cast<scene::DrawableComponent*>(c.get()))
+            if (auto component = dynamic_cast<scene::DrawableRenderComponent*>(c.get()))
             {
-                if (const auto d = component->drawable())
+                if (const auto mesh = component->geometry())
                 {
-                    append(s, d.get());
-                    append(s, d->mesh().get());
-                    if (d->mesh() && geometrySeen.insert(d->mesh().get()).second)
+                    append(s, component->geometryIdentity().get());
+                    append(s, mesh.get());
+                    if (geometrySeen.insert(mesh.get()).second)
                     {
-                        appendGeometry(s, *d->mesh());
+                        appendGeometry(s, *mesh);
                     }
-                    append(s, d->submeshesCount());
-                    for (uint32_t i = 0; i < d->submeshesCount(); ++i)
+                    append(s, component->submeshesCount());
+                    for (uint32_t i = 0; i < component->submeshesCount(); ++i)
                     {
-                        appendText(s, d->submeshName(i));
-                        appendText(s, d->submeshGroupName(i));
-                        append(s, d->submeshVisibility(i));
-                        append(s, d->submeshTransform(i));
+                        appendText(s, component->submeshName(i));
+                        appendText(s, component->submeshGroupName(i));
+                        append(s, component->submeshVisibility(i));
+                        append(s, component->submeshTransform(i));
+                        append(s, component->effectiveMaterial(i).revision());
                     }
                 }
             }
-            auto value = c->serializeReferences({});
+            std::shared_ptr<json::JsonNode> value;
+            if (const auto* owner = dynamic_cast<scene::DrawableComponent*>(c.get()))
+            {
+                value = c->scene::Component::serialize({});
+                appendText(s, owner->resourcePath().generic_string());
+                appendText(s, owner->sourcePath().generic_string());
+            }
+            else if (dynamic_cast<scene::DrawableInstanceComponent*>(c.get()))
+            {
+                value = c->scene::Component::serialize({});
+            }
+            else
+            {
+                value = c->serializeReferences({});
+            }
             appendText(s, value ? value->toString() : "null");
         }
         for (const auto& child : node->children())
@@ -183,6 +200,13 @@ std::string sceneSignature(scene::Node* root, draw::Engine& engine, draw::Render
         }
     };
     graph(graph, root);
+    std::vector<std::shared_ptr<draw::DrawableCache>> contexts;
+    scene::collectDrawableCacheContexts(*root, contexts);
+    for (const auto& cache : contexts)
+    {
+        append(s, cache->scopeIdentity());
+        append(s, cache->contentGeneration());
+    }
     append(s, queue.items().size());
     for (const auto& i : queue.items())
     {
@@ -249,7 +273,7 @@ bool knownComponent(const scene::Component& c)
 {
     // Exact RTTI intentionally excludes subclasses with undeclared dependencies.
     const auto& t = typeid(c);
-    return t == typeid(scene::DrawableComponent) || t == typeid(scene::TransformComponent) ||
+    return t == typeid(scene::DrawableComponent) || t == typeid(scene::DrawableInstanceComponent) || t == typeid(scene::TransformComponent) ||
         t == typeid(scene::CameraComponent) || t == typeid(scene::LightComponent) ||
         t == typeid(scene::EnvironmentComponent) || t == typeid(scene::InputChainJointComponent) ||
         t == typeid(scene::OutputChainJointComponent) || t == typeid(scene::OrbitCameraComponent) ||
@@ -294,6 +318,7 @@ struct LightmapOutputWriter::State {
     std::vector<Input> inputs;
     std::shared_ptr<scene::Node> root;
     draw::RenderQueue baseline;
+    scene::DrawableResourceRetention resourceUses;
 
     void checkDestination() const
     {
@@ -447,29 +472,35 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
                     protect(p);
                 }
             }
-            if (auto dc = dynamic_cast<scene::DrawableComponent*>(c.get()))
+            if (auto renderable = dynamic_cast<scene::DrawableRenderComponent*>(c.get()))
             {
-                if (!dc->resourcePath().empty())
+                auto* dc = dynamic_cast<scene::DrawableComponent*>(c.get());
+                if (const auto* instance = dynamic_cast<scene::DrawableInstanceComponent*>(c.get());
+                    instance && !instance->resourcePath().empty())
                 {
-                    protect(dc->resourcePath());
-                    auto ext = dc->resourcePath().extension().string();
+                    protect(instance->resourcePath());
+                }
+                if (dc && !dc->sourcePath().empty())
+                {
+                    protect(dc->sourcePath());
+                    auto ext = dc->sourcePath().extension().string();
                     std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char v)
                     {
                         return static_cast<char>(std::tolower(v));
                     });
                     if (ext == ".obj")
                     {
-                        for (const auto& p : db::readObj(dc->resourcePath())->sourcePaths)
+                        for (const auto& p : db::readObj(dc->sourcePath())->sourcePaths)
                         {
                             protect(p);
                         }
                     }
                 }
-                if (auto d = dc->drawable())
+                if (renderable->geometry())
                 {
-                    for (uint32_t i = 0; i < d->submeshesCount(); ++i)
+                    for (uint32_t i = 0; i < renderable->submeshesCount(); ++i)
                     {
-                        const auto& m = d->material(i);
+                        const auto& m = renderable->effectiveMaterial(i);
                         for (const auto& t : {m.albedoTexture(), m.metalnessTexture(), m.roughnessTexture(),
                              m.normalTexture(), m.aoTexture(), m.lightEmissionTexture()})
                         {
@@ -492,16 +523,46 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
         }
     };
     graph(graph, s.root.get());
+    std::vector<std::shared_ptr<draw::DrawableCache>> contexts;
+    scene::collectDrawableCacheContexts(*s.root, contexts);
+    for (const auto& cache : contexts)
+    {
+        const auto dependencies = cache->dependencies();
+        for (const auto& file : dependencies.files)
+        {
+            protect(file);
+        }
+        for (const auto& model : dependencies.models)
+        {
+            protect(model);
+            auto extension = model.extension().string();
+            std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char value)
+            {
+                return static_cast<char>(std::tolower(value));
+            });
+            if (extension == ".bg2" || extension == ".vwglb")
+            {
+                for (const auto& texture : db::meshTexturePaths(model))
+                {
+                    protect(model.parent_path() / texture);
+                }
+            }
+        }
+        if (!dependencies.warnings.empty())
+        {
+            throw std::runtime_error("Bake output: resident dependencies could not be completely resolved");
+        }
+    }
     for (size_t i = 0; i < targets.size(); ++i)
     {
         const auto& t = targets[i];
         if (t.identity.empty() || !identities.insert(t.identity).second || !t.node ||
-            t.node->sceneRoot() != s.root.get() || !t.node->drawable() || !t.node->drawable()->drawable())
+            t.node->sceneRoot() != s.root.get() || !t.node->drawableRender() || !t.node->drawableRender()->isSceneGeometry())
         {
             throw std::invalid_argument("Bake output: duplicate identity or invalid scene target");
         }
-        const auto drawable = t.node->drawable()->drawable();
-        if (!drawable->isLoaded() || !drawable->mesh() || !drawable->drawMesh() ||
+        const auto drawable = detail::receiverResource(*t.node->drawableRender());
+        if (!drawable || drawable->engine() != s.engine || !t.node->drawableRender()->resourcesLoaded() || !drawable->isLoaded() || !drawable->mesh() || !drawable->drawMesh() ||
             !sameGeometry(*drawable->mesh(), drawable->drawMesh()->meshData()))
         {
             throw std::invalid_argument("Bake output: target CPU geometry differs from its uploaded geometry; reload before baking");
@@ -526,6 +587,10 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
             s.generation / (name + ".lightmap.json"), std::nullopt};
         if (writeModelCopies)
         {
+            if (!t.node->drawable())
+            {
+                throw std::invalid_argument("Bake output: instances export lightmap images and metadata; model copies require geometry owners");
+            }
             out.modelPath = s.generation / (name + "-model") / "model.bg2";
         }
         s.outputs.push_back(std::move(out));
@@ -549,6 +614,12 @@ std::vector<LightmapOutputWriter::OutputPaths> LightmapOutputWriter::preflight(
             throw std::runtime_error("Bake output: reserved output namespace already exists");
         }
     }
+    auto retained = scene::retainDrawableResources(*s.root, draw::DrawableUse::Job, "lightmap-output-writer");
+    if (!retained.diagnostic.ok())
+    {
+        throw std::runtime_error(retained.diagnostic.message);
+    }
+    s.resourceUses = std::move(retained);
     s.signature = sceneSignature(s.root.get(), *s.engine, s.baseline);
     s.targets = targets;
     s.written.assign(targets.size(), false);

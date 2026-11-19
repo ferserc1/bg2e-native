@@ -58,3 +58,14 @@ initialization, source replacement and cleanup.
 Sources: [declarations](../../../lib/include/bg2e/bake/LightmapBakeExecutor.hpp),
 [implementation](../../../lib/src/bg2e/bake/LightmapBakeExecutor.cpp),
 [UV surface contract](UvSurfacePass.md), [integrated caller](IntegratedBakerContext.md).
+
+## Instance receivers
+
+`prepareGeometry(std::shared_ptr<scene::DrawableRenderComponent>)` is the receiver
+overload. It preserves receiver/component identity separately from the retained
+shared Drawable and raster buffers. UV projection uses the receiver's independent
+combined submesh matrix with the supplied node-world matrix. Instance preparation
+retains a Job lease; integrated/standalone contexts also retain source resources.
+Existing direct-Drawable preparation and injected owner preparation hooks remain.
+There is no per-instance BLAS clone. Geometry replacement invalidates source checks;
+retain all submitted versions through completion.

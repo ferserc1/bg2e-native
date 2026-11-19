@@ -23,7 +23,9 @@ before its deferred renderer callback captures the baseline. Discrete commands
 admitted afterwards wait until settlement. The first callback uses a
 conservative boundary before capturing the edit baseline; subsequent updates use
 `enqueueCpuValueUpdate`. Beginning or updating an edit warns about a running bake
-without stopping it: Composer bakes an independent snapshot of the initial scene.
+while its frozen appearance/placement/lighting snapshot remains usable. Shared
+geometry replacement can invalidate bake source checks; submitted old versions
+remain retained through retirement.
 No live mutation runs during UI drawing.
 
 Begin, Update and Commit acknowledge admission; actual failures are reported

@@ -60,13 +60,16 @@ extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::p
 extern BG2E_API std::shared_ptr<scene::Scene> loadScene(const std::filesystem::path& basePath,
     const std::string& fileName, draw::Engine& engine, scene::SceneProgressCallback onProgress = nullptr);
 
-// Complete resource snapshot. Call at a stopped submission boundary. Unique
-// sidecars are published first and the main document is replaced atomically last.
+// Complete resource snapshot. Call at a stopped submission boundary. Each used
+// drawable identity is exported once; ownerless resources use original defaults.
+// Intended model files are replaced with rollback backups; collision copies use
+// unused names. Dependencies precede the atomic main-document replacement.
 // Text is embedded, never baked to BG2. Fonts, supplied/adjacent license notices
 // and other material images are copied; authored live references are restored.
-// Resource/component failures are isolated: saves the recoverable graph and
-// logs warnings. Use the report overload to distinguish partial saves. Returns
-// false only if no document could be published; never propagates exceptions.
+// Resource/component failures are isolated: saves a recoverable graph only when
+// its model/image references have complete staged or existing targets. Otherwise
+// leaves the prior document/files intact. Warnings distinguish partial saves;
+// false means no document was published. Never propagates exceptions.
 extern BG2E_API bool saveScene(scene::Node* root, draw::Engine& engine,
     const std::filesystem::path& path, scene::SceneProgressCallback progress = nullptr) noexcept;
 extern BG2E_API bool saveScene(scene::Node* root, draw::Engine& engine,

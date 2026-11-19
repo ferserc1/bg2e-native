@@ -169,8 +169,9 @@ integrated example handles this explicitly; the general material editor does
 not become a bake scheduler or image exporter. Bake invalidation policy belongs
 to the application. A context consuming a live scene must invalidate/reprepare
 its source generation after edits at a stopped boundary. Composer instead bakes
-a deep snapshot of initial rendering inputs: material/source edits set a warning
-without cancelling that job. Its completed result is not rejected solely because
+independent initial appearance, placement and lighting snapshots over retained
+shared raster/BLAS: material edits may only warn, while shared geometry replacement
+can invalidate the job's source checks. Its completed result is not rejected solely because
 the document revision changed. See [Composer baking](../../apps/draw_composer.md#integrated-scene-baking).
 Retain unbaked originals if restart must regenerate independent UV2 and materials.
 
@@ -198,3 +199,15 @@ source-compatible; ordinaryAo requests the explicit AO reset after application.
 The [draw editor guide](../../apps/draw_model_edit.md) explains the actual
 application integration. Generic production ComponentInspector/DrawableEditor
 remain separate; these APIs do not certify arbitrary immediate component mutation.
+
+
+## Instance appearance targets
+
+SelectionItem appearance locks validate node membership and resource identity for
+owners and instances. The material editor edits independent authored definitions
+and native materials without asking an instance for a mutable mesh. Instance
+submesh names/groups/visibility and affine matrices use appearance commands;
+geometry/UV2 tools require owner targets. Legacy lockMesh remains unavailable on
+instances. Prepared material history retains before/after texture sources,
+including generated lightmaps, and acknowledges instance revisions after editing
+both CPU and native state. See [instances](../scene/DrawableInstanceComponent.md).

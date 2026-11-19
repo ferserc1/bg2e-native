@@ -21,6 +21,7 @@
 
 #include <bg2e/scene/PolarTransformController.hpp>
 #include <bg2e/scene/FixedScaleTransformController.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include <bg2e/scene/TextComponent.hpp>
 #include <bg2e/scene/TextFontComponent.hpp>
 #include <utility>
@@ -71,14 +72,15 @@ void AppDelegate::initializeTransformInteractions()
             }
             // Unknown/custom update writers require their own authored-state
             // adapter. Exact types prevent an overriding subclass slipping in.
-            // Text and font declarations do not write the node transform; they
-            // use the same authored matrix transaction as ordinary drawables.
+            // Instances, text and font declarations do not write the node
+            // transform; they use the ordinary authored matrix transaction.
             for (const auto& entry : node->components())
             {
                 using namespace bg2e::scene;
                 const auto* component = entry.second.get();
                 const auto& type = typeid(*component);
                 if (type != typeid(TransformComponent) && type != typeid(DrawableComponent) &&
+                    type != typeid(DrawableInstanceComponent) &&
                     type != typeid(TextComponent) && type != typeid(TextFontComponent) &&
                     type != typeid(CameraComponent) && type != typeid(LightComponent) &&
                     type != typeid(EnvironmentComponent) && type != typeid(OrbitCameraComponent) &&

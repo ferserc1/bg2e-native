@@ -189,42 +189,29 @@ void EditorUi::initEditMenu()
         }
     }}});
     edit.addMenuItem({});
-    edit.addMenuItem({"Z up to Y up", {.handler = [weakDelegate]
+    using GeometryOperation = command::geometry::Operation;
+    const std::pair<const char*, GeometryOperation> geometryActions[]{
+        {"Z up to Y up", GeometryOperation::ZUpToYUp}, {"Center Geometry", GeometryOperation::Center},
+        {"Put on Floor", GeometryOperation::PutOnFloor}, {"centimeters to meters", GeometryOperation::CentimetersToMeters},
+        {"meters to centimeters", GeometryOperation::MetersToCentimeters}
+    };
+    for (const auto& [label, operation] : geometryActions)
     {
-        if (auto owner = weakDelegate.lock())
+        edit.addMenuItem({label, {.handler = [weakDelegate, operation]
         {
-            owner->editGeometry(command::geometry::Operation::ZUpToYUp);
-        }
-    }}});
-    edit.addMenuItem({"Center Geometry", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->editGeometry(operation);
+            }
+        }}, [label]
         {
-            owner->editGeometry(command::geometry::Operation::Center);
-        }
-    }}});
-    edit.addMenuItem({"Put on Floor", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+            return std::string(label);
+        }, [weakDelegate]
         {
-            owner->editGeometry(command::geometry::Operation::PutOnFloor);
-        }
-    }}});
-    edit.addMenuItem({});
-    edit.addMenuItem({"centimeters to meters", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->editGeometry(command::geometry::Operation::CentimetersToMeters);
-        }
-    }}});
-    edit.addMenuItem({"meters to centimeters", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->editGeometry(command::geometry::Operation::MetersToCentimeters);
-        }
-    }}});
+            const auto owner = weakDelegate.lock();
+            return owner && owner->geometryEditAvailable();
+        }});
+    }
     _toolbar.addMenuItem(edit);
 }
 
@@ -296,6 +283,21 @@ void EditorUi::initCreateNodeMenu()
             }
         }}});
     }
+    create.addMenuItem({});
+    create.addMenuItem({"Instance from selected owner", {.handler = [weakDelegate]
+    {
+        if (auto owner = weakDelegate.lock())
+        {
+            owner->createDrawableInstanceFromOwner();
+        }
+    }}, []
+    {
+        return std::string("Instance from selected owner");
+    }, [weakDelegate]
+    {
+        const auto owner = weakDelegate.lock();
+        return owner && owner->canCreateDrawableInstanceFromOwner();
+    }});
     _toolbar.addMenuItem(create);
 }
 
@@ -383,12 +385,24 @@ void EditorUi::initWindowMenu()
             owner->_sceneResources.open();
         }
     }}});
+    window.addMenuItem({"Drawable Instances", {.handler = [weakUi]
+    {
+        if (auto owner = weakUi.lock())
+        {
+            owner->_drawableInstances.open();
+        }
+    }}, [weakUi]
+    {
+        const auto owner = weakUi.lock();
+        return owner && owner->_drawableInstances.isOpen();
+    }});
     _toolbar.addMenuItem(window);
 }
 
 void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session)
 {
     _ui = session;
+    initDrawableBrowser();
     const auto weakResourcesDelegate = _delegate;
     _sceneResources.configure([weakResourcesDelegate]() -> const bg2e::db::SceneResourceAnalysis*
     {
@@ -729,6 +743,7 @@ void EditorUi::drawUI()
         return;
     }
     _sceneResources.draw();
+    _drawableInstances.draw();
     _importSettingsWindow.draw();
     if (auto deferred = dynamic_cast<bg2e::draw::RendererDeferred*>(delegate->renderer());
         deferred && !deferred->environmentError().empty())

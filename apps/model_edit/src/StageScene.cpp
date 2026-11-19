@@ -259,7 +259,10 @@ void cleanupTree(bg2e::scene::Node& node)
         {
             release([&]
             {
-                drawable->cleanup();
+                if (!drawable->cacheUsage().registered)
+                {
+                    drawable->cleanup();
+                }
             });
         }
     }
@@ -493,7 +496,11 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
                 if (drawables.contains(drawable.get()) || meshes.contains(drawable->mesh().get()))
                 {
                     drawable = drawable->clone();
-                    component->setDrawable(drawable);
+                    const auto assigned = component->setDrawable(drawable);
+                    if (!assigned.ok())
+                    {
+                        throw std::runtime_error(assigned.message);
+                    }
                 }
                 drawables.insert(drawable.get());
                 meshes.insert(drawable->mesh().get());
@@ -848,7 +855,10 @@ void StageScene::cleanup()
     {
         try
         {
-            drawable->cleanup();
+            if (!drawable->cacheUsage().registered)
+            {
+                drawable->cleanup();
+            }
         }
         catch (...)
         {

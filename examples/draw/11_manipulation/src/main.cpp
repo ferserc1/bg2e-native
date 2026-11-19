@@ -840,8 +840,7 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
             if (ui::Button::button("Group: body/front", false, !hasSelection(delegate)))
             {
                 auto item = delegate->selection()->selectedItem();
-                auto component = item ? item->drawable.lock() : nullptr;
-                auto drawable = component ? component->drawable() : nullptr;
+                auto drawable = item ? item->lockMesh() : nullptr;
                 if (drawable)
                 {
                     const utils::MaterialModifier patch(std::string{R"({"roughness":0.6})"});
@@ -855,8 +854,7 @@ class UiDelegate final : public ui::UserInterfaceDelegate, public std::enable_sh
             if (ui::Button::button("Regex: all body groups", false, !hasSelection(delegate)))
             {
                 auto item = delegate->selection()->selectedItem();
-                auto component = item ? item->drawable.lock() : nullptr;
-                auto drawable = component ? component->drawable() : nullptr;
+                auto drawable = item ? item->lockMesh() : nullptr;
                 if (drawable)
                 {
                     const utils::MaterialModifier patch(std::string{R"({"metalness":0.1})"});

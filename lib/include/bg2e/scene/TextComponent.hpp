@@ -18,14 +18,15 @@
 
 #pragma once
 
-#include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableRenderComponent.hpp>
+#include <optional>
 #include <bg2e/base/TextTextureGenerator.hpp>
 
 namespace bg2e::scene {
 
 // One XY quad, facing +Z, +X tangent, +Y up. Both UV sets run top-left to
 // bottom-right. Ordinary material appearance is independent of paragraph data.
-class BG2E_API TextComponent final : public DrawableComponent {
+class BG2E_API TextComponent final : public DrawableRenderComponent {
   public:
     void collectDependencyIssues(const ComponentValidationContext& context,
         std::vector<ComponentIssue>& issues) const override;
@@ -36,7 +37,21 @@ class BG2E_API TextComponent final : public DrawableComponent {
 
     TextComponent();
 
-    bool requiresBg2Export() const override;
+    bool requiresBg2Export() const;
+
+    std::shared_ptr<draw::Drawable> drawable()
+    {
+        return _drawable;
+    }
+    std::shared_ptr<const draw::Drawable> drawable() const override
+    {
+        return _drawable;
+    }
+    bool renderable(bool forPicking = false) const override
+    {
+        return forPicking ? hasQuadResources() : canRender();
+    }
+
     base::Text& text();
     const base::Text& text() const;
     void setText(const base::Text& value) noexcept;
@@ -91,11 +106,7 @@ class BG2E_API TextComponent final : public DrawableComponent {
     void didRemoveFromNode(Node* owner) override;
 
   private:
-    // Hide model-backed conveniences in the direct API, not through base casts.
-    using DrawableComponent::setDrawable;
-    using DrawableComponent::clearDrawable;
-    using DrawableComponent::setResourcePath;
-    using DrawableComponent::swapResourcePath;
+    std::shared_ptr<draw::Drawable> _drawable;
 
     base::Text _text;
     base::MaterialAttributes _fallbackMaterial;

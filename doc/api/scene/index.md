@@ -24,12 +24,14 @@ scene. Null Text/TextFonts serializers propagate a save failure rather than bein
 silently dropped. These specific recovery contracts do not turn arbitrary custom
 registered component failures into nonthrowing operations.
 
-DrawableComponent stores only draw::Drawable. `drawable()` returns a shared owner
-(const component access returns const Drawable); `setDrawable`/`clearDrawable`
-coordinate existing GPU users and reject a cross-engine replacement until cleared.
-CPU source references remain separate from resource realization. `clone()` deep
-copies the drawable/resources. Node::drawable excludes non-geometry helpers.
-There is no execution-mode discriminator or alternate native Drawable accessor.
+DrawableComponent is an exclusive draw::Drawable resource owner. `drawable()`
+returns its realization; const component access returns const Drawable.
+`setDrawable` replaces geometry within its identity and `rebindResource` explicitly
+changes identity. Cross-device and duplicate-owner claims reject. CPU source
+references remain separate. Owner clones are independent; instance clones share
+geometry and copy appearance. Node::drawable excludes helpers, Text and instances;
+use drawableRender for common rendering/appearance and drawableInstance for the
+concrete instance. There is no alternate native scene Drawable accessor.
 
 ComponentFactoryRegistry::registerComponent(name, defaultCreator) registers a
 CPU constructor; create(data, path) parses the schema, and the draw Engine overload
@@ -44,3 +46,10 @@ retains generic extent conversion and graphics-free component callbacks, alongsi
 Find/Update/Input/Transform visitors. Render traversal/bindings live in draw.
 
 - [Component issues and reversible fixes](ComponentIssues.md)
+
+## Shared drawable resources
+
+- [DrawableRenderComponent](DrawableRenderComponent.md): common rendering/appearance contract.
+- [DrawableComponent](DrawableComponent.md): exclusive mutable model owner.
+- [DrawableInstanceComponent](DrawableInstanceComponent.md): independent appearance over shared geometry/BLAS.
+- [Architecture](../../architecture/drawable_caches_and_instances.md): persistence, replacement and cleanup boundaries.

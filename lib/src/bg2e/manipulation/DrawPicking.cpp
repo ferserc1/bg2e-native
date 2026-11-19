@@ -109,19 +109,13 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
     for (const auto& item : queue.items())
     {
         auto node = item.node.lock();
-        auto* component = node ? node->drawable() : nullptr;
+        auto* component = node ? node->drawableRender() : nullptr;
         auto* selectable = node ? node->getComponent<SelectableComponent>() : nullptr;
         if (!component || !selectable)
         {
             continue;
         }
-        selectable->update(0);
-        SelectionItem selection;
-        selection.node = node;
-        selection.drawable = std::dynamic_pointer_cast<scene::DrawableComponent>(component->shared_from_this());
-        selection.mesh = component->drawable();
-        selection.submesh = item.submeshIndex;
-        selection.selectionIdentifier = selectable->identifier(item.submeshIndex);
+        auto selection = SelectionItem::forRenderable(*node, *component, item.submeshIndex);
         entries.push_back({selection, item.drawMesh, item.worldMatrix, item.objectId, {},
             (item.materialData.uvSets[1].z & draw::MaterialDoubleSided) != 0});
     }

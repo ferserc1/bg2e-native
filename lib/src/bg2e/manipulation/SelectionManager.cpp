@@ -19,10 +19,29 @@
 #include <bg2e/manipulation/SelectionManager.hpp>
 
 #include <bg2e/base/Log.hpp>
+#include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include <bg2e/manipulation/SelectableComponent.hpp>
 #include <bg2e/manipulation/GizmoComponent.hpp>
 
 namespace bg2e::manipulation {
+
+SelectionItem SelectionItem::forRenderable(scene::Node& node, scene::DrawableRenderComponent& component, uint32_t submesh)
+{
+    SelectionItem result;
+    result.node = node.weak_from_this();
+    result.drawable = std::dynamic_pointer_cast<scene::DrawableRenderComponent>(component.shared_from_this());
+    result.mesh = component.drawable();
+    result.resourceIdentity = component.geometryIdentity();
+    result.submesh = submesh;
+    if (auto* selectable = node.getComponent<SelectableComponent>())
+    {
+        selectable->update(0);
+        result.selectionIdentifier = selectable->identifier(submesh);
+    }
+    return result;
+}
+
 
 bool SelectionItem::expired() const
 {
@@ -36,14 +55,15 @@ bool SelectionItem::expired() const
         return false;
     }
     auto component = drawable.lock();
-    auto resource = mesh.lock();
-    if (!component || component->ownerNode() != n.get() || n->drawable() != component.get() ||
-        !resource || component->drawable() != resource)
+    const auto identity = resourceIdentity.lock();
+    const auto resource = mesh.lock();
+    if (!component || component->ownerNode() != n.get() || n->drawableRender() != component.get() ||
+        (identity ? component->geometryIdentity() != identity : !resource || component->drawable() != resource))
     {
         return true;
     }
     auto selectable = n->getComponent<SelectableComponent>();
-    if (!selectable || submesh >= resource->submeshesCount())
+    if (!selectable || submesh >= component->submeshesCount())
     {
         return true;
     }
@@ -53,15 +73,69 @@ bool SelectionItem::expired() const
 
 std::shared_ptr<draw::Drawable> SelectionItem::lockMesh() const
 {
-    return !expired() ? mesh.lock() : nullptr;
+    if (expired())
+    {
+        return nullptr;
+    }
+    // Legacy editing access is limited to independently owned realizations.
+    // Instances participate in picking without exposing geometry edits.
+    auto component = drawable.lock();
+    if (auto owner = std::dynamic_pointer_cast<scene::DrawableComponent>(component))
+    {
+        return owner->drawable();
+    }
+    if (auto text = std::dynamic_pointer_cast<scene::TextComponent>(component))
+    {
+        return text->drawable();
+    }
+    return nullptr;
 }
+
+std::shared_ptr<scene::DrawableRenderComponent> SelectionItem::lockRenderable() const
+{
+    return expired() ? nullptr : drawable.lock();
+}
+
+
+std::shared_ptr<draw::MaterialBase> SelectionItem::lockMaterial() const
+{
+    const auto component = lockRenderable();
+    if (!component || !component->resourcesLoaded())
+    {
+        return nullptr;
+    }
+    return component->drawMaterial(submesh);
+}
+
+
+base::MaterialAttributes* SelectionItem::lockMaterialDefinition() const
+{
+    const auto component = lockRenderable();
+    if (const auto instance = std::dynamic_pointer_cast<scene::DrawableInstanceComponent>(component))
+    {
+        return &instance->material(submesh);
+    }
+    const auto resource = lockMesh();
+    return resource ? &resource->materialDefinition(submesh) : nullptr;
+}
+
+
+void SelectionItem::materialEdited() const noexcept
+{
+    const auto component = drawable.lock();
+    if (const auto instance = std::dynamic_pointer_cast<scene::DrawableInstanceComponent>(component))
+    {
+        instance->acknowledgeMaterialEdit(submesh);
+    }
+}
+
 
 scene::Node* SelectionItem::nodePtr() const
 {
     return !expired() ? node.lock().get() : nullptr;
 }
 
-scene::DrawableComponent* SelectionItem::drawablePtr() const
+scene::DrawableRenderComponent* SelectionItem::drawablePtr() const
 {
     return !expired() ? drawable.lock().get() : nullptr;
 }
@@ -99,7 +173,7 @@ void SelectionManager::restoreSelection(const SelectionState& state,
             });
             const bool hasGeometry = std::any_of(state.items.begin(), state.items.end(), [&](const auto& item)
             {
-                return item.node.lock() == node && bool(item.lockMesh());
+                return item.node.lock() == node && !item.expired();
             });
             if (hadGeometry && !hasGeometry)
             {
@@ -117,7 +191,7 @@ void SelectionManager::restoreSelection(const SelectionState& state,
     for (const auto& item : state.items)
     {
         auto node = item.node.lock();
-        if (node && (!belongs || belongs(node.get())) && item.lockMesh())
+        if (node && (!belongs || belongs(node.get())) && !item.expired())
         {
             items.push_back(std::make_shared<SelectionItem>(item));
         }
@@ -466,16 +540,20 @@ bool SelectionManager::isSelected(const scene::Node* node)
         });
 }
 
-bool SelectionManager::isSelected(const scene::Node* node, const scene::DrawableComponent* drawable, uint32_t submesh)
+bool SelectionManager::isSelected(const scene::Node* node, const scene::DrawableRenderComponent* drawable, uint32_t submesh)
 {
     refreshSelection();
-    return drawable && isSelected(node, drawable->drawable().get(), submesh);
+    return drawable && std::any_of(_selectedItems.begin(), _selectedItems.end(), [&](const auto& item)
+    {
+        return item->node.lock().get() == node && item->drawable.lock().get() == drawable &&
+            item->submesh == submesh && !item->expired();
+    });
 }
 
-bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableComponent* drawable, uint32_t submesh)
+bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableRenderComponent* drawable, uint32_t submesh)
 {
     refreshSelection();
-    if (!node || !drawable || drawable->ownerNode() != node || node->drawable() != drawable)
+    if (!node || !drawable || drawable->ownerNode() != node || node->drawableRender() != drawable)
     {
         return false;
     }
@@ -487,12 +565,11 @@ bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableComp
         return false;
     }
 
-    auto mesh = drawable->drawable();
-    if (mesh && mesh->engine() && mesh->engine() != _drawEngine)
+    if (drawable->drawEngine() && drawable->drawEngine() != _drawEngine)
     {
         throw std::logic_error("SelectionManager cannot select geometry from another draw engine");
     }
-    const auto count = mesh ? mesh->submeshesCount() : 0;
+    const auto count = drawable->geometry() ? drawable->submeshesCount() : 0;
     if (submesh >= count)
     {
         return false;
@@ -511,13 +588,7 @@ bool SelectionManager::addToSelectedItems(scene::Node* node, scene::DrawableComp
     }
 
     // Build the SelectionItem class
-    auto selectItem = std::make_shared<SelectionItem>();
-    selectItem->node = node->weak_from_this();
-    selectItem->drawable = std::weak_ptr<scene::DrawableComponent>(std::dynamic_pointer_cast<scene::DrawableComponent>(drawable->shared_from_this()));
-    selectItem->mesh = mesh;
-    selComponent->update(0);
-    selectItem->selectionIdentifier = selComponent->identifier(submesh);
-    selectItem->submesh = submesh;
+    auto selectItem = std::make_shared<SelectionItem>(SelectionItem::forRenderable(*node, *drawable, submesh));
     _selectedItems.push_back(selectItem);
 
     // Mark the submesh as selected
@@ -539,7 +610,7 @@ bool SelectionManager::addToSelectedItems(scene::Node* node)
 
     // If the node owns a drawable, select it at submesh level (submesh 0) so it
     // also highlights in the 3D view, reusing all the validation above.
-    if (auto* drawable = node->drawable())
+    if (auto* drawable = node->drawableRender())
     {
         return addToSelectedItems(node, drawable, 0);
     }
@@ -608,11 +679,11 @@ void SelectionManager::removeFromSelectedItems(scene::Node* node)
 
 void SelectionManager::removeFromSelectedItems(scene::Node* node, uint32_t submesh)
 {
-    const auto drawable = const_cast<scene::DrawableComponent*>(node->getComponent<scene::DrawableComponent>());
+    const auto drawable = node->drawableRender();
     return removeFromSelectedItems(drawable, submesh);
 }
 
-void SelectionManager::removeFromSelectedItems(scene::DrawableComponent* drawable, uint32_t submesh)
+void SelectionManager::removeFromSelectedItems(scene::DrawableRenderComponent* drawable, uint32_t submesh)
 {
     if (!drawable || !drawable->ownerNode())
     {
@@ -722,7 +793,7 @@ void SelectionManager::prioritizeDrawableNode()
     // If index 0 already owns a drawable, nothing to do
     if (auto front = _selectedNodes.front().lock())
     {
-        if (front->drawable())
+        if (front->drawableRender())
         {
             return;
         }
@@ -731,7 +802,7 @@ void SelectionManager::prioritizeDrawableNode()
     for (std::size_t i = 1; i < _selectedNodes.size(); ++i)
     {
         auto candidate = _selectedNodes[i].lock();
-        if (candidate && candidate->drawable())
+        if (candidate && candidate->drawableRender())
         {
             auto wp = _selectedNodes[i];
             _selectedNodes.erase(_selectedNodes.begin() + i);

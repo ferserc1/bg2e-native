@@ -50,7 +50,8 @@ The private execution wrapper is constructed by MainLoop, not the application.
 See [quick start](quick_start.md), [API reference](reference.md),
 [MainLoop selection](../app/MainLoop.md#execution-selection-and-validation) and
 [GPU API](../gpu/index.md). [OffscreenApplication](../app/OffscreenApplication.md)
-uses the typed draw path exclusively. DrawableComponent::drawable() exposes the canonical draw resource.
+uses the typed draw path exclusively. DrawableComponent::drawable() exposes owner resources; DrawableRenderComponent
+provides the common owner/instance/text rendering contract.
 
 ## Implementation details
 
@@ -133,3 +134,5 @@ UV2 sampling, HDR G-buffer storage and application through the AO texture slot.
 - [TransparentRegions](TransparentRegions.md): conservative raster/composition bounds and full fallbacks.
 - [UpdateSynchronization](UpdateSynchronization.md): typed final-color updates and conservative generic callbacks.
 - [CPU/GPU profiling](../../architecture/cpu_profiling.md): collection, recording, native granularity and Performance UI ownership.
+
+- [DrawableCache and usage leases](DrawableCache.md): resident geometry identity, originals, document scopes and job/frame retention.

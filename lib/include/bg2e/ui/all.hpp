@@ -67,3 +67,5 @@
 #include <bg2e/ui/EditInteraction.hpp>
 
 #include <bg2e/ui/SceneResourcesWindow.hpp>
+
+#include <bg2e/ui/DrawableInstancesWindow.hpp>

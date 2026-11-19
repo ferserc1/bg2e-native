@@ -20,6 +20,7 @@
 
 #include <bg2e/app/Command.hpp>
 #include <bg2e/scene/Node.hpp>
+#include <bg2e/scene/drawable_resources.hpp>
 
 namespace bg2e_composer {
 class StageScene;
@@ -30,6 +31,8 @@ namespace command {
 class SceneRetention {
   private:
     bool _preparedEnvironment = false;
+    std::vector<bg2e::draw::DrawableUsageLease> _resourceUses;
+    std::vector<bg2e::draw::DrawableResourceHandle> _resourceIdentities;
     std::shared_ptr<void> _registryLease; // Outlives all retained asset/control blocks.
 
   public:

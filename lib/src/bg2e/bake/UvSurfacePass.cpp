@@ -17,6 +17,7 @@
  */
 
 #include <bg2e/bake/UvSurfacePass.hpp>
+#include "Receiver.hpp"
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
@@ -164,6 +165,7 @@ std::shared_ptr<const UvSurfaceGeometry> UvSurfacePass::prepare(std::shared_ptr<
     _device->waitIdle(); // Explicit rare preparation boundary, never per record.
     auto geometry = std::make_shared<UvSurfaceGeometry>();
     geometry->target = std::move(target);
+    geometry->resource = geometry->target;
     geometry->drawMesh = geometry->target->drawMesh();
     const auto& mesh = geometry->drawMesh->meshData();
     const auto limit = _device->resourceArrayCapabilities().maxStorageBufferRange;
@@ -176,6 +178,58 @@ std::shared_ptr<const UvSurfaceGeometry> UvSurfacePass::prepare(std::shared_ptr<
     geometry->vertices->createStorageBuffer(geometry->packed.vertices);
     return geometry;
 }
+
+std::shared_ptr<const UvSurfaceGeometry> UvSurfacePass::prepare(std::shared_ptr<scene::DrawableRenderComponent> receiver)
+{
+    const auto resource = receiver ? detail::receiverResource(*receiver) : nullptr;
+    if (!_pipeline || !receiver || !receiver->isSceneGeometry() || !receiver->resourcesLoaded() || !resource ||
+        !resource->engine() || resource->engine()->device() != _device || !resource->drawMesh() ||
+        !resource->drawMesh()->vertexBuffer() || resource->drawMesh()->vertexBuffer()->device() != _device)
+    {
+        throw std::invalid_argument("Prepare UV surface from a loaded same-Device scene receiver");
+    }
+    for (uint32_t sub = 0; sub < receiver->submeshesCount(); ++sub)
+    {
+        if (receiver->effectiveMaterial(sub).isTransparent())
+        {
+            throw std::invalid_argument("Transparent materials are not supported baked-map receivers");
+        }
+    }
+    _device->waitIdle();
+    auto geometry = std::make_shared<UvSurfaceGeometry>();
+    geometry->resource = resource;
+    geometry->receiver = std::move(receiver);
+    geometry->drawMesh = resource->drawMesh();
+    draw::DrawableResourceHandle handle;
+    if (const auto* instance = dynamic_cast<const scene::DrawableInstanceComponent*>(geometry->receiver.get()))
+    {
+        handle = instance->resourceHandle();
+    }
+    else if (const auto* owner = dynamic_cast<const scene::DrawableComponent*>(geometry->receiver.get()))
+    {
+        handle = owner->resourceHandle();
+    }
+    if (const auto cache = handle.context())
+    {
+        auto retained = cache->retain(handle, draw::DrawableUse::Job, "bake-uv-receiver:" + handle.identifier());
+        if (!retained)
+        {
+            throw std::runtime_error(retained.diagnostic.message);
+        }
+        geometry->resourceUse = std::make_shared<draw::DrawableUsageLease>(std::move(retained.lease));
+    }
+    const auto& mesh = geometry->drawMesh->meshData();
+    const auto limit = _device->resourceArrayCapabilities().maxStorageBufferRange;
+    if (!limit || mesh.indices.size() > limit / sizeof(UvSurfaceVertex))
+    {
+        throw std::length_error("UV packed surface exceeds Device storage-buffer range");
+    }
+    geometry->packed = buildUvSurfaceMesh(mesh);
+    geometry->vertices = _device->createBuffer("bake immutable UV receiver vertices");
+    geometry->vertices->createStorageBuffer(geometry->packed.vertices);
+    return geometry;
+}
+
 
 void UvSurfacePass::beginFrame(uint32_t index, uint64_t serial)
 {
@@ -195,9 +249,11 @@ void UvSurfacePass::beginFrame(uint32_t index, uint64_t serial)
 
 UvSurfaceResult UvSurfacePass::record(const UvSurfaceInput& input)
 {
+    const std::shared_ptr<const draw::Drawable> resource = input.geometry
+        ? (input.geometry->resource ? input.geometry->resource : input.geometry->target) : nullptr;
     if (!_pipeline || !_coveragePipeline || input.command.hasActiveScope() || !input.geometry ||
-        !input.geometry->target || !input.geometry->target->isLoaded() ||
-        input.geometry->target->drawMesh() != input.geometry->drawMesh ||
+        !resource || !resource->isLoaded() || resource->drawMesh() != input.geometry->drawMesh ||
+        (input.geometry->receiver && detail::receiverResource(*input.geometry->receiver) != resource) ||
         !input.geometry->vertices || input.geometry->vertices->device() != _device || input.extent.isZero())
     {
         throw std::invalid_argument("UV recording needs current retained geometry, nonzero extent and inactive scope");
@@ -213,7 +269,7 @@ UvSurfaceResult UvSurfacePass::record(const UvSurfaceInput& input)
         throw std::logic_error("UV surface slot/serial not prepared or invocation budget exceeded");
     }
     const auto& geometry = *input.geometry;
-    if (geometry.packed.ranges.size() != geometry.target->submeshesCount())
+    if (geometry.packed.ranges.size() != resource->submeshesCount())
     {
         throw std::invalid_argument("UV target submesh topology changed; prepare again");
     }
@@ -221,7 +277,7 @@ UvSurfaceResult UvSurfacePass::record(const UvSurfaceInput& input)
     std::vector<SurfaceUniforms> transforms;
     for (uint32_t i = 0; i < geometry.packed.ranges.size(); ++i)
     {
-        transforms.push_back(transform(input.nodeWorld*geometry.target->submeshTransform(i)));
+        transforms.push_back(transform(input.nodeWorld * (geometry.receiver ? geometry.receiver->submeshTransform(i) : resource->submeshTransform(i))));
         const auto range = geometry.packed.ranges[i];
         for (uint32_t j = 0; j < range.indexCount; ++j)
         {

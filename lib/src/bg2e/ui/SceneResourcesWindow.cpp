@@ -52,7 +52,7 @@ void SceneResourcesWindow::draw()
 void SceneResourcesWindow::drawContents()
 {
     const bool available = _available && _available();
-    ImGui::TextWrapped("Analysis reads the saved scene file. Saving first is only needed for pending changes or a scene without a saved file.");
+    ImGui::TextWrapped("Analysis reads the saved scene and protects resident drawable resources, including unused cache entries. Save pending changes before analyzing.");
     ImGui::BeginDisabled(!available || !_analyze);
     if (ImGui::Button("Analyze scene resources"))
     {
@@ -106,7 +106,7 @@ void SceneResourcesWindow::drawContents()
     {
         using Box = app::MessageBox;
         const auto answer = Box::showWarning("Delete unused scene files",
-            "Permanently delete the listed files? The saved scene is reloaded first, clearing selection, undo/redo history and the clipboard.",
+            "Permanently delete the listed files? The saved scene is reloaded first, clearing selection, undo/redo history and the clipboard. Resident drawable cache entries are preserved.",
             {{0, "Cancel", Box::Esc}, {1, "Delete files"}});
         if (answer == 1)
         {

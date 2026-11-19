@@ -660,6 +660,7 @@ std::shared_ptr<draw::Drawable> loadDrawableBg2(const std::filesystem::path& fil
     }
     auto result = std::make_shared<draw::Drawable>();
     result->setName(filePath.stem().string());
+    result->setImportSource(filePath);
     result->setMesh(model->mesh);
     for (uint32_t i = 0; i < model->materials.size(); ++i)
     {

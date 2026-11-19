@@ -22,3 +22,5 @@
 
 - [Production build/distribution](build_and_distribution.md)
 - [Resource reuse and profiling](production_performance.md)
+
+- [Drawable caches and instances](drawable_caches_and_instances.md): resource identity, exclusive ownership, independent appearance, shared raster/BLAS, export and cleanup protection.

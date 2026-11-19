@@ -16,12 +16,15 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/scene/drawable_resources.hpp>
+#include "Receiver.hpp"
 #include <bg2e/bake/IntegratedBakerContext.hpp>
 #include <bg2e/bake/LightmapCompositionPass.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/draw/RenderQueueVisitor.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <cstring>
 #include <limits>
@@ -73,6 +76,7 @@ bool sameQueue(const draw::RenderQueue& a, const draw::RenderQueue& b)
 }
 
 struct IntegratedBakeState {
+    scene::DrawableResourceRetention resourceUses;
     BakerContextConfiguration configuration;
     draw::Engine* engine = nullptr;
     uint64_t generation = 1, lastSerial = 0;
@@ -177,10 +181,10 @@ struct IntegratedLightmapBaker::Impl {
             }
             found = found || ancestor == state->configuration.sceneRoot.get();
         }
-        auto* component = node->drawable();
-        auto drawable = component ? component->drawable() : nullptr;
+        auto* component = node->drawableRender();
+        auto drawable = component ? detail::receiverResource(*component) : nullptr;
         const auto world = node->worldMatrix();
-        if (!found || !drawable || !geometry || drawable != geometry->target ||
+        if (!found || !drawable || !geometry || component != geometry->receiver.get() || drawable != geometry->resource ||
             drawable->drawMesh() != geometry->drawMesh ||
             std::memcmp(&world,&nodeWorld,sizeof(glm::mat4)) != 0)
         {
@@ -200,6 +204,14 @@ IntegratedBakerContext::IntegratedBakerContext(draw::Engine& engine, BakerContex
     }
     _state->configuration = std::move(configuration);
     _state->engine = &engine;
+    scene::DrawableComponent::prepareResources(_state->configuration.sceneRoot.get(), engine);
+    scene::DrawableInstanceComponent::prepareResources(_state->configuration.sceneRoot.get(), engine);
+    auto retained = scene::retainDrawableResources(*_state->configuration.sceneRoot, draw::DrawableUse::Job, "integrated-bake-context");
+    if (!retained.diagnostic.ok())
+    {
+        throw std::runtime_error(retained.diagnostic.message);
+    }
+    _state->resourceUses = std::move(retained);
     _state->baseline = _state->extract();
     _state->executor = std::make_unique<LightmapBakeExecutor>(_state->configuration);
 }
@@ -404,6 +416,7 @@ void IntegratedBakerContext::cleanup()
     _state->cleanupOutput();
     _state->closed = true;
     _state->baseline.clear();
+    _state->resourceUses = {};
 }
 
 IntegratedLightmapBaker::IntegratedLightmapBaker(std::shared_ptr<IntegratedBakeState> state,
@@ -458,8 +471,8 @@ void IntegratedLightmapBaker::resetAccumulation()
     {
         throw std::logic_error("Notify invalidateSources before restarting after scene edits");
     }
-    auto* component = configuration().target->drawable();
-    auto drawable = component ? component->drawable() : nullptr;
+    auto* component = configuration().target->drawableRender();
+    auto drawable = component ? detail::receiverResource(*component) : nullptr;
     if (!drawable)
     {
         throw std::invalid_argument("Integrated bake target requires a loaded draw Drawable");
@@ -478,7 +491,7 @@ void IntegratedLightmapBaker::resetAccumulation()
     state.cleanupOutput();
     _impl->frozen = *configuration().settings;
     state.executor->initialize(_impl->frozen);
-    _impl->geometry = state.executor->prepareGeometry(drawable);
+    _impl->geometry = state.executor->prepareGeometry(std::dynamic_pointer_cast<scene::DrawableRenderComponent>(component->shared_from_this()));
     _impl->nodeWorld = configuration().target->worldMatrix();
     _impl->checkTarget();
     AccumulationConfiguration accumulation;

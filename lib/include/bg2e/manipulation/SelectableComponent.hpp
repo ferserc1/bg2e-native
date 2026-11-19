@@ -96,8 +96,8 @@ class BG2E_API SelectableComponent : public scene::Component {
     uint32_t _gizmoIdentifier = 0;
 
     // Replacement or a changed submesh count invalidates selection and pick IDs.
-    std::weak_ptr<void> _drawableIdentity;
-    std::weak_ptr<void> _meshIdentity;
+    std::weak_ptr<const void> _drawableIdentity;
+    std::weak_ptr<const void> _meshIdentity;
     static uint32_t _lastIdentifier;
 };
 

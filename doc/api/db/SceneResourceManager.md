@@ -19,7 +19,8 @@ main document or enumerating its directory throw; partial deletion failures are
 returned in `SceneCleanupResult::errors` alongside successful deletions.
 
 The scene directory is an exclusive resource container: every regular file not
-reachable from the main JSON is a cleanup candidate, regardless of extension.
+reachable from the main JSON (or supplied runtime protection roots) is a cleanup
+candidate, regardless of extension.
 Nested directories are inspected, but directories and symbolic links are never
 removed and directory links are not followed. The main JSON and recognized
 resources are protected. External dependencies are reported separately and never
@@ -64,3 +65,40 @@ total space, external resources, dependency warnings, an explicit warning
 override, and a final deletion confirmation. Ordinary saves never clean files.
 
 See [the CPU probe and manual Composer checks](../../../tests/db/scene_resources/README.md).
+
+## Runtime protection and internal reload
+
+File-only overloads remain device-free. Runtime callers may supply a transient
+`SceneResourceProtection` with `roots` (SceneFileReferences) and
+`cacheGenerations` (cache scope identity to content generation):
+
+```cpp
+auto analysis = bg2e::db::SceneResourceManager::analyze(sceneFile, protection);
+auto plan = bg2e::db::SceneResourceManager::createCleanupPlan(analysis, protection, false);
+auto result = bg2e::db::SceneResourceManager::executeCleanup(plan, protection);
+```
+
+Collect fresh roots/generations at review and execution. Passing no protection
+cannot execute a runtime-reviewed plan. Known dependency closure includes
+BG2/VWGLB images, OBJ/MTL source/material files, glTF/GLB buffer/image URIs,
+nested scene model references, and independent instance material/lightmap images.
+Models are visited once to terminate cycles. Unsupported/missing dependencies
+retain the explicit warning-acknowledgement policy.
+
+Composer protects every reachable document cache, including unused resident entries,
+originals, current/retained geometry and material versions, instance appearances,
+history/job/frame sources and clipboard textures. Cache load/unload invalidates
+review even without a scene edit. Ordinary frame/lease turnover does not change
+content generation. Runtime roots and cache generations are never persisted.
+
+The cleanup reload explicitly transfers all reviewed cache contexts to the
+candidate document. `rebindCleanupPlan(plan, protection)` verifies unchanged
+reviewed cache generations and the full file snapshot, preserves all reviewed
+resource protection, rejects newly discovered warnings, and only permits a subset
+of the confirmed deletion list. Composer carries reviewed history/clipboard roots
+conservatively through that operation. Failed/unresolved cleanup reload removes
+no files. True New/Open starts fresh and does not transfer these contexts;
+nonpersisted unused resources cease protecting disk files after true reopen.
+
+Resident unloading, DrawableRegistry names and filesystem orphan accounting are
+separate operations. See [ownership architecture](../../architecture/drawable_caches_and_instances.md).

@@ -55,3 +55,5 @@ remain distinct from specialized bake source protection and final-manifest polic
 ObjMesh::sourcePaths records original OBJ/read MTL inputs for dependency inventory.
 
 See the [module reference](reference.md) for the maintained db symbol catalog.
+
+- [Resident BG2 loading](../draw/DrawableCache.md): `db::loadCachedDrawableBg2` adapters and explicit lifetime rules.

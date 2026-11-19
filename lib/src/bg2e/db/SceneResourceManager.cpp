@@ -20,6 +20,9 @@
 #include <bg2e/db/scene.hpp>
 #include <bg2e/db/scene_path.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
+#include <bg2e/db/mesh_obj.hpp>
+#include <cgltf.h>
+#include <cctype>
 #include <bg2e/json/NodeReader.hpp>
 #include <algorithm>
 #include <array>
@@ -106,7 +109,7 @@ SceneResourceFile inspectWithWarnings(const fs::path& path, std::vector<std::str
 
 bool sameAnalysis(const SceneResourceAnalysis& a, const SceneResourceAnalysis& b)
 {
-    return a.scenePath == b.scenePath && a.snapshot == b.snapshot && a.resources == b.resources &&
+    return a.scenePath == b.scenePath && a.protection == b.protection && a.snapshot == b.snapshot && a.resources == b.resources &&
         a.externalResources == b.externalResources && a.unusedFiles == b.unusedFiles &&
         a.symbolicLinks == b.symbolicLinks && a.warnings == b.warnings;
 }
@@ -151,7 +154,7 @@ void collect(std::shared_ptr<json::JsonNode> node, const fs::path& base, SceneFi
                 continue;
             }
             const auto type = component->getString("type").value_or("");
-            if (type == "Drawable")
+            if (type == "Drawable" || type == "DrawableInstance")
             {
                 fs::path path;
                 if (auto source = component->getString("path"); source && !source->empty())
@@ -171,7 +174,40 @@ void collect(std::shared_ptr<json::JsonNode> node, const fs::path& base, SceneFi
                 }
                 else
                 {
-                    result.warnings.push_back("Drawable without a model reference.");
+                    result.warnings.push_back(type + " without a model reference.");
+                }
+                if (type == "DrawableInstance")
+                {
+                    if (auto submeshes = component->getArray("submeshes"))
+                    {
+                        for (size_t sub = 0; sub < submeshes->size(); ++sub)
+                        {
+                            const auto item = submeshes->getObject(sub);
+                            const auto material = item ? item->getObject("material") : std::nullopt;
+                            if (!item)
+                            {
+                                result.warnings.push_back("Invalid instance submesh; dependencies may be incomplete.");
+                                continue;
+                            }
+                            if (!material)
+                            {
+                                if (!item->isUndefined("material"))
+                                {
+                                    result.warnings.push_back("Invalid instance material; dependencies may be incomplete.");
+                                }
+                                continue;
+                            }
+                            for (const auto* key : {"albedoTexture", "metalnessTexture", "roughnessTexture",
+                                "normalTexture", "ambientOcclussion", "lightEmissionTexture"})
+                            {
+                                add(*material, key);
+                            }
+                        }
+                    }
+                    else if (!component->isUndefined("submeshes"))
+                    {
+                        result.warnings.push_back("Invalid instance submeshes; dependencies may be incomplete.");
+                    }
                 }
             }
             else if (type == "Environment")
@@ -255,7 +291,14 @@ SceneFileReferences sceneFileReferences(std::shared_ptr<json::JsonNode> node, co
 
 SceneResourceAnalysis SceneResourceManager::analyze(const fs::path& selectedPath)
 {
+    return analyze(selectedPath, {});
+}
+
+
+SceneResourceAnalysis SceneResourceManager::analyze(const fs::path& selectedPath, const SceneResourceProtection& protection)
+{
     SceneResourceAnalysis result;
+    result.protection = protection;
     result.scenePath = fs::canonical(resolveSceneLoadPath(selectedPath));
     const auto root = result.scenePath.parent_path();
     const auto document = readSceneDocument(result.scenePath);
@@ -275,18 +318,116 @@ SceneResourceAnalysis SceneResourceManager::analyze(const fs::path& selectedPath
             models.insert(resolved(root, path));
         }
     }
-    for (const auto& model : models)
+    for (const auto& path : protection.roots.files)
     {
-        if (model.extension() != ".bg2")
+        resources.insert(resolved(root, path));
+    }
+    for (const auto& path : protection.roots.models)
+    {
+        models.insert(resolved(root, path));
+    }
+    result.warnings.insert(result.warnings.end(), protection.roots.warnings.begin(), protection.roots.warnings.end());
+    std::set<fs::path> visited;
+    while (!models.empty())
+    {
+        const auto model = *models.begin();
+        models.erase(models.begin());
+        resources.insert(model);
+        if (!visited.insert(model).second)
         {
-            result.warnings.push_back("Unsupported model dependencies: " + model.string());
             continue;
         }
+        auto extension = model.extension().string();
+        std::transform(extension.begin(), extension.end(), extension.begin(), [](unsigned char value)
+        {
+            return static_cast<char>(std::tolower(value));
+        });
         try
         {
-            for (const auto& texture : meshTexturePaths(model))
+            const auto add = [&](const fs::path& path)
             {
-                resources.insert(resolved(model.parent_path(), texture));
+                resources.insert(resolved(model.parent_path(), path));
+            };
+            if (extension == ".bg2" || extension == ".vwglb")
+            {
+                for (const auto& texture : meshTexturePaths(model))
+                {
+                    add(texture);
+                }
+            }
+            else if (extension == ".obj")
+            {
+                const auto parsed = readObj(model);
+                for (const auto& source : parsed->sourcePaths)
+                {
+                    add(source);
+                }
+                for (const auto& material : parsed->materials)
+                {
+                    for (const auto& texture : {material.albedoTexture(), material.metalnessTexture(), material.roughnessTexture(),
+                        material.normalTexture(), material.aoTexture(), material.lightEmissionTexture()})
+                    {
+                        if (texture && texture->type() == base::Texture::TypeFilesystem && !texture->imageFilePath().empty())
+                        {
+                            add(texture->imageFilePath());
+                        }
+                    }
+                }
+            }
+            else if (extension == ".gltf" || extension == ".glb")
+            {
+                cgltf_options options{};
+                cgltf_data* raw = nullptr;
+                const auto status = cgltf_parse_file(&options, model.string().c_str(), &raw);
+                const std::unique_ptr<cgltf_data, decltype(&cgltf_free)> parsed(raw, &cgltf_free);
+                if (status != cgltf_result_success)
+                {
+                    throw std::runtime_error("Cannot inspect glTF dependencies: " + model.string());
+                }
+                const auto uri = [&](const char* source)
+                {
+                    if (!source || std::string(source).starts_with("data:"))
+                    {
+                        return;
+                    }
+                    std::string path(source);
+                    if (path.find(':') != std::string::npos)
+                    {
+                        result.warnings.push_back("Unsupported glTF dependency URI: " + path);
+                        return;
+                    }
+                    path.resize(cgltf_decode_uri(path.data()));
+                    add(path);
+                };
+                for (cgltf_size i = 0; i < parsed->buffers_count; ++i)
+                {
+                    uri(parsed->buffers[i].uri);
+                }
+                for (cgltf_size i = 0; i < parsed->images_count; ++i)
+                {
+                    uri(parsed->images[i].uri);
+                }
+            }
+            else if (extension == ".json")
+            {
+                const auto nested = json::ObjectReader(readSceneDocument(model)).getArray("scene");
+                for (size_t i = 0; i < nested->size(); ++i)
+                {
+                    const auto references = sceneFileReferences(nested->getNode(i), model.parent_path());
+                    for (const auto& file : references.files)
+                    {
+                        add(file);
+                    }
+                    for (const auto& child : references.models)
+                    {
+                        models.insert(resolved(model.parent_path(), child));
+                    }
+                    result.warnings.insert(result.warnings.end(), references.warnings.begin(), references.warnings.end());
+                }
+            }
+            else
+            {
+                result.warnings.push_back("Unsupported model dependencies: " + model.string());
             }
         }
         catch (const std::exception& error)
@@ -339,11 +480,18 @@ SceneResourceAnalysis SceneResourceManager::analyze(const fs::path& selectedPath
 
 SceneCleanupPlan SceneResourceManager::createCleanupPlan(const SceneResourceAnalysis& analysis, bool ignoreWarnings)
 {
+    return createCleanupPlan(analysis, {}, ignoreWarnings);
+}
+
+
+SceneCleanupPlan SceneResourceManager::createCleanupPlan(const SceneResourceAnalysis& analysis,
+    const SceneResourceProtection& protection, bool ignoreWarnings)
+{
     if (!ignoreWarnings && !analysis.warnings.empty())
     {
         throw std::runtime_error("Review and explicitly acknowledge dependency warnings before cleanup.");
     }
-    if (!sameAnalysis(analyze(analysis.scenePath), analysis))
+    if (!sameAnalysis(analyze(analysis.scenePath, protection), analysis))
     {
         throw std::runtime_error("Scene files changed. Analyze resources again before cleanup.");
     }
@@ -353,10 +501,57 @@ SceneCleanupPlan SceneResourceManager::createCleanupPlan(const SceneResourceAnal
     return plan;
 }
 
-SceneCleanupResult SceneResourceManager::executeCleanup(const SceneCleanupPlan& plan)
+
+SceneCleanupPlan SceneResourceManager::rebindCleanupPlan(const SceneCleanupPlan& plan, const SceneResourceProtection& protection)
 {
     const auto& previous = plan._analysis;
-    const auto current = analyze(previous.scenePath);
+    for (const auto& [identity, generation] : previous.protection.cacheGenerations)
+    {
+        const auto current = protection.cacheGenerations.find(identity);
+        if (current == protection.cacheGenerations.end() || current->second != generation)
+        {
+            throw std::runtime_error("Resident drawable cache changed. Analyze resources again before cleanup.");
+        }
+    }
+    auto current = analyze(previous.scenePath, protection);
+    const auto contains = [](const auto& values, const auto& value)
+    {
+        return std::find(values.begin(), values.end(), value) != values.end();
+    };
+    bool safe = current.snapshot == previous.snapshot && current.symbolicLinks == previous.symbolicLinks;
+    for (const auto& path : previous.resources)
+    {
+        safe = safe && contains(current.resources, path);
+    }
+    for (const auto& warning : current.warnings)
+    {
+        safe = safe && contains(previous.warnings, warning);
+    }
+    for (const auto& file : current.unusedFiles)
+    {
+        safe = safe && contains(previous.unusedFiles, file);
+    }
+    if (!safe)
+    {
+        throw std::runtime_error("Scene resources changed during reload. Analyze resources again before cleanup.");
+    }
+    SceneCleanupPlan rebound;
+    rebound._analysis = std::move(current);
+    rebound._ignoreWarnings = plan._ignoreWarnings;
+    return rebound;
+}
+
+
+SceneCleanupResult SceneResourceManager::executeCleanup(const SceneCleanupPlan& plan)
+{
+    return executeCleanup(plan, {});
+}
+
+
+SceneCleanupResult SceneResourceManager::executeCleanup(const SceneCleanupPlan& plan, const SceneResourceProtection& protection)
+{
+    const auto& previous = plan._analysis;
+    const auto current = analyze(previous.scenePath, protection);
     if (!sameAnalysis(current, previous))
     {
         throw std::runtime_error("Scene files changed. Analyze resources again before cleanup.");

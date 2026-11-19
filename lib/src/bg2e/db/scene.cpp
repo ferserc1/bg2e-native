@@ -103,9 +103,53 @@ void writeSceneDocument(std::shared_ptr<json::JsonNode> document, const std::fil
     }
 }
 
+static int countInstanceTextures(const std::shared_ptr<json::JsonNode>& data)
+{
+    const json::ObjectReader node(data);
+    int count = 0;
+    if (const auto components = node.getArray("components"))
+    {
+        for (size_t i = 0; i < components->size(); ++i)
+        {
+            const auto component = components->getObject(i);
+            if (!component || component->getString("type").value_or("") != "DrawableInstance")
+            {
+                continue;
+            }
+            if (const auto submeshes = component->getArray("submeshes"))
+            {
+                for (size_t sub = 0; sub < submeshes->size(); ++sub)
+                {
+                    const auto item = submeshes->getObject(sub);
+                    const auto material = item ? item->getObject("material") : std::nullopt;
+                    if (!material)
+                    {
+                        continue;
+                    }
+                    for (const auto* key : {"albedoTexture", "metalnessTexture", "roughnessTexture",
+                        "normalTexture", "ambientOcclussion", "lightEmissionTexture"})
+                    {
+                        const auto path = material->getString(key);
+                        count += path && !path->empty() ? 1 : 0;
+                    }
+                }
+            }
+        }
+    }
+    if (const auto children = node.getArray("children"))
+    {
+        for (size_t i = 0; i < children->size(); ++i)
+        {
+            count += countInstanceTextures(children->getNode(i));
+        }
+    }
+    return count;
+}
+
+
 static int countDrawTextures(std::shared_ptr<json::JsonNode> data, const std::filesystem::path& basePath)
 {
-    int result = 0;
+    int result = countInstanceTextures(data);
     for (const auto& model : sceneFileReferences(data, basePath).models)
     {
         if (model.extension() == ".bg2")

@@ -33,9 +33,20 @@ struct SceneFileReferences {
     std::vector<std::filesystem::path> files;
     std::vector<std::filesystem::path> models;
     std::vector<std::string> warnings;
+
+    bool operator==(const SceneFileReferences&) const = default;
 };
 BG2E_API SceneFileReferences sceneFileReferences(std::shared_ptr<json::JsonNode> node,
     const std::filesystem::path& basePath);
+
+// Transient caller-supplied roots, never serialized into the scene document.
+// Cache identities and generations are CPU values; file-only callers need no device.
+struct SceneResourceProtection {
+    SceneFileReferences roots;
+    std::map<uint64_t, uint64_t> cacheGenerations;
+
+    bool operator==(const SceneResourceProtection&) const = default;
+};
 
 struct SceneResourceFile {
     std::filesystem::path path;
@@ -48,6 +59,7 @@ struct SceneResourceFile {
 
 struct SceneResourceAnalysis {
     std::filesystem::path scenePath;
+    SceneResourceProtection protection;
     std::vector<std::filesystem::path> resources;
     std::vector<std::filesystem::path> externalResources;
     std::vector<SceneResourceFile> unusedFiles;
@@ -84,12 +96,21 @@ struct SceneCleanupResult {
 class BG2E_API SceneResourceManager {
   public:
     static SceneResourceAnalysis analyze(const std::filesystem::path& scenePath);
+    static SceneResourceAnalysis analyze(const std::filesystem::path& scenePath, const SceneResourceProtection& protection);
     // Revalidates the analysis. Warnings require explicit acknowledgement.
     // Fatal document/directory failures throw; dependency failures become warnings.
     static SceneCleanupPlan createCleanupPlan(const SceneResourceAnalysis& analysis, bool ignoreWarnings = false);
+    static SceneCleanupPlan createCleanupPlan(const SceneResourceAnalysis& analysis,
+        const SceneResourceProtection& protection, bool ignoreWarnings);
     // Reanalyzes before deleting; stale plans throw without deleting any file.
     // Individual removal failures are returned; successful removals are not rolled back.
     static SceneCleanupResult executeCleanup(const SceneCleanupPlan& plan);
+    static SceneCleanupResult executeCleanup(const SceneCleanupPlan& plan, const SceneResourceProtection& protection);
+
+    // Internal reload may add protection, never expand deletion. Every reviewed
+    // cache generation and filesystem fingerprint must still match. Old roots
+    // must be carried explicitly even when history/clipboard are retired.
+    static SceneCleanupPlan rebindCleanupPlan(const SceneCleanupPlan& plan, const SceneResourceProtection& protection);
 };
 
 }

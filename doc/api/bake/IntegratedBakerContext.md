@@ -22,9 +22,10 @@ samples. Other presentation work may continue independently; final validation/re
 synchronous and can drain other Device submissions. Release the previous
 baker handle before creating another target, or use separately owned contexts.
 All methods are single-threaded. Source checks apply to the configured scene,
-not an application's saved/dirty flag. Composer supplies an independent snapshot
-of evaluated scene resources so editing its document only warns while baking
-continues. This is an application policy, not relaxed context validation; edits
+not an application's saved/dirty flag. Composer freezes evaluated appearance,
+transforms and lighting while retaining shared model raster/BLAS through instances.
+Appearance edits may only warn; a shared geometry replacement invalidates source
+checks and submitted versions remain retained through retirement. This is an application policy, not relaxed context validation; edits
 to the configured scene itself still require invalidation/repreparation. See
 [Composer baking](../../apps/draw_composer.md#integrated-scene-baking).
 The service itself owns no viewport UI;
@@ -193,3 +194,11 @@ Only successful return from immediateSubmit establishes completion here. If it
 throws, do not call completeFrame as though submission succeeded; the example
 releases baker/context through their draining failure path. Retain all completed
 results and cached pixels before material adoption, then retire the context.
+
+## Instance target identity
+
+Target nodes may contain DrawableInstanceComponent. Preparation uses the common
+receiver overload; checks compare receiver/component identity, resolved shared
+resource/native geometry and node-world placement. Source snapshots retain Job
+uses, with geometry/BLAS shared per resource and independent material/lightmap
+state per receiver. Context lifecycle/fence requirements are unchanged.

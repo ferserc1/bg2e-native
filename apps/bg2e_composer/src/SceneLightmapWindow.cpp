@@ -39,8 +39,8 @@ std::shared_ptr<bg2e::scene::Node> findFirstDrawable(const std::shared_ptr<bg2e:
     {
         return nullptr;
     }
-    if (auto component = root->drawable();
-        component && component->drawable())
+    if (auto component = root->drawableRender();
+        component && (root->drawable() || root->drawableInstance()) && component->isSceneGeometry() && component->resourcesLoaded())
     {
         return root;
     }
@@ -128,9 +128,19 @@ void SceneLightmapWindow::draw()
 
 void SceneLightmapWindow::refreshUvPreview(const std::shared_ptr<bg2e::scene::Node>& target)
 {
-    auto component = target ? target->drawable() : nullptr;
-    auto drawable = component ? component->drawable() : nullptr;
-    if (!drawable || !drawable->mesh() || !_uv0Renderer || !_uv1Renderer || !_ui || !_engine)
+    auto* drawable = target ? target->drawableRender() : nullptr;
+    std::shared_ptr<const bg2e::draw::Drawable> resource;
+    if (const auto* instance = target ? target->drawableInstance() : nullptr)
+    {
+        const auto cache = instance->resourceHandle().context();
+        resource = cache ? cache->resolve(instance->resourceHandle()) : nullptr;
+    }
+    else if (drawable)
+    {
+        resource = drawable->drawable();
+    }
+    const auto geometry = drawable ? drawable->geometry() : nullptr;
+    if (!drawable || !geometry || !resource || !_uv0Renderer || !_uv1Renderer || !_ui || !_engine)
     {
         _uvWarning.clear();
         _uv0Preview.clear();
@@ -140,19 +150,19 @@ void SceneLightmapWindow::refreshUvPreview(const std::shared_ptr<bg2e::scene::No
         _previewGeometry.reset();
         return;
     }
-    if (_previewTarget.lock() == target && _previewDrawable.lock() == drawable && _previewGeometry.lock() == drawable->drawMesh())
+    if (_previewTarget.lock() == target && _previewDrawable.lock() == drawable->geometryIdentity() && _previewGeometry.lock() == resource->drawMesh())
     {
         return;
     }
-    _uvWarning = bg2e::geo::UvAtlasValidator::validate(*drawable->mesh(), 1,
+    _uvWarning = bg2e::geo::UvAtlasValidator::validate(*geometry, 1,
         bg2e::geo::UvAtlasOverlapPolicy::Warn).warning;
-    _uv0Renderer->render(*drawable->mesh(), 0);
-    _uv1Renderer->render(*drawable->mesh(), 1);
+    _uv0Renderer->render(*geometry, 0);
+    _uv1Renderer->render(*geometry, 1);
     _uv0Preview.setImage(*_ui, *_engine, _uv0Renderer->image());
     _uv1Preview.setImage(*_ui, *_engine, _uv1Renderer->image());
     _previewTarget = target;
-    _previewDrawable = drawable;
-    _previewGeometry = drawable->drawMesh();
+    _previewDrawable = drawable->geometryIdentity();
+    _previewGeometry = resource->drawMesh();
 }
 
 void SceneLightmapWindow::drawContents()
@@ -196,7 +206,8 @@ void SceneLightmapWindow::drawContents()
 
     auto selected = delegate->selection() ? delegate->selection()->selectedNode() : nullptr;
     auto target = selected ? selected->shared_from_this() : nullptr;
-    if (!target || !target->drawable() || !target->drawable()->drawable())
+    if (!target || (!target->drawable() && !target->drawableInstance()) || !target->drawableRender() ||
+        !target->drawableRender()->isSceneGeometry() || !target->drawableRender()->resourcesLoaded())
     {
         target = findFirstDrawable(delegate->document()->root);
     }
@@ -219,7 +230,12 @@ void SceneLightmapWindow::drawContents()
         _previewTarget.reset();
         refreshUvPreview(target);
     }
-    if (bg2e::ui::Button::button("Generate UV2", false, _uv2Generating))
+    const bool instance = target->drawableInstance() != nullptr;
+    if (instance)
+    {
+        bg2e::ui::Text::text("Shared geometry: generate UV2 on the owner. Baked lightmaps apply independently to each instance.");
+    }
+    if (bg2e::ui::Button::button("Generate UV2", false, _uv2Generating || instance))
     {
         bg2e::geo::Uv2AtlasOptions options;
         options.resolution = 128u << _resolutionIndex;

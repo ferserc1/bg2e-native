@@ -51,7 +51,8 @@ an explicit draw Engine and remains separate from reference-only saving. Raw
 preservation is broader than typed component construction.
 
 Stop scene/GPU producers for realization or replacement, retain Engine/device
-until resources are released, and use DrawableComponent::drawable() for its sole draw resource.
+until resources are released. Use DrawableComponent::drawable() for owners and
+DrawableRenderComponent for generic owner/instance/text consumers.
 See [draw resources](../draw/Resources.md).
 
 ## Detached scene roots and custom component copies
@@ -77,3 +78,28 @@ retains FOV/near/far. Unsupported serialized base Camera projection types fail
 explicitly; a custom Camera component needs its own parser for custom formats.
 See [Composer document IO](../../apps/draw_composer.md#documents-and-imports)
 and [manual checks](../../../tests/draw/composer_io/README.md).
+
+## Shared-resource components and recovery
+
+DrawableRenderComponent is the shared read/appearance base of model owners,
+instances and Text. Node::drawable remains owner-only; use drawableRender or
+drawableInstance for their respective contracts. DrawableInstance JSON remains in
+Node component arrays, with `path`, drawable `transform`, `rayTracingEnabled` and
+ordered `submeshes` containing independent `material`, local `transform`, `name`,
+`groupName` and `visible`. No unused resident cache list is serialized.
+
+Instance properties overlay originals by index. Missing values use originals,
+excess entries are truncated and missing entries are filled with warnings.
+Unresolved binding/material state retains references and authored appearance;
+invalid direct assignments preserve the prior component. Repeated legacy owner
+paths remain independent owners with separate identities/export destinations;
+instances referencing that path keep the first shared resource.
+
+Composer incremental Open isolates recoverable drawable resource failures,
+continues valid resources and reports accumulated warnings after transactional
+adoption. Pending independent copies remain visible as diagnostics. Cleanup's
+internal reload rejects unresolved-resource warnings before deletion. These
+application policies do not weaken arbitrary registered parser/constructor errors
+or make standalone bake source failures nonfatal. Complete export uses the
+[resource coordinator](DrawResourceIO.md#shared-resource-export-and-save-reports);
+reference-only saving never materializes a shared model or image.

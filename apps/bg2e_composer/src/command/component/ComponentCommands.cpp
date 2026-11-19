@@ -259,8 +259,8 @@ CommandResult EditMembership::execute() noexcept
             {
                 return {CommandStatus::Rejected, "The component type is already attached"};
             }
-            if (component != old && next && dynamic_cast<bg2e::scene::DrawableComponent*>(component.get()) &&
-                dynamic_cast<bg2e::scene::DrawableComponent*>(next.get()))
+            if (component != old && next && dynamic_cast<bg2e::scene::DrawableRenderComponent*>(component.get()) &&
+                dynamic_cast<bg2e::scene::DrawableRenderComponent*>(next.get()))
             {
                 std::fprintf(stderr, "A node can own only one drawable; create a child Text/model node.\n");
                 return {CommandStatus::Rejected, "Create a child node for another drawable"};
@@ -483,7 +483,7 @@ bool supportedProperty(Component& component, const bg2e::ui::ReflectionEditInten
 {
     using namespace bg2e::scene;
     using bg2e::reflection::PropertyType;
-    if (!supportedComponent(component) || dynamic_cast<DrawableComponent*>(&component) ||
+    if (!supportedComponent(component) || dynamic_cast<DrawableRenderComponent*>(&component) ||
         intent.path.empty() || !finiteValue(intent.proposed))
     {
         return false; // Resource/custom effects need their dedicated adapter.

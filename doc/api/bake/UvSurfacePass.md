@@ -41,7 +41,7 @@ and preparation drain at stopped boundaries; recording does not waitIdle.
 
 readDiagnostic(result) uses completed raw color readback and explicit integer,
 float32 and half decoding. It does not infer GPU completion from CPU ownership.
-See [native ABI/lifecycle](../../../docs/render_to_draw/plan/milestone_04_lightmaps/uv-surfaces.md)
+See [native ABI/lifecycle](../../architecture/lightmaps/index.md)
 and [manual validation](../../../tests/bake/uv_surface/README.md).
 
 For a rare stopped edit, generateUv2AndReload(source,options) calls the existing
@@ -61,3 +61,13 @@ histories and scene redraw are coordinated. Production regenerate() is untouched
 The surface primitive itself does not schedule or apply maps. Use
 [IntegratedBakerContext](IntegratedBakerContext.md), [finished output](LightmapOutput.md)
 and the [UV preview](UvMapPreviewRenderer.md) for those delivered services.
+
+## Instance preparation
+
+`prepare(std::shared_ptr<scene::DrawableRenderComponent>)` accepts a loaded
+same-device instance receiver. UvSurfaceGeometry retains `resource` (const shared
+Drawable), `receiver`, raster mesh and a Job `resourceUse` alongside packed UV data.
+Its legacy `target` field remains for direct-Drawable preparation. Recording checks
+current resource/native identity and uses receiver submesh transforms. The old
+Drawable entry point remains supported; neither overload grants instance mesh
+mutation. Keep both scene/receiver and GPU completion lifetimes explicit.

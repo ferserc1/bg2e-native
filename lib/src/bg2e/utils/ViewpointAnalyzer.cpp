@@ -29,7 +29,7 @@
 #include <bg2e/gpu/PipelineLayout.hpp>
 #include <bg2e/gpu/ShaderLib.hpp>
 #include <bg2e/scene/BoundingBox.hpp>
-#include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableRenderComponent.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
 
@@ -260,8 +260,8 @@ std::vector<ViewSample> ViewpointAnalyzer::analyze(scene::Node* rootNode)
         {
             continue;
         }
-        auto* component = node->drawable();
-        auto drawable = component ? std::dynamic_pointer_cast<scene::DrawableComponent>(component->shared_from_this()) : nullptr;
+        auto* component = node->drawableRender();
+        auto drawable = component ? std::dynamic_pointer_cast<scene::DrawableRenderComponent>(component->shared_from_this()) : nullptr;
         if (!drawable)
         {
             continue;

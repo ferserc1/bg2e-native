@@ -80,7 +80,7 @@ class BG2E_API GizmoAndSelectionRenderer : public bg2e::scene::NodeVisitor, publ
     };
 
     void collectDrawNodes(scene::Node* root);
-    bool cacheLines(const std::shared_ptr<draw::Drawable>& drawable);
+    bool cacheLines(const std::shared_ptr<const draw::Drawable>& drawable);
     std::shared_ptr<draw::Drawable::DrawMesh> lineMesh(const std::shared_ptr<draw::Drawable::DrawMesh>& source) const;
 
     std::shared_ptr<draw::pipeline::MeshOverlayPass> _graphics;

@@ -30,6 +30,7 @@
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
 #include <bg2e/ui/Window.hpp>
 #include <bg2e/ui/SceneResourcesWindow.hpp>
+#include <bg2e/ui/DrawableInstancesWindow.hpp>
 #include <bg2e/ui/Toolbar.hpp>
 #include <bg2e/ui/DrawMaterialEditor.hpp>
 #include <bg2e/ui/StatusBar.hpp>
@@ -53,6 +54,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void initViewMenu();
     void initCreateNodeMenu();
     void initWindowMenu();
+    void initDrawableBrowser();
     void drawDebug(const std::shared_ptr<AppDelegate>& delegate);
 
     void drawImportSettings(const std::shared_ptr<AppDelegate>& delegate);
@@ -90,6 +92,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     bg2e::ui::UISettingsWindow _uiSettings;
     SceneLightmapWindow _lightmap;
     bg2e::ui::SceneResourcesWindow _sceneResources;
+    bg2e::ui::DrawableInstancesWindow _drawableInstances;
     bg2e::ui::Window _importSettingsWindow;
     bg2e::ui::Window _importQueueWindow;
     std::string _importPort;

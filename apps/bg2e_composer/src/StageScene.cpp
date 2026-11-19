@@ -37,6 +37,7 @@
 #include <bg2e/math/projections.hpp>
 #include <bg2e/scene/CameraComponent.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/TextComponent.hpp>
 #include <bg2e/scene/EnvironmentComponent.hpp>
 #include <bg2e/scene/LightComponent.hpp>
 #include <bg2e/scene/TransformComponent.hpp>
@@ -95,8 +96,10 @@ std::shared_ptr<bg2e::scene::Node> StageScene::create(std::shared_ptr<command::D
         throw std::invalid_argument("The initial stage requires a generation-one dispatcher");
     }
     _root = std::make_shared<scene::Node>("Composer stage");
+    _root->setDrawableCacheContext(_engine->createDrawableCache());
 
     _model = std::make_shared<scene::Node>("Scene");
+    _model->setDrawableCacheContext(_engine->createDrawableCache());
     _model->addComponent(new scene::TransformComponent());
     addDefaultContents(_model);
     _root->addChild(_model);
@@ -416,13 +419,28 @@ void cleanupTree(bg2e::scene::Node& node)
             gizmo->cleanupDrawResources();
         });
     }
+    if (auto* text = node.getComponent<bg2e::scene::TextComponent>())
+    {
+        text->releaseResources();
+    }
+    if (auto* instance = node.drawableInstance())
+    {
+        const auto released = instance->releaseResources();
+        if (!released.ok())
+        {
+            throw std::runtime_error(released.message);
+        }
+    }
     if (auto component = node.drawable())
     {
         if (auto drawable = component->drawable())
         {
             release([&]
             {
-                drawable->cleanup();
+                if (!drawable->cacheUsage().registered)
+                {
+                    drawable->cleanup();
+                }
             });
         }
     }
@@ -542,6 +560,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::emptyDocumentRoot() const
 {
     using namespace bg2e;
     auto root = std::make_shared<scene::Node>("Scene");
+    root->setDrawableCacheContext(_engine->createDrawableCache());
     root->addComponent(new scene::TransformComponent());
     auto camera = std::make_shared<scene::Node>("Camera");
     camera->addComponent(new scene::TransformComponent());
@@ -607,7 +626,8 @@ void StageScene::prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root, 
 
 std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesystem::path& path,
     bool requireCamera, bg2e::scene::SceneProgressCallback progress,
-    std::shared_ptr<bg2e::json::JsonNode> schema, bool realizeResources)
+    std::shared_ptr<bg2e::json::JsonNode> schema, bool realizeResources,
+    std::shared_ptr<bg2e::draw::DrawableCache> cache)
 {
     // CPU schema parsing may already have completed on the import worker.
     auto loaded = schema ? bg2e::scene::Scene::deserialize(schema, path.parent_path()) :
@@ -638,6 +658,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareScene(const std::filesyste
     {
         throw std::invalid_argument("Draw scenes support at most eight enabled lights");
     }
+    candidate->setDrawableCacheContext(cache ? std::move(cache) : _engine->createDrawableCache());
     if (!realizeResources)
     {
         return candidate;
@@ -674,10 +695,11 @@ std::shared_ptr<bg2e::scene::Node> StageScene::load(const std::filesystem::path&
     });
     if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
     {
-        return prepareScene(path, true, nullptr, std::move(schema), realizeResources);
+        return prepareScene(path, true, nullptr, std::move(schema), realizeResources, _engine->createDrawableCache());
     }
     auto root = emptyDocumentRoot();
-    root->addChild(prepareImport(path));
+    root->addChild(prepareImportWithCache(path, 1.0f, false, nullptr, nullptr, {}, nullptr, nullptr,
+        root->drawableCacheContext()));
     return root;
 }
 
@@ -685,6 +707,21 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesyst
     float unitsScale, bool sourceIsZUp, bg2e::scene::SceneProgressCallback progress,
     const bg2e::db::GltfDocument* gltf, std::shared_ptr<bg2e::json::JsonNode> schema,
     const bg2e::db::Bg2Mesh* bg2, const bg2e::db::ObjMesh* obj)
+{
+    auto cache = _document.root ? _document.root->drawableCacheContext() : nullptr;
+    if (!cache)
+    {
+        cache = _engine->createDrawableCache();
+    }
+    return prepareImportWithCache(input, unitsScale, sourceIsZUp, std::move(progress), gltf,
+        std::move(schema), bg2, obj, std::move(cache));
+}
+
+
+std::shared_ptr<bg2e::scene::Node> StageScene::prepareImportWithCache(const std::filesystem::path& input,
+    float unitsScale, bool sourceIsZUp, bg2e::scene::SceneProgressCallback progress,
+    const bg2e::db::GltfDocument* gltf, std::shared_ptr<bg2e::json::JsonNode> schema,
+    const bg2e::db::Bg2Mesh* bg2, const bg2e::db::ObjMesh* obj, std::shared_ptr<bg2e::draw::DrawableCache> cache)
 {
     using namespace bg2e;
     if (!std::isfinite(unitsScale) || unitsScale <= 0)
@@ -720,7 +757,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesyst
     }
     else if (extension == ".json" || extension == ".bg2scene" || extension == ".bg2e" || extension == ".vitscnj")
     {
-        node = prepareScene(path, false, progress, std::move(schema));
+        node = prepareScene(path, false, progress, std::move(schema), true, cache);
     }
     else
     {
@@ -731,6 +768,7 @@ std::shared_ptr<bg2e::scene::Node> StageScene::prepareImport(const std::filesyst
         throw std::runtime_error("Import returned no scene content");
     }
     auto wrapper = std::make_shared<scene::Node>(path.stem().string());
+    wrapper->setDrawableCacheContext(std::move(cache));
     try
     {
         prepareCameras(node);
@@ -1041,6 +1079,12 @@ try
     try
     {
         refreshCamera();
+        // Persist the visible camera pose with no pending fly-mode key-up or
+        // mouse-smoothing tail that would modify the document after markSaved.
+        if (auto* orbit = orbitCamera())
+        {
+            orbit->cancelInput();
+        }
         bg2e::scene::UpdateVisitor update;
         update.update(_document.root.get(), 0);
     }
@@ -1120,7 +1164,7 @@ bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Nod
             throw std::invalid_argument("Model export target is no longer in the document");
         }
         auto component = node->drawable();
-        if (component && !component->requiresBg2Export())
+        if ((component && !component->requiresBg2Export()) || node->getComponent<scene::TextComponent>())
         {
             std::fprintf(stderr, "Procedural text is editable scene content, not an exportable BG2 model.\n");
             return false;
@@ -1169,29 +1213,15 @@ bool StageScene::exportModels(const std::vector<std::shared_ptr<bg2e::scene::Nod
         {
             throw std::invalid_argument("Export a model with a .bg2 extension");
         }
-        // Export this node's model only: no descendants, scene components or
-        // placement transform. The live drawable is borrowed for snapshot IO.
-        auto model = std::make_shared<scene::Node>(node->name());
-        model->addComponent(new scene::DrawableComponent(component->drawable()));
-        if (auto joint = node->getComponent<scene::InputChainJointComponent>())
-        {
-            model->addComponent(joint->clone());
-        }
-        if (auto joint = node->getComponent<scene::OutputChainJointComponent>())
-        {
-            model->addComponent(joint->clone());
-        }
-        exports.emplace_back(std::move(model), std::move(output));
-    }
-    if (exports.empty())
-    {
-        throw std::invalid_argument("No selected node owns a draw model");
+        // Snapshot the existing owner directly; a transient second owner would
+        // violate exclusive resource identity and invalidate instance semantics.
+        exports.emplace_back(node, std::move(output));
     }
     for (const auto& [model, output] : exports)
     {
         // Each complete writer is transactional. A later batch failure leaves
         // earlier exported models intact and reports the failed destination.
-        if (!db::storeDrawableBg2(output, *_engine, model.get()))
+        if (!db::exportDrawableModelBg2(output, *_engine, model.get()))
         {
             return false;
         }
@@ -1208,6 +1238,11 @@ std::shared_ptr<command::SceneRetention> StageScene::retainForCommand(const std:
             return lease;
         }
     }
+    if (!node->drawableCacheContext())
+    {
+        node->setDrawableCacheContext(_document.root ? _document.root->drawableCacheContext() : _engine->createDrawableCache());
+    }
+    bg2e::scene::DrawableComponent::prepareResources(node.get(), *_engine);
     auto lease = std::make_shared<command::SceneRetention>(node);
     _commandRetained.push_back(lease);
     return lease;
@@ -1301,11 +1336,11 @@ void StageScene::releaseRetired()
         }
     }
     // Primitive construction retains partial resources until a stopped cleanup.
-    // Once cleanup has cleared the engine binding, the cache must not keep CPU
-    // geometry/settings alive after the last command lease is retired.
+    // Once a resource is registered, its cache owns residency. Drop construction
+    // references so displaced versions live only as long as explicit users.
     std::erase_if(_drawables, [](const auto& drawable)
     {
-        return !drawable->isLoaded() && !drawable->engine();
+        return drawable->cacheUsage().registered || (!drawable->isLoaded() && !drawable->engine());
     });
     if (error)
     {
@@ -1354,6 +1389,12 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
     {
         return;
     }
+    if (!root->drawableCacheContext())
+    {
+        root->setDrawableCacheContext(_document.root ? _document.root->drawableCacheContext() : _engine->createDrawableCache());
+    }
+    bg2e::scene::DrawableComponent::prepareResources(root.get(), *_engine);
+    bg2e::scene::DrawableInstanceComponent::prepareResources(root.get(), *_engine);
     std::set<bg2e::draw::Drawable*> drawables;
     std::set<bg2e::geo::Mesh*> meshes;
     visitNodes(root, [&](const auto& node)
@@ -1366,7 +1407,11 @@ void StageScene::prepareTools(std::shared_ptr<bg2e::scene::Node> root)
                 if (drawables.contains(drawable.get()) || meshes.contains(drawable->mesh().get()))
                 {
                     drawable = drawable->clone();
-                    component->setDrawable(drawable);
+                    const auto assigned = component->setDrawable(drawable);
+                    if (!assigned.ok())
+                    {
+                        throw std::runtime_error(assigned.message);
+                    }
                 }
                 drawables.insert(drawable.get());
                 meshes.insert(drawable->mesh().get());
@@ -1600,7 +1645,10 @@ void StageScene::cleanup()
     {
         try
         {
-            drawable->cleanup();
+            if (!drawable->cacheUsage().registered)
+            {
+                drawable->cleanup();
+            }
         }
         catch (...)
         {

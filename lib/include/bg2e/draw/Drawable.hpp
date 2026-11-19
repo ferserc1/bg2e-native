@@ -19,10 +19,16 @@
 #pragma once
 
 #include <bg2e/draw/MaterialBase.hpp>
+#include <bg2e/draw/DrawableUsage.hpp>
 #include <bg2e/draw/FrameContext.hpp>
 #include <bg2e/gpu/Mesh.hpp>
 #include <bg2e/gpu/RayTracingMesh.hpp>
 #include <bg2e/geo/modifiers.hpp>
+#include <filesystem>
+
+namespace bg2e::scene {
+class DrawableComponent;
+}
 
 namespace bg2e::draw {
 // Standard engine mesh: positions, normals, two UV sets and tangents.
@@ -43,6 +49,30 @@ class BG2E_API Drawable {
     Drawable(const Drawable&) = delete;
     Drawable& operator=(const Drawable&) = delete;
     std::shared_ptr<Drawable> clone() const;
+
+    DrawableUsage cacheUsage() const noexcept;
+    DrawableResourceHandle resourceHandle() const;
+    bool hasOwner() const noexcept
+    {
+        return !_ownerClaim.expired();
+    }
+    // Import provenance is separate from display name and export destination.
+    void setImportSource(const std::filesystem::path& path)
+    {
+        _importSource = path.empty() ? path : std::filesystem::absolute(path).lexically_normal();
+    }
+    const std::filesystem::path& importSource() const noexcept
+    {
+        return _importSource;
+    }
+    bool isResourceClone() const noexcept
+    {
+        return _resourceClone;
+    }
+    uint64_t geometryVersion() const noexcept
+    {
+        return _geometryVersion;
+    }
 
     void setMesh(std::shared_ptr<Mesh> mesh);
     void setMesh(Mesh* mesh)
@@ -96,7 +126,9 @@ class BG2E_API Drawable {
     void reload();
     void updateMaterials(std::function<void()> onTextureLoaded = nullptr);
     void updateMaterials(ImageLoadContext& context, std::function<void()> onTextureLoaded = nullptr);
-    void cleanup(); // Synchronous; stop frame/background producers first.
+    // Synchronous for uncached geometry. Cached resources warn and stay resident;
+    // use the cache's explicit unload after releasing all logical users.
+    void cleanup();
     bool isLoaded() const
     {
         return _loaded;
@@ -208,6 +240,14 @@ class BG2E_API Drawable {
     void drawSubmesh(const FrameContext& frame, uint32_t index, const DrawFunction& bind) const;
 
   private:
+    friend class DrawableCache;
+    friend class bg2e::scene::DrawableComponent;
+    std::weak_ptr<const void> _ownerClaim;
+    uint64_t _geometryVersion = 1;
+    std::filesystem::path _importSource;
+    bool _resourceClone = false;
+    std::weak_ptr<detail::DrawableCacheEntry> _cacheEntry;
+
     static void validateMesh(const Mesh& mesh);
     void buildDrawMesh();
     void buildRayTracingMeshes();

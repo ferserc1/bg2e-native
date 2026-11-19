@@ -37,8 +37,9 @@ independent writable images. Contexts retain CPU pixels only until their destruc
 `scene::DrawableComponent::drawable()` returns the sole draw realization; const
 component access returns a const Drawable. `setDrawable`/`clearDrawable` release
 component references at a safe boundary, checking context ownership on replacement.
-Schema source references can exist without a loaded Drawable. Graph cloning uses
-deep resource cloning; native scene Drawable types and mode tags are removed.
+Schema source references can exist without a loaded Drawable. Owner graph clones
+use deep resource cloning; instance clones preserve shared geometry and copy
+independent appearance. Native scene Drawable types and mode tags are removed.
 
 `draw::DrawVisitor`, `RenderQueueVisitor` and `CollectRayTracingInstancesVisitor`
 consume the new geometry. Bindings live under draw: `FrameDataBinding`,
@@ -56,3 +57,18 @@ and materialize image data before saving a reloadable resource. The [deferred ex
 contains clone, UV1 and packed-channel probes.
 
 See [database representation/resource IO](../db/SceneReferences.md).
+
+## Sharing through resource identities
+
+Use [DrawableCache](DrawableCache.md) and
+[DrawableInstanceComponent](../scene/DrawableInstanceComponent.md) for shared
+raster/BLAS residency with independent materials and drawable/submesh transforms.
+This does not change deep `Drawable::clone()` behavior or the optional texture
+cache. Generic rendering/appearance uses DrawableRenderComponent and
+`Node::drawableRender()`; concrete `Node::drawable()` remains owner-only.
+
+A resource permits one owner. Owner replacement follows its stable cache identity;
+explicit rebind chooses another identity. Instance duplication shares geometry,
+whereas owner duplication creates a separate resource/destination. Preserve Job,
+History and Frame leases independently of transient resolve pointers. Instance
+frame leases also protect appearance paths through GPU completion.

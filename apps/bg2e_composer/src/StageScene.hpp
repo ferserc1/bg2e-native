@@ -151,11 +151,17 @@ class StageScene {
 
   private:
     void addDefaultContents(const std::shared_ptr<bg2e::scene::Node>& root);
+    std::shared_ptr<bg2e::scene::Node> prepareImportWithCache(const std::filesystem::path& input,
+        float unitsScale, bool sourceIsZUp, bg2e::scene::SceneProgressCallback progress,
+        const bg2e::db::GltfDocument* gltf, std::shared_ptr<bg2e::json::JsonNode> schema,
+        const bg2e::db::Bg2Mesh* bg2, const bg2e::db::ObjMesh* obj,
+        std::shared_ptr<bg2e::draw::DrawableCache> cache);
     std::shared_ptr<bg2e::scene::Node> emptyDocumentRoot() const;
 
     std::shared_ptr<bg2e::scene::Node> prepareScene(const std::filesystem::path& path,
         bool requireCamera, bg2e::scene::SceneProgressCallback progress,
-        std::shared_ptr<bg2e::json::JsonNode> schema = {}, bool realizeResources = true);
+        std::shared_ptr<bg2e::json::JsonNode> schema, bool realizeResources,
+        std::shared_ptr<bg2e::draw::DrawableCache> cache);
     void prepareCameras(const std::shared_ptr<bg2e::scene::Node>& root, bool allowFallback = true) const;
     void refreshEnvironment(bool reset = false);
 

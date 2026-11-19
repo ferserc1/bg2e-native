@@ -68,8 +68,10 @@ if (!bg2e::db::storeDrawableBg2(outputDirectory / "model.bg2", engine, modelNode
 ```
 
 These engine-aware save functions return bool and are noexcept: false reports a
-logged failure. Check the result before declaring document/batch success; a
-try/catch alone cannot detect it. The example fragment assumes live root/engine/
+logged failure. Complete scene saving also exposes a SceneSaveReport overload;
+true with warnings means a recoverable partial save, not a fully saved editor
+state. Check both bool and report before declaring success; a try/catch alone
+cannot detect either condition. The example fragment assumes live root/engine/
 modelNode and includes `<iostream>`. Destination parents are created by export.
 Ordinary model export requires realized drawables owned by the supplied Engine and no unresolved
 pending texture updates. It snapshots live material attributes. Only explicitly
@@ -108,14 +110,15 @@ for hierarchies, non-identity Node transforms, node flags or custom components.
 The standalone model's display name follows its output filename; scenes preserve
 Node and drawable display names separately from generated resource filenames.
 
-A unique staging directory is created beside the destination. Generated model resources and images materialized from GPU-only sources receive
-unique generation names. Filesystem images keep their filenames, and matching
-filenames already in the destination are reused without replacement. Distinct
-sources sharing a filename are not distinguished; texture-library collision
-handling is outside this contract. New resources are linked into the destination
-without replacement. The main model/scene file is replaced last using an atomic filesystem
-rename (MoveFileEx on Windows). Failure removes this transaction's new sidecars
-and staging directory, preserving an existing main file and its resources. The
+A unique staging directory is created beside the destination. Intended model
+files are replaced with rollback backups; independent collision copies reserve
+unused destinations. Generated assets receive unique names. Filesystem images
+retain the existing basename-reuse policy: distinct model image sources sharing
+a filename are not distinguished by that policy. New sidecars publish before the
+main model/scene document, whose final replacement is atomic. Failure rolls back
+owned replacements/new sidecars and preserves prior complete files where possible;
+resource failures that permit recoverable JSON publication are reported as
+warnings rather than complete success. The
 filesystem must support same-filesystem atomic replacement. If native hardlink
 publication is unavailable, exclusive resource reservation plus copy is used;
 unique resources still cannot clobber previous generations. This is publication
@@ -136,7 +139,8 @@ is implied by these source contracts.
 
 `DrawableComponent::requiresBg2Export() const` defaults true. Export checks it
 **before** model snapshot/texture collection/BG2 allocation/resourcePath changes.
-TextComponent returns false but still runs its virtual serializer, embedding
+TextComponent is a sibling renderable with its own false query and explicit
+export exclusions; its virtual serializer still runs, embedding
 `text` and conventional `material` objects plus size/aspect/pivot. Entire-component
 ignoreSerialization instead omits the component. `storeDrawableBg2` and Composer
 model export refuse Text rather than wrapping/baking it as an ordinary drawable.
@@ -154,8 +158,9 @@ the exporter recognizes adjacent OFL.txt, LICENSE/LICENSE.txt/LICENSE.md, COPYIN
 NOTICE/NOTICE.txt and README.md. This includes canonical Didact Gothic's full OFL
 and pinned provenance record. No discovered notices emits a warning to supply
 required notices/verify redistribution rights, not an invented license. Missing
-fonts, required images or explicitly supplied notices fail complete saving with
-false/status/rollback; reference-only saving can retain missing filesystem paths.
+fonts, required images or explicitly supplied notices produce save-report warnings
+or false/status/rollback when no recoverable complete references exist;
+reference-only saving can retain missing filesystem paths.
 Loading such a font later warns and omits dependent text, not the rest of a scene.
 
 Font/notice/embedded filesystem-image copies use full canonical source-path
@@ -218,3 +223,27 @@ The [bake writer](../bake/LightmapOutputWriter.md) reuses complete bool-checked
 model snapshots inside private per-target directories, then publishes a complete
 batch manifest last. Complete single-document DB publication by itself does not
 supply that source-protection/overwrite/multi-target transaction. Generic image/file publication is documented in [FileIO](FileIO.md).
+
+## Shared-resource export and save reports
+
+`db::loadCachedDrawableBg2(path, cache, callback)` and its Engine overload explicitly
+opt into [resident identity reuse](../draw/DrawableCache.md). Ordinary standalone
+`loadDrawableBg2` still returns independent geometry. Scene owners register
+exclusive ownership; repeated legacy owners receive independent copies/paths.
+
+Complete scene save collects one operation-local entry per used resource identity.
+Each model exports once with owner properties when present, immutable original
+definitions otherwise. Instances never independently export the shared model.
+Their ordered material images/settings serialize in component JSON. Published
+submesh bases rebase instance matrices without mutating live geometry. BG2
+snapshots reference existing staging images; instance JSON names final image paths.
+
+The report-taking overload is `saveScene(root, engine, path, progress, report)`,
+where `SceneSaveReport` has `warnings` and `error`. True with no warnings is a
+complete save; true with warnings means recoverable JSON was written and an editor
+must remain dirty. False means no document was published. Composed operations
+aggregate resource failures, retain authored references/pending destinations and
+reuse previous complete models only when their dependencies remain complete.
+A missing required reference with no complete target prevents publication.
+Composer shows the report, retains the scene and refuses close/replacement after
+an incomplete save. No save implicitly removes disk or cache resources.

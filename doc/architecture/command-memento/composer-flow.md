@@ -30,12 +30,13 @@ acknowledgement and failure recovery.
 UV2 and lightmap results are computed in private CPU/resource state. Their
 command is submitted with `CommandOrigin::PreparedResult`; the initial validator
 checks the operation's document generation, original target and job identity.
-UV2 retains its source-state validation. Lightmap baking instead captures a deep,
-independent snapshot of evaluated rendering inputs: document revision changes
-produce a warning without cancelling accumulation or rejecting the completed
-result solely for that revision. All batch targets finish before automatic
-adoption. A replaced document or removed/replaced drawable prevents automatic
-application, but completed results remain retained. Explicit cancellation and
+UV2 retains its source-state validation. Lightmap baking freezes independent
+appearance/placement/lighting while retaining shared model raster/BLAS through
+instances. Document revision changes alone warn rather than rejecting completed
+results; shared geometry replacement can invalidate source checks. All batch
+targets finish before automatic adoption. Removed/replaced destination receivers
+reject application. Successful New/Open stops the previous document's job and
+queued application eligibility. Explicit cancellation and
 superseding jobs still prevent old work from publishing.
 Only after complete preparation does one command publish. Completion reports
 actual publication and fires once. Undo/redo rely on retained prepared values,

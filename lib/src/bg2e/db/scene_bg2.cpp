@@ -37,6 +37,7 @@ std::shared_ptr<scene::Node> loadSceneBg2(const std::filesystem::path& path,
     }
     auto drawable = std::make_shared<draw::Drawable>();
     drawable->setName(path.stem().string());
+    drawable->setImportSource(path);
     drawable->setMesh(std::make_shared<geo::MeshPNUUT>(*model.mesh));
     for (uint32_t i = 0; i < model.materials.size(); ++i)
     {

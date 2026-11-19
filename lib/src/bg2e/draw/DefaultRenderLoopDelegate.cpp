@@ -18,6 +18,8 @@
 
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include "../base/TextDiagnostics.hpp"
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/draw/FsrUpscaler.hpp>
@@ -550,7 +552,9 @@ void DefaultRenderLoopDelegate::prepareFrame()
 
 void DefaultRenderLoopDelegate::prepareTextResources()
 {
-    if (scene::TextComponent::prepareResources(_scene.get(), *_engine))
+    const bool ownersChanged = scene::DrawableComponent::prepareResources(_scene.get(), *_engine);
+    const bool instancesChanged = scene::DrawableInstanceComponent::prepareResources(_scene.get(), *_engine);
+    if (scene::TextComponent::prepareResources(_scene.get(), *_engine) || instancesChanged || ownersChanged)
     {
         try
         {

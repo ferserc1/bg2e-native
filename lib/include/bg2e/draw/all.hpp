@@ -32,6 +32,7 @@
 #include <bg2e/draw/DefaultOffscreenApplicationDelegate.hpp>
 
 #include <bg2e/draw/Drawable.hpp>
+#include <bg2e/draw/DrawableCache.hpp>
 #include <bg2e/draw/Texture.hpp>
 #include <bg2e/draw/MaterialBase.hpp>
 

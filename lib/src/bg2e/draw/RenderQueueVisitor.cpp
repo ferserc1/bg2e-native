@@ -19,6 +19,7 @@
 #include <bg2e/draw/RenderQueueVisitor.hpp>
 #include <bg2e/scene/DrawableComponent.hpp>
 #include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include <bg2e/scene/Node.hpp>
 #include <bg2e/scene/Scene.hpp>
 #include <bg2e/scene/LightComponent.hpp>
@@ -98,25 +99,25 @@ void RenderQueueVisitor::visit(scene::Node* node)
     {
         _world *= node->transform()->matrix();
     }
-    if (auto* component = node->drawable())
+    if (auto* component = node->drawableRender())
     {
-        auto drawable = component->drawable();
+        auto* instance = dynamic_cast<scene::DrawableInstanceComponent*>(component);
         auto* text = dynamic_cast<scene::TextComponent*>(component);
-        const bool include = !text || (_forPicking ? text->hasQuadResources() : text->canRender());
-        if (drawable && include)
+        const bool include = component->renderable(_forPicking);
+        if (component->geometry() && include)
         {
             const auto enqueue = [&]()
             {
-                if (!drawable->isLoaded())
+                if (!component->resourcesLoaded())
                 {
                     throw std::logic_error("Load draw resources before extraction");
                 }
-                for (uint32_t i = 0; i < drawable->submeshesCount(); ++i)
+                for (uint32_t i = 0; i < component->submeshesCount(); ++i)
                 {
-                    _queue->enqueue(*node, drawable, i, _world * drawable->submeshTransform(i));
+                    _queue->enqueue(*node, *component, i, _world * component->submeshTransform(i));
                 }
             };
-            if (text)
+            if (text || instance)
             {
                 try
                 {
@@ -124,7 +125,15 @@ void RenderQueueVisitor::visit(scene::Node* node)
                 }
                 catch (...)
                 {
-                    text->reportRenderFailure(); // No upload or repair in traversal.
+                    if (text)
+                    {
+                        text->reportRenderFailure();
+                    }
+                    else
+                    {
+                        instance->reportRenderFailure();
+                    }
+                    // No upload or repair in traversal.
                 }
             }
             else
@@ -132,7 +141,7 @@ void RenderQueueVisitor::visit(scene::Node* node)
                 enqueue();
             }
         }
-        else if (!text && !component->resourcePath().empty())
+        else if (auto* owner = dynamic_cast<scene::DrawableComponent*>(component); owner && include && !owner->resourcePath().empty())
         {
             throw std::logic_error("Load unresolved draw resources before extraction");
         }

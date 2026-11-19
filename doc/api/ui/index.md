@@ -36,3 +36,5 @@ application's Performance view rather than serialized graphics settings.
 These interfaces do not require command history. See the
 [command/memento SDK integration guide](../../architecture/command-memento/sdk-integration.md)
 for opt-in use and migration from mutation notifications.
+
+- [DrawableInstancesWindow](DrawableInstancesWindow.md): host-driven cache browser and undoable instance actions.

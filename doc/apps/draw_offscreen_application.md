@@ -88,3 +88,13 @@ See [shader deployment](../api/gpu/ShaderLibraries.md),
 [packaging/standalone/library updates](../../scripts/PACKAGING.md) and
 [the tutorial](../tutorials/draw/13_offscreen_application.md). These instructions
 are source-checked; no build or packaging run was performed for this documentation.
+
+## Cached drawable exercise
+
+The optional `--cached-model FILE` loads the same BG2 twice before node binding,
+requires one resident identity, retains a Job lease and adds two instances with
+independent roughness settings to the example scene. Use an initialized supported
+backend and a fresh `--output-dir`; existing output-overwrite policy remains.
+This exercises device-backed cache reuse without Composer. It does not add an
+HTTP service, persistent cache file or draw-call batching. See
+[DrawableCache](../api/draw/DrawableCache.md).

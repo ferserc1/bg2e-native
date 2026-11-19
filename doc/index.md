@@ -16,3 +16,7 @@ Draw is the production scene renderer over Vulkan or Metal. Start with the
 
 API availability and native/backend capability are separate. Documentation snippets
 are source-based; native build/runtime/package validation belongs to the project lead.
+
+
+- [Drawable caches and instances](architecture/drawable_caches_and_instances.md):
+  shared geometry/BLAS, independent materials, document lifecycle, export and cleanup.

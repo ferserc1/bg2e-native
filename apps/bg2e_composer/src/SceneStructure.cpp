@@ -25,6 +25,7 @@
 #include <cstdio>
 #include <bg2e/app/CompositeCommand.hpp>
 #include <bg2e/scene/TextComponent.hpp>
+#include <bg2e/app/MessageBox.hpp>
 #include <bg2e/scene/TextFontComponent.hpp>
 
 namespace bg2e_composer {
@@ -223,9 +224,9 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
                 bool aliases = false;
                 const auto inspect = [&](const auto& self, const std::shared_ptr<bg2e::scene::Node>& current) -> void
                 {
-                    auto* live = current->drawable();
-                    aliases = aliases || (live && live->drawable() &&
-                        (live->drawable() == drawable->drawable() || live->drawable()->mesh() == drawable->drawable()->mesh()));
+                    auto* live = current->drawableRender();
+                    aliases = aliases || (live && live->geometry() &&
+                        (live->geometryIdentity().get() == drawable->drawable().get() || live->geometry() == drawable->drawable()->mesh()));
                     for (const auto& child : current->children())
                     {
                         self(self, child);
@@ -234,7 +235,11 @@ void AppDelegate::editComponent(std::weak_ptr<bg2e::scene::Node> node,
                 inspect(inspect, document()->root);
                 if (aliases)
                 {
-                    drawable->setDrawable(drawable->drawable()->clone());
+                    const auto assigned = drawable->setDrawable(drawable->drawable()->clone());
+                    if (!assigned.ok())
+                    {
+                        throw std::runtime_error(assigned.message);
+                    }
                 }
             }
             auto lease = _stage->retainForCommand(replacement);
@@ -273,8 +278,14 @@ void AppDelegate::addSceneComponent(std::weak_ptr<bg2e::scene::Node> node, const
         {
             throw std::invalid_argument("The component needs a supported reversible editor adapter");
         }
+        if (auto instance = std::dynamic_pointer_cast<bg2e::scene::DrawableInstanceComponent>(component);
+            instance && !instance->resourceHandle().valid())
+        {
+            bg2e::app::MessageBox::showError("Drawable instance", "Open Window > Drawable Instances, select a resident resource and choose Create instance.");
+            return std::unique_ptr<bg2e::app::Command>{};
+        }
         auto target = node.lock();
-        if (std::dynamic_pointer_cast<bg2e::scene::DrawableComponent>(component) && target && target->drawable())
+        if (std::dynamic_pointer_cast<bg2e::scene::DrawableRenderComponent>(component) && target && target->drawableRender())
         {
             std::fprintf(stderr, "A node can own only one drawable. Create a child Text node instead.\n");
             return std::unique_ptr<bg2e::app::Command>{};

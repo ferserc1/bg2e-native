@@ -88,19 +88,34 @@ Model/prefab imports insert below selection or root, retaining the scene save pa
 
 Window → Import Settings controls local units/Z-up conversion and the localhost HTTP service, enabled by default on port 8643 with preference scope `draw.bg2e_composer.import`. Another Composer using that port causes a visible bind failure. See the [HTTP protocol](composer/import_service.md) and [draw import lifecycle](composer/draw_import_lifecycle.md).
 
-Unregistered/untyped or malformed component entries warn and are skipped; subsequent valid graph data continues loading. Registered parser, constructor and resource failures remain errors. Typed save omits skipped representations; [raw JSON IO](../api/db/SceneReferences.md) preserves them.
+Unregistered/untyped or malformed component entries warn and are skipped; subsequent valid graph data continues loading. Registered parser/constructor failures remain errors. Incremental Open isolates
+recoverable drawable resource failures, retains their references and reports an
+aggregate warning; unrelated component errors retain their existing contracts. Typed save omits skipped representations; [raw JSON IO](../api/db/SceneReferences.md) preserves them.
 
 Save/Save As uses the Name/Name.json layout and [complete resource IO](../api/db/DrawResourceIO.md), copying assigned image sources once per filename and exporting assigned GPU-only 2D images as PNG/HDR mip zero. Runtime placeholders are not saved; authored mip chains are not exported. Keep the document and resources together. Reference-only save does not export pixels. Export Selected Model(s) writes directly selected models and joints without descendants or node placement; each item commits separately, so earlier exports survive a later failure.
 
 ## Integrated scene baking
 
-The UV/Lightmap window targets its preview drawable, selected hierarchy subtrees or all document drawables. Generate UV2 where needed. Genuine overlaps warn without excluding targets. One live baker and one submitted frame run at a time against frozen sources; all targets complete before material preparation/adoption. The baker owns an independent snapshot of evaluated geometry, materials/textures, transforms, lights and environment captured at start. Source edits, navigation, imports and renderer rebinds do not cancel accumulation. Document changes produce a persistent warning that results may no longer match the edited scene. Existing unsaved changes do not prevent baking. Explicit Cancel, starting a replacement bake and application shutdown stop the job; actual GPU/capability failures remain errors. Required RT capability failures leave ordinary editing usable; no-RT rendering does not promise RT baking.
+The UV/Lightmap window targets its preview drawable, selected hierarchy subtrees or all document drawables. Generate UV2 where needed. Genuine overlaps warn without excluding targets. One live baker and one submitted frame run at a time against frozen sources; all targets complete before material preparation/adoption. The baker freezes evaluated appearance, transforms, lights and environment at start.
+Registered model owners are captured as instances sharing retained raster/BLAS;
+instance appearances are independent. Ordinary appearance/navigation edits can
+continue against that snapshot, while shared geometry replacement invalidates
+source checks. Submitted old resources remain retained until GPU retirement. Document changes produce a persistent warning that results may no longer match the edited scene. Existing unsaved changes do not prevent baking. Explicit Cancel, starting a replacement bake, successful New/Open and application shutdown stop the job; actual GPU/capability failures remain errors. Required RT capability failures leave ordinary editing usable; no-RT rendering does not promise RT baking.
 
 Defaults are Ray traced GI, resolution 512, 16 accumulation iterations, 8 samples per pixel and 3 GI bounces. The iteration control is limited to 1–30. AO shows radius; GI shows bounces and maximum distance, with exposure visible only for RGB8. Hidden controls retain their values.
 
-All targets finish before automatic application. A changed document revision alone does not reject results. If the destination document or a target drawable has been replaced/removed, the batch still completes and retains results, but warns and skips automatic application. Snapshots require additional CPU/GPU memory for independent source resources.
+All targets finish before automatic application. A changed document revision alone does not reject results. Removed/replaced destination components or changed geometry prevent automatic
+application; shared source changes may invalidate accumulation itself. Successful
+document replacement retires old jobs and queued application eligibility.
+Independent material/image snapshots consume memory, while registered model
+raster/BLAS versions are retained per resource.
 
-Select a completed target for its own map preview. Applied maps use linear RGB UV2 with explicit baked AO/GI metadata. RGB8 uses temporary PNG sources; float output uses standard Radiance HDR with RGBE quantization. The default is RGB8 PNG; GI exposure applies to RGB8 only. Applied images and temporary sources remain available for complete Save. Interactive adoption rejects values outside finite half-float range. A failure after material mutation can leave partial dirty edits and retained sources; this is separate from complete DB publication and does not provide the [standalone batch](../api/bake/StandaloneBakeBatch.md)'s protected whole-generation publication guarantees.
+Select a completed target for its own map preview. Applied maps use linear RGB UV2 with explicit baked AO/GI metadata. RGB8 uses temporary PNG sources; float output uses standard Radiance HDR with RGBE quantization. The default is RGB8 PNG; GI exposure applies to RGB8 only. Applied images and temporary sources remain available for complete Save. Interactive adoption rejects values outside finite half-float range. Material adoption prepares all targets first and uses the existing retained
+EditMaterials batch command for appearance and undo/redo. Preparation failure
+leaves receivers unchanged; history execution/replay retains its existing fault
+handling. This is separate from the [standalone batch](../api/bake/StandaloneBakeBatch.md)'s
+protected whole-generation disk publication. Instance maps remain independent and
+serialize with each instance's materials. Generate UV2 on their shared owner.
 
 Tracing tables use exact device budgets up to 16384, including sampler limits. Excess image/sampler pairs warn and use neutral texture fallback while keeping geometry and raster materials. Direct query shadows also retain the scene on overflow. Essential procedural text masks are an exception to neutral/rectangular visibility fallback: if their alpha descriptor cannot be represented, traced text/shadow contribution is omitted rather than becoming a rectangular blocker. Materials remain independently owned. See [tracing resources](../api/draw/TracingSceneResources.md) and [query shadows](../api/draw/RendererDeferred.md).
 
@@ -109,3 +124,48 @@ Tracing tables use exact device budgets up to 16384, including sampler limits. E
 [DocumentIo.cpp](../../apps/bg2e_composer/src/DocumentIo.cpp), [SceneEditor.cpp](../../apps/bg2e_composer/src/SceneEditor.cpp), [ImportActions.cpp](../../apps/bg2e_composer/src/ImportActions.cpp) and [EditorBaking.cpp](../../apps/bg2e_composer/src/EditorBaking.cpp) own application policy. Shared graph/root/clone hooks are described in [scene API](../api/scene/index.md). No engine API depends on Composer's import queues.
 
 The [guided workflow](../tutorials/draw/composer.md) and manual [IO](../../tests/draw/composer_io/README.md), [import](../../tests/draw/composer_import/README.md) and [baking](../../tests/draw/composer_baking/README.md) matrices guide lead validation. M07 implementation/corrections are accepted by continuation; exact backend, HTTP and package coverage is unspecified. Documentation checks are static, with no new runtime run implied.
+
+## Drawable instances
+
+Open **Window > Drawable Instances** to inspect document cache entries, source and
+export paths, revision, logical users and the selected component's submeshes.
+Load a BG2/VWGLB into the resident cache independently of inserting nodes. Loading
+and unloading are outside undo history and do not mark the document dirty. Unload
+requires no owner, instance, history, job or frame use; browser display alone does
+not retain a use.
+
+**Create instance** from a cache entry uses its original material/submesh defaults.
+**Create instance from owner** uses the selected owner's current in-memory
+materials, textures/lightmaps, drawable/local submesh transforms, names, groups,
+visibility and tracing eligibility. No preliminary save is required. The new
+appearance is independent, while geometry and BLAS retain the shared identity.
+Undo/redo restores the captured instance rather than resampling the owner.
+
+Select instance submeshes for the ordinary material/property editor. Edit color,
+textures/sampling, baked indirect maps, metadata, visibility and local matrices.
+Node transform gizmos work separately from the instance's drawable/submesh matrices.
+Geometry and UV2 actions require owners; mixed owner/instance geometry actions
+reject. **Replace owner geometry...** propagates geometry through the stable
+identity, reconciles properties by index and retains before/after state for undo.
+Rebind/removal and node duplicate/delete remain ordinary undoable scene commands.
+
+The Drawable Instance type gizmo is hidden by default. Enable its small pair of
+offset wireframe cubes under **UI Settings > Gizmos > Drawable Instance**.
+Visibility/scale/opacity there affect the helper, not saved model appearance.
+
+Complete Save exports each used shared model once and serializes per-instance
+appearance/images in the scene. Unused cache entries are not persisted. New/Open
+starts a fresh document cache and retires old document bake jobs. An internal
+Scene Resources cleanup reload instead preserves reviewed cache contexts and
+cache-only entries. Loading a cache entry after analysis invalidates cleanup
+review. Protected runtime roots include independent maps and required retained
+sources; true reopening drops unused, nonpersisted protection.
+
+Recoverable missing-model/material loads retain references and show aggregated
+warnings while other resources continue opening. Pending independent model copies
+are reported until complete saving succeeds. A recoverable partial save keeps
+Composer dirty; the previous complete files remain where possible. Cleanup reload
+with unresolved resources aborts before deletion. See
+[cache architecture](../architecture/drawable_caches_and_instances.md),
+[instance API](../api/scene/DrawableInstanceComponent.md) and
+[cleanup policy](../api/db/SceneResourceManager.md).

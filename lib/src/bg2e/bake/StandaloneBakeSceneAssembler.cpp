@@ -22,6 +22,7 @@
 #include <bg2e/base/CpuProfile.hpp>
 #include <bg2e/db/scene.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
+#include "Receiver.hpp"
 #include <bg2e/db/mesh_obj.hpp>
 #include <bg2e/draw/Engine.hpp>
 #include <bg2e/draw/RenderQueueVisitor.hpp>
@@ -206,6 +207,19 @@ void readTargetDrawables(scene::Node& node, draw::Engine& engine, bool allowGpu)
 {
     for (const auto& entry : node.orderedComponents())
     {
+        if (auto* instance = dynamic_cast<scene::DrawableInstanceComponent*>(entry.get()))
+        {
+            if (!allowGpu)
+            {
+                throw std::invalid_argument("Instance receivers require device-backed resource loading; generate UV2 on their owner");
+            }
+            instance->loadResources(engine);
+            if (!instance->resourcesLoaded())
+            {
+                throw std::runtime_error("Standalone instance receiver could not load: " + instance->resourcePath().string());
+            }
+            continue;
+        }
         auto* component = dynamic_cast<scene::DrawableComponent*>(entry.get());
         if (!component || !component->isSceneGeometry())
         {
@@ -226,7 +240,11 @@ void readTargetDrawables(scene::Node& node, draw::Engine& engine, bool allowGpu)
                 {
                     drawable->setName(*name);
                 }
-                component->setDrawable(std::move(drawable));
+                const auto assigned = component->setDrawable(std::move(drawable));
+                if (!assigned.ok())
+                {
+                    throw std::runtime_error(assigned.message);
+                }
             }
             else if (allowGpu)
             {
@@ -253,14 +271,17 @@ void collectTargets(const std::shared_ptr<scene::Node>& node, const std::filesys
     {
         return;
     }
-    if (auto* component = node->drawable())
+    if (auto* component = node->drawableRender(); component && (node->drawable() || node->drawableInstance()) && component->isSceneGeometry())
     {
-        const auto drawable = component->drawable();
+        const auto drawable = detail::receiverResource(*component);
         if (!drawable || !drawable->mesh())
         {
             throw std::invalid_argument("Standalone target has no CPU draw geometry: " + identity);
         }
-        const auto path = component->resourcePath().empty() ? source : inputPath(component->resourcePath());
+        const auto* owner = dynamic_cast<const scene::DrawableComponent*>(component);
+        const auto* instance = dynamic_cast<const scene::DrawableInstanceComponent*>(component);
+        const auto reference = owner ? owner->sourcePath() : instance ? instance->resourcePath() : std::filesystem::path{};
+        const auto path = reference.empty() ? source : inputPath(reference);
         targets.push_back({node,path,identity,{},std::nullopt});
     }
     for (size_t i = 0; i < node->children().size(); ++i)
@@ -301,7 +322,7 @@ void collectDependencies(scene::Node& node, std::set<std::filesystem::path>& pat
     enabled = enabled && node.enabled();
     if (enabled)
     {
-        if (node.drawable())
+        if (node.drawableRender())
         {
             validateTransform(node.worldMatrix());
         }
@@ -344,23 +365,28 @@ void collectDependencies(scene::Node& node, std::set<std::filesystem::path>& pat
     // Traverse all authored references, even disabled sources, for input protection.
     for (const auto& entry : node.orderedComponents())
     {
-        const auto* component = dynamic_cast<const scene::DrawableComponent*>(entry.get());
+        const auto* component = dynamic_cast<const scene::DrawableRenderComponent*>(entry.get());
         if (!component || !component->isSceneGeometry())
         {
             continue;
         }
-        if (!component->resourcePath().empty())
+        const auto* model = dynamic_cast<const scene::DrawableComponent*>(component);
+        if (model && !model->sourcePath().empty())
         {
-            paths.insert(std::filesystem::canonical(inputPath(component->resourcePath())));
+            paths.insert(std::filesystem::canonical(inputPath(model->sourcePath())));
         }
-        const auto drawable = component->drawable();
-        if (!drawable)
+        if (const auto* instance = dynamic_cast<const scene::DrawableInstanceComponent*>(component);
+            instance && !instance->resourcePath().empty())
+        {
+            paths.insert(std::filesystem::canonical(inputPath(instance->resourcePath())));
+        }
+        if (!component->geometry())
         {
             throw std::invalid_argument("Standalone authored Drawable has unresolved resources");
         }
-        for (uint32_t i = 0; i < drawable->submeshesCount(); ++i)
+        for (uint32_t i = 0; i < component->submeshesCount(); ++i)
         {
-            const auto& material = drawable->material(i);
+            const auto& material = component->effectiveMaterial(i);
             for (const auto& texture : {material.albedoTexture(),material.metalnessTexture(),material.roughnessTexture(),
                 material.normalTexture(),material.aoTexture(),material.lightEmissionTexture()})
             {
@@ -468,13 +494,19 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemble(
     {
         try
         {
-            const auto drawable = target.node->drawable()->drawable();
-            auto replacement = drawable;
+            const auto* component = target.node->drawableRender();
+            const auto drawable = detail::receiverResource(*component);
+            auto* owner = target.node->drawable();
+            auto replacement = owner ? owner->drawable() : nullptr;
+            if (uv2Options && !owner)
+            {
+                throw std::invalid_argument("Generate UV2 on the shared geometry owner before baking instance receivers");
+            }
             if (uv2Options)
             {
                 if (drawable->isLoaded())
                 {
-                    auto generated = generateUv2AndReload(drawable,*uv2Options);
+                    auto generated = generateUv2AndReload(replacement,*uv2Options);
                     replacement = std::move(generated.drawable);
                     target.generatedUv2 = generated.atlas;
                 }
@@ -488,17 +520,18 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemble(
                     replacement->setMesh(std::move(mesh));
                 }
             }
-            for (uint32_t i = 0; i < replacement->submeshesCount(); ++i)
+            const auto mesh = replacement ? replacement->mesh() : component->geometry();
+            for (uint32_t i = 0; i < component->submeshesCount(); ++i)
             {
-                if (replacement->material(i).isTransparent())
+                if (component->effectiveMaterial(i).isTransparent())
                 {
                     throw std::invalid_argument("Transparent materials are not supported baked-map receivers");
                 }
-                validateTransform(target.node->worldMatrix()*replacement->submeshTransform(i));
+                validateTransform(target.node->worldMatrix() * component->submeshTransform(i));
             }
-            target.uv2 = geo::UvAtlasValidator::validate(*replacement->mesh(),1,geo::UvAtlasOverlapPolicy::Warn);
-            buildUvSurfaceMesh(*replacement->mesh()); // Finite geometry/normals, ranges and chart validation; logs overlaps.
-            meshes.push_back(replacement->mesh());
+            target.uv2 = geo::UvAtlasValidator::validate(*mesh,1,geo::UvAtlasOverlapPolicy::Warn);
+            buildUvSurfaceMesh(*mesh); // Finite geometry/normals, ranges and chart validation; logs overlaps.
+            meshes.push_back(mesh);
             replacements.push_back(std::move(replacement));
         }
         catch (const std::exception& error)
@@ -511,7 +544,15 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemble(
     // here is attached to the caller's context or published as an Assembly yet.
     for (size_t i = 0; i < result.targets.size(); ++i)
     {
-        result.targets[i].node->drawable()->setDrawable(replacements[i]);
+        if (!replacements[i])
+        {
+            continue; // Instance identity and independent appearance remain bound.
+        }
+        const auto assigned = result.targets[i].node->drawable()->setDrawable(replacements[i]);
+        if (!assigned.ok())
+        {
+            throw std::runtime_error(assigned.message);
+        }
     }
     if (loadTargetGpuResources)
     {
@@ -519,9 +560,9 @@ StandaloneBakeSceneAssembler::Assembly StandaloneBakeSceneAssembler::assemble(
         removeHelpers(*result.targetRoot);
         for (size_t i = 0; i < result.targets.size(); ++i)
         {
-            auto* component = result.targets[i].node->drawable();
-            const auto drawable = component ? component->drawable() : nullptr;
-            if (drawable != replacements[i] || drawable->mesh() != meshes[i] ||
+            auto* component = result.targets[i].node->drawableRender();
+            const auto drawable = component ? detail::receiverResource(*component) : nullptr;
+            if (!drawable || (replacements[i] && drawable != replacements[i]) || drawable->mesh() != meshes[i] ||
                 !drawable->isLoaded() || drawable->engine() != _engine)
             {
                 throw std::logic_error("Resource loading replaced/incompletely realized a prepared standalone target");

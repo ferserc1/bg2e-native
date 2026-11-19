@@ -54,3 +54,17 @@ geometry exchange selects a compatible TLAS generation on the next extraction.
 This implementation favors retained complete versions and conservative device
 waits over rebuilding on replay, in-place BLAS updates, compaction, or fine-grained
 fence retirement. It uses more history memory to keep replay deterministic.
+
+## Resource-backed instances and owner replacement
+
+Instance selections are appearance targets only. Mixed owner/instance geometry
+actions reject; UV2 generation remains owner-only. Resource-backed instances share
+the owner's raster/BLAS versions, so they do not receive independent native builds
+when shared geometry is exchanged. History retains each required resource version
+through explicit History leases and charges independent appearance separately.
+
+`ReplaceDrawable` prepares a new owner realization and independent before/after
+instance states, reconciled by submesh index. Replay restores the same identity,
+native versions, original definitions, instance materials and selection. Failure
+before admission leaves the scene intact; failed compensation faults history as
+in other geometry commands. See [resource architecture](../drawable_caches_and_instances.md).

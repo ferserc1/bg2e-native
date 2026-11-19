@@ -16,6 +16,8 @@
  *    along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <bg2e/scene/DrawableComponent.hpp>
+#include <bg2e/scene/DrawableInstanceComponent.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
 #include <bg2e/draw/FsrUpscaler.hpp>
 #include <bg2e/draw/MetalFXUpscaler.hpp>
@@ -943,7 +945,8 @@ bool RendererDeferred::prepareFrame()
     {
         return false;
     }
-    bool overlayChanged = false;
+    const bool ownersChanged = scene::DrawableComponent::prepareResources(_scene.get(), *_engine);
+    bool overlayChanged = scene::DrawableInstanceComponent::prepareResources(_scene.get(), *_engine) || ownersChanged;
     base::CpuProfileScope overlayProfile("render.overlays");
     for (const auto& overlay : _configuration.overlays)
     {

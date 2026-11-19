@@ -618,6 +618,13 @@ scene::Node* createSceneTree(
     {
         size_t meshIndex = gltfNode->mesh - data->meshes;
         auto drawable = drawables[meshIndex];
+        if constexpr (std::is_same_v<DrawableT, draw::Drawable>)
+        {
+            if (drawable->hasOwner())
+            {
+                drawable = drawable->clone();
+            }
+        }
 
         node->addComponent(new scene::DrawableComponent(drawable));
     }
@@ -770,6 +777,10 @@ static scene::Node* loadGltfImpl(
     for (auto& mesh : meshes)
     {
         auto drw = std::make_shared<DrawableT>();
+        if constexpr (std::is_same_v<DrawableT, draw::Drawable>)
+        {
+            drw->setImportSource(filePath);
+        }
 
         if (data->meshes[meshIdx].name)
         {

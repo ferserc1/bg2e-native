@@ -49,7 +49,8 @@ enum class GizmoType
     DirectionalLight,
     Environment,
     Transform,
-    SunLight
+    SunLight,
+    DrawableInstance
 };
 
 // Identifies which part of the transform gizmo is being interacted with. The

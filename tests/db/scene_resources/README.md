@@ -43,3 +43,17 @@ supported.
    an authored source. Clean and immediately save again: the second save must
    succeed. The cleanup reload must rebind those live references to the packaged
    copies before removing the original sources.
+
+## Resident cache protection
+
+- Load a local BG2 only into Drawable Instances. Analyze: its model and texture
+  dependencies must not appear as deletion candidates.
+- Load another entry after review; cleanup must require a new analysis even when
+  the scene remains clean. Unload also invalidates review.
+- Confirm cleanup: internal reload preserves cache-only entries and they can
+  still create instances. Include nested scopes and independent lightmap sources.
+- Truly reopen the saved scene: unused nonpersisted entries no longer protect
+  their files. Keep new warning acknowledgement and changed-file rejection checks.
+- Missing resources during the cleanup reload must abort before deletion. Runtime
+  roots are not written into scene JSON. These are manual checks, not new automated
+  executions or claims of exact backend coverage.
