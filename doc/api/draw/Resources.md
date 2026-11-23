@@ -62,7 +62,7 @@ See [database representation/resource IO](../db/SceneReferences.md).
 
 Use [DrawableCache](DrawableCache.md) and
 [DrawableInstanceComponent](../scene/DrawableInstanceComponent.md) for shared
-raster/BLAS residency with independent materials and drawable/submesh transforms.
+raster/BLAS residency with independent materials and model-local submesh transforms.
 This does not change deep `Drawable::clone()` behavior or the optional texture
 cache. Generic rendering/appearance uses DrawableRenderComponent and
 `Node::drawableRender()`; concrete `Node::drawable()` remains owner-only.

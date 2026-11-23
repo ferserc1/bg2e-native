@@ -1,5 +1,8 @@
 # Scene graph contracts
 
+For the on-disk owner and instance component schemas, see the
+[drawable scene format](../db/DrawableSceneFormat.md).
+
 Headers: `<bg2e/scene/Scene.hpp>`, `<bg2e/scene/Node.hpp>`, `<bg2e/scene/Component.hpp>` and `<bg2e/scene/ComponentFactoryRegistry.hpp>`. Scene parsing is graphics-free; resource realization accepts an explicit draw Engine. Production Engine overloads, scene native Drawables and scene::vk bindings are removed.
 
 `Scene::releaseSceneRoot()` transfers the complete shared root, clears its Scene back-pointer/caches and leaves `rootNode()` null. Consumers may unwrap one synthetic single-root level; preserve multi-root containers. `Node::getComponent<T>()` prefers exact type then compatible subclass. `Node::clone()` rejects null, shared, already-owned or sliced component clones. Mutable draw geometry/material realizations and camera projections must remain independent; custom component/projection subclasses override clone with their concrete type.

@@ -36,3 +36,6 @@ properties when present or cache originals when ownerless. Instances serialize
 independent appearance and cannot independently export the shared model.
 See [complete IO](../db/DrawResourceIO.md) and
 [ownership architecture](../../architecture/drawable_caches_and_instances.md).
+
+For owner JSON fields, legacy path fallback and BG2 material dependencies, see the
+[drawable scene format](../db/DrawableSceneFormat.md).

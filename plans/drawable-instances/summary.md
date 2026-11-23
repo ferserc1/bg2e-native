@@ -6,10 +6,13 @@ Steps 01–10 implemented and accepted. The user confirmed independent instance 
 
 ## Agreed contracts
 
+The [drawable scene format](../../doc/api/db/DrawableSceneFormat.md) is the
+current serialization and import specification.
+
 - DrawableComponent, DrawableInstanceComponent and TextComponent share DrawableRenderComponent, not each other. Keep Node::drawable() concrete and add Node::drawableInstance().
 - Instances cannot mutate geometry. Copy original properties on creation; serialize their ordered submesh state in component JSON. Match by index, truncate excess, fill missing values from originals and warn without cancelling higher-level operations.
 - One owner per resource; many instances. Owner replacement propagates shared geometry. Owner duplication/legacy duplicate paths produce separate identities and BG2 files.
-- Share local-space raster buffers and BLAS; world transforms belong to TLAS instances. Preserve GPU lifetimes and debug identifiers.
+- Share local-space raster buffers and BLAS; node placement comes from TransformComponent, and each TLAS instance uses the node world matrix and model-local submesh matrix. Preserve GPU lifetimes and debug identifiers.
 - Device-backed cache is independent of UI/tree, strongly resident, and distinct from disk resource accounting. Do not add a device-free abstraction. BG2 IDs use full paths; procedural/imported IDs are unique (imported IDs have filename prefixes).
 - Instances never export or alter models. A DB save coordinator writes each used resource once, using owner properties or original definitions if ownerless. Normal saves overwrite intended files. Collision copies do not overwrite unrelated files.
 - Recoverable/palliable failures warn and continue composed operations. Direct invalid assignments fail locally with a UI explanation. Preserve authored state and prior good files; report incomplete saves honestly. No crashes or uncaught recoverable exceptions.

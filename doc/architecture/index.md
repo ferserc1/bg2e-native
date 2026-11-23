@@ -1,5 +1,8 @@
 # Architecture
 
+For JSON fields and the BG2 dependency chain, see the
+[drawable scene format](../api/db/DrawableSceneFormat.md).
+
 - [Command/memento editing](command-memento/index.md): reusable app history API,
   optional SDK sessions, and Composer's retained scene/resource integration.
 

@@ -61,3 +61,6 @@ including lightmaps. Use these values through
 
 See [architecture](../../architecture/drawable_caches_and_instances.md) for
 originals, owner replacement, document scopes and offscreen reuse.
+
+For the scene fields that reference cached geometry, see the
+[drawable scene format](../db/DrawableSceneFormat.md).

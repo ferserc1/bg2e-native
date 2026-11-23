@@ -127,6 +127,9 @@ The [guided workflow](../tutorials/draw/composer.md) and manual [IO](../../tests
 
 ## Drawable instances
 
+For the schema and asset references written by Composer, see the
+[drawable scene format](../api/db/DrawableSceneFormat.md).
+
 Open **Window > Drawable Instances** to inspect document cache entries, source and
 export paths, revision, logical users and the selected component's submeshes.
 Load a BG2/VWGLB into the resident cache independently of inserting nodes. Loading
@@ -136,14 +139,14 @@ not retain a use.
 
 **Create instance** from a cache entry uses its original material/submesh defaults.
 **Create instance from owner** uses the selected owner's current in-memory
-materials, textures/lightmaps, drawable/local submesh transforms, names, groups,
+materials, textures/lightmaps, model submesh placement, names, groups,
 visibility and tracing eligibility. No preliminary save is required. The new
 appearance is independent, while geometry and BLAS retain the shared identity.
 Undo/redo restores the captured instance rather than resampling the owner.
 
 Select instance submeshes for the ordinary material/property editor. Edit color,
-textures/sampling, baked indirect maps, metadata, visibility and local matrices.
-Node transform gizmos work separately from the instance's drawable/submesh matrices.
+textures/sampling, baked indirect maps, metadata and visibility. Use the node
+transform gizmo to place the instance in the hierarchy.
 Geometry and UV2 actions require owners; mixed owner/instance geometry actions
 reject. **Replace owner geometry...** propagates geometry through the stable
 identity, reconciles properties by index and retains before/after state for undo.

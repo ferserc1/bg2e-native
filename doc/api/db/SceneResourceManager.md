@@ -102,3 +102,6 @@ nonpersisted unused resources cease protecting disk files after true reopen.
 
 Resident unloading, DrawableRegistry names and filesystem orphan accounting are
 separate operations. See [ownership architecture](../../architecture/drawable_caches_and_instances.md).
+
+For the file references emitted by drawable components and BG2 materials, see the
+[drawable scene format](DrawableSceneFormat.md).

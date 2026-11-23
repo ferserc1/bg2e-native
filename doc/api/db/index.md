@@ -17,6 +17,9 @@ production database formats. Its umbrella header is `<bg2e/db/all.hpp>`.
 
 ## Representation and draw
 
+For SDK import and the on-disk schema, see the
+[drawable scene format](DrawableSceneFormat.md).
+
 [Scene references and draw resource loading](SceneReferences.md) explains raw
 document preservation, graphics-free typed graphs and synchronous realization.
 

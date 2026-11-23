@@ -49,7 +49,6 @@ class BG2E_API DrawableInstanceComponent final : public DrawableRenderComponent 
     uint32_t retainedMaterialCount() const noexcept;
     uint32_t submeshesCount() const override;
     glm::mat4 transform() const override;
-    void setTransform(const glm::mat4& value);
     glm::mat4 submeshTransform(uint32_t index) const override;
     glm::mat4 localSubmeshTransform(uint32_t index) const;
     void setSubmeshTransform(const glm::mat4& value, uint32_t index = 0);
@@ -96,7 +95,6 @@ class BG2E_API DrawableInstanceComponent final : public DrawableRenderComponent 
     draw::DrawableCache* _cache = nullptr;
     draw::DrawableResourceHandle _handle;
     draw::DrawableUsageLease _use;
-    glm::mat4 _transform{1};
     bool _tracing = true;
     uint64_t _revision = 0;
     bool _ready = false, _retry = true;

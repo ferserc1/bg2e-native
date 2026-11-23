@@ -184,7 +184,7 @@ void DrawableInstancesWindow::drawContents()
     {
         ImGui::TextWrapped("Resource identity: %s", selection.handle.identifier().c_str());
         ImGui::Text("Ray tracing: %s", selection.tracing ? "Enabled" : "Disabled");
-        if (ImGui::CollapsingHeader("Drawable transform"))
+        if (selection.owner && ImGui::CollapsingHeader("Drawable transform"))
         {
             matrix(selection.transform);
         }

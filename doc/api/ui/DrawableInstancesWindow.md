@@ -13,7 +13,8 @@ headers/types are required by the public interface.
 and selected-component inspection. Entries expose labels, source/export paths,
 geometry revision, scope, logical usage and an unload diagnostic. Independent
 submesh inspection includes names/groups, material/image descriptions, visibility
-and local matrices. These DTOs do not own caches, native realizations or usage
+and read-only model-local matrices. The drawable-wide matrix display is for
+model owners. Use the node's Transform component to place an instance. These DTOs do not own caches, native realizations or usage
 leases merely because the browser is open.
 
 Composer cache load/unload is nonhistorical and does not mark the document dirty.

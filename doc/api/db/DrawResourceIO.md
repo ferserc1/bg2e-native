@@ -226,6 +226,9 @@ supply that source-protection/overwrite/multi-target transaction. Generic image/
 
 ## Shared-resource export and save reports
 
+For serialized fields and image paths as read back by an importer, see the
+[drawable scene format](DrawableSceneFormat.md).
+
 `db::loadCachedDrawableBg2(path, cache, callback)` and its Engine overload explicitly
 opt into [resident identity reuse](../draw/DrawableCache.md). Ordinary standalone
 `loadDrawableBg2` still returns independent geometry. Scene owners register

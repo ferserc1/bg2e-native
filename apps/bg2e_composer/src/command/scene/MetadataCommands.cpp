@@ -20,7 +20,6 @@
 #include <set>
 #include <algorithm>
 #include <stdexcept>
-#include <cmath>
 
 namespace bg2e_composer::command::scene {
 using namespace bg2e::app;
@@ -28,25 +27,6 @@ using namespace bg2e::app;
 EditMetadata::EditMetadata(std::weak_ptr<StageScene> stage, MetadataRequest request)
     : _stage(std::move(stage)), _request(std::move(request))
 {
-    if (_request.field == MetadataField::SubmeshTransform || _request.field == MetadataField::DrawableTransform)
-    {
-        for (int c = 0; c < 4; ++c)
-        {
-            for (int r = 0; r < 4; ++r)
-            {
-                if (!std::isfinite(_request.transform[c][r]))
-                {
-                    throw std::invalid_argument("Instance transform must be finite");
-                }
-            }
-        }
-        const auto determinant = glm::determinant(_request.transform);
-        if (!std::isfinite(determinant) || std::abs(determinant) < 1e-12f || _request.transform[0][3] != 0 ||
-            _request.transform[1][3] != 0 || _request.transform[2][3] != 0 || _request.transform[3][3] != 1)
-        {
-            throw std::invalid_argument("Instance transform must be affine and invertible");
-        }
-    }
     std::set<std::pair<const bg2e::scene::DrawableRenderComponent*, uint32_t>> seen;
     std::erase_if(_request.targets, [&](const auto& target)
     {
@@ -79,15 +59,6 @@ EditMetadata::Value EditMetadata::read(const bg2e::manipulation::SelectionItem& 
     {
         throw std::logic_error("Submesh metadata identity is stale");
     }
-    if (_request.field == MetadataField::SubmeshTransform || _request.field == MetadataField::DrawableTransform)
-    {
-        const auto instance = std::dynamic_pointer_cast<bg2e::scene::DrawableInstanceComponent>(mesh);
-        if (!instance)
-        {
-            throw std::logic_error("Instance transform editing requires an instance receiver");
-        }
-        return {{}, true, _request.field == MetadataField::SubmeshTransform ? instance->localSubmeshTransform(item.submesh) : instance->transform()};
-    }
     if (_request.field == MetadataField::Visibility)
     {
         return {{}, mesh->submeshVisibility(item.submesh)};
@@ -100,15 +71,7 @@ void EditMetadata::write(const bg2e::manipulation::SelectionItem& item, const Va
     const auto component = item.lockRenderable();
     if (const auto instance = std::dynamic_pointer_cast<bg2e::scene::DrawableInstanceComponent>(component))
     {
-        if (_request.field == MetadataField::SubmeshTransform)
-        {
-            instance->setSubmeshTransform(value.transform, item.submesh);
-        }
-        else if (_request.field == MetadataField::DrawableTransform)
-        {
-            instance->setTransform(value.transform);
-        }
-        else if (_request.field == MetadataField::Visibility)
+        if (_request.field == MetadataField::Visibility)
         {
             instance->setSubmeshVisibility(value.visible, item.submesh);
         }
@@ -188,10 +151,9 @@ CommandResult EditMetadata::execute() noexcept
         for (const auto& target : _request.targets)
         {
             auto before = read(target);
-            Value after{_request.text, _request.visible, _request.transform};
-            const bool matrix = _request.field == MetadataField::SubmeshTransform || _request.field == MetadataField::DrawableTransform;
-            changed = changed || (matrix ? before.transform != after.transform :
-                _request.field == MetadataField::Visibility ? before.visible != after.visible : before.text != after.text);
+            Value after{_request.text, _request.visible};
+            changed = changed || (_request.field == MetadataField::Visibility ?
+                before.visible != after.visible : before.text != after.text);
             _before.push_back(std::move(before));
             _after.push_back(std::move(after));
         }

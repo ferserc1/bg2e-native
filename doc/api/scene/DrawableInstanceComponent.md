@@ -13,10 +13,11 @@ Engine/Device alive and stop producers for binding/resource operations.
 
 `material(index)` exposes the authored CPU definition; `setMaterial()` deep-copies
 settings. `effectiveMaterial()` and `drawMaterial()` inspect independent CPU/native
-appearance. Edit drawable/local submesh matrices, names, groups, visibility and
-tracing through `setTransform`, `setSubmeshTransform`, `setSubmeshName`,
+appearance. Set model-local submesh matrices, names, groups, visibility and
+tracing through `setSubmeshTransform`, `setSubmeshName`,
 `setSubmeshGroupName`, `setSubmeshVisibility` and `setRayTracingEnabled`.
-`submeshTransform()` combines the drawable and local matrices. Nonfinite,
+`submeshTransform()` returns the local matrix. The node's
+`TransformComponent` controls placement. Nonfinite,
 singular or nonaffine matrices warn and preserve the previous value.
 
 These operations never edit raster/BLAS storage. `clone()` keeps the resource
@@ -39,7 +40,10 @@ Standalone users must preserve the same synchronization and lifetime rules.
 
 ## Persistence and Composer creation
 
-Reference JSON stores `path`, `transform`, `rayTracingEnabled` and ordered
+For the complete JSON schema and SDK import rules, see the
+[drawable scene format](../db/DrawableSceneFormat.md).
+
+Reference JSON stores `path`, `rayTracingEnabled` and ordered
 `submeshes` objects containing `material`, `transform`, `name`, `groupName` and
 `visible`. Material fields use conventional PBR texture/sampling/indirect metadata.
 Missing/excess properties recover against originals; unresolved references remain

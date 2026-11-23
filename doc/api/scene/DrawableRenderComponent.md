@@ -6,7 +6,10 @@ The common rendering contract is the direct base of DrawableComponent,
 DrawableInstanceComponent and TextComponent. It supplies geometry identity/read
 access, readiness, draw engine, drawable/submesh transforms, names/groups,
 visibility, effective material/native material inspection and tracing eligibility.
-Rendering, bounds, selection and overlays consume this contract.
+Rendering, bounds, selection and overlays consume this contract. For
+DrawableInstanceComponent, `transform()` returns identity and
+`submeshTransform(index)` returns the model-local matrix. The node's
+TransformComponent supplies scene placement.
 
 Use `Node::drawableRender()` to find a generic renderable. `Node::drawable()` keeps
 its concrete owner meaning and `Node::drawableInstance()` finds an instance.

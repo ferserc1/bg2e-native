@@ -1,5 +1,8 @@
 # bg2 engine documentation
 
+The on-disk contract is covered in the
+[drawable scene format](api/db/DrawableSceneFormat.md).
+
 Draw is the production scene renderer over Vulkan or Metal. Start with the
 [API index](api/index.md), [draw tutorials](tutorials/draw/index.md) and
 [applications](apps/index.md). GPU tutorials cover lower-level resources.

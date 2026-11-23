@@ -23,7 +23,7 @@ accessor exposes mutable storage. Text is excluded from BG2 model export.
 
 One resource permits at most one SceneOwner and many SceneInstance registrations.
 An instance shares local raster buffers and BLAS with its resource. Node/world and
-independent drawable/submesh matrices supply each TLAS placement. Effective
+the node world transform and model-local submesh matrix supply each TLAS placement. Effective
 materials belong to each instance. This reduces geometry residency, not draw calls;
 there is no new batching or GPU abstraction contract.
 
@@ -36,7 +36,9 @@ an export destination into an implicit source alias.
 
 Cache entries retain immutable original submesh definitions and drawable transform.
 `DrawableInstanceComponent::setResource()` initializes independent CPU material
-settings, local transforms, names, groups and visibility from these originals.
+settings, model-local transforms, names, groups and visibility from these originals.
+At initialization the cache's original drawable transform is composed into the
+submesh defaults. Node placement comes from `TransformComponent`.
 Each instance realizes its own native materials and retains tracing eligibility.
 Changing an instance does not edit the owner, originals or another instance.
 
@@ -44,7 +46,7 @@ Composer provides two creation policies:
 
 - From the cache browser, use the resource originals.
 - From a selected owner, bind the same identity and copy the owner's current live
-  materials, texture settings, drawable/local transforms, names, groups,
+  materials, texture settings, model submesh placement, names, groups,
   visibility and tracing state. Unsaved changes and generated lightmaps are copied
   without saving or rereading the BG2. Texture source lifetime is retained while
   mutable settings and materials are independent.
@@ -95,8 +97,7 @@ Keep separately extracted native references within that lifetime too.
 ## Scene representation and coordinated export
 
 Instances remain ordinary entries in Node `components` arrays with type
-`DrawableInstance`. They store a model `path`, independent `transform`,
-`rayTracingEnabled` and ordered `submeshes`, each with `material`, `transform`,
+`DrawableInstance`. They store a model `path`, `rayTracingEnabled` and ordered `submeshes`, each with `material`, `transform`,
 `name`, `groupName` and `visible`. There is no persisted top-level cache array.
 Unused resident entries, runtime handles, usage counts and cleanup roots are not
 serialized. Reference-only saving copies no assets and can require a prior complete
@@ -175,3 +176,6 @@ See [DrawableCache](../api/draw/DrawableCache.md),
 [cleanup](../api/db/SceneResourceManager.md),
 [Composer](../apps/draw_composer.md#drawable-instances) and
 [retained commands](command-memento/composer-resources.md).
+
+For the on-disk schema and the import sequence, see the
+[drawable scene format](../api/db/DrawableSceneFormat.md).

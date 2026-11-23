@@ -131,7 +131,10 @@ try
             if (const auto* renderable = node->drawableRender(); renderable && (inspected.owner || inspected.instance))
             {
                 inspected.handle = instance ? instance->resourceHandle() : owner->resourceHandle();
-                inspected.transform = renderable->transform();
+                if (inspected.owner)
+                {
+                    inspected.transform = owner->transform();
+                }
                 inspected.tracing = renderable->rayTracingEnabled();
                 for (uint32_t sub = 0; sub < renderable->submeshesCount(); ++sub)
                 {
@@ -366,18 +369,13 @@ void AppDelegate::createDrawableInstanceFromOwner()
             }
             // Cache creation uses immutable originals. This action instead captures
             // the selected owner's live appearance before admitting the insert.
-            instance->setTransform(owner->transform());
-            if (instance->transform() != owner->transform())
-            {
-                throw std::invalid_argument("The owner's drawable transform cannot be represented by an instance");
-            }
             instance->setRayTracingEnabled(owner->rayTracingEnabled());
             for (uint32_t sub = 0; sub < owner->submeshesCount(); ++sub)
             {
                 // Clone texture settings and retain generated sources, including
                 // unsaved lightmaps, without sharing mutable material attributes.
                 instance->material(sub) = bg2e::draw::cloneMaterialAttributes(owner->effectiveMaterial(sub));
-                const auto local = drawable->localSubmeshTransform(sub);
+                const auto local = owner->submeshTransform(sub);
                 instance->setSubmeshTransform(local, sub);
                 if (instance->localSubmeshTransform(sub) != local)
                 {

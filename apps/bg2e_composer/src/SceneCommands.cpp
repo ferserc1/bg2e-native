@@ -228,8 +228,7 @@ try
     }
     command::Effects effects;
     effects.renderHistories = true;
-    effects.lightmapSources = request.field == command::scene::MetadataField::Visibility ||
-        request.field == command::scene::MetadataField::SubmeshTransform || request.field == command::scene::MetadataField::DrawableTransform;
+    effects.lightmapSources = request.field == command::scene::MetadataField::Visibility;
     return submitSceneCommand(std::make_unique<command::scene::EditMetadata>(_stage, std::move(request)),
         effects, command::Boundary::CpuValue);
 }

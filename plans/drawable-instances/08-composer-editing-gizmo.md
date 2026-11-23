@@ -6,7 +6,7 @@ Step 07 implemented and buildable; record its user validation status.
 
 ## Work
 
-Expose undoable independent submesh material, transform and visibility editing; duplicate instances without cloning geometry. Hide/disable all geometry-modifying actions for instances, including indirect menu/selection command paths. Expose owner replacement and standalone conflict diagnostics. Review reflection and editor actions after the Text inheritance change.
+Expose undoable independent submesh material, metadata and visibility editing. Use the node Transform component and its gizmo for placement. Duplicate instances without cloning geometry. Hide/disable all geometry-modifying actions for instances, including indirect menu/selection command paths. Expose owner replacement and standalone conflict diagnostics. Review reflection and editor actions after the Text inheritance change.
 Add GizmoType::DrawableInstance using two small offset wireframe cubes, screen-size-aware, hidden by default, with its own visibility/scale/opacity settings. Exclude helper geometry from model cache, final rendering and bake. Preserve transform gizmo behavior.
 Integrate undo/redo material retention and geometry replacement revisions without multiplying memory accounting for shared buffers/BLAS.
 

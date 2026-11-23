@@ -237,11 +237,11 @@ try
     DrawableInstanceComponent candidate;
     candidate._handle = handle;
     candidate._cache = &cache;
-    candidate._transform = info->originalTransform;
     candidate._tracing = cache.resolve(handle)->rayTracingEnabled();
     candidate._state->submeshes = *info->originalSubmeshes;
     for (auto& submesh : candidate._state->submeshes)
     {
+        submesh.transform = info->originalTransform * submesh.transform;
         submesh.material = draw::cloneMaterialAttributes(submesh.material);
     }
     const std::weak_ptr<State> weak = candidate._state;
@@ -272,9 +272,15 @@ try
         {
             if (published.path == _resourcePath)
             {
-                for (size_t sub = 0; sub < std::min(candidate._state->submeshes.size(), published.submeshTransforms.size()); ++sub)
+                const auto records = json::ObjectReader(_pendingAppearance).getArray("submeshes");
+                for (size_t sub = 0; records && sub < std::min(candidate._state->submeshes.size(), published.submeshTransforms.size()); ++sub)
                 {
-                    candidate._state->submeshes[sub].transform *= published.submeshTransforms[sub];
+                    const auto record = records->getObject(sub);
+                    const auto matrix = record ? record->getGlmMat4("transform") : std::nullopt;
+                    if (matrix && validTransform(*matrix))
+                    {
+                        candidate._state->submeshes[sub].transform *= published.submeshTransforms[sub];
+                    }
                 }
                 break;
             }
@@ -313,7 +319,6 @@ try
     std::swap(_handle, candidate._handle);
     std::swap(_use, candidate._use);
     std::swap(_cache, candidate._cache);
-    std::swap(_transform, candidate._transform);
     std::swap(_tracing, candidate._tracing);
     std::swap(_revision, candidate._revision);
     _ready = candidate._ready;
@@ -487,6 +492,7 @@ bool DrawableInstanceComponent::prepareResources(draw::Engine& engine) noexcept
             while (submeshes.size() < count)
             {
                 auto value = info->originalSubmeshes->at(submeshes.size());
+                value.transform = info->originalTransform * value.transform;
                 value.material = draw::cloneMaterialAttributes(value.material);
                 submeshes.push_back(std::move(value));
             }
@@ -653,27 +659,14 @@ uint32_t DrawableInstanceComponent::submeshesCount() const
 
 glm::mat4 DrawableInstanceComponent::transform() const
 {
-    return _transform;
-}
-
-
-void DrawableInstanceComponent::setTransform(const glm::mat4& value)
-{
-    if (!validTransform(value))
-    {
-        warn("Invalid instance transform; previous transform retained.");
-        return;
-    }
-    _transform = value;
-    rememberField("transform", json::JSON(value));
+    return glm::mat4(1);
 }
 
 
 glm::mat4 DrawableInstanceComponent::submeshTransform(uint32_t index) const
 {
-    return _transform * localSubmeshTransform(index);
+    return localSubmeshTransform(index);
 }
-
 
 glm::mat4 DrawableInstanceComponent::localSubmeshTransform(uint32_t index) const
 {
@@ -901,7 +894,6 @@ try
     result->_exportBasis = _exportBasis;
     result->_appearanceBase = _appearanceBase;
     result->_pendingAppearance = _pendingAppearance ? json::JsonParser(_pendingAppearance->serialize()).parse() : nullptr;
-    result->_transform = _transform;
     result->_tracing = _tracing;
     result->_priority = _priority;
     result->_ignoreSerialization = _ignoreSerialization;
@@ -958,7 +950,6 @@ std::shared_ptr<DrawableInstanceComponent> DrawableInstanceComponent::cloneForRe
     result->_handle = _handle;
     result->_resourcePath = resourcePath();
     result->_exportBasis = _exportBasis;
-    result->_transform = _transform;
     result->_tracing = _tracing;
     result->_priority = _priority;
     result->_ignoreSerialization = _ignoreSerialization;
@@ -972,7 +963,7 @@ std::shared_ptr<DrawableInstanceComponent> DrawableInstanceComponent::cloneForRe
         }
         else
         {
-            value = {resource.materialDefinition(sub), resource.localSubmeshTransform(sub), resource.submeshName(sub),
+            value = {resource.materialDefinition(sub), resource.submeshTransform(sub), resource.submeshName(sub),
                 resource.submeshGroupName(sub), resource.submeshVisibility(sub)};
         }
         value.material = draw::cloneMaterialAttributes(value.material);
@@ -1119,7 +1110,6 @@ void DrawableInstanceComponent::overlayAppearance(const std::shared_ptr<json::Js
             invalid(object, "transform", false);
         }
     };
-    matrix(reader, _transform);
     if (const auto value = reader.getBool("rayTracingEnabled"))
     {
         _tracing = *value;
@@ -1344,7 +1334,6 @@ try
     {
         warn("Instance model reference is missing or malformed; authored appearance retained.");
     }
-    _transform = glm::mat4(1);
     _tracing = true;
     const auto submeshes = reader.getArray("submeshes");
     _state->submeshes.clear();
@@ -1382,7 +1371,7 @@ try
         auto pending = json::JsonParser(_pendingAppearance->serialize()).parse();
         relocateMaterials(pending, _appearanceBase, base);
         const json::ObjectReader reader(pending);
-        for (const auto* key : {"transform", "rayTracingEnabled", "submeshes"})
+        for (const auto* key : {"rayTracingEnabled", "submeshes"})
         {
             if (const auto value = reader.getNode(key))
             {
@@ -1417,7 +1406,6 @@ try
                 {"name", json::JSON(value.name)}, {"groupName", json::JSON(value.groupName)}, {"visible", json::JSON(value.visible)}}));
         }
         result->objectValue()["submeshes"] = submeshes;
-        result->objectValue()["transform"] = json::JSON(_transform);
         result->objectValue()["rayTracingEnabled"] = json::JSON(_tracing);
     }
     if (!path.empty())
@@ -1473,7 +1461,6 @@ std::shared_ptr<json::JsonNode> DrawableInstanceComponent::serializeExportRefere
             {"name", json::JSON(value.name)}, {"groupName", json::JSON(value.groupName)}, {"visible", json::JSON(value.visible)}}));
     }
     result->objectValue()["submeshes"] = submeshes;
-    result->objectValue()["transform"] = json::JSON(_transform);
     result->objectValue()["rayTracingEnabled"] = json::JSON(_tracing);
     const auto relative = modelPath.lexically_relative(base);
     result->objectValue()["path"] = json::JSON((relative.empty() ? modelPath : relative).generic_string());

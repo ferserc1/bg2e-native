@@ -81,12 +81,16 @@ and [manual checks](../../../tests/draw/composer_io/README.md).
 
 ## Shared-resource components and recovery
 
+For exact component keys, material overlays and path resolution, see the
+[drawable scene format](DrawableSceneFormat.md).
+
 DrawableRenderComponent is the shared read/appearance base of model owners,
 instances and Text. Node::drawable remains owner-only; use drawableRender or
 drawableInstance for their respective contracts. DrawableInstance JSON remains in
-Node component arrays, with `path`, drawable `transform`, `rayTracingEnabled` and
+Node component arrays, with `path`, `rayTracingEnabled` and
 ordered `submeshes` containing independent `material`, local `transform`, `name`,
-`groupName` and `visible`. No unused resident cache list is serialized.
+`groupName` and `visible`. The node's `Transform` component controls placement.
+No unused resident cache list is serialized.
 
 Instance properties overlay originals by index. Missing values use originals,
 excess entries are truncated and missing entries are filled with warnings.

@@ -103,13 +103,16 @@ std::shared_ptr<bg2e::scene::Node> snapshotBakeNode(
         {
             throw std::runtime_error(bound.message);
         }
-        const auto drawable = owner->drawable();
-        instance->setTransform(drawable->transform());
         instance->setRayTracingEnabled(owner->rayTracingEnabled());
         for (uint32_t sub = 0; sub < owner->submeshesCount(); ++sub)
         {
             instance->setMaterial(owner->effectiveMaterial(sub), sub);
-            instance->setSubmeshTransform(drawable->localSubmeshTransform(sub), sub);
+            const auto transform = owner->submeshTransform(sub);
+            instance->setSubmeshTransform(transform, sub);
+            if (instance->localSubmeshTransform(sub) != transform)
+            {
+                throw std::runtime_error("Cannot capture owner submesh placement for bake: " + source->name());
+            }
             instance->setSubmeshName(owner->submeshName(sub), sub);
             instance->setSubmeshGroupName(owner->submeshGroupName(sub), sub);
             instance->setSubmeshVisibility(owner->submeshVisibility(sub), sub);

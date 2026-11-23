@@ -207,28 +207,6 @@ void EditorUi::drawTools(const std::shared_ptr<AppDelegate>& delegate)
             drawMetadata(command::scene::MetadataField::Group, "Group", true);
             drawMetadata(command::scene::MetadataField::Visibility, "Visible", true);
         }
-        if (auto* instance = target->drawableInstance())
-        {
-            ui::Text::text("Geometry is shared and read-only. These transforms and material edits affect only this instance.");
-            const auto editMatrix = [&](command::scene::MetadataField field, const char* label, const glm::mat4& matrix)
-            {
-                command::scene::MetadataRequest request;
-                request.field = field;
-                request.targets = {*item};
-                request.transform = matrix;
-                const auto key = std::to_string(reinterpret_cast<uintptr_t>(instance)) + ":matrix:" +
-                    std::to_string(item->submesh) + ":" + std::to_string(static_cast<int>(field));
-                request = std::any_cast<command::scene::MetadataRequest>(_metadataEdit->value(key, std::move(request)));
-                bool changed = false;
-                const auto state = ui::EditInteraction::draw([&]
-                {
-                    changed = ui::Vector::mat4(label, request.transform);
-                });
-                _metadataEdit->submit(key, std::move(request), changed, state);
-            };
-            editMatrix(command::scene::MetadataField::SubmeshTransform, "Instance submesh transform", instance->localSubmeshTransform(item->submesh));
-            editMatrix(command::scene::MetadataField::DrawableTransform, "Instance drawable transform", instance->transform());
-        }
         if (!target->getComponent<scene::TextComponent>() && !target->drawableInstance())
         {
             ui::Text::separator("Geometry (whole selected meshes)");

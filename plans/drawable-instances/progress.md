@@ -2,6 +2,11 @@
 
 ## Current state
 
+The [drawable scene format](../../doc/api/db/DrawableSceneFormat.md) describes
+the current schema. In Composer, edit instance placement through the node
+Transform component and its gizmo. The browser shows model-local submesh
+matrices read-only. The step entries below record development history.
+
 - Steps 01–10 implemented and accepted. The user confirmed instance lightmaps, then validated owner-based creation from unsaved appearance and explicitly authorized the final documentation step.
 - Step 11 documentation delivered; final user documentation review pending.
 - Completed implementation/documentation steps: 01, 02, 03, 04, 05, 06, 07, 08, 09, 10, 11.
