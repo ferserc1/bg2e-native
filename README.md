@@ -16,6 +16,8 @@ bg2 engine depends on **SDL2**, **Vulkan**, and **GLM**, but the way these depen
 
 ### macOS and Windows
 
+> IMPORTANT: download VulkanSDK version **1.4.321.1**. The engine is not tested with any other version.
+
 During the VulkanSDK installation, ensure you also install the following packages:
 
 - GLM

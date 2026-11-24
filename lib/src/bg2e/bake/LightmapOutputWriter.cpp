@@ -18,6 +18,8 @@
 
 #include <bg2e/bake/LightmapOutputWriter.hpp>
 #include <bg2e/scene/drawable_resources.hpp>
+#include <bg2e/scene/Component.hpp>
+#include <bg2e/scene/Node.hpp>
 #include "Receiver.hpp"
 #include <bg2e/db/file.hpp>
 #include <bg2e/db/mesh_bg2.hpp>
@@ -180,13 +182,13 @@ std::string sceneSignature(scene::Node* root, draw::Engine& engine, draw::Render
             std::shared_ptr<json::JsonNode> value;
             if (const auto* owner = dynamic_cast<scene::DrawableComponent*>(c.get()))
             {
-                value = c->scene::Component::serialize({});
+                value = c->::bg2e::scene::Component::serialize({});
                 appendText(s, owner->resourcePath().generic_string());
                 appendText(s, owner->sourcePath().generic_string());
             }
             else if (dynamic_cast<scene::DrawableInstanceComponent*>(c.get()))
             {
-                value = c->scene::Component::serialize({});
+                value = c->::bg2e::scene::Component::serialize({});
             }
             else
             {
