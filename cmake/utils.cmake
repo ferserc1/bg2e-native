@@ -296,11 +296,13 @@ function(bundle_resources)
     endif()
 
     get_target_property(APP_RESOURCE_OUTPUT ${BL_TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
-    # Windows apps share a configuration-specific runtime directory. Give each
-    # source/destination pair one writer instead of concurrent per-app copies.
+    # Windows apps share a configuration-specific runtime directory, and Linux
+    # apps share their assets directory. Use one copy target per shared destination.
     # TARGET_FILE_DIR does not add an app dependency under CMP0112 (NEW).
     get_target_property(RESOURCE_RUNTIME_DIR ${BL_TARGET_NAME} RUNTIME_OUTPUT_DIRECTORY)
-    if(WIN32 AND CMAKE_CONFIGURATION_TYPES AND IS_ABSOLUTE "${RESOURCE_RUNTIME_DIR}")
+    if(IS_ABSOLUTE "${RESOURCE_RUNTIME_DIR}" AND
+        ((WIN32 AND CMAKE_CONFIGURATION_TYPES) OR
+         (CMAKE_SYSTEM_NAME STREQUAL "Linux" AND "${BL_SRC_PATH}" STREQUAL "${ASSETS_PATH}")))
         set(RESOURCE_KEY "${BL_SRC_PATH}|${RESOURCE_RUNTIME_DIR}|${BL_SUBPATH}")
         foreach(CONFIG IN LISTS CMAKE_CONFIGURATION_TYPES)
             string(TOUPPER "${CONFIG}" CONFIG_UPPER)
