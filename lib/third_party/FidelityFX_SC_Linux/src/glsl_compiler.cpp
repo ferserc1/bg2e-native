@@ -27,19 +27,16 @@
 
 std::string MD5HashString(unsigned char* sig)
 {
-    char out[33];
-    out[32] = '\0';
-
-    char* out_ptr = out;
-    std::stringstream ss;
+    constexpr char hexDigits[] = "0123456789abcdef";
+    std::string digest(MD5_SIZE * 2, '0');
 
     for (int i = 0; i < MD5_SIZE; i++)
     {
-        std::snprintf(out_ptr, 32, "%02x", sig[i]);
-        out_ptr += 2;
+        digest[i * 2] = hexDigits[sig[i] >> 4];
+        digest[i * 2 + 1] = hexDigits[sig[i] & 0x0f];
     }
 
-    return std::string(out);
+    return digest;
 }
 
 std::string GetMD5HashDigest(void* buffer, size_t size)
