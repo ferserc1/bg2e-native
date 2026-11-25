@@ -40,6 +40,7 @@ namespace bg2e::ui {
 
 namespace {
 constexpr char uiPreferencesContext[] = "ui";
+constexpr float defaultUiScale = 1.0f;
 constexpr char toolbarPresentationKey[] = "toolbarPresentation";
 constexpr char toolbarIconSizeKey[] = "toolbarIconSize";
 
@@ -92,7 +93,7 @@ void detail::validateToolbarConfiguration(const ToolbarConfiguration& configurat
     }
 }
 
-float UserInterface::s_uiScale = 1.0f;
+float UserInterface::s_uiScale = defaultUiScale;
 bool UserInterface::s_uiFontLoaded = false;
 bool UserInterface::s_uiScaleChanged = true;
 static bool s_baseStyleInitialized = false;
@@ -195,7 +196,7 @@ void UserInterface::init(draw::Engine* engine)
     try
     {
         const auto& preferences = app::PreferencesStore::instance().preferences(uiPreferencesContext);
-        s_uiScale = preferences.get("uiScale", s_uiScale);
+        s_uiScale = preferences.get("uiScale", defaultUiScale);
         _impl->toolbarConfiguration = loadToolbarConfiguration(preferences);
         _impl->context = ImGui::CreateContext();
         if (!_impl->context)
@@ -401,6 +402,18 @@ IconManager& UserInterface::icons()
         throw std::logic_error("Icons require an initialized UI session");
     }
     return *_impl->icons;
+}
+
+void UserInterface::restoreAppearanceDefaults()
+{
+    const ToolbarConfiguration configuration;
+    setToolbarConfiguration(configuration);
+    setScale(defaultUiScale);
+    auto& preferences = app::PreferencesStore::instance().preferences(uiPreferencesContext);
+    preferences.set("uiScale", defaultUiScale);
+    preferences.set(toolbarPresentationKey, static_cast<int32_t>(configuration.presentation));
+    preferences.set(toolbarIconSizeKey, configuration.iconSize);
+    preferences.save();
 }
 
 std::shared_ptr<TexturePreview> UserInterface::texturePreview(const std::shared_ptr<draw::Texture>& texture)

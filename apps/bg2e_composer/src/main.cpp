@@ -121,7 +121,7 @@ int main(int argc, char** argv)
             }
             return active->confirmClose();
         });
-        loop.initWindowConfig(bg2e::app::WindowConfig::maximized("bg2e Composer (draw)", true));
+        loop.initWindowConfig(bg2e::app::WindowConfig::maximized("bg2 engine Composer", true));
         return loop.run(&application, configuration);
     }
     catch (const std::exception& error)

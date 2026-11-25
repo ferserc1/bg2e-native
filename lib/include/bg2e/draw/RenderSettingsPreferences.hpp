@@ -22,6 +22,8 @@
 #include <bg2e/draw/DefaultRenderLoopDelegate.hpp>
 #include <bg2e/app/Preferences.hpp>
 
+#include <map>
+
 namespace bg2e::draw {
 // Explicit contract for a completion that only updates UI/persistence values.
 enum class SettingsUpdateSynchronization { Conservative, ValueOnlyNotification };
@@ -60,13 +62,17 @@ class BG2E_API RenderSettingsPreferences : public std::enable_shared_from_this<R
     void setAutomaticPersistence(bool enabled);
     void setExcludeSceneSettingsFromAutomaticPersistence(bool enabled);
     void queueRestore(UnknownSettingPolicy policy = UnknownSettingPolicy::Reject, Completion completion = {});
+    // Apply the first attachment's renderer configuration and save it.
+    // Authored scene settings are outside the reset scope.
+    void queueLoadDefaults(Completion completion = {});
     void persist() const;
     SettingsResult restore(const json::JsonNode* explicitDocument = nullptr,
         UnknownSettingPolicy policy = UnknownSettingPolicy::Reject);
     // Explicit document bypasses persisted defaults; otherwise persistence is used.
     // Missing properties retain their current live values. Automatic loading is opt-in.
   private:
-    void enqueue(SettingsImport plan, Completion completion);
+    void enqueue(SettingsImport plan, Completion completion, bool persistOnSuccess = false);
+    std::map<std::string, std::shared_ptr<json::JsonNode>> _rendererDefaults;
     SceneEdits _sceneEdits;
     SettingsCatalog _catalog;
     std::weak_ptr<pipeline::FinalLayer> _boundedFinal;

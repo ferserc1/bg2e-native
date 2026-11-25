@@ -41,6 +41,9 @@
 
 #include <algorithm>
 #include <cmath>
+#include <deque>
+#include <iomanip>
+#include <sstream>
 #include <thread>
 #include <stdexcept>
 
@@ -48,6 +51,8 @@ namespace bg2e {
 namespace app {
 
 static const char preferencesContext[] = "app";
+static constexpr char showSceneFpsKey[] = "showSceneFpsInWindowTitle";
+static constexpr bool defaultShowSceneFps = true;
 
 SDL_Window* createSDLWindow(const WindowConfig& cfg, gpu::WindowType windowType)
 {
@@ -218,6 +223,8 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
     initSdlVideoDriver();
     SDL_Init(SDL_INIT_VIDEO);
 
+    _showSceneFpsInWindowTitle = PreferencesStore::instance().preferences("ui").get(
+        showSceneFpsKey, defaultShowSceneFps);
     auto window = createSDLWindow(_windowConfig, execution->windowType());
     if (!window)
     {
@@ -312,6 +319,7 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
     SDL_GetWindowSize(window, &logicalWidth, &logicalHeight);
     _windowSize = glm::uvec2{static_cast<uint32_t>(std::max(logicalWidth, 0)),
         static_cast<uint32_t>(std::max(logicalHeight, 0))};
+    auto displayedTitle = _windowConfig.title;
     _execution->initialize(window, *application, _userInterface);
 
     _inputManager.setDelegate(application->inputDelegate());
@@ -329,15 +337,29 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
     _execution->initializeScene();
     auto lastRenderedFrameTime = std::chrono::steady_clock::now();
     auto nextBackgroundFrame = lastRenderedFrameTime;
+    using Clock = std::chrono::steady_clock;
+    std::deque<std::pair<Clock::time_point, uint64_t>> fpsSamples;
+    std::string fpsText;
+    _windowTitleDirty = true;
+    const auto windowId = SDL_GetWindowID(window);
     int storeWidth = _windowConfig.width;
     int storeHeight = _windowConfig.height;
 
     while (!quit)
     {
         {
+            const bool previousForeground = isForeground;
             base::CpuProfileScope profile("app.events");
             while (SDL_PollEvent(&event) != 0)
             {
+                // Recovery is independent of whether the UI consumes the input.
+                if ((event.type == SDL_KEYDOWN && event.key.windowID == windowId) ||
+                    (event.type == SDL_TEXTINPUT && event.text.windowID == windowId) ||
+                    (event.type == SDL_TEXTEDITING && event.edit.windowID == windowId) ||
+                    (event.type == SDL_MOUSEBUTTONDOWN && event.button.windowID == windowId))
+                {
+                    isForeground = true;
+                }
 
                 if (event.type == SDL_QUIT)
                 {
@@ -370,13 +392,13 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
                     requestFrame();
                 }
                 else if (event.type == SDL_WINDOWEVENT &&
+                         event.window.windowID == windowId &&
                          event.window.event == SDL_WINDOWEVENT_FOCUS_GAINED)
                 {
                     isForeground = true;
-                    lastRenderedFrameTime = std::chrono::steady_clock::now();
-                    requestFrame();
                 }
                 else if (event.type == SDL_WINDOWEVENT &&
+                         event.window.windowID == windowId &&
                          event.window.event == SDL_WINDOWEVENT_FOCUS_LOST)
                 {
                     isForeground = false;
@@ -453,6 +475,15 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
                     _userInterface.processEvent(&event);
                 }
             }
+            if (SDL_GetKeyboardFocus() == window)
+            {
+                isForeground = true;
+            }
+            if (isForeground && !previousForeground)
+            {
+                lastRenderedFrameTime = Clock::now();
+                requestFrame();
+            }
         }
 
         if (!quit)
@@ -470,6 +501,64 @@ int32_t MainLoop::runInternal(app::Application* application, std::unique_ptr<det
                 {
                     resizing = false;
                 }
+            }
+
+            const auto titleTime = Clock::now();
+            if (_showSceneFpsInWindowTitle)
+            {
+                const auto sceneCount = _execution->renderedSceneCount();
+                if (!fpsSamples.empty() && sceneCount < fpsSamples.back().second)
+                {
+                    fpsSamples.clear();
+                    fpsText.clear();
+                    _windowTitleDirty = true;
+                }
+                if (fpsSamples.empty() || titleTime - fpsSamples.back().first >= std::chrono::seconds(1))
+                {
+                    fpsSamples.emplace_back(titleTime, sceneCount);
+                    while (fpsSamples.size() > 2 && titleTime - fpsSamples[1].first >= std::chrono::seconds(4))
+                    {
+                        fpsSamples.pop_front();
+                    }
+                    if (fpsSamples.size() > 1)
+                    {
+                        const auto& [start, count] = fpsSamples.front();
+                        const auto fps = (sceneCount - count) /
+                            std::chrono::duration<double>(titleTime - start).count();
+                        std::ostringstream label;
+                        label << std::fixed << std::setprecision(fps > 0.0 && fps < 1.0 ? 1 : 0)
+                              << fps << " fps";
+                        auto text = label.str();
+                        if (fpsText != text)
+                        {
+                            fpsText = std::move(text);
+                            _windowTitleDirty = true;
+                        }
+                    }
+                }
+            }
+            else if (!fpsSamples.empty())
+            {
+                fpsSamples.clear();
+                fpsText.clear();
+                _windowTitleDirty = true;
+            }
+            if (_windowTitleDirty)
+            {
+                auto title = _windowConfig.title;
+                for (const auto* suffix : {&_windowTitleSuffix, &fpsText})
+                {
+                    if (!suffix->empty())
+                    {
+                        title += " - " + *suffix;
+                    }
+                }
+                if (title != displayedTitle)
+                {
+                    SDL_SetWindowTitle(window, title.c_str());
+                    displayedTitle = std::move(title);
+                }
+                _windowTitleDirty = false;
             }
 
             if (stopRendering)
@@ -530,6 +619,44 @@ void MainLoop::exit()
     SDL_Event event;
     event.type = SDL_QUIT;
     SDL_PushEvent(&event);
+}
+
+void MainLoop::setWindowTitle(std::string title)
+{
+    _windowConfig.title = std::move(title);
+    _windowTitleDirty = true;
+}
+
+void MainLoop::setWindowTitleSuffix(std::string suffix)
+{
+    _windowTitleSuffix = std::move(suffix);
+    _windowTitleDirty = true;
+}
+
+void MainLoop::setShowSceneFpsInWindowTitle(bool enabled)
+{
+    auto& preferences = PreferencesStore::instance().preferences("ui");
+    preferences.set(showSceneFpsKey, enabled);
+    preferences.save();
+    _showSceneFpsInWindowTitle = enabled;
+}
+
+void MainLoop::restoreWindowTitleDefaults()
+{
+    setShowSceneFpsInWindowTitle(defaultShowSceneFps);
+}
+
+void MainLoop::restoreFrameRateDefaults(bool sceneOnly)
+{
+    if (sceneOnly)
+    {
+        setSceneFrameRateLimits(defaultForegroundSceneMaxFrameRate, defaultBackgroundSceneMaxFrameRate);
+    }
+    else
+    {
+        setBackgroundFrameRateLimitEnabled(defaultBackgroundFrameRateLimitEnabled);
+        setBackgroundMaxFrameRate(defaultBackgroundMaxFrameRate);
+    }
 }
 
 void MainLoop::setBackgroundFrameRateLimitEnabled(bool enabled)

@@ -643,6 +643,14 @@ void RenderSettingsPreferences::bind(Renderer& renderer, std::shared_ptr<scene::
         {
             throw std::invalid_argument("Custom renderers require a catalog extension with a stable renderer identity");
         }
+        if (_persistence && !_rendererDefaults.contains(_catalog.rendererId()))
+        {
+            // Capture the configured renderer before loading user preferences.
+            // A later scene rebind must retain this baseline.
+            auto defaults = SettingsCodec::serialize(_catalog);
+            excludeSceneSettings(*defaults);
+            _rendererDefaults.emplace(_catalog.rendererId(), std::move(defaults));
+        }
     }
     catch (...)
     {
@@ -780,7 +788,7 @@ void RenderSettingsPreferences::onSceneEdits(SceneEdits handler)
 }
 
 
-void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completion)
+void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completion, bool persistOnSuccess)
 {
     if (!plan.result().valid())
     {
@@ -826,7 +834,7 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
             property == "bloomThreshold" || property == "bloomScatter" || property == "bloomLevels" || property == "bloomResolution");
     });
     const std::weak_ptr<RenderSettingsPreferences> self = shared_from_this();
-    auto apply = [self, plan, completion, bloomOnly](Renderer& renderer)
+    auto apply = [self, plan, completion, bloomOnly, persistOnSuccess](Renderer& renderer)
     {
         auto owner = self.lock();
         auto result = owner ? plan.apply(owner->_catalog) : failure("target_expired", "Settings facade no longer exists");
@@ -834,7 +842,7 @@ void RenderSettingsPreferences::enqueue(SettingsImport plan, Completion completi
         {
             renderer.invalidateHistories(); // Includes reported partial application failures.
         }
-        if (owner && owner->_automaticPersistence && result.valid())
+        if (owner && (persistOnSuccess || owner->_automaticPersistence) && result.valid())
         {
             try
             {
@@ -922,6 +930,22 @@ void RenderSettingsPreferences::queueRestore(UnknownSettingPolicy policy, Comple
         }
     }
 }
+
+void RenderSettingsPreferences::queueLoadDefaults(Completion completion)
+{
+    const auto defaults = _rendererDefaults.find(_catalog.rendererId());
+    if (!_persistence || defaults == _rendererDefaults.end())
+    {
+        if (completion)
+        {
+            completion(failure("no_defaults", "Renderer defaults and preference storage must be available"));
+        }
+        return;
+    }
+    auto plan = SettingsCodec::validate(*defaults->second, _catalog, UnknownSettingPolicy::SkipUnknownOrUnavailable);
+    enqueue(std::move(plan), std::move(completion), true);
+}
+
 void RenderSettingsPreferences::persist() const
 {
     if (!_persistence)

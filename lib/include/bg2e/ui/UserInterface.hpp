@@ -78,6 +78,7 @@ class BG2E_API UserInterface {
         return s_uiScale;
     }
     static void setScale(float scale);
+    static void restoreAppearanceDefaults();
 
     // Defaults belong to the active UI session. Before a session, get returns
     // IconsAndText/16; set requires an active session, including delegate initialization.

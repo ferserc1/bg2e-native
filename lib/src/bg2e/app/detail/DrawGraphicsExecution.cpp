@@ -152,6 +152,11 @@ class DrawGraphicsExecution : public GraphicsExecution {
         _renderLoop.requestResize();
     }
 
+    uint64_t renderedSceneCount() const override
+    {
+        return _renderLoop.renderedSceneCount();
+    }
+
     void frame(float deltaMilliseconds, bool renderingAllowed) override
     {
         if (!renderingAllowed || !_engineInitialized)

@@ -191,6 +191,18 @@ class BG2E_API MainLoop {
         return _timeout;
     }
 
+    // Main-thread only. The native title is refreshed by the active event loop.
+    void setWindowTitle(std::string title);
+    void setWindowTitleSuffix(std::string suffix);
+    bool showSceneFpsInWindowTitle() const { return _showSceneFpsInWindowTitle; }
+    void setShowSceneFpsInWindowTitle(bool enabled);
+    void restoreWindowTitleDefaults();
+
+    static constexpr double defaultForegroundSceneMaxFrameRate = 0.0;
+    static constexpr double defaultBackgroundSceneMaxFrameRate = 0.5;
+    static constexpr double defaultBackgroundMaxFrameRate = 1.0;
+    static constexpr bool defaultBackgroundFrameRateLimitEnabled = false;
+    void restoreFrameRateDefaults(bool sceneOnly);
     void setBackgroundFrameRateLimitEnabled(bool enabled);
 
     // Main-thread only. Draw scene-only limits, independent of UI presentation.
@@ -290,11 +302,15 @@ class BG2E_API MainLoop {
 
     bool _resizeRequested = false;
 
-    std::atomic<bool> _backgroundFrameRateLimitEnabled{false};
+    bool _windowTitleDirty = true;
+    std::string _windowTitleSuffix;
+    bool _showSceneFpsInWindowTitle = true;
+
+    std::atomic<bool> _backgroundFrameRateLimitEnabled{defaultBackgroundFrameRateLimitEnabled};
     bool _sceneFrameRateLimitsEnabled = false;
-    double _foregroundSceneMaxFrameRate = 0.0;
-    double _backgroundSceneMaxFrameRate = 1.0;
-    std::atomic<double> _backgroundMaxFrameRate{1.0};
+    double _foregroundSceneMaxFrameRate = defaultForegroundSceneMaxFrameRate;
+    double _backgroundSceneMaxFrameRate = defaultBackgroundSceneMaxFrameRate;
+    std::atomic<double> _backgroundMaxFrameRate{defaultBackgroundMaxFrameRate};
     std::atomic<bool> _frameRequested{false};
 
     bg2e::base::Timeout _timeout;

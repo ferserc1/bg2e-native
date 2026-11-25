@@ -24,6 +24,7 @@
 
 #include <bg2e/math/glm.hpp>
 
+#include <cstdint>
 #include <memory>
 #include <string>
 
@@ -81,6 +82,7 @@ class GraphicsExecution {
     virtual void requestResize() = 0;
 
     // MainLoop passes milliseconds; the draw coordinator converts to seconds.
+    virtual uint64_t renderedSceneCount() const = 0;
     virtual void frame(float deltaMilliseconds, bool renderingAllowed) = 0;
 
     virtual void waitIdle() = 0;

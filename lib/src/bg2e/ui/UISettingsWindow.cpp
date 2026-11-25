@@ -57,11 +57,13 @@ void UISettingsWindow::init(bool showBackgroundFrameRateSettings, bool sceneFram
         if (auto* mainLoop = app::MainLoop::current())
         {
             auto& preferences = app::PreferencesStore::instance().preferences(preferencesContext);
-            const auto foreground = preferences.get(foregroundSceneFrameRateKey, 0.0);
-            const auto background = preferences.get(backgroundSceneFrameRateKey, 1.0);
+            constexpr auto foregroundDefault = app::MainLoop::defaultForegroundSceneMaxFrameRate;
+            constexpr auto backgroundDefault = app::MainLoop::defaultBackgroundSceneMaxFrameRate;
+            const auto foreground = preferences.get(foregroundSceneFrameRateKey, foregroundDefault);
+            const auto background = preferences.get(backgroundSceneFrameRateKey, backgroundDefault);
             mainLoop->setSceneFrameRateLimits(
-                std::isfinite(foreground) && foreground >= 0.0 ? foreground : 0.0,
-                std::isfinite(background) && background >= 0.0 ? background : 1.0);
+                std::isfinite(foreground) && foreground >= 0.0 ? foreground : foregroundDefault,
+                std::isfinite(background) && background >= 0.0 ? background : backgroundDefault);
         }
     }
     else if (_showBackgroundFrameRateSettings)
@@ -90,6 +92,41 @@ void UISettingsWindow::init(bool showBackgroundFrameRateSettings, bool sceneFram
 
 void UISettingsWindow::drawUI()
 {
+    auto* mainLoop = app::MainLoop::current();
+    if (Button::button("Load defaults"))
+    {
+        UserInterface::restoreAppearanceDefaults();
+        if (mainLoop)
+        {
+            mainLoop->restoreWindowTitleDefaults();
+            if (_sceneFrameRateSettings || _showBackgroundFrameRateSettings)
+            {
+                mainLoop->restoreFrameRateDefaults(_sceneFrameRateSettings);
+                auto& preferences = app::PreferencesStore::instance().preferences(preferencesContext);
+                if (_sceneFrameRateSettings)
+                {
+                    preferences.set(foregroundSceneFrameRateKey, mainLoop->foregroundSceneMaxFrameRate());
+                    preferences.set(backgroundSceneFrameRateKey, mainLoop->backgroundSceneMaxFrameRate());
+                }
+                else
+                {
+                    preferences.set(backgroundLimitEnabledKey, mainLoop->backgroundFrameRateLimitEnabled());
+                    preferences.set(backgroundMaxFrameRateKey, mainLoop->backgroundMaxFrameRate());
+                }
+                preferences.save();
+            }
+        }
+    }
+
+    if (mainLoop)
+    {
+        bool showSceneFps = mainLoop->showSceneFpsInWindowTitle();
+        if (Button::checkBox("Show scene FPS in window title", &showSceneFps))
+        {
+            mainLoop->setShowSceneFpsInWindowTitle(showSceneFps);
+        }
+    }
+
     float scale = UserInterface::getScale();
     if (Numeric::sliderFloat("Interface Scale", &scale, 1.0f, 2.0f))
     {

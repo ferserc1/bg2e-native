@@ -31,7 +31,7 @@ an existing build. These checks do not require changes to CMake.
 ## Independent scene/UI rates
 
 1. Open Window > UI Settings. Defaults: foreground scene FPS = 0 (unlimited),
-   background scene FPS = 1. The UI runs at the available presentation rate.
+   background scene FPS = 0.5. The UI runs at the available presentation rate.
 2. Set foreground scene FPS to 5. Observe an animated/noisy scene advancing at
    approximately 5 FPS while menus, dragging panels and other UI remain smooth.
    Pointer events must not bypass the scene cap.

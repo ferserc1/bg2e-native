@@ -647,6 +647,10 @@ void GraphicsSettingsWindow::drawContents()
     }
     Group::pushId(int(_state->generation & 0x7fffffff));
     Group::beginDisabled(pending());
+    if (_preferences->hasPersistence() && Button::button("Load defaults"))
+    {
+        _preferences->queueLoadDefaults(completion());
+    }
     if (Button::button("Restore preferences from file"))
     {
         app::FileDialog picker;
