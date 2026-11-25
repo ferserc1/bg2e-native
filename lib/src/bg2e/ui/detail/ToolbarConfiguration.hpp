@@ -22,6 +22,10 @@
 
 namespace bg2e::ui::detail {
 
+inline constexpr float minimumToolbarIconSize = 12.0f;
+inline constexpr float maximumToolbarIconSize = 32.0f;
+
 void validateToolbarConfiguration(const ToolbarConfiguration& configuration);
+bool editToolbarConfiguration(ToolbarConfiguration& configuration);
 
 }

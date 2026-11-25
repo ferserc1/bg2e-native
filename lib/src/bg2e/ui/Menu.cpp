@@ -153,9 +153,27 @@ class MenuIconRow {
 };
 }
 
+MenuItem MenuItem::fromAction(std::shared_ptr<const ActionDefinition> action)
+{
+    if (!action || action->id.empty() || !action->execute)
+    {
+        throw std::invalid_argument("Menu actions require an ID and an execution callback");
+    }
+
+    MenuItem item(action->label);
+    item._type = MenuItemType::Action;
+    item._action = std::move(action);
+    return item;
+}
+
+const std::filesystem::path& MenuItem::effectiveIconPath() const
+{
+    return _action ? _action->iconPath : iconPath;
+}
+
 void MenuItem::draw() const
 {
-    draw(!iconPath.empty());
+    draw(!effectiveIconPath().empty());
 }
 
 void MenuItem::draw(bool reserveIconSpace) const
@@ -163,6 +181,15 @@ void MenuItem::draw(bool reserveIconSpace) const
     // The tree owns stable instances while rendering. Visible dynamic labels
     // and icon path changes never contribute to this instance's identity.
     MenuIdentity identity(this);
+    if (const auto action = _action)
+    {
+        if (Menu::iconMenuItem("entry", action->displayLabel(), action->iconPath,
+            action->shortcut.getShortcutString(), action->isChecked(), action->isEnabled(), reserveIconSpace))
+        {
+            action->invoke();
+        }
+        return;
+    }
     const auto text = _labelFn ? _labelFn() : label;
     const bool enabled = !_enabledFn || _enabledFn();
     switch (_type)
@@ -173,7 +200,7 @@ void MenuItem::draw(bool reserveIconSpace) const
             const bool childIcons = std::any_of(_children.begin(), _children.end(),
                 [](const MenuItem& item)
                 {
-                    return item._type != MenuItemType::Separator && !item.iconPath.empty();
+                    return item._type != MenuItemType::Separator && !item.effectiveIconPath().empty();
                 });
             for (const auto& subItem : _children)
             {
@@ -207,6 +234,10 @@ void MenuItem::draw(bool reserveIconSpace) const
 
 void MenuItem::initShortcuts() const
 {
+    if (_action)
+    {
+        return;
+    }
     switch (_type)
     {
     case MenuItemType::Submenu:
@@ -322,7 +353,7 @@ void Menu::draw()
     const bool reserveIconSpace = std::any_of(_menuItems.begin(), _menuItems.end(),
         [](const MenuItem& item)
         {
-            return item._type != MenuItemType::Separator && !item.iconPath.empty();
+            return item._type != MenuItemType::Separator && !item.effectiveIconPath().empty();
         });
     for (auto& item : _menuItems)
     {

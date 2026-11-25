@@ -24,6 +24,7 @@
 
 #include <algorithm>
 #include <limits>
+#include <span>
 #include <stdexcept>
 #include <unordered_set>
 
@@ -63,6 +64,40 @@ int32_t Toolbar::addButton(
     return button.id;
 }
 
+void Toolbar::registerAction(std::shared_ptr<const ActionDefinition> action)
+{
+    if (!action || action->id.empty() || !action->execute)
+    {
+        throw std::invalid_argument("Toolbar actions require an ID and an execution callback");
+    }
+    if (action->id == ToolbarLayout::Separator)
+    {
+        throw std::invalid_argument("Toolbar action ID is reserved for separators");
+    }
+    if (!_actions.try_emplace(action->id, action).second)
+    {
+        throw std::invalid_argument("Toolbar action ID is already in use");
+    }
+}
+
+void Toolbar::setDefaultLayout(ToolbarLayout layout)
+{
+    std::unordered_set<std::string> used;
+    const auto validate = [&](const std::vector<std::string>& side)
+    {
+        for (const auto& id : side)
+        {
+            if (id != ToolbarLayout::Separator && (!_actions.contains(id) || !used.insert(id).second))
+            {
+                throw std::invalid_argument("Toolbar layout requires registered and unique action IDs");
+            }
+        }
+    };
+    validate(layout.left);
+    validate(layout.right);
+    _defaultLayout = std::move(layout);
+}
+
 namespace {
 class ToolbarIdentity {
   public:
@@ -77,12 +112,15 @@ class ToolbarIdentity {
 };
 
 struct ToolbarEntry {
-    int32_t id;
+    std::string id;
     std::string label;
+    std::string overflowLabel;
     std::shared_ptr<Icon> icon;
     std::function<void()> action;
     IconDrawOptions options;
     detail::IconButtonMetrics metrics;
+    bool selected = false;
+    bool separator = false;
 };
 }
 
@@ -93,10 +131,10 @@ void Toolbar::draw()
         ToolbarIdentity identity(this);
         const auto settings = configuration();
         std::unordered_set<int32_t> ids;
-        const auto prepare = [&](const std::vector<ToolbarButton>& buttons)
+        const auto prepare = [&](const std::vector<ToolbarButton>& buttons, const std::vector<std::string>& actionIds)
         {
             std::vector<ToolbarEntry> entries;
-            entries.reserve(buttons.size());
+            entries.reserve(buttons.size() + actionIds.size());
             for (const auto& button : buttons)
             {
                 if (button.id < 0 || !ids.insert(button.id).second)
@@ -109,8 +147,9 @@ void Toolbar::draw()
                 // actionless Text entries have always treated labels literally.
                 const auto text = button.action ? button.label.substr(0, button.label.find("##")) : button.label;
                 ToolbarEntry entry;
-                entry.id = button.id;
+                entry.id = std::to_string(button.id);
                 entry.label = iconOnly ? std::string{} : text;
+                entry.overflowLabel = text;
                 entry.icon = withIcon ? detail::resolveIcon(button.iconPath) : nullptr;
                 entry.action = button.action;
                 entry.options.disabled = button.disabled;
@@ -120,17 +159,53 @@ void Toolbar::draw()
                     : detail::measureIconContent(entry.label, bool(entry.icon), settings.iconSize);
                 entries.push_back(std::move(entry));
             }
+            for (const auto& id : actionIds)
+            {
+                if (id == ToolbarLayout::Separator)
+                {
+                    ToolbarEntry entry{};
+                    entry.metrics.width = std::max(1.0f, UserInterface::getScale());
+                    entry.metrics.height = ImGui::GetFrameHeight();
+                    entry.separator = true;
+                    entries.push_back(std::move(entry));
+                    continue;
+                }
+                const auto found = _actions.find(id);
+                if (found == _actions.end())
+                {
+                    continue;
+                }
+                const auto action = found->second;
+                auto text = action->displayLabel();
+                text = text.substr(0, text.find("##"));
+                ToolbarEntry entry;
+                entry.id = "action:" + id;
+                if (settings.presentation != ToolbarPresentation::Text && !action->iconPath.empty())
+                {
+                    entry.icon = detail::resolveIcon(action->iconPath);
+                }
+                const bool iconOnly = entry.icon && settings.presentation == ToolbarPresentation::IconsWithTooltips;
+                entry.label = iconOnly ? std::string{} : text;
+                entry.overflowLabel = text;
+                entry.action = [action] { action->invoke(); };
+                entry.options.disabled = !action->isEnabled();
+                entry.options.tooltip = !action->tooltip.empty() ? action->tooltip : (iconOnly ? text : std::string{});
+                entry.metrics = detail::measureIconButton(entry.label, bool(entry.icon), settings.iconSize);
+                entry.selected = action->isChecked();
+                entries.push_back(std::move(entry));
+            }
             return entries;
         };
         // Snapshot before callbacks run; actions may safely append/update the
         // toolbar without invalidating the entries being rendered this frame.
-        const auto left = prepare(_leftButtons);
-        const auto right = prepare(_rightButtons);
+        const auto& layout = activeLayout();
+        const auto left = prepare(_leftButtons, layout.left);
+        const auto right = prepare(_rightButtons, layout.right);
         const auto origin = ImGui::GetCursorScreenPos();
         const auto available = ImGui::GetContentRegionAvail().x;
         const auto spacing = ImGui::GetStyle().ItemSpacing.x;
         float rowHeight = 0.0f;
-        const auto groupWidth = [&](const std::vector<ToolbarEntry>& entries)
+        const auto groupWidth = [&](std::span<const ToolbarEntry> entries)
         {
             float width = 0.0f;
             for (const auto& entry : entries)
@@ -144,18 +219,72 @@ void Toolbar::draw()
             }
             return width;
         };
-        const auto leftWidth = groupWidth(left);
-        const auto rightWidth = groupWidth(right);
+        auto leftWidth = groupWidth(left);
+        auto rightWidth = groupWidth(right);
+        auto visibleLeft = std::span<const ToolbarEntry>(left);
+        auto visibleRight = std::span<const ToolbarEntry>(right);
+        auto hiddenLeft = std::span<const ToolbarEntry>{};
+        auto hiddenRight = std::span<const ToolbarEntry>{};
+        const float groupSpacing = left.empty() || right.empty() ? 0.0f : spacing;
+        bool hasOverflow = _customizationEnabled && leftWidth + rightWidth + groupSpacing > available;
+        auto rightEdge = origin.x + available;
+        constexpr auto overflowLabel = "More Tools";
+        if (hasOverflow)
+        {
+            const auto overflow = detail::measureIconButton(overflowLabel, false, settings.iconSize);
+            rowHeight = std::max(rowHeight, overflow.height);
+            rightEdge -= overflow.width + spacing;
+
+            const auto fit = [&](std::span<const ToolbarEntry> entries, float budget, float& width)
+            {
+                width = 0.0f;
+                size_t count = 0;
+                for (const auto& entry : entries)
+                {
+                    const auto next = width + (count == 0 ? 0.0f : spacing) + entry.metrics.width;
+                    if (next > budget)
+                    {
+                        break;
+                    }
+                    width = next;
+                    ++count;
+                }
+                return entries.first(count);
+            };
+            const auto budget = rightEdge - origin.x;
+            visibleRight = fit(visibleRight, budget, rightWidth);
+            visibleLeft = fit(visibleLeft, budget - rightWidth - (visibleRight.empty() ? 0.0f : spacing), leftWidth);
+            hiddenLeft = std::span<const ToolbarEntry>(left).subspan(visibleLeft.size());
+            hiddenRight = std::span<const ToolbarEntry>(right).subspan(visibleRight.size());
+            const auto isTool = [](const ToolbarEntry& entry)
+            {
+                return !entry.separator;
+            };
+            hasOverflow = std::ranges::any_of(hiddenLeft, isTool) || std::ranges::any_of(hiddenRight, isTool);
+            if (!hasOverflow)
+            {
+                rightEdge = origin.x + available;
+            }
+        }
         std::vector<std::function<void()>> actions;
-        const auto render = [&](const std::vector<ToolbarEntry>& entries, float x)
+        const auto render = [&](std::span<const ToolbarEntry> entries, float x)
         {
             for (const auto& entry : entries)
             {
+                if (entry.separator)
+                {
+                    const float inset = ImGui::GetStyle().FramePadding.y;
+                    ImGui::GetWindowDrawList()->AddRectFilled(ImVec2(x, origin.y + inset),
+                        ImVec2(x + entry.metrics.width, origin.y + rowHeight - inset),
+                        ImGui::GetColorU32(ImGuiCol_Separator));
+                    x += entry.metrics.width + spacing;
+                    continue;
+                }
                 ImGui::SetCursorScreenPos(ImVec2(x, origin.y + (rowHeight - entry.metrics.height) * 0.5f));
                 if (entry.action)
                 {
-                    if (detail::drawIconButton(std::to_string(entry.id), entry.label,
-                        entry.icon, settings.iconSize, entry.options))
+                    if (detail::drawIconButton(entry.id, entry.label,
+                        entry.icon, settings.iconSize, entry.options, entry.selected))
                     {
                         actions.push_back(entry.action);
                     }
@@ -167,11 +296,48 @@ void Toolbar::draw()
                 x += entry.metrics.width + spacing;
             }
         };
-        render(left, origin.x);
-        // Keep right items against the content edge when they fit. In narrow
-        // windows prefer clipping to overlapping the left group or wrapping.
-        const auto minimumRight = origin.x + leftWidth + (left.empty() ? 0.0f : spacing);
-        render(right, std::max(minimumRight, origin.x + available - rightWidth));
+        render(visibleLeft, origin.x);
+        const auto minimumRight = origin.x + leftWidth + (visibleLeft.empty() ? 0.0f : spacing);
+        render(visibleRight, std::max(minimumRight, rightEdge - rightWidth));
+        if (hasOverflow)
+        {
+            ImGui::SetCursorScreenPos(ImVec2(std::max(origin.x, rightEdge + spacing),
+                origin.y + (rowHeight - ImGui::GetFrameHeight()) * 0.5f));
+            if (ImGui::Button(overflowLabel))
+            {
+                ImGui::OpenPopup("ToolbarOverflow");
+            }
+            if (ImGui::BeginPopup("ToolbarOverflow"))
+            {
+                const auto drawHidden = [&](std::span<const ToolbarEntry> entries)
+                {
+                    bool drewTool = false;
+                    bool pendingSeparator = false;
+                    for (const auto& entry : entries)
+                    {
+                        if (entry.separator)
+                        {
+                            pendingSeparator = drewTool;
+                            continue;
+                        }
+                        if (pendingSeparator)
+                        {
+                            Menu::separator();
+                            pendingSeparator = false;
+                        }
+                        if (Menu::menuItem(entry.overflowLabel + "###" + entry.id, {},
+                            entry.selected, entry.action && !entry.options.disabled))
+                        {
+                            actions.push_back(entry.action);
+                        }
+                        drewTool = true;
+                    }
+                };
+                drawHidden(hiddenLeft);
+                drawHidden(hiddenRight);
+                ImGui::EndPopup();
+            }
+        }
         if (!left.empty() || !right.empty())
         {
             ImGui::SetCursorScreenPos(origin);
@@ -181,7 +347,16 @@ void Toolbar::draw()
         {
             action();
         }
+        if (_customizationEnabled)
+        {
+            drawContextMenu();
+        }
     });
+
+    if (_customizationEnabled && isOpen() && _settingsWindow.isOpen())
+    {
+        _settingsWindow.draw([this] { drawSettings(); });
+    }
 }
 
 ToolbarConfiguration Toolbar::configuration() const

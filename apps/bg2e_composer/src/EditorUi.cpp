@@ -20,10 +20,12 @@
 
 #include <bg2e/app/PreferencesStore.hpp>
 #include <bg2e/app/FileDialog.hpp>
+#include <bg2e/app/MainLoop.hpp>
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Text.hpp>
 #include <bg2e/draw/RendererDeferred.hpp>
 
+#include <iterator>
 #include <utility>
 
 namespace bg2e_composer {
@@ -57,71 +59,119 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
     _workspace.leftPanelSize().min = 300;
 }
 
+bg2e::ui::MenuItem EditorUi::makeMenuAction(bg2e::ui::ActionDefinition definition, ActionPlacement placement)
+{
+    auto action = std::make_shared<const bg2e::ui::ActionDefinition>(std::move(definition));
+    if (placement == ActionPlacement::MenuAndToolbar)
+    {
+        _toolbar.registerAction(action);
+    }
+    bg2e::ui::ActionDefinition::registerShortcut(bg2e::app::MainLoop::shortcuts(), action);
+    return bg2e::ui::MenuItem::fromAction(std::move(action));
+}
+
 void EditorUi::initFileMenu()
 {
     const auto weakDelegate = _delegate;
     const auto weakUi = weak_from_this();
     bg2e::ui::MenuItem file("File");
-    file.addMenuItem({"Open...", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyO, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+    file.addMenuItem(makeMenuAction({
+        .id = "file.open",
+        .label = "Open...",
+        .execute = [weakDelegate]
         {
-            owner->openDocument();
-        }
-    }}});
-    file.addMenuItem({"New Scene", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyN, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->newDocument();
-        }
-    }}});
-    file.addMenuItem({"Close Scene", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->newDocument();
-        }
-    }}});
-    file.addMenuItem({"Import Model or Prefab...", {.handler = [weakUi]
-    {
-        if (auto ui = weakUi.lock())
-        {
-            if (auto owner = ui->_delegate.lock())
+            if (auto owner = weakDelegate.lock())
             {
-                ui->chooseImport(owner);
+                owner->openDocument();
+            }
+        },
+        .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyO}
+    }));
+    file.addMenuItem(makeMenuAction({
+        .id = "file.new",
+        .label = "New Scene",
+        .execute = [weakDelegate]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->newDocument();
+            }
+        },
+        .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyN}
+    }));
+    file.addMenuItem(makeMenuAction({
+        .id = "file.close",
+        .label = "Close Scene",
+        .execute = [weakDelegate]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->newDocument();
             }
         }
-    }}});
-    file.addMenuItem({"Export Selected Model(s)...", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+    }, ActionPlacement::MenuOnly));
+    file.addMenuItem(makeMenuAction({
+        .id = "file.import",
+        .label = "Import Model or Prefab...",
+        .execute = [weakUi]
         {
-            owner->exportSelectedModels();
+            if (auto ui = weakUi.lock())
+            {
+                if (auto owner = ui->_delegate.lock())
+                {
+                    ui->chooseImport(owner);
+                }
+            }
         }
-    }}});
-    file.addMenuItem({"Save", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+    }));
+    file.addMenuItem(makeMenuAction({
+        .id = "file.export-selection",
+        .label = "Export Selected Model(s)...",
+        .execute = [weakDelegate]
         {
-            owner->saveDocument();
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->exportSelectedModels();
+            }
         }
-    }}});
-    file.addMenuItem({"Save as...", {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+    }));
+    file.addMenuItem(makeMenuAction({
+        .id = "file.save",
+        .label = "Save",
+        .execute = [weakDelegate]
         {
-            owner->saveDocument(true);
-        }
-    }}});
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->saveDocument();
+            }
+        },
+        .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyS}
+    }));
+    file.addMenuItem(makeMenuAction({
+        .id = "file.save-as",
+        .label = "Save as...",
+        .execute = [weakDelegate]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->saveDocument(true);
+            }
+        },
+        .shortcut = {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyS}
+    }));
     file.addMenuItem({});
-    file.addMenuItem({"Quit", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyQ, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+    file.addMenuItem(makeMenuAction({
+        .id = "file.quit",
+        .label = "Quit",
+        .execute = [weakDelegate]
         {
-            owner->requestQuit();
-        }
-    }}});
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->requestQuit();
+            }
+        },
+        .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyQ}
+    }, ActionPlacement::MenuOnly));
     _toolbar.addMenuItem(file);
 }
 
@@ -129,88 +179,116 @@ void EditorUi::initEditMenu()
 {
     const auto weakDelegate = _delegate;
     bg2e::ui::MenuItem edit("Edit");
-    const auto historyItem = [weakDelegate](bool redo)
+    const auto historyItem = [this, weakDelegate](bool redo)
     {
-        bg2e::app::Shortcuts::ShortcutData shortcut;
-        shortcut.cmdOrCtrlModifier = true;
-        shortcut.shiftModifier = redo;
-        shortcut.key = bg2e::app::KeyEvent::KeyZ;
-        shortcut.allowInTextInput = false;
-        shortcut.handler = [weakDelegate, redo]
-        {
-            if (auto owner = weakDelegate.lock())
+        return makeMenuAction({
+            .id = redo ? "edit.redo" : "edit.undo",
+            .label = redo ? "Redo" : "Undo",
+            .execute = [weakDelegate, redo]
             {
-                if (redo)
+                if (auto owner = weakDelegate.lock())
                 {
-                    owner->redoEdit();
+                    if (redo)
+                    {
+                        owner->redoEdit();
+                    }
+                    else
+                    {
+                        owner->undoEdit();
+                    }
                 }
-                else
-                {
-                    owner->undoEdit();
-                }
+            },
+            .dynamicLabel = [weakDelegate, redo]
+            {
+                auto owner = weakDelegate.lock();
+                return owner ? owner->historyActionLabel(redo) : std::string(redo ? "Redo" : "Undo");
+            },
+            .enabled = [weakDelegate, redo]
+            {
+                auto owner = weakDelegate.lock();
+                return owner && owner->historyActionAvailable(redo);
+            },
+            .shortcut = {
+                .shiftModifier = redo,
+                .key = bg2e::app::KeyEvent::KeyZ,
+                .cmdOrCtrlModifier = true,
+                .allowInTextInput = false
             }
-        };
-        return bg2e::ui::MenuItem(redo ? "Redo" : "Undo", shortcut, [weakDelegate, redo]
-        {
-            auto owner = weakDelegate.lock();
-            return owner ? owner->historyActionLabel(redo) : std::string(redo ? "Redo" : "Undo");
-        }, [weakDelegate, redo]
-        {
-            auto owner = weakDelegate.lock();
-            return owner && owner->historyActionAvailable(redo);
         });
     };
     edit.addMenuItem(historyItem(false));
     edit.addMenuItem(historyItem(true));
-    edit.addMenuItem({"Record selection in undo history", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->toggleSelectionHistory();
-        }
-    }}, [weakDelegate]
-    {
-        auto owner = weakDelegate.lock();
-        return owner && owner->selectionHistoryEnabled();
-    }});
-    edit.addMenuItem({});
-    edit.addMenuItem({"Duplicate", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->duplicateSelection();
-        }
-    }}});
-    edit.addMenuItem({"Remove", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->removeSelection();
-        }
-    }}});
-    edit.addMenuItem({});
-    using GeometryOperation = command::geometry::Operation;
-    const std::pair<const char*, GeometryOperation> geometryActions[]{
-        {"Z up to Y up", GeometryOperation::ZUpToYUp}, {"Center Geometry", GeometryOperation::Center},
-        {"Put on Floor", GeometryOperation::PutOnFloor}, {"centimeters to meters", GeometryOperation::CentimetersToMeters},
-        {"meters to centimeters", GeometryOperation::MetersToCentimeters}
-    };
-    for (const auto& [label, operation] : geometryActions)
-    {
-        edit.addMenuItem({label, {.handler = [weakDelegate, operation]
+    edit.addMenuItem(makeMenuAction({
+        .id = "edit.record-selection-history",
+        .label = "Record selection in undo history",
+        .execute = [weakDelegate]
         {
             if (auto owner = weakDelegate.lock())
             {
-                owner->editGeometry(operation);
+                owner->toggleSelectionHistory();
             }
-        }}, [label]
+        },
+        .checked = [weakDelegate]
         {
-            return std::string(label);
-        }, [weakDelegate]
+            auto owner = weakDelegate.lock();
+            return owner && owner->selectionHistoryEnabled();
+        }
+    }, ActionPlacement::MenuOnly));
+    edit.addMenuItem({});
+    edit.addMenuItem(makeMenuAction({
+        .id = "edit.duplicate",
+        .label = "Duplicate",
+        .execute = [weakDelegate]
         {
-            const auto owner = weakDelegate.lock();
-            return owner && owner->geometryEditAvailable();
-        }});
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->duplicateSelection();
+            }
+        }
+    }));
+    edit.addMenuItem(makeMenuAction({
+        .id = "edit.remove",
+        .label = "Remove",
+        .execute = [weakDelegate]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->removeSelection();
+            }
+        }
+    }));
+    edit.addMenuItem({});
+    using GeometryOperation = command::geometry::Operation;
+    struct GeometryAction {
+        const char* id;
+        const char* label;
+        GeometryOperation operation;
+    };
+    const GeometryAction geometryActions[]{
+        {"geometry.z-up-to-y-up", "Z up to Y up", GeometryOperation::ZUpToYUp},
+        {"geometry.center", "Center Geometry", GeometryOperation::Center},
+        {"geometry.put-on-floor", "Put on Floor", GeometryOperation::PutOnFloor},
+        {"geometry.centimeters-to-meters", "centimeters to meters", GeometryOperation::CentimetersToMeters},
+        {"geometry.meters-to-centimeters", "meters to centimeters", GeometryOperation::MetersToCentimeters}
+    };
+    for (const auto& [id, label, operation] : geometryActions)
+    {
+        edit.addMenuItem(makeMenuAction({
+            .id = id,
+            .label = label,
+            .execute = [weakDelegate, operation]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->editGeometry(operation);
+                }
+            },
+            .enabled = [weakDelegate]
+            {
+                const auto owner = weakDelegate.lock();
+                return owner && owner->geometryEditAvailable();
+            }
+        }));
     }
     _toolbar.addMenuItem(edit);
 }
@@ -220,39 +298,57 @@ void EditorUi::initViewMenu()
     const auto weakDelegate = _delegate;
     const auto weakUi = weak_from_this();
     bg2e::ui::MenuItem view("View");
-    view.addMenuItem({"Reset camera", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
+    view.addMenuItem(makeMenuAction({
+        .id = "view.reset-camera",
+        .label = "Reset camera",
+        .execute = [weakDelegate]
         {
-            owner->resetCamera();
-        }
-    }}});
-    view.addMenuItem({"Frame selection", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->frameSelection();
-        }
-    }}});
-    view.addMenuItem({"Analyze best view", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyF, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->analyzeBestView();
-        }
-    }}});
-    view.addMenuItem({"Toggle selection highlight", {.shiftModifier = true, .key = bg2e::app::KeyEvent::KeySpace, .handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_highlight = (owner->_highlight + 1) % 4;
-            const float levels[]{0, 0.25f, 0.8f, 1};
-            if (auto delegate = owner->_delegate.lock())
+            if (auto owner = weakDelegate.lock())
             {
-                delegate->setHighlight(levels[owner->_highlight]);
+                owner->resetCamera();
             }
         }
-    }}});
+    }));
+    view.addMenuItem(makeMenuAction({
+        .id = "view.frame-selection",
+        .label = "Frame selection",
+        .execute = [weakDelegate]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->frameSelection();
+            }
+        }
+    }));
+    view.addMenuItem(makeMenuAction({
+        .id = "view.analyze-best-view",
+        .label = "Analyze best view",
+        .execute = [weakDelegate]
+        {
+            if (auto owner = weakDelegate.lock())
+            {
+                owner->analyzeBestView();
+            }
+        },
+        .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyF}
+    }));
+    view.addMenuItem(makeMenuAction({
+        .id = "view.toggle-selection-highlight",
+        .label = "Toggle selection highlight",
+        .execute = [weakUi]
+        {
+            if (auto owner = weakUi.lock())
+            {
+                owner->_highlight = (owner->_highlight + 1) % 4;
+                const float levels[]{0, 0.25f, 0.8f, 1};
+                if (auto delegate = owner->_delegate.lock())
+                {
+                    delegate->setHighlight(levels[owner->_highlight]);
+                }
+            }
+        },
+        .shortcut = {.shiftModifier = true, .key = bg2e::app::KeyEvent::KeySpace}
+    }));
     _toolbar.addMenuItem(view);
 }
 
@@ -260,44 +356,70 @@ void EditorUi::initCreateNodeMenu()
 {
     const auto weakDelegate = _delegate;
     bg2e::ui::MenuItem create("Create Node");
-    std::array<const char*, 5> nodeTypes{"Group", "Camera", "Light", "Environment", "Text" };
-    for (unsigned kind = 0; kind < nodeTypes.size(); ++kind)
+    struct CreateAction {
+        const char* id;
+        const char* label;
+    };
+    constexpr CreateAction nodeTypes[]{
+        {"create.group", "Group"},
+        {"create.camera", "Camera"},
+        {"create.light", "Light"},
+        {"create.environment", "Environment"},
+        {"create.text", "Text"}
+    };
+    for (unsigned kind = 0; kind < std::size(nodeTypes); ++kind)
     {
-        create.addMenuItem({nodeTypes[kind], {.handler = [weakDelegate, kind]
+        const auto& [id, label] = nodeTypes[kind];
+        create.addMenuItem(makeMenuAction({
+            .id = id,
+            .label = label,
+            .execute = [weakDelegate, kind]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->addSceneItem(kind);
+                }
+            }
+        }));
+    }
+    create.addMenuItem({});
+    constexpr CreateAction primitiveTypes[]{
+        {"create.cube", "Create Cube"},
+        {"create.sphere", "Create Sphere"},
+        {"create.plane", "Create Plane"}
+    };
+    for (unsigned kind = 0; kind < std::size(primitiveTypes); ++kind)
+    {
+        const auto& [id, label] = primitiveTypes[kind];
+        create.addMenuItem(makeMenuAction({
+            .id = id,
+            .label = label,
+            .execute = [weakDelegate, kind]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->addPrimitive(kind);
+                }
+            }
+        }));
+    }
+    create.addMenuItem({});
+    create.addMenuItem(makeMenuAction({
+        .id = "create.instance-from-owner",
+        .label = "Instance from selected owner",
+        .execute = [weakDelegate]
         {
             if (auto owner = weakDelegate.lock())
             {
-                owner->addSceneItem(kind);
+                owner->createDrawableInstanceFromOwner();
             }
-        }}});
-    }
-    create.addMenuItem({});
-    std::array<const char*, 3> primitiveTypes{"Cube", "Sphere", "Plane" };
-    for (unsigned kind = 0; kind < primitiveTypes.size(); ++kind)
-    {
-        create.addMenuItem({std::string("Create ") + primitiveTypes[kind], {.handler = [weakDelegate, kind]
+        },
+        .enabled = [weakDelegate]
         {
-            if (auto owner = weakDelegate.lock())
-            {
-                owner->addPrimitive(kind);
-            }
-        }}});
-    }
-    create.addMenuItem({});
-    create.addMenuItem({"Instance from selected owner", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->createDrawableInstanceFromOwner();
+            const auto owner = weakDelegate.lock();
+            return owner && owner->canCreateDrawableInstanceFromOwner();
         }
-    }}, []
-    {
-        return std::string("Instance from selected owner");
-    }, [weakDelegate]
-    {
-        const auto owner = weakDelegate.lock();
-        return owner && owner->canCreateDrawableInstanceFromOwner();
-    }});
+    }));
     _toolbar.addMenuItem(create);
 }
 
@@ -305,97 +427,145 @@ void EditorUi::initWindowMenu()
 {
     const auto weakUi = weak_from_this();
     bg2e::ui::MenuItem window("Window");
-    window.addMenuItem({"Model Properties", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+    const auto assets = bg2e::base::PlatformTools::assetPath();
+    window.addMenuItem(makeMenuAction({
+        .id = "panel.model-properties",
+        .label = "Model Properties",
+        .iconPath = assets / "material-editor-icon.png",
+        .execute = [weakUi]
         {
-            owner->_workspace.toggleLeftPanel();
-        }
-    }}, [weakUi]
-    {
-        auto owner = weakUi.lock();
-        return owner && owner->_workspace.leftPanelVisible();
-    }});
-    window.addMenuItem({"Scene", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+            if (auto owner = weakUi.lock())
+            {
+                owner->_workspace.toggleLeftPanel();
+            }
+        },
+        .checked = [weakUi]
         {
-            owner->_workspace.toggleRightPanel();
+            auto owner = weakUi.lock();
+            return owner && owner->_workspace.leftPanelVisible();
         }
-    }}, [weakUi]
-    {
-        auto owner = weakUi.lock();
-        return owner && owner->_workspace.rightPanelVisible();
-    }});
+    }));
+    window.addMenuItem(makeMenuAction({
+        .id = "panel.scene",
+        .label = "Scene",
+        .iconPath = assets / "scene-editor-icon.png",
+        .execute = [weakUi]
+        {
+            if (auto owner = weakUi.lock())
+            {
+                owner->_workspace.toggleRightPanel();
+            }
+        },
+        .checked = [weakUi]
+        {
+            auto owner = weakUi.lock();
+            return owner && owner->_workspace.rightPanelVisible();
+        }
+    }));
     window.addMenuItem({});
-    window.addMenuItem({"UI Settings", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+    window.addMenuItem(makeMenuAction({
+        .id = "window.ui-settings",
+        .label = "UI Settings",
+        .execute = [weakUi]
         {
-            owner->_uiSettings.open();
+            if (auto owner = weakUi.lock())
+            {
+                owner->_uiSettings.open();
+            }
         }
-    }}});
-    window.addMenuItem({"Graphics Settings", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+    }, ActionPlacement::MenuOnly));
+    window.addMenuItem(makeMenuAction({
+        .id = "window.graphics-settings",
+        .label = "Graphics Settings",
+        .execute = [weakUi]
         {
-            owner->_graphics.open();
+            if (auto owner = weakUi.lock())
+            {
+                owner->_graphics.open();
+            }
         }
-    }}});
-    window.addMenuItem({"Debug", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+    }));
+    window.addMenuItem(makeMenuAction({
+        .id = "window.debug",
+        .label = "Debug",
+        .execute = [weakUi]
         {
-            owner->_debugWindow.open();
-        }
-    }}, [weakUi]
-    {
-        const auto owner = weakUi.lock();
-        return owner && owner->_debugWindow.isOpen();
-    }});
-    window.addMenuItem({"Performance", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+            if (auto owner = weakUi.lock())
+            {
+                owner->_debugWindow.open();
+            }
+        },
+        .checked = [weakUi]
         {
-            owner->_performance.open();
+            const auto owner = weakUi.lock();
+            return owner && owner->_debugWindow.isOpen();
         }
-    }}, [weakUi]
-    {
-        const auto owner = weakUi.lock();
-        return owner && owner->_performance.isOpen();
-    }});
-    window.addMenuItem({"Import Settings", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+    }, ActionPlacement::MenuOnly));
+    window.addMenuItem(makeMenuAction({
+        .id = "window.performance",
+        .label = "Performance",
+        .execute = [weakUi]
         {
-            owner->_importSettingsWindow.open();
-        }
-    }}});
-    window.addMenuItem({"UV and Lightmap Baker...", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+            if (auto owner = weakUi.lock())
+            {
+                owner->_performance.open();
+            }
+        },
+        .checked = [weakUi]
         {
-            owner->_lightmap.open();
+            const auto owner = weakUi.lock();
+            return owner && owner->_performance.isOpen();
         }
-    }}});
-    window.addMenuItem({"Scene Resources Manager", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+    }));
+    window.addMenuItem(makeMenuAction({
+        .id = "window.import-settings",
+        .label = "Import Settings",
+        .execute = [weakUi]
         {
-            owner->_sceneResources.open();
+            if (auto owner = weakUi.lock())
+            {
+                owner->_importSettingsWindow.open();
+            }
         }
-    }}});
-    window.addMenuItem({"Drawable Instances", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
+    }));
+    window.addMenuItem(makeMenuAction({
+        .id = "window.lightmap-baker",
+        .label = "UV and Lightmap Baker...",
+        .execute = [weakUi]
         {
-            owner->_drawableInstances.open();
+            if (auto owner = weakUi.lock())
+            {
+                owner->_lightmap.open();
+            }
         }
-    }}, [weakUi]
-    {
-        const auto owner = weakUi.lock();
-        return owner && owner->_drawableInstances.isOpen();
-    }});
+    }));
+    window.addMenuItem(makeMenuAction({
+        .id = "window.scene-resources",
+        .label = "Scene Resources Manager",
+        .execute = [weakUi]
+        {
+            if (auto owner = weakUi.lock())
+            {
+                owner->_sceneResources.open();
+            }
+        }
+    }));
+    window.addMenuItem(makeMenuAction({
+        .id = "window.drawable-instances",
+        .label = "Drawable Instances",
+        .execute = [weakUi]
+        {
+            if (auto owner = weakUi.lock())
+            {
+                owner->_drawableInstances.open();
+            }
+        },
+        .checked = [weakUi]
+        {
+            const auto owner = weakUi.lock();
+            return owner && owner->_drawableInstances.isOpen();
+        }
+    }));
     _toolbar.addMenuItem(window);
 }
 
@@ -431,7 +601,6 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
     });
     _toolbar.setTitle("Scene tools");
     _toolbar.options.noClose = true;
-    const auto weakDelegate = _delegate;
     const auto weakUi = weak_from_this();
     initFileMenu();
     initEditMenu();
@@ -441,80 +610,11 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
 
     initWindowMenu();
 
-    const auto addPanelButton = [this](const char* label, auto action, const std::filesystem::path & iconPath, bg2e::ui::Toolbar::Alignment alignment = bg2e::ui::Toolbar::AlignLeft)
-    {
-        _toolbar.addButton({.label = label, .action = std::move(action), .iconPath = iconPath }, alignment);
-    };
-
-    /*
-    addPanelButton("Z up to Y up", [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->editGeometry(command::geometry::Operation::ZUpToYUp);
-        }
+    _toolbar.setDefaultLayout({
+        .left = {},
+        .right = {"panel.model-properties", "panel.scene"}
     });
-    addPanelButton("Center Geometry", [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->editGeometry(command::geometry::Operation::Center);
-        }
-    });
-    addPanelButton("Put on Floor", [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->editGeometry(command::geometry::Operation::PutOnFloor);
-        }
-    });
-    addPanelButton("cm to m", [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->editGeometry(command::geometry::Operation::CentimetersToMeters);
-        }
-    });
-    addPanelButton("Frame", [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->frameSelection();
-        }
-    });
-    addPanelButton("Duplicate", [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->duplicateSelection();
-        }
-    });
-    addPanelButton("Remove", [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->removeSelection();
-        }
-    });
-    */
-    addPanelButton("Model Properties", [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_workspace.toggleLeftPanel();
-        }
-    },
-    bg2e::base::PlatformTools::assetPath() / "material-editor-icon.png",
-    bg2e::ui::Toolbar::AlignRight);
-    addPanelButton("Scene", [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_workspace.toggleRightPanel();
-        }
-    },
-    bg2e::base::PlatformTools::assetPath() / "scene-editor-icon.png",
-    bg2e::ui::Toolbar::AlignRight);
+    _toolbar.enableCustomization(bg2e::base::PlatformTools::settingsPath() / "composer-scene-tools.toolbar");
     if (auto delegate = _delegate.lock())
     {
         _material.init(engine, delegate);
@@ -623,6 +723,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
         }
     });
     _uiSettings.init(true, true);
+    _uiSettings.setToolbarSettingsVisible(false);
     _uiSettings.close();
     if (auto delegate = _delegate.lock())
     {
@@ -661,6 +762,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
     _statusBar.addItem(_importStatusItem, bg2e::ui::StatusBar::AlignLeft);
     _statusBar.addItem(_fileStatus, bg2e::ui::StatusBar::AlignLeft);
     _statusBar.addItem(_saveStatus, bg2e::ui::StatusBar::AlignRight);
+    _workspace.setToolBarHeight(68);
     _workspace.setup(uiWidth(), uiHeight(), &_toolbar, &_properties, &_sceneProperties, nullptr, &_statusBar);
     _workspaceWidth = uiWidth();
     _workspaceHeight = uiHeight();

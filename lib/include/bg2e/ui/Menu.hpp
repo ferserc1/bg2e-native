@@ -20,6 +20,7 @@
 
 #include <bg2e/common.hpp>
 #include <bg2e/app/Shortcuts.hpp>
+#include <bg2e/ui/ActionDefinition.hpp>
 
 #include <filesystem>
 #include <string>
@@ -64,6 +65,8 @@ class BG2E_API MenuItem {
     {
     }
 
+    static MenuItem fromAction(std::shared_ptr<const ActionDefinition> action);
+
     std::string label;
     // Empty means no icon; sibling rows reserve a gutter if any has an icon.
     std::filesystem::path iconPath;
@@ -71,6 +74,7 @@ class BG2E_API MenuItem {
     void addMenuItem(const MenuItem& item)
     {
         _type = MenuItemType::Submenu;
+        _action.reset();
         _children.push_back(item);
     }
 
@@ -81,6 +85,9 @@ class BG2E_API MenuItem {
   private:
     friend class Menu;
     void draw(bool reserveIconSpace) const;
+    const std::filesystem::path& effectiveIconPath() const;
+
+    std::shared_ptr<const ActionDefinition> _action;
 
   protected:
     std::vector<MenuItem> _children;

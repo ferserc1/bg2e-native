@@ -27,6 +27,11 @@ class BG2E_API UISettingsWindow : public Window {
   public:
     void init(bool showBackgroundFrameRateSettings = false, bool sceneFrameRateSettings = false);
 
+    void setToolbarSettingsVisible(bool visible)
+    {
+        _showToolbarSettings = visible;
+    }
+
   private:
     void drawUI();
     void drawToolbarSection();
@@ -35,6 +40,7 @@ class BG2E_API UISettingsWindow : public Window {
 
     bool _showBackgroundFrameRateSettings = false;
     bool _sceneFrameRateSettings = false;
+    bool _showToolbarSettings = true;
 };
 
 }

@@ -27,6 +27,7 @@
 
 #include <string>
 #include <functional>
+#include <unordered_map>
 #include <vector>
 #include <utility>
 
@@ -40,6 +41,13 @@ struct ToolbarButton {
     bool disabled = false;
     std::filesystem::path iconPath;
     std::string tooltip;
+};
+
+struct ToolbarLayout {
+    static constexpr char Separator[] = "@separator";
+
+    std::vector<std::string> left;
+    std::vector<std::string> right;
 };
 
 class BG2E_API Toolbar : public Window {
@@ -77,6 +85,20 @@ class BG2E_API Toolbar : public Window {
     int32_t addButton(
         ToolbarButton&& button,
         Alignment align = AlignLeft);
+
+    // Registered actions appear only when their IDs are in the layout.
+    // Register all actions before setting the default layout. Invalid or
+    // duplicate registrations and unknown or repeated action IDs throw.
+    // ToolbarLayout::Separator is reserved and may appear more than once.
+    void registerAction(std::shared_ptr<const ActionDefinition> action);
+    void setDefaultLayout(ToolbarLayout layout);
+
+    // Enable the context menu and use local appearance and layout settings.
+    // Registered actions and separators participate in layout editing.
+    void enableCustomization();
+    // Supply a distinct file per toolbar. Register actions and set the
+    // default layout before enabling persistent customization.
+    void enableCustomization(std::filesystem::path preferencesPath);
 
     void draw() override;
 
@@ -117,6 +139,20 @@ class BG2E_API Toolbar : public Window {
     void draw(std::function<void()> drawFunc, std::function<void()> menuFunction = nullptr) override;
 
     int32_t genId();
+
+  private:
+    const ToolbarLayout& activeLayout() const;
+    void drawContextMenu();
+    void drawSettings();
+    void loadCustomization();
+    void saveCustomization(bool replaceExisting = true) const;
+
+    std::unordered_map<std::string, std::shared_ptr<const ActionDefinition>> _actions;
+    ToolbarLayout _defaultLayout;
+    std::optional<ToolbarLayout> _customLayout;
+    std::filesystem::path _customizationPath;
+    Window _settingsWindow;
+    bool _customizationEnabled = false;
 };
 
 }

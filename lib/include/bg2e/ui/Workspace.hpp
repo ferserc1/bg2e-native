@@ -35,6 +35,7 @@ class BG2E_API Workspace {
         Window* statusBar = nullptr);
 
     void resize(uint32_t width, uint32_t height);
+    void setToolBarHeight(uint32_t logicalHeight);
 
     // To use the workspace draw function, the workspace windows must have
     // a draw lambda function configured

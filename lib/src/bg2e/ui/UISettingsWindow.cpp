@@ -26,6 +26,7 @@
 #include <bg2e/ui/Button.hpp>
 #include <bg2e/ui/Numeric.hpp>
 #include <bg2e/ui/Value.hpp>
+#include "detail/ToolbarConfiguration.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -133,7 +134,10 @@ void UISettingsWindow::drawUI()
         UserInterface::setScale(scale);
     }
 
-    drawToolbarSection();
+    if (_showToolbarSettings)
+    {
+        drawToolbarSection();
+    }
 
     if (_sceneFrameRateSettings)
     {
@@ -223,29 +227,33 @@ void UISettingsWindow::drawUI()
 void UISettingsWindow::drawToolbarSection()
 {
     Text::separator("Toolbar");
+    auto configuration = UserInterface::getToolbarConfiguration();
+    if (detail::editToolbarConfiguration(configuration))
+    {
+        UserInterface::setToolbarConfiguration(configuration);
+    }
+}
+
+bool detail::editToolbarConfiguration(ToolbarConfiguration& configuration)
+{
     static const std::vector<std::string> presentations = {
         "Text", "Icons with tooltips", "Icons and text"
     };
-    auto configuration = UserInterface::getToolbarConfiguration();
     auto presentation = static_cast<uint32_t>(configuration.presentation);
     const bool presentationChanged = Value::comboBox("Presentation", presentations, presentation);
     configuration.presentation = static_cast<ToolbarPresentation>(presentation);
 
-    constexpr float minimumSize = 12.0f;
-    constexpr float maximumSize = 32.0f;
-    const bool sizeChanged = Numeric::sliderFloat("Icon Size", &configuration.iconSize, minimumSize, maximumSize);
+    const bool sizeChanged = Numeric::sliderFloat("Icon Size", &configuration.iconSize,
+        minimumToolbarIconSize, maximumToolbarIconSize);
     Text::tooltip("Logical icon size before interface scaling.");
     if (sizeChanged)
     {
         // Temporary slider text input can exceed its drag bounds or be invalid.
         configuration.iconSize = std::isfinite(configuration.iconSize)
-            ? std::clamp(configuration.iconSize, minimumSize, maximumSize)
+            ? std::clamp(configuration.iconSize, minimumToolbarIconSize, maximumToolbarIconSize)
             : ToolbarConfiguration{}.iconSize;
     }
-    if (presentationChanged || sizeChanged)
-    {
-        UserInterface::setToolbarConfiguration(configuration);
-    }
+    return presentationChanged || sizeChanged;
 }
 
 void UISettingsWindow::drawBackgroundFrameRateSection()

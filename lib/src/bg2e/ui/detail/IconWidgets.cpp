@@ -225,7 +225,7 @@ void drawIconImage(const std::shared_ptr<Icon>& icon, float size, const IconDraw
 }
 
 bool drawIconButton(const std::string& id, const std::string& label,
-    const std::shared_ptr<Icon>& icon, float size, const IconDrawOptions& options)
+    const std::shared_ptr<Icon>& icon, float size, const IconDrawOptions& options, bool selected)
 {
     if (!IconAccess::current() || (icon && !IconAccess::belongsToCurrentSession(*icon)))
     {
@@ -246,7 +246,15 @@ bool drawIconButton(const std::string& id, const std::string& label,
         }
         // A regular button supplies navigation, focus, activation and background
         // exactly once. Draw content over its blank label without new UI items.
+        if (selected)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImGui::GetStyle().Colors[ImGuiCol_ButtonActive]);
+        }
         pressed = ImGui::Button("##icon-button", ImVec2(metrics.width, metrics.height));
+        if (selected)
+        {
+            ImGui::PopStyleColor();
+        }
         if (ImGui::IsItemVisible())
         {
             const auto min = ImGui::GetItemRectMin();

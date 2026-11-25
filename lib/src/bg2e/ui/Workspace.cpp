@@ -49,6 +49,12 @@ void Workspace::resize(uint32_t width, uint32_t height)
     updateWindows();
 }
 
+void Workspace::setToolBarHeight(uint32_t logicalHeight)
+{
+    _toolBarHeight = logicalHeight;
+    updateWindows();
+}
+
 void Workspace::draw()
 {
     if (_uiScale != UserInterface::getScale())

@@ -54,6 +54,6 @@ void drawIconContent(const std::string& label, const std::shared_ptr<Icon>& icon
     float size, const IconDrawOptions& options);
 void drawIconImage(const std::shared_ptr<Icon>& icon, float size, const IconDrawOptions& options);
 bool drawIconButton(const std::string& id, const std::string& label,
-    const std::shared_ptr<Icon>& icon, float size, const IconDrawOptions& options);
+    const std::shared_ptr<Icon>& icon, float size, const IconDrawOptions& options, bool selected = false);
 
 }
