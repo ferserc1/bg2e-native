@@ -6,11 +6,32 @@
 
 Run `bg2e_composer [--backend vulkan|metal]`; `--help` lists accepted arguments. Use a backend available on the host. The existing CMake target is `bg2e_composer`; the shared SDL bundle helper deploys engine shaders and assets. Launch with that resource tree, or the macOS bundle and its `Contents/MacOS/bg2e_composer` executable. Native file dialogs require Xcode on macOS; use Ninja on Linux and Visual Studio 17 2022 on Windows. The repository configuration requires `VULKAN_SDK`. See [packaging](../../scripts/PACKAGING.md); source routing alone does not establish native package launch coverage.
 
-Graphics preferences use `draw.bg2e_composer.graphics`, separately from document lighting and former application preference scopes. Window → Graphics Settings exposes active renderer settings; changes persist automatically. JSON import/export is optional. Window → UI Settings controls foreground/background scene FPS independently of UI presentation; a zero cap is unlimited.
+Graphics preferences use `draw.bg2e_composer.graphics`, separately from document lighting and former application preference scopes. **Window > Settings > Graphics** exposes active renderer settings; changes persist automatically. JSON import/export is optional. **Window > Settings > User Interface** controls foreground/background scene FPS independently of UI presentation; a zero cap is unlimited.
+
+## Toolbar and Window menu
+
+Right-click a toolbar button or an empty area of the toolbar and choose
+**Toolbar Settings…** to change the presentation, adjust the icon size, or
+choose which actions appear. Drag from **Available Tools** to **Left** or
+**Right**. Drop on a row to insert before it, or use **Drop to append** to add
+to the end. Move rows between the two sides or drag them back to **Available
+Tools** to remove them. Drag **Separator** from the catalog as many times
+as needed to create visual groups.
+
+The toolbar saves its appearance and layout across restarts, including empty
+sides and separator positions. **Restore Defaults** restores the original
+appearance and the two right-side buttons, **Model Properties** and **Scene**.
+When the window is too narrow to fit the active layout, **More Tools** exposes
+the remaining actions. See [toolbar customization](../api/ui/Toolbar_and_StatusBar.md#toolbar-customization).
+
+Under **Window**, **Settings** contains **User Interface** and **Graphics**.
+**Developer** contains **Debug**, **Performance**, and **Import Settings**.
+**UV and Lightmap Baker…**, **Scene Resources Manager**, and **Drawable
+Instances** remain directly under **Window** after the separator.
 
 ## Performance collection and recording
 
-Window → Performance opens live CPU/GPU charts without creating a capture file.
+**Window > Developer > Performance** opens live CPU/GPU charts without creating a capture file.
 Start Recording selects a JSONL destination; Stop Recording ends that file session.
 Closing/reopening the window releases/reacquires only its live collection lease,
 so closing the window does not stop an active recording. MainLoop shutdown stops
@@ -86,7 +107,7 @@ File Open replaces the document; New/Close creates an empty camera-bearing scene
 
 Model/prefab imports insert below selection or root, retaining the scene save path. Supported inputs include BG2/VWGLB, OBJ/MTL, static glTF/GLB and scene JSON prefabs. CPU parsing is asynchronous; main-thread realization is synchronous. The local queue allows 16 waiting jobs. Cancellation and document replacement reject stale publication, but cannot interrupt a third-party parser or an active realization call. External referenced files must remain available until realization finishes.
 
-Window → Import Settings controls local units/Z-up conversion and the localhost HTTP service, enabled by default on port 8643 with preference scope `draw.bg2e_composer.import`. Another Composer using that port causes a visible bind failure. See the [HTTP protocol](composer/import_service.md) and [draw import lifecycle](composer/draw_import_lifecycle.md).
+**Window > Developer > Import Settings** controls local units/Z-up conversion and the localhost HTTP service, enabled by default on port 8643 with preference scope `draw.bg2e_composer.import`. Another Composer using that port causes a visible bind failure. See the [HTTP protocol](composer/import_service.md) and [draw import lifecycle](composer/draw_import_lifecycle.md).
 
 Unregistered/untyped or malformed component entries warn and are skipped; subsequent valid graph data continues loading. Registered parser/constructor failures remain errors. Incremental Open isolates
 recoverable drawable resource failures, retains their references and reports an
@@ -153,7 +174,7 @@ identity, reconciles properties by index and retains before/after state for undo
 Rebind/removal and node duplicate/delete remain ordinary undoable scene commands.
 
 The Drawable Instance type gizmo is hidden by default. Enable its small pair of
-offset wireframe cubes under **UI Settings > Gizmos > Drawable Instance**.
+offset wireframe cubes under **Window > Settings > User Interface > Gizmos > Drawable Instance**.
 Visibility/scale/opacity there affect the helper, not saved model appearance.
 
 Complete Save exports each used shared model once and serializes per-instance

@@ -41,6 +41,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void drawUI() override;
 
   private:
+    void initActions();
     void drawTools(const std::shared_ptr<AppDelegate>& delegate);
     void drawEnvironment(const std::shared_ptr<AppDelegate>& delegate);
     void bindDocument(const std::shared_ptr<AppDelegate>& delegate);

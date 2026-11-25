@@ -22,8 +22,13 @@
 #include <bg2e/app/KeyEvent.hpp>
 
 #include <functional>
+#include <memory>
 #include <vector>
 #include <cstdint>
+
+namespace bg2e::ui {
+struct BG2E_API ActionDefinition;
+}
 
 namespace bg2e::app {
 
@@ -58,6 +63,10 @@ class BG2E_API Shortcuts {
     bool _shiftModifier = false;
 
     bool matchShortcut(KeyEvent::Key currentKey, const ShortcutData& sc) const;
+
+  private:
+    friend struct ui::ActionDefinition;
+    std::vector<std::weak_ptr<const ui::ActionDefinition>> _registeredActions;
 };
 
 }

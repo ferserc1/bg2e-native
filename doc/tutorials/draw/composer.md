@@ -11,7 +11,7 @@ Use the delivered `bg2e_composer` with its deployed shaders/assets. Launch with 
    invalidate source checks. Successful New/Open retires the previous job. Cancel if needed; unsupported required RT reports failure rather than silently baking a different effect. Inspect each completed target preview after automatic material application.
 6. Save As to publish the scene with actual model/texture resources. Reopen the saved document and check hierarchy, camera, materials and linear UV2 baked maps. Move the generated sidecars together with the main file. Export Selected Model(s) instead exports only directly selected models and joints, without placement or descendants.
 
-For external-tool imports, configure Window → Import Settings and use the [localhost protocol](../../apps/composer/import_service.md). A busy HTTP request occupies one slot; local imports have their own queue. A second application cannot bind the same port.
+For external-tool imports, configure **Window > Developer > Import Settings** and use the [localhost protocol](../../apps/composer/import_service.md). A busy HTTP request occupies one slot; local imports have their own queue. A second application cannot bind the same port.
 
 This source-checked workflow is not a new executed backend/package test. The project lead owns runtime checks. See the application guide for retained material adoption, temporary source ownership and complete-save limits.
 

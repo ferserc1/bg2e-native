@@ -1,6 +1,6 @@
 # CPU Performance diagnostics
 
-Open **Window > Performance** in the draw composer. Live CPU charts need no output
+Open **Window > Developer > Performance** in the draw composer. Live CPU charts need no output
 file. Graphics Settings contains only graphics controls; profiling controls belong
 to the separate Performance window.
 

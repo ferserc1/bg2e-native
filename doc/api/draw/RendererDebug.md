@@ -1,6 +1,6 @@
 # Session-only buffer inspection
 
-Composer exposes **Window > Debug**. The first checkbox is **Enabled**; every
+Composer exposes **Window > Developer > Debug**. The first checkbox is **Enabled**; every
 inspection control is disabled while it is off. Closing the window disables
 inspection. This state belongs to the UI/renderer session, is not registered in
 the graphics preferences catalog, and is never written to scene or user settings.

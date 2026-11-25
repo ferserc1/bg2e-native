@@ -456,4 +456,4 @@ validation remains distinct from source/numerical-specification checks.
 
 
 Session-only buffer inspection and its disabled-path resource contract are documented
-in [RendererDebug](RendererDebug.md). Composer exposes it through Window > Debug.
+in [RendererDebug](RendererDebug.md). Composer exposes it through **Window > Developer > Debug**.

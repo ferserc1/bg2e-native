@@ -12,7 +12,7 @@ Native verification is pending; no build or shader compilation is performed by
 these checks. After an explicitly authorized build, use Composer on Vulkan and
 Metal with a cube over a ground plane and at least one transparent object:
 
-- Open Window > Debug: it starts disabled and its remaining controls are disabled.
+- Open **Window > Developer > Debug**. Only the enable checkbox is active at startup.
 - Enable it; inspect every G-buffer and switch RGB/R/G/B/A. Check nearest zoom,
   fixed exposure and the depth range. A source size is reported for available views.
 - With FSR/MetalFX active, compare GI Original, Accumulated and Filtered without

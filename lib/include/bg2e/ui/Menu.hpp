@@ -138,6 +138,11 @@ class BG2E_API Menu {
 
     void draw();
 
+  private:
+    friend class Toolbar;
+    void addAction(const std::vector<std::string>& path,
+        const std::shared_ptr<const ActionDefinition>& action, bool addSeparator, bool afterSubmenu);
+
   protected:
     std::vector<MenuItem> _menuItems;
     bool _shortcutInitialized = false;

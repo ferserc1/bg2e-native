@@ -180,6 +180,7 @@ Fixed docked layout manager for `Window`s (not a `Window` itself).
 | Member | Description |
 |--------|-------------|
 | `void setup(uint32_t width, uint32_t height, Window* toolBar, Window* leftPanel, Window* rightPanel, Window* bottomPanel, Window* statusBar = nullptr)` | Registers the windows (any may be `nullptr`) and positions them. |
+| `void setToolBarHeight(uint32_t logicalHeight)` | Sets the logical toolbar height and relayouts the workspace. |
 | `void resize(uint32_t width, uint32_t height)` | Re-runs the layout for a new viewport. Call from `swapchainResized`. |
 | `void draw()` | Draws toolbar + visible panels + status bar; detects UI scale changes. |
 | `bool isValid() const` | True once a non-zero viewport is set. |
@@ -242,6 +243,17 @@ plain (unscoped) enum; the type is inferred from the used constructor /
 
 **Header:** `<bg2e/ui/Toolbar.hpp>` · **Guide:** [Toolbar & StatusBar](Toolbar_and_StatusBar.md)
 
+#### `ActionDefinition`
+
+| Field | Purpose |
+|-------|---------|
+| `id` | Stable string used by the toolbar layout and its preferences. |
+| `label`, `dynamicLabel` | Base catalog label and optional live label for the menu and button. |
+| `iconPath`, `tooltip` | Optional icon source and toolbar help text. |
+| `execute`, `enabled`, `checked` | Execution callback, optional availability and optional checked state. |
+| `shortcut` | Optional key and modifier metadata. Action activation uses `execute`. |
+| `path` | Menu parents separated by a vertical bar. An empty path keeps the action in the toolbar catalog alone. |
+
 #### `ToolbarButton`
 
 | Field | Description |
@@ -267,12 +279,15 @@ plain (unscoped) enum; the type is inferred from the used constructor /
 | `bool inheritsSessionDefaults() const` / `void useSessionDefaults()` | Inspect/reset inheritance from current session defaults. |
 | `void enableButton(int32_t id)` / `void disableButton(int32_t id)` | Live enable state. |
 | `ToolbarButton* findButton(int32_t id)` / const overload | Lookup on either side; nullptr if absent. Do not mutate IDs. |
-| `void addMenuItem(const MenuItem&)` | Forwards to the internal `Menu` (drawn in the window menu bar). |
+| `void registerAction(ActionDefinition, bool addSeparator = false)` / shared pointer overload | Registers an action in the catalog and adds it to the menu when it has a path. |
+| `void registerActions(std::span<const ActionDefinition>, bool addSeparator = false)` / initializer list overload | Registers a batch in order. The optional separator follows the final action in its menu. |
+| `void registerActions(..., Toolbar::MenuSeparator::AfterSubmenu)` | Places the separator after the final action's submenu in its parent menu. |
+| `void setDefaultLayout(ToolbarLayout)` | Sets the initial and restored order of visible action IDs on each side. |
+| `void enableCustomization()` / `void enableCustomization(std::filesystem::path)` | Enables the Toolbar Settings context menu. Supplying a file persists the toolbar's appearance and layout. |
 | `enum Alignment` | `AlignLeft` / `AlignRight`. |
 
-`setDrawFunction()` and the two-argument `draw()` are overridden and do not
-accept custom bodies (the toolbar body is fixed); the menu function is wired
-automatically on the first draw.
+The toolbar owns its body and builds its menu automatically from registered
+actions.
 
 ### `StatusBar` / `StatusItem`
 
@@ -598,6 +613,9 @@ bool sceneFrameRateSettings = false)` configures interface scale, toolbar mode/s
 optional application/scene FPS controls and gizmo controls. Initial size is
 400x450, or 400x550 when either optional performance section is enabled. Scene
 FPS controls take priority when both flags are true.
+
+Use `setToolbarSettingsVisible(false)` to hide the session toolbar controls in
+applications with a dedicated Toolbar Settings window.
 
 Toolbar controls edit active-session defaults: Text / Icons with tooltips /
 Icons and text, plus a logical size slider from 12 to 32. Preferences use the

@@ -50,7 +50,7 @@ See [live settings and target IDs](../draw/Settings.md),
 [light/transform editing](../../apps/draw_manipulation.md).
 
 Graphics Settings contains no profiling controls. The draw composer exposes
-profiling separately through Window → Performance.
+profiling separately through **Window > Developer > Performance**.
 
 The final **Appearance: Bloom and color correction** section exposes **Bloom**,
 followed by **Color**:

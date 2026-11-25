@@ -7,7 +7,7 @@ editor regressions distinct from the new app's evidence.
 
 ## HTTP probe
 
-Start the app, open Window > Import Settings and choose a free localhost port.
+Start the app, open **Window > Developer > Import Settings** and choose a free localhost port.
 The default is 8643. Use an existing supported static glTF/GLB without cameras,
 lights, skinning or animation. Example commands (replace the local model path):
 

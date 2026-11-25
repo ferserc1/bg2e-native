@@ -130,9 +130,8 @@ _window.setMenuFunction([this]{
 });
 ```
 
-A `Toolbar` exposes the same tree directly: `_toolBar.addMenuItem(item)`
-forwards to its internal `Menu`, which it draws in the toolbar window's menu
-bar automatically.
+A `Toolbar` builds its internal menu from registered actions with nonempty
+`ActionDefinition::path` values. See [Toolbar actions](Toolbar_and_StatusBar.md#menu).
 
 ### Item type rules
 

@@ -18,6 +18,7 @@ public:
                Window* toolBar, Window* leftPanel, Window* rightPanel,
                Window* bottomPanel, Window* statusBar = nullptr);
     void resize(uint32_t width, uint32_t height);
+    void setToolBarHeight(uint32_t logicalHeight);
     void draw();
 
     bool isValid() const;
@@ -38,7 +39,7 @@ The viewport is partitioned (all sizes multiplied by `UserInterface::getScale()`
 
 ```
 +------------------------------------------------------+
-|  toolBar (fixed height 60 * scale, no title bar)     |
+|  toolBar (configured height * scale, no title bar)  |
 +-------------+---------------------+------------------+
 |             |                     |                  |
 |  leftPanel  |      free 3D        |    rightPanel    |
@@ -51,7 +52,8 @@ The viewport is partitioned (all sizes multiplied by `UserInterface::getScale()`
 +------------------------------------------------------+
 ```
 
-- **Toolbar**: full width, top, height `_toolBarHeight` (60), no title bar.
+- **Toolbar** has full width and no title bar. The default height is 60
+  logical pixels. `setToolBarHeight` updates the height and relayouts the panels.
 - **Status bar**: full width, bottom, height `_statusBarHeight` (50).
 - **Left / right panels**: width `clamp(vp * relative, min, max)`, full height
   between toolbar and status bar.

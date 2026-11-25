@@ -366,4 +366,36 @@ void Menu::draw()
     _shortcutInitialized = true;
 }
 
+void Menu::addAction(const std::vector<std::string>& path,
+    const std::shared_ptr<const ActionDefinition>& action, bool addSeparator, bool afterSubmenu)
+{
+    auto* items = &_menuItems;
+    auto* siblings = items;
+    std::vector<MenuItem>::iterator parent;
+    for (const auto& label : path)
+    {
+        siblings = items;
+        parent = std::ranges::find_if(*items, [&](const MenuItem& item)
+        {
+            return item._type == MenuItemType::Submenu && item.label == label;
+        });
+        if (parent == items->end())
+        {
+            items->emplace_back(label);
+            parent = items->end() - 1;
+            parent->_type = MenuItemType::Submenu;
+        }
+        items = &parent->_children;
+    }
+    items->push_back(MenuItem::fromAction(action));
+    if (addSeparator && !afterSubmenu)
+    {
+        items->emplace_back();
+    }
+    else if (addSeparator && path.size() > 1)
+    {
+        siblings->emplace(parent + 1);
+    }
+}
+
 }

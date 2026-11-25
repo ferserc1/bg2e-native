@@ -1,6 +1,6 @@
 # Toolbar and StatusBar
 
-**Headers:** `<bg2e/ui/Toolbar.hpp>`, `<bg2e/ui/StatusBar.hpp>`
+**Headers:** `<bg2e/ui/Toolbar.hpp>`, `<bg2e/ui/ActionDefinition.hpp>`, `<bg2e/ui/StatusBar.hpp>`
 **Namespace:** `bg2e::ui`
 
 Two specialized [`Window`](Window.md) subclasses that provide fixed-content
@@ -111,11 +111,11 @@ changes session defaults.
 
 Left/right entries retain insertion order. Shared float content measurements
 include icon boxes, text, inner spacing and frame padding for actionable entries.
-Every draw remeasures both groups, vertically centers them to the tallest entry,
-and packs right entries against the content edge when they fit. Insufficient
-width clips rather than overlapping the left group or wrapping. The embedding
-Window/Workspace owns window height; provide enough height for large icons or
-multiline labels. Toolbar does not shrink configured icons or resize the workspace.
+Every draw remeasures both groups, vertically centers entries, and packs right
+entries against the content edge. A customizable toolbar puts entries that
+exceed the available width into **More Tools**. Other toolbars clip at the
+window edge. The embedding Window or Workspace sets the height. Use
+`Workspace::setToolBarHeight` to allow room for large icons or multiline labels.
 
 `addButton(ToolbarButton&, Alignment = AlignLeft)` and its rvalue overload return
 the final ID. Negative IDs are replaced with the smallest available nonnegative
@@ -129,11 +129,95 @@ actions run after the current row has been submitted using a snapshot.
 
 ### Menu
 
-`addMenuItem(const MenuItem&)` forwards to the internal [Menu](Menu.md), including
-its iconPath support. The toolbar installs its window menu callback after the
-first body draw; shortcut registration occurs when the menu first draws. The
-existing `_menuInitialized` assignment remains false, so that callback continues
-to be installed on subsequent draws. This icon work does not change that behavior.
+`registerAction` registers an action in the toolbar catalog and any menu named
+by its `path`. Use `|` between parent names, for example `"View|Settings"`.
+An empty path makes the action available through the toolbar catalog alone.
+The toolbar creates each parent on first use and preserves registration order.
+Use stable action IDs so that saved layouts continue to resolve after a label,
+icon, or menu path changes. A shared definition supplies execution, availability,
+the checked state, and a dynamic label to both surfaces. The settings catalog
+uses its base `label`. Shortcuts are independent of menu and button visibility.
+
+`registerActions` accepts a span of definitions or a braced list. Both
+registration methods support `addSeparator`. It adds a menu separator after
+the only or final action when that action has a path. All IDs and paths in a
+batch are validated before any action is added.
+
+Pass `Toolbar::MenuSeparator::AfterSubmenu` to `registerActions` to place the
+separator after the final action's submenu in its parent menu.
+
+Call `setDefaultLayout` after registering the actions. Its left and right
+lists use action IDs and can include `ToolbarLayout::Separator` for a toolbar
+separator. This layout is also used by **Restore Defaults**. Standalone
+menus can use [Menu and MenuItem](Menu.md) to build their own trees.
+
+For example, an editor can register these actions during initialization.
+
+```cpp
+using bg2e::ui::Toolbar;
+using bg2e::ui::ToolbarLayout;
+
+toolbar.registerAction({
+    .id = "file.open",
+    .label = "Open...",
+    .execute = [this]() { openDocument(); },
+    .path = "File"
+});
+toolbar.registerActions({
+    {
+        .id = "window.interface",
+        .label = "User Interface",
+        .execute = [this]() { openInterfaceSettings(); },
+        .path = "Window|Settings"
+    },
+    {
+        .id = "window.graphics",
+        .label = "Graphics",
+        .execute = [this]() { openGraphicsSettings(); },
+        .path = "Window|Settings"
+    }
+}, Toolbar::MenuSeparator::AfterSubmenu);
+toolbar.registerAction({
+    .id = "window.resources",
+    .label = "Resources",
+    .execute = [this]() { openResources(); },
+    .path = "Window"
+});
+toolbar.setDefaultLayout({
+    .left = {"file.open", ToolbarLayout::Separator, "window.resources"}
+});
+```
+
+This produces **Window > Settings** with two entries, followed by a separator
+and **Resources** in **Window**. The separator in the left toolbar layout is
+independent of that menu separator.
+
+### Toolbar customization
+
+Call `enableCustomization()` after registering the actions and setting the
+default layout. Right-click the toolbar to open **Toolbar Settings…**. The
+window edits the presentation, logical icon size (12–32), and the order of
+actions on each side. Drag actions from **Available Tools** into either side,
+between sides, or back to the catalog. Drop on a row to insert before it.
+The **Separator** catalog item can be added multiple times and each instance
+can be moved or removed independently.
+
+For persistence, supply a distinct file per toolbar and use the application's
+settings directory. Composer uses this form.
+
+```cpp
+toolbar.enableCustomization(
+    bg2e::base::PlatformTools::settingsPath() / "composer-scene-tools.toolbar");
+```
+
+On first use, the toolbar copies the session appearance into its local settings.
+The file stores appearance and, when customized, both ordered lists. A saved
+empty side stays empty. Unknown action IDs and repeated actions are ignored
+while repeated separators are preserved. An unreadable or unsupported file
+falls back silently to the initial layout and appearance. **Restore Defaults**
+restores the declared layout and the standard appearance. Use
+`UISettingsWindow::setToolbarSettingsVisible(false)` when the application
+exposes toolbar appearance through this window.
 
 ---
 

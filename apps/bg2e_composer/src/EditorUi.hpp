@@ -49,20 +49,7 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void drawUI() override;
 
   private:
-    enum class ActionPlacement
-    {
-        MenuOnly,
-        MenuAndToolbar
-    };
-
-    bg2e::ui::MenuItem makeMenuAction(bg2e::ui::ActionDefinition definition,
-        ActionPlacement placement = ActionPlacement::MenuAndToolbar);
-
-    void initFileMenu();
-    void initEditMenu();
-    void initViewMenu();
-    void initCreateNodeMenu();
-    void initWindowMenu();
+    void initActions();
     void initDrawableBrowser();
     void drawDebug(const std::shared_ptr<AppDelegate>& delegate);
 

@@ -41,6 +41,230 @@ EditorUi::EditorUi(const std::shared_ptr<AppDelegate>& delegate) : _delegate(del
     _workspace.leftPanelSize().min = 300;
 }
 
+void EditorUi::initActions()
+{
+    const auto weakDelegate = _delegate;
+    const auto weakUi = weak_from_this();
+
+    _toolbar.registerActions({
+        {
+            .id = "file.open",
+            .label = "Open...",
+            .execute = [weakDelegate]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->openDocument();
+                }
+            },
+            .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyO},
+            .path = "File"
+        },
+        {
+            .id = "file.import-gltf",
+            .label = "Import glTF...",
+            .execute = [weakDelegate]
+            {
+                const auto path = bg2e::app::FileDialog::getOpenFilePath({{"glTF model", "gltf,glb"}});
+                if (auto owner = weakDelegate.lock(); owner && !path.empty())
+                {
+                    owner->openDocument(path);
+                }
+            },
+            .path = "File"
+        },
+        {
+            .id = "file.import-obj",
+            .label = "Import OBJ...",
+            .execute = [weakDelegate]
+            {
+                const auto path = bg2e::app::FileDialog::getOpenFilePath({{"OBJ model", "obj"}});
+                if (auto owner = weakDelegate.lock(); owner && !path.empty())
+                {
+                    owner->openDocument(path);
+                }
+            },
+            .path = "File"
+        },
+        {
+            .id = "file.save",
+            .label = "Save",
+            .execute = [weakDelegate]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->saveDocument();
+                }
+            },
+            .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyS},
+            .path = "File"
+        },
+        {
+            .id = "file.save-as",
+            .label = "Save as...",
+            .execute = [weakDelegate]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->saveDocument(true);
+                }
+            },
+            .shortcut = {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyS},
+            .path = "File"
+        }
+    }, /*addSeparator=*/true);
+
+    _toolbar.registerActions({
+        {
+            .id = "file.quit",
+            .label = "Quit",
+            .execute = [weakDelegate]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->requestQuit();
+                }
+            },
+            .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyQ},
+            .path = "File"
+        }
+    });
+
+    _toolbar.registerActions({
+        {
+            .id = "view.reset-camera",
+            .label = "Reset camera",
+            .execute = [weakDelegate]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->resetCamera();
+                }
+            },
+            .path = "View"
+        },
+        {
+            .id = "view.frame-selection",
+            .label = "Frame selection",
+            .execute = [weakDelegate]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->frameSelection();
+                }
+            },
+            .path = "View"
+        },
+        {
+            .id = "view.analyze-best-view",
+            .label = "Analyze best view",
+            .execute = [weakDelegate]
+            {
+                if (auto owner = weakDelegate.lock())
+                {
+                    owner->analyzeBestView();
+                }
+            },
+            .shortcut = {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyA},
+            .path = "View"
+        },
+        {
+            .id = "view.toggle-selection-highlight",
+            .label = "Toggle selection highlight",
+            .execute = [weakUi]
+            {
+                if (auto owner = weakUi.lock())
+                {
+                    owner->_highlight = (owner->_highlight + 1) % 4;
+                    const float levels[]{0, 0.25f, 0.8f, 1};
+                    if (auto delegate = owner->_delegate.lock())
+                    {
+                        delegate->setHighlight(levels[owner->_highlight]);
+                    }
+                }
+            },
+            .shortcut = {.shiftModifier = true, .key = bg2e::app::KeyEvent::KeySpace},
+            .path = "View"
+        }
+    });
+
+    _toolbar.registerActions({
+        {
+            .id = "window.model-properties",
+            .label = "Model Properties",
+            .execute = [weakUi]
+            {
+                if (auto owner = weakUi.lock())
+                {
+                    owner->_workspace.toggleLeftPanel();
+                }
+            },
+            .checked = [weakUi]
+            {
+                auto owner = weakUi.lock();
+                return owner && owner->_workspace.leftPanelVisible();
+            },
+            .path = "Window"
+        },
+        {
+            .id = "window.environment-options",
+            .label = "Environment Options",
+            .execute = [weakUi]
+            {
+                if (auto owner = weakUi.lock())
+                {
+                    owner->_workspace.toggleRightPanel();
+                }
+            },
+            .checked = [weakUi]
+            {
+                auto owner = weakUi.lock();
+                return owner && owner->_workspace.rightPanelVisible();
+            },
+            .path = "Window"
+        }
+    }, /*addSeparator=*/true);
+
+    _toolbar.registerActions({
+        {
+            .id = "window.ui-settings",
+            .label = "UI Settings",
+            .execute = [weakUi]
+            {
+                if (auto owner = weakUi.lock())
+                {
+                    owner->_uiSettings.open();
+                }
+            },
+            .path = "Window"
+        },
+        {
+            .id = "window.graphics-settings",
+            .label = "Graphics Settings",
+            .execute = [weakUi]
+            {
+                if (auto owner = weakUi.lock())
+                {
+                    owner->_graphics.open();
+                }
+            },
+            .path = "Window"
+        },
+        {
+            .id = "window.lightmap-baker",
+            .label = "UV and Lightmap Baker...",
+            .execute = [weakUi]
+            {
+                if (auto owner = weakUi.lock())
+                {
+                    owner->_lightmap.open();
+                }
+            },
+            .path = "Window"
+        }
+    });
+}
+
 void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session)
 {
     _ui = session;
@@ -48,135 +272,7 @@ void EditorUi::init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session
     _toolbar.options.noClose = true;
     const auto weakDelegate = _delegate;
     const auto weakUi = weak_from_this();
-    bg2e::ui::MenuItem file("File");
-    file.addMenuItem({"Open...", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyO, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->openDocument();
-        }
-    }}});
-    file.addMenuItem({"Import glTF...", {.handler = [weakDelegate]
-    {
-        const auto path = bg2e::app::FileDialog::getOpenFilePath({{"glTF model", "gltf,glb"}});
-        if (auto owner = weakDelegate.lock(); owner && !path.empty())
-        {
-            owner->openDocument(path);
-        }
-    }}});
-    file.addMenuItem({"Import OBJ...", {.handler = [weakDelegate]
-    {
-        const auto path = bg2e::app::FileDialog::getOpenFilePath({{"OBJ model", "obj"}});
-        if (auto owner = weakDelegate.lock(); owner && !path.empty())
-        {
-            owner->openDocument(path);
-        }
-    }}});
-    file.addMenuItem({"Save", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->saveDocument();
-        }
-    }}});
-    file.addMenuItem({"Save as...", {.ctrlModifier = true, .shiftModifier = true, .key = bg2e::app::KeyEvent::KeyS, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->saveDocument(true);
-        }
-    }}});
-    file.addMenuItem({});
-    file.addMenuItem({"Quit", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyQ, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->requestQuit();
-        }
-    }}});
-    _toolbar.addMenuItem(file);
-    bg2e::ui::MenuItem view("View");
-    view.addMenuItem({"Reset camera", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->resetCamera();
-        }
-    }}});
-    view.addMenuItem({"Frame selection", {.handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->frameSelection();
-        }
-    }}});
-    view.addMenuItem({"Analyze best view", {.ctrlModifier = true, .key = bg2e::app::KeyEvent::KeyA, .handler = [weakDelegate]
-    {
-        if (auto owner = weakDelegate.lock())
-        {
-            owner->analyzeBestView();
-        }
-    }}});
-    view.addMenuItem({"Toggle selection highlight", {.shiftModifier = true, .key = bg2e::app::KeyEvent::KeySpace, .handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_highlight = (owner->_highlight + 1) % 4;
-            const float levels[]{0, 0.25f, 0.8f, 1};
-            if (auto delegate = owner->_delegate.lock())
-            {
-                delegate->setHighlight(levels[owner->_highlight]);
-            }
-        }
-    }}});
-    _toolbar.addMenuItem(view);
-
-    bg2e::ui::MenuItem window("Window");
-    window.addMenuItem({"Model Properties", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_workspace.toggleLeftPanel();
-        }
-    }}, [weakUi]
-    {
-        auto owner = weakUi.lock();
-        return owner && owner->_workspace.leftPanelVisible();
-    }});
-    window.addMenuItem({"Environment Options", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_workspace.toggleRightPanel();
-        }
-    }}, [weakUi]
-    {
-        auto owner = weakUi.lock();
-        return owner && owner->_workspace.rightPanelVisible();
-    }});
-    window.addMenuItem({});
-    window.addMenuItem({"UI Settings", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_uiSettings.open();
-        }
-    }}});
-    window.addMenuItem({"Graphics Settings", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_graphics.open();
-        }
-    }}});
-    window.addMenuItem({"UV and Lightmap Baker...", {.handler = [weakUi]
-    {
-        if (auto owner = weakUi.lock())
-        {
-            owner->_lightmap.open();
-        }
-    }}});
-    _toolbar.addMenuItem(window);
+    initActions();
 
     const auto addPanelButton = [this](const char* label, auto action, bg2e::ui::Toolbar::Alignment alignment = bg2e::ui::Toolbar::AlignLeft)
     {

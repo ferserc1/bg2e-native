@@ -19,7 +19,7 @@ in-place content edits. Transparent-region fallbacks and narrow typed updates
 retain correctness when reuse is unavailable. Rare synchronous edits wait at a
 controlled boundary instead of changing in-flight resources.
 
-CPU scopes, GPU timestamps, work counters and Composer Window → Performance
+CPU scopes, GPU timestamps, work counters and Composer's **Window > Developer > Performance**
 are independent verification tools. Live charts do not require file capture.
 Instrumentation being present is not a measured speedup. Compare unchanged-frame
 work counters and diagnostic baselines on the same workload/backend/configuration;

@@ -10,7 +10,7 @@ not the owner of HTTP queues or import publication policy.
 
 ### Startup and default port
 
-The service is configured through the `Window > Import Settings` menu entry
+The service is configured through the `Window > Developer > Import Settings` menu entry
 and persists its state across sessions. On application startup:
 
 - If the service was enabled the last time Composer ran (the default), the
@@ -23,7 +23,7 @@ and persists its state across sessions. On application startup:
 
 ### Settings window
 
-`Window > Import Settings` opens the **Import Settings** window, which shows:
+`Window > Developer > Import Settings` opens the **Import Settings** window, which shows:
 
 - **Port** — a text field with the TCP port. It is editable only while the
   service is stopped (the field is disabled while running). Valid range:

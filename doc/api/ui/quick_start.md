@@ -299,7 +299,7 @@ void init(ui::UserInterface*) override
     _menu.addMenuItem(fileMenu);
 }
 
-// In the toolbar/window menu function (Window opens the menu bar itself):
+// In the Window menu function (Window opens the menu bar itself):
 setMenuFunction([this]() {
     _menu.draw();               // draws + installs shortcuts (first draw only)
 });
@@ -336,7 +336,12 @@ viewMenu.addMenuItem(MenuItem(
 
 ## Recipe 5: Toolbar buttons with live state
 
-`Toolbar` is a `Window` subclass with a left/right button layout. Buttons are
+`Toolbar` is a `Window` subclass with a left/right button layout. To share
+commands with the menu and support customization, register
+[actions](Toolbar_and_StatusBar.md#menu) and call `setDefaultLayout` followed
+by `enableCustomization`.
+
+For fixed buttons and readouts, use `addButton`. These entries are
 identified by `int32_t` ids so you can update them later:
 
 ```cpp
@@ -367,12 +372,11 @@ void onUndoStackChanged()
 - `addButton()` may modify `button.id` when it auto-generates one (the
   by-reference overload), or consumes it (the rvalue overload). Always take
   the **returned** id as authoritative.
-- Right-side alignment is computed from text/button widths every frame, so
-  dynamic labels re-flow correctly. Very wide labels can overlap left-side
-  buttons — keep right-side labels short.
-- `Toolbar` ignores `setDrawFunction()` (the body is fixed) but forwards its
-  menu to an internal `Menu`: `_toolBar.addMenuItem(...)` (see
-  [Recipe 4](#recipe-4-menus-with-keyboard-shortcuts)).
+- Right-side alignment follows the measured text and button widths. A
+  customizable toolbar exposes entries that do not fit through **More Tools**.
+- Use `registerAction()` or `registerActions()` to add toolbar actions. Give
+  each action a `path` such as `"View|Settings"` to include it in the toolbar
+  menu. See [Toolbar actions](Toolbar_and_StatusBar.md#menu).
 
 ---
 

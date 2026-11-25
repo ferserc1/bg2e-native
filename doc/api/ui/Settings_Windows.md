@@ -13,7 +13,7 @@ scrolling/resizing remains available. Body:
 | Section | Controls |
 |---------|----------|
 | Interface | `Interface Scale` slider `1.0 .. 2.0` → `UserInterface::setScale()` (persisted by `UserInterface::cleanup`) |
-| Toolbar | Presentation: Text / Icons with tooltips / Icons and text; logical Icon Size slider `12 .. 32`. Uses the active session defaults. |
+| Toolbar (visible by default) | Presentation mode and logical icon size from 12 to 32. Edits the active session defaults. |
 | Scene Performance (optional) | Foreground/background scene FPS, with zero meaning unlimited; enabled by the second init argument. Takes priority over Background Performance. |
 | Background Performance (optional) | Enable limiting while unfocused and edit maximum background FPS (`0.1 .. 240`). Changes apply immediately through `app::MainLoop::current()` and persist in the `"app"` preferences context. |
 | Gizmos | one collapsing header per `manipulation::GizmoType` (Camera, Point/Spot/Directional Light, Environment): Visible checkbox, Opacity slider `0..1`, Scale slider `0.01..0.5` |
@@ -30,9 +30,10 @@ scheduler controls:
 _uiSettings.init(true);
 ```
 
-The optional controls configure `MainLoop`; they do not implement throttling
-inside the UI layer. Existing callers can continue using `init()`; it now includes toolbar controls
-and the larger initial size. Use `init(false, true)` to show scene FPS controls.
+The optional controls configure `MainLoop`. Use `init(false, true)` to show
+scene FPS controls. Call `setToolbarSettingsVisible(false)` to hide the
+Toolbar section. Composer does this and exposes appearance and layout through
+the individual toolbar's [Toolbar Settings](Toolbar_and_StatusBar.md#toolbar-customization).
 
 ---
 

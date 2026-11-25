@@ -41,6 +41,8 @@ struct BG2E_API ActionDefinition {
     std::function<bool()> checked;
     // Key and modifier metadata. Activation always uses execute.
     app::Shortcuts::ShortcutData shortcut;
+    // Menu parents separated by '|'. An empty path keeps the action toolbar-only.
+    std::string path;
 
     std::string displayLabel() const;
     bool isEnabled() const;
@@ -48,8 +50,8 @@ struct BG2E_API ActionDefinition {
 
     void invoke() const;
 
-    // Call once per action during application setup. Presentation and
-    // placement do not affect shortcut registration.
+    // Toolbar registers shortcuts automatically. Other owners can register
+    // explicitly. A shared action is registered once per Shortcuts instance.
     static void registerShortcut(app::Shortcuts& shortcuts,
         const std::shared_ptr<const ActionDefinition>& action);
 };

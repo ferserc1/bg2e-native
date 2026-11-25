@@ -19,6 +19,8 @@
 #include <bg2e/ui/ActionDefinition.hpp>
 #include <bg2e/ui/UserInterface.hpp>
 
+#include <algorithm>
+
 namespace bg2e::ui {
 
 std::string ActionDefinition::displayLabel() const
@@ -52,6 +54,19 @@ void ActionDefinition::registerShortcut(app::Shortcuts& shortcuts,
         return;
     }
 
+    auto& registered = shortcuts._registeredActions;
+    std::erase_if(registered, [](const auto& entry)
+    {
+        return entry.expired();
+    });
+    if (std::ranges::any_of(registered, [&](const auto& entry)
+    {
+        return entry.lock() == action;
+    }))
+    {
+        return;
+    }
+
     auto shortcut = action->shortcut;
     shortcut.handler = [weakAction = std::weak_ptr<const ActionDefinition>(action),
                            allowText = shortcut.allowInTextInput]
@@ -62,7 +77,9 @@ void ActionDefinition::registerShortcut(app::Shortcuts& shortcuts,
             definition->invoke();
         }
     };
+    registered.reserve(registered.size() + 1);
     shortcuts.addShortcutMapper(shortcut);
+    registered.emplace_back(action);
 }
 
 }

@@ -23,7 +23,9 @@
 #include <bg2e/ui/Menu.hpp>
 #include <bg2e/ui/ToolbarConfiguration.hpp>
 #include <filesystem>
+#include <initializer_list>
 #include <optional>
+#include <span>
 
 #include <string>
 #include <functional>
@@ -86,11 +88,27 @@ class BG2E_API Toolbar : public Window {
         ToolbarButton&& button,
         Alignment align = AlignLeft);
 
-    // Registered actions appear only when their IDs are in the layout.
-    // Register all actions before setting the default layout. Invalid or
-    // duplicate registrations and unknown or repeated action IDs throw.
-    // ToolbarLayout::Separator is reserved and may appear more than once.
-    void registerAction(std::shared_ptr<const ActionDefinition> action);
+    // Register actions in the catalog and add those with a path to the menu.
+    // The optional separator follows the last action in its menu, if any.
+    // Invalid IDs, duplicates and empty path components throw.
+    void registerAction(ActionDefinition action, bool addSeparator = false);
+    void registerAction(std::shared_ptr<const ActionDefinition> action, bool addSeparator = false);
+    void registerActions(std::span<const ActionDefinition> actions, bool addSeparator = false);
+    void registerActions(std::initializer_list<ActionDefinition> actions, bool addSeparator = false);
+
+    enum class MenuSeparator
+    {
+        None,
+        AfterAction,
+        AfterSubmenu
+    };
+
+    // AfterSubmenu places the separator in the submenu's parent menu, when present.
+    void registerActions(std::span<const ActionDefinition> actions, MenuSeparator separator);
+    void registerActions(std::initializer_list<ActionDefinition> actions, MenuSeparator separator);
+
+    // Register actions before setting the layout. Visible action IDs must be
+    // unique and registered. ToolbarLayout::Separator may appear repeatedly.
     void setDefaultLayout(ToolbarLayout layout);
 
     // Enable the context menu and use local appearance and layout settings.
@@ -123,24 +141,22 @@ class BG2E_API Toolbar : public Window {
     ToolbarButton* findButton(int32_t buttonId);
     const ToolbarButton* findButton(int32_t buttonId) const;
 
-    void addMenuItem(const MenuItem& menuItem)
-    {
-        _menu.addMenuItem(menuItem);
-    }
-
   protected:
     std::optional<ToolbarConfiguration> _configuration;
     std::vector<ToolbarButton> _leftButtons;
     std::vector<ToolbarButton> _rightButtons;
-    Menu _menu;
-    bool _menuInitialized = false;
-
     void setDrawFunction(std::function<void()> drawFunction) override;
     void draw(std::function<void()> drawFunc, std::function<void()> menuFunction = nullptr) override;
 
     int32_t genId();
 
   private:
+    using Window::setMenuFunction;
+
+    void registerActionBatch(std::span<const ActionDefinition> actions, MenuSeparator separator);
+    void registerActionBatch(std::span<const std::shared_ptr<const ActionDefinition>> actions,
+        MenuSeparator separator);
+    void registerPendingShortcuts();
     const ToolbarLayout& activeLayout() const;
     void drawContextMenu();
     void drawSettings();
@@ -148,6 +164,8 @@ class BG2E_API Toolbar : public Window {
     void saveCustomization(bool replaceExisting = true) const;
 
     std::unordered_map<std::string, std::shared_ptr<const ActionDefinition>> _actions;
+    Menu _menu;
+    std::vector<std::shared_ptr<const ActionDefinition>> _pendingShortcuts;
     ToolbarLayout _defaultLayout;
     std::optional<ToolbarLayout> _customLayout;
     std::filesystem::path _customizationPath;

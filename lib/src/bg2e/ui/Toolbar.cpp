@@ -18,6 +18,7 @@
 
 #include <bg2e/ui/Toolbar.hpp>
 #include <bg2e/ui/UserInterface.hpp>
+#include <bg2e/app/MainLoop.hpp>
 #include "detail/IconWidgets.hpp"
 #include "detail/ToolbarConfiguration.hpp"
 #include <imgui.h>
@@ -26,6 +27,7 @@
 #include <limits>
 #include <span>
 #include <stdexcept>
+#include <string_view>
 #include <unordered_set>
 
 namespace bg2e::ui {
@@ -64,20 +66,120 @@ int32_t Toolbar::addButton(
     return button.id;
 }
 
-void Toolbar::registerAction(std::shared_ptr<const ActionDefinition> action)
+void Toolbar::registerAction(ActionDefinition action, bool addSeparator)
 {
-    if (!action || action->id.empty() || !action->execute)
+    registerAction(std::make_shared<const ActionDefinition>(std::move(action)), addSeparator);
+}
+
+void Toolbar::registerAction(std::shared_ptr<const ActionDefinition> action, bool addSeparator)
+{
+    registerActionBatch(std::span{&action, 1},
+        addSeparator ? MenuSeparator::AfterAction : MenuSeparator::None);
+}
+
+void Toolbar::registerActions(std::span<const ActionDefinition> actions, bool addSeparator)
+{
+    registerActionBatch(actions, addSeparator ? MenuSeparator::AfterAction : MenuSeparator::None);
+}
+
+void Toolbar::registerActions(std::initializer_list<ActionDefinition> actions, bool addSeparator)
+{
+    registerActions(std::span{actions.begin(), actions.size()}, addSeparator);
+}
+
+void Toolbar::registerActions(std::span<const ActionDefinition> actions, MenuSeparator separator)
+{
+    registerActionBatch(actions, separator);
+}
+
+void Toolbar::registerActions(std::initializer_list<ActionDefinition> actions, MenuSeparator separator)
+{
+    registerActions(std::span{actions.begin(), actions.size()}, separator);
+}
+
+void Toolbar::registerActionBatch(std::span<const ActionDefinition> actions, MenuSeparator separator)
+{
+    std::vector<std::shared_ptr<const ActionDefinition>> definitions;
+    definitions.reserve(actions.size());
+    for (const auto& action : actions)
     {
-        throw std::invalid_argument("Toolbar actions require an ID and an execution callback");
+        definitions.push_back(std::make_shared<const ActionDefinition>(action));
     }
-    if (action->id == ToolbarLayout::Separator)
+    registerActionBatch(definitions, separator);
+}
+
+void Toolbar::registerActionBatch(std::span<const std::shared_ptr<const ActionDefinition>> actions,
+    MenuSeparator separatorPlacement)
+{
+    std::unordered_set<std::string_view> ids;
+    std::vector<std::vector<std::string>> paths;
+    paths.reserve(actions.size());
+    for (const auto& action : actions)
     {
-        throw std::invalid_argument("Toolbar action ID is reserved for separators");
+        if (!action || action->id.empty() || !action->execute)
+        {
+            throw std::invalid_argument("Toolbar actions require an ID and an execution callback");
+        }
+        if (action->id == ToolbarLayout::Separator)
+        {
+            throw std::invalid_argument("Toolbar action ID is reserved for separators");
+        }
+        if (_actions.contains(action->id) || !ids.insert(action->id).second)
+        {
+            throw std::invalid_argument("Toolbar action ID is already in use");
+        }
+
+        auto& path = paths.emplace_back();
+        std::string_view remaining = action->path;
+        if (remaining.empty())
+        {
+            continue;
+        }
+        for (;;)
+        {
+            const auto separator = remaining.find('|');
+            const auto parent = remaining.substr(0, separator);
+            if (parent.find_first_not_of(" \t\r\n") == std::string_view::npos)
+            {
+                throw std::invalid_argument("Toolbar menu paths require nonempty parent names");
+            }
+            path.emplace_back(parent);
+            if (separator == std::string_view::npos)
+            {
+                break;
+            }
+            remaining.remove_prefix(separator + 1);
+        }
     }
-    if (!_actions.try_emplace(action->id, action).second)
+
+    for (std::size_t i = 0; i < actions.size(); ++i)
     {
-        throw std::invalid_argument("Toolbar action ID is already in use");
+        const auto& action = actions[i];
+        _actions.emplace(action->id, action);
+        if (!paths[i].empty())
+        {
+            const bool addSeparator = i + 1 == actions.size() && separatorPlacement != MenuSeparator::None;
+            _menu.addAction(paths[i], action, addSeparator, separatorPlacement == MenuSeparator::AfterSubmenu);
+        }
+        if (action->shortcut.key != app::KeyEvent::KeyUnknown)
+        {
+            _pendingShortcuts.push_back(action);
+        }
     }
+    registerPendingShortcuts();
+}
+
+void Toolbar::registerPendingShortcuts()
+{
+    if (_pendingShortcuts.empty() || !app::MainLoop::current())
+    {
+        return;
+    }
+    for (const auto& action : _pendingShortcuts)
+    {
+        ActionDefinition::registerShortcut(app::MainLoop::shortcuts(), action);
+    }
+    _pendingShortcuts.clear();
 }
 
 void Toolbar::setDefaultLayout(ToolbarLayout layout)
@@ -126,6 +228,7 @@ struct ToolbarEntry {
 
 void Toolbar::draw()
 {
+    registerPendingShortcuts();
     draw([this]()
     {
         ToolbarIdentity identity(this);
@@ -477,17 +580,13 @@ void Toolbar::setDrawFunction(std::function<void()> /* drawFunction */)
 
 void Toolbar::draw(
     std::function<void()> drawFunc,
-    std::function<void()> menuFunction)
+    std::function<void()> /* menuFunction */)
 {
-    Window::draw(drawFunc, menuFunction);
-    if (!_menuInitialized)
+    _menuFunction = nullptr;
+    Window::draw(std::move(drawFunc), [this]()
     {
-        setMenuFunction([&]()
-                        {
-                            _menu.draw();
-                        });
-        _menuInitialized = false;
-    }
+        _menu.draw();
+    });
 }
 
 int32_t Toolbar::genId()
