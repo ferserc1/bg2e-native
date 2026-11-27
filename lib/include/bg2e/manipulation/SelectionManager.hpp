@@ -189,6 +189,7 @@ class BG2E_API SelectionManager {
     // Observer installation is optional. Targets are frozen for the gesture;
     // selection changes never redirect an in-progress drag to a different node.
     void setTransformEditObserver(TransformEditObserver observer);
+    void setLinearSnapSettings(math::LinearSnapSettings settings);
     void cancelTransform();
     void commitTransform();
 
@@ -336,6 +337,7 @@ class BG2E_API SelectionManager {
     bool _capturing = false;
     std::shared_ptr<GizmoComponent> _capturedGizmo;
     TransformEditObserver _transformEditObserver;
+    math::LinearSnapSettings _linearSnapSettings;
     bool _leftPressed = false;
     int _mouseDownX = 0;
     int _mouseDownY = 0;

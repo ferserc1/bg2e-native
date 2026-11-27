@@ -355,6 +355,25 @@ bg2e::app::CommandResult Dispatcher::settle(bool commit)
         "Document history requires repair or replacement"} : bg2e::app::CommandResult{};
 }
 
+bg2e::app::CommandResult Dispatcher::discardWorkspaceHistory()
+{
+    using namespace bg2e::app;
+    if (pending() || _cpuInteractionReserved || _history->transactionActive())
+    {
+        return {CommandStatus::Rejected, "Document commands are not idle"};
+    }
+
+    // Both calls use the same history availability check. Eviction only
+    // queues retirement, so no command or callback can run between them.
+    const auto undo = _history->discardOldest(_history->undoCount());
+    if (!undo.accepted())
+    {
+        return undo;
+    }
+    return _history->discardRedo();
+}
+
+
 bg2e::app::CommandResult Dispatcher::shutdown()
 {
     return _queue->shutdown();

@@ -20,6 +20,7 @@
 
 #include <bg2e/app/Shortcuts.hpp>
 #include <bg2e/common.hpp>
+#include <bg2e/ui/WorkspaceMask.hpp>
 
 #include <filesystem>
 #include <functional>
@@ -43,6 +44,7 @@ struct BG2E_API ActionDefinition {
     app::Shortcuts::ShortcutData shortcut;
     // Menu parents separated by '|'. An empty path keeps the action toolbar-only.
     std::string path;
+    WorkspaceMask workspaceMask = WorkspaceAll;
 
     std::string displayLabel() const;
     bool isEnabled() const;

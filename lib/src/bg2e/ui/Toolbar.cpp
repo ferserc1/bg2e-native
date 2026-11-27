@@ -108,48 +108,68 @@ void Toolbar::registerActionBatch(std::span<const ActionDefinition> actions, Men
     registerActionBatch(definitions, separator);
 }
 
-void Toolbar::registerActionBatch(std::span<const std::shared_ptr<const ActionDefinition>> actions,
-    MenuSeparator separatorPlacement)
+std::vector<std::string> Toolbar::validateAction(const ActionDefinition& action)
 {
+    if (action.id.empty() || !action.execute)
+    {
+        throw std::invalid_argument("Toolbar actions require an ID and an execution callback");
+    }
+    if (action.id == ToolbarLayout::Separator)
+    {
+        throw std::invalid_argument("Toolbar action ID is reserved for separators");
+    }
+
+    std::vector<std::string> path;
+    std::string_view remaining = action.path;
+    if (remaining.empty())
+    {
+        return path;
+    }
+    for (;;)
+    {
+        const auto separator = remaining.find('|');
+        const auto parent = remaining.substr(0, separator);
+        if (parent.find_first_not_of(" \t\r\n") == std::string_view::npos)
+        {
+            throw std::invalid_argument("Toolbar menu paths require nonempty parent names");
+        }
+        path.emplace_back(parent);
+        if (separator == std::string_view::npos)
+        {
+            return path;
+        }
+        remaining.remove_prefix(separator + 1);
+    }
+}
+
+void Toolbar::registerActionBatch(std::span<const std::shared_ptr<const ActionDefinition>> actions,
+    MenuSeparator separatorPlacement, bool workspaceProjection)
+{
+    if (_workspaceSlot != 0)
+    {
+        throw std::invalid_argument("Register workspace actions through the workspace collection");
+    }
+
     std::unordered_set<std::string_view> ids;
     std::vector<std::vector<std::string>> paths;
     paths.reserve(actions.size());
+    std::size_t lastMenuAction = actions.size();
     for (const auto& action : actions)
     {
-        if (!action || action->id.empty() || !action->execute)
+        if (!action)
         {
             throw std::invalid_argument("Toolbar actions require an ID and an execution callback");
         }
-        if (action->id == ToolbarLayout::Separator)
-        {
-            throw std::invalid_argument("Toolbar action ID is reserved for separators");
-        }
+        auto path = validateAction(*action);
         if (_actions.contains(action->id) || !ids.insert(action->id).second)
         {
             throw std::invalid_argument("Toolbar action ID is already in use");
         }
-
-        auto& path = paths.emplace_back();
-        std::string_view remaining = action->path;
-        if (remaining.empty())
+        if (!path.empty())
         {
-            continue;
+            lastMenuAction = paths.size();
         }
-        for (;;)
-        {
-            const auto separator = remaining.find('|');
-            const auto parent = remaining.substr(0, separator);
-            if (parent.find_first_not_of(" \t\r\n") == std::string_view::npos)
-            {
-                throw std::invalid_argument("Toolbar menu paths require nonempty parent names");
-            }
-            path.emplace_back(parent);
-            if (separator == std::string_view::npos)
-            {
-                break;
-            }
-            remaining.remove_prefix(separator + 1);
-        }
+        paths.push_back(std::move(path));
     }
 
     for (std::size_t i = 0; i < actions.size(); ++i)
@@ -158,10 +178,11 @@ void Toolbar::registerActionBatch(std::span<const std::shared_ptr<const ActionDe
         _actions.emplace(action->id, action);
         if (!paths[i].empty())
         {
-            const bool addSeparator = i + 1 == actions.size() && separatorPlacement != MenuSeparator::None;
+            const bool lastAction = workspaceProjection ? i == lastMenuAction : i + 1 == actions.size();
+            const bool addSeparator = lastAction && separatorPlacement != MenuSeparator::None;
             _menu.addAction(paths[i], action, addSeparator, separatorPlacement == MenuSeparator::AfterSubmenu);
         }
-        if (action->shortcut.key != app::KeyEvent::KeyUnknown)
+        if (!workspaceProjection && action->shortcut.key != app::KeyEvent::KeyUnknown)
         {
             _pendingShortcuts.push_back(action);
         }

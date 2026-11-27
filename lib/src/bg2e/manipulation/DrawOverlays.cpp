@@ -285,8 +285,16 @@ void GizmoAndSelectionRenderer::update(const draw::pipeline::OverlayContext& con
             {
                 throw std::invalid_argument("Overlay gizmo belongs to another engine");
             }
-            const auto world = transform ? gizmo->renderTransform(node->worldMatrix(), context.view, context.projection, GizmoType::Transform) :
-                gizmo->renderTransform(node->worldMatrix(), context.view, context.projection);
+            const auto nodeWorld = node->worldMatrix();
+            const auto world = transform ? gizmo->renderTransform(nodeWorld, context.view, context.projection, GizmoType::Transform) :
+                gizmo->renderTransform(nodeWorld, context.view, context.projection);
+            auto translationFrame = world;
+            if (transform && gizmo->worldAlignedTranslation())
+            {
+                glm::mat4 axes(1.0f);
+                axes[3] = nodeWorld[3];
+                translationFrame = gizmo->renderTransform(axes, context.view, context.projection, GizmoType::Transform);
+            }
             auto mesh = !transform && settings.typeGizmoLines ? lineMesh(resource->drawMesh()) : resource->drawMesh();
             if (!mesh)
             {
@@ -303,7 +311,10 @@ void GizmoAndSelectionRenderer::update(const draw::pipeline::OverlayContext& con
                 const auto type = transform ? GizmoType::Transform : gizmo->currentGizmoType();
                 const float alpha = GizmoComponent::gizmoOpacity(type);
                 auto& list = transform ? draws.transformGizmos : draws.typeGizmos;
-                list.push_back({mesh, i, world * resource->submeshTransform(i), {color.r, color.g, color.b, alpha}});
+                const auto handle = transform ? GizmoComponent::handleForSubmesh(
+                    resource->submeshName(i), resource->submeshGroupName(i)) : TransformHandle::None;
+                const auto frame = gizmo->transformHandleMatrix(world, handle, translationFrame);
+                list.push_back({mesh, i, frame * resource->submeshTransform(i), {color.r, color.g, color.b, alpha}});
             }
         };
         if (gizmo->currentGizmoType() != GizmoType::None && GizmoComponent::isGizmoVisible(gizmo->currentGizmoType()))

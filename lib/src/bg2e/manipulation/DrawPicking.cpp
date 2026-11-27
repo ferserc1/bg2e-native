@@ -152,8 +152,16 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
         {
             throw std::invalid_argument("Pick gizmo belongs to another draw engine");
         }
-        const auto world = transform ? gizmo->renderTransform(node->worldMatrix(), view, projection, GizmoType::Transform) :
-            gizmo->renderTransform(node->worldMatrix(), view, projection);
+        const auto nodeWorld = node->worldMatrix();
+        const auto world = transform ? gizmo->renderTransform(nodeWorld, view, projection, GizmoType::Transform) :
+            gizmo->renderTransform(nodeWorld, view, projection);
+        auto translationFrame = world;
+        if (transform && gizmo->worldAlignedTranslation())
+        {
+            glm::mat4 axes(1.0f);
+            axes[3] = nodeWorld[3];
+            translationFrame = gizmo->renderTransform(axes, view, projection, GizmoType::Transform);
+        }
         for (uint32_t i = 0; i < resource->submeshesCount(); ++i)
         {
             if (transform && !GizmoComponent::isTransformSubmeshVisible(resource->submeshName(i), resource->submeshGroupName(i)))
@@ -168,7 +176,10 @@ bool SelectionManager::pickDrawObject(scene::Node* root, const glm::mat4& view,
             selection.node = node;
             selection.kind = kind;
             selection.submesh = i;
-            entries.push_back({selection, resource->drawMesh(), world * resource->submeshTransform(i), nextId++,
+            const auto handle = transform ? GizmoComponent::handleForSubmesh(
+                resource->submeshName(i), resource->submeshGroupName(i)) : TransformHandle::None;
+            const auto frame = gizmo->transformHandleMatrix(world, handle, translationFrame);
+            entries.push_back({selection, resource->drawMesh(), frame * resource->submeshTransform(i), nextId++,
                 std::dynamic_pointer_cast<GizmoComponent>(gizmo->shared_from_this())});
         }
     };

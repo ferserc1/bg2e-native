@@ -28,6 +28,7 @@
 
 namespace bg2e::ui {
 struct BG2E_API ActionDefinition;
+class BG2E_API WorkspaceCollection;
 }
 
 namespace bg2e::app {
@@ -66,6 +67,28 @@ class BG2E_API Shortcuts {
 
   private:
     friend struct ui::ActionDefinition;
+    friend class ui::WorkspaceCollection;
+
+    struct Chord {
+        KeyEvent::Key key;
+        bool alt;
+        bool ctrl;
+        bool super;
+        bool shift;
+
+        bool operator==(const Chord&) const = default;
+    };
+
+    static Chord effectiveChord(const ShortcutData& shortcut);
+
+    struct ManagedBinding {
+        Chord chord;
+        ShortcutHandler handler;
+    };
+
+    std::weak_ptr<const void> _managedOwner;
+    std::vector<ManagedBinding> _managedBindings;
+
     std::vector<std::weak_ptr<const ui::ActionDefinition>> _registeredActions;
 };
 

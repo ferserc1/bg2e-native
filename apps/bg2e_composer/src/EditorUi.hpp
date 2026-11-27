@@ -18,28 +18,20 @@
 
 #pragma once
 
-#include <bg2e/ui/EditInteraction.hpp>
-#include <bg2e/draw/RendererDebug.hpp>
-
-#include "AppDelegate.hpp"
-
-#include <bg2e/draw/RenderSettingsPreferences.hpp>
-#include <bg2e/ui/GraphicsSettingsWindow.hpp>
-#include <bg2e/ui/UISettingsWindow.hpp>
-#include <bg2e/ui/Performance.hpp>
 #include <bg2e/ui/UserInterfaceDelegate.hpp>
-#include <bg2e/ui/Window.hpp>
-#include <bg2e/ui/SceneResourcesWindow.hpp>
-#include <bg2e/ui/DrawableInstancesWindow.hpp>
-#include <bg2e/ui/Toolbar.hpp>
-#include <bg2e/ui/DrawMaterialEditor.hpp>
-#include <bg2e/ui/StatusBar.hpp>
 #include <bg2e/ui/Workspace.hpp>
-#include <bg2e/ui/SceneTree.hpp>
-#include <bg2e/ui/ComponentInspector.hpp>
-#include "SceneLightmapWindow.hpp"
+
+#include <memory>
 
 namespace bg2e_composer {
+
+class AppDelegate;
+
+namespace workspaces::common { class SettingsWindows; }
+
+namespace workspaces::scene {
+class SceneWorkspace;
+}
 
 class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enable_shared_from_this<EditorUi> {
   public:
@@ -48,60 +40,13 @@ class EditorUi final : public bg2e::ui::UserInterfaceDelegate, public std::enabl
     void init(bg2e::draw::Engine* engine, bg2e::ui::UserInterface* session) override;
     void drawUI() override;
 
+    bool requestWorkspace(bg2e::ui::WorkspaceMask destination);
+
   private:
-    void initActions();
-    void initDrawableBrowser();
-    void drawDebug(const std::shared_ptr<AppDelegate>& delegate);
-
-    void drawImportSettings(const std::shared_ptr<AppDelegate>& delegate);
-    void drawImportProgress(const std::shared_ptr<AppDelegate>& delegate);
-    void chooseImport(const std::shared_ptr<AppDelegate>& delegate);
-
-    void drawSceneEditor(const std::shared_ptr<AppDelegate>& delegate);
-    void drawTextEditors(const std::shared_ptr<AppDelegate>& delegate, bg2e::scene::Node& node);
-    void drawTools(const std::shared_ptr<AppDelegate>& delegate);
-    void bindDocument(const std::shared_ptr<AppDelegate>& delegate);
-
-    bg2e::ui::UserInterface* _ui = nullptr;
-    bg2e::ui::DrawMaterialEditor _material;
-    bg2e::ui::SceneTree _sceneTree;
-    bg2e::ui::ComponentInspector _componentInspector;
-    std::unique_ptr<bg2e::ui::EditSession> _nameEdit;
-    std::unique_ptr<bg2e::ui::EditSession> _metadataEdit;
-    std::unique_ptr<bg2e::ui::EditSession> _textEdit;
-    uint64_t _textEditGeneration = UINT64_MAX;
-    bool _textUiWarning = false;
-    bool _componentInspectorDrawn = false;
-    std::weak_ptr<bg2e::scene::Node> _nameEditNode;
-    uint64_t _nameEditGeneration = 0;
-    bg2e::ui::Window _debugWindow;
-    bg2e::draw::RendererDebugOptions _debugOptions;
-    uint64_t _debugRendererGeneration = UINT64_MAX;
-    bg2e::ui::Window _properties;
-    bg2e::ui::Window _sceneProperties;
-    uint64_t _boundGeneration = UINT64_MAX;
-    uint32_t _highlight = 2;
     std::weak_ptr<AppDelegate> _delegate;
-    std::shared_ptr<bg2e::draw::RenderSettingsPreferences> _preferences;
-    bg2e::ui::GraphicsSettingsWindow _graphics;
-    bg2e::ui::Performance _performance;
-    bg2e::ui::UISettingsWindow _uiSettings;
-    SceneLightmapWindow _lightmap;
-    bg2e::ui::SceneResourcesWindow _sceneResources;
-    bg2e::ui::DrawableInstancesWindow _drawableInstances;
-    bg2e::ui::Window _importSettingsWindow;
-    bg2e::ui::Window _importQueueWindow;
-    std::string _importPort;
-    uint32_t _importUnits = 0;
-    bool _importZUp = false;
-    bg2e::ui::Toolbar _toolbar;
-    bg2e::ui::Workspace _workspace;
-    bg2e::ui::StatusBar _statusBar;
-    std::shared_ptr<bg2e::ui::StatusItem> _fileStatus;
-    std::shared_ptr<bg2e::ui::StatusItem> _importStatusItem;
-    std::shared_ptr<bg2e::ui::StatusItem> _saveStatus;
-    uint32_t _workspaceWidth = 0;
-    uint32_t _workspaceHeight = 0;
+    std::shared_ptr<workspaces::common::SettingsWindows> _settings;
+    std::shared_ptr<workspaces::scene::SceneWorkspace> _scene;
+    bg2e::ui::WorkspaceCollection _workspaces;
 };
 
 }

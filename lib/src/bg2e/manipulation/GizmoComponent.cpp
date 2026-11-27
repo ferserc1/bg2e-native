@@ -547,7 +547,29 @@ void GizmoComponent::beginTransform(TransformHandle handle, int mouseX, int mous
     // so we can compute deltas relative to it (avoiding the origin jump)
     if (handle >= TransformHandle::TranslateX && handle <= TransformHandle::TranslateZ)
     {
-        auto node = _ownerReference.lock();
+        if (_linearSnapSettings.enabled)
+        {
+            _linearSnapGesture.emplace(_linearSnapSettings);
+            _worldGridAxis = _linearSnapSettings.mode == math::LinearSnapMode::Absolute ? axis : -1;
+            if (_worldGridAxis >= 0)
+            {
+                _worldAxis = glm::vec3(0.0f);
+                _worldAxis[_worldGridAxis] = 1.0f;
+            }
+            auto* parent = node->parent();
+            const auto parentLinear = parent ? glm::mat3(parent->worldMatrix()) : glm::mat3(1.0f);
+            const float determinant = glm::determinant(parentLinear);
+            _localUnitsPerWorldUnit = glm::vec3(0.0f);
+            if (std::isfinite(determinant) && determinant != 0.0f)
+            {
+                const auto localDirection = glm::inverse(parentLinear) * _worldAxis;
+                if (std::isfinite(localDirection.x) && std::isfinite(localDirection.y) &&
+                    std::isfinite(localDirection.z))
+                {
+                    _localUnitsPerWorldUnit = localDirection;
+                }
+            }
+        }
         auto scene = node->scene();
         auto ray = rayFromCursor(scene, mouseX, mouseY);
         _initialAxisPoint = closestPointOnAxis(
@@ -597,6 +619,20 @@ void GizmoComponent::updateTransform(scene::Scene* scene, int mouseX, int mouseY
         auto closest = closestPointOnAxis(
             _initialWorldPos, _worldAxis, ray.origin, ray.dir);
         float dist = glm::dot(closest - _initialAxisPoint, _worldAxis);
+        if (_linearSnapGesture)
+        {
+            const bool aligned = _worldGridAxis >= 0;
+            const double start = aligned ? _initialWorldPos[_worldGridAxis] : 0.0;
+            const double snapped = _linearSnapGesture->displacement(start, dist, aligned);
+            const glm::vec3 deltaLocal = _localUnitsPerWorldUnit * static_cast<float>(snapped);
+            if (std::isfinite(deltaLocal.x) && std::isfinite(deltaLocal.y) && std::isfinite(deltaLocal.z))
+            {
+                auto matrix = _initialLocalMatrix;
+                matrix[3] += glm::vec4(deltaLocal, 0.0f);
+                transform->setMatrix(matrix);
+            }
+            break;
+        }
         glm::vec3 deltaLocal = (_localAxis * dist) / _parentScaleAxis;
         glm::vec3 t = scene::TransformComponent::extractTranslation(_initialLocalMatrix) + deltaLocal;
         node->transform()->setMatrix(
@@ -669,6 +705,32 @@ void GizmoComponent::setTransformEditObserver(TransformEditObserver observer)
 }
 
 
+bool GizmoComponent::worldAlignedTranslation() const
+{
+    if (_activeHandle >= TransformHandle::TranslateX && _activeHandle <= TransformHandle::TranslateZ)
+    {
+        return _worldGridAxis >= 0;
+    }
+    return _linearSnapSettings.enabled && _linearSnapSettings.mode == math::LinearSnapMode::Absolute;
+}
+
+glm::mat4 GizmoComponent::transformHandleMatrix(const glm::mat4& localFrame, TransformHandle handle,
+    const glm::mat4& worldFrame) const
+{
+    return handle >= TransformHandle::TranslateX && handle <= TransformHandle::TranslateZ
+        ? worldFrame : localFrame;
+}
+
+
+void GizmoComponent::setLinearSnapSettings(math::LinearSnapSettings settings)
+{
+    if (settings.valid())
+    {
+        _linearSnapSettings = settings;
+    }
+}
+
+
 void GizmoComponent::cancelTransform()
 {
     finishTransform(true);
@@ -712,6 +774,8 @@ void GizmoComponent::finishTransform(bool cancel)
         drawResource->material(submeshIdx).setAlbedo(_originalHandleColor);
     }
 
+    _linearSnapGesture.reset();
+    _worldGridAxis = -1;
     _activeHandle = TransformHandle::None;
     _transformReference.reset();
 }

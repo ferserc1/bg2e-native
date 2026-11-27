@@ -140,6 +140,9 @@ class BG2E_API Menu {
 
   private:
     friend class Toolbar;
+    friend class WorkspaceCollection;
+    static void trimSeparators(std::vector<MenuItem>& items);
+
     void addAction(const std::vector<std::string>& path,
         const std::shared_ptr<const ActionDefinition>& action, bool addSeparator, bool afterSubmenu);
 

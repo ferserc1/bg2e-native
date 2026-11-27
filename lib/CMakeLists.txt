@@ -78,7 +78,7 @@ else()
     target_link_libraries(${BG2E_TARGET_NAME} PRIVATE "opengl32.lib")
 endif()
 
-target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${CMAKE_DL_LIBS})
+target_link_libraries(${BG2E_TARGET_NAME} PRIVATE bg2e_manifold ${CMAKE_DL_LIBS})
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${SDL2_LIBRARIES})
 target_link_libraries(${BG2E_TARGET_NAME} PRIVATE ${VULKAN_LIB})
 
@@ -128,3 +128,10 @@ set(BG2E_LIB_TARGET ${BG2E_TARGET_NAME} PARENT_SCOPE)
 set(BG2E_RUNTIME_BINARY "$<TARGET_FILE:${BG2E_TARGET_NAME}>" PARENT_SCOPE)
 set(BG2E_INCLUDE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/include" PARENT_SCOPE)
 set(BG2E_SHADER_DIR ${DST_SHADER_DIR} PARENT_SCOPE)
+
+install(FILES
+    "${BG2E_MANIFOLD_DIR}/LICENSE"
+    "${BG2E_MANIFOLD_DIR}/THIRD_PARTY_NOTICES.txt"
+    DESTINATION licenses/manifold
+    COMPONENT Distribution
+)

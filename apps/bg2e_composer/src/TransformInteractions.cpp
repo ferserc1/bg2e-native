@@ -34,6 +34,7 @@ namespace bg2e_composer {
 void AppDelegate::initializeTransformInteractions()
 {
     const auto weak = weak_from_this();
+    _selection->setLinearSnapSettings(_snappingPreferences.settings());
     _selection->setTransformEditObserver([weak](bg2e::manipulation::TransformEditPhase phase,
         const std::shared_ptr<bg2e::scene::Node>& node, const glm::mat4&, const glm::mat4&)
     {

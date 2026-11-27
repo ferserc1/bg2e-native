@@ -19,6 +19,7 @@
 #include <bg2e/app/Shortcuts.hpp>
 #include <bg2e/base/PlatformTools.hpp>
 
+#include <algorithm>
 #include <iostream>
 #include <sstream>
 
@@ -123,6 +124,16 @@ void Shortcuts::keyUp(const KeyEvent& evt)
                 sc.handler();
             }
         }
+        if (!_managedOwner.expired())
+        {
+            const Chord chord{evt.key(), _altModifier, _ctrlModifier, _superModifier, _shiftModifier};
+            const auto binding = std::ranges::find(_managedBindings, chord, &ManagedBinding::chord);
+            if (binding != _managedBindings.end())
+            {
+                const auto handler = binding->handler;
+                handler();
+            }
+        }
     }
 }
 
@@ -140,19 +151,21 @@ void Shortcuts::addShortcutMapper(const ShortcutData& shortcut)
     _shortcutData.push_back(shortcut);
 }
 
-bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData& sc) const
+Shortcuts::Chord Shortcuts::effectiveChord(const ShortcutData& shortcut)
 {
 #if defined(__APPLE__)
-    const bool ctrl = sc.ctrlModifier;
-    const bool super = sc.cmdOrCtrlModifier;
+    const bool ctrl = shortcut.ctrlModifier;
+    const bool super = shortcut.cmdOrCtrlModifier;
 #else
-    const bool ctrl = sc.ctrlModifier || sc.cmdOrCtrlModifier;
+    const bool ctrl = shortcut.ctrlModifier || shortcut.cmdOrCtrlModifier;
     const bool super = false;
 #endif
-    return currentKey == sc.key &&
-           _altModifier == sc.altModifier &&
-           _shiftModifier == sc.shiftModifier &&
-           ctrl == _ctrlModifier && super == _superModifier;
+    return {shortcut.key, shortcut.altModifier, ctrl, super, shortcut.shiftModifier};
+}
+
+bool Shortcuts::matchShortcut(const KeyEvent::Key currentKey, const ShortcutData& sc) const
+{
+    return effectiveChord(sc) == Chord{currentKey, _altModifier, _ctrlModifier, _superModifier, _shiftModifier};
 }
 
 }

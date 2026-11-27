@@ -177,6 +177,11 @@ void AppDelegate::keyDown(const bg2e::app::KeyEvent& keyEvent)
     {
         return;
     }
+    if (keyEvent.key() == bg2e::app::KeyEvent::KeyEscape &&
+        _sceneShortcutScope && !_sceneShortcutScope())
+    {
+        return;
+    }
     queueInput([this, keyEvent]
     {
         if (keyEvent.key() == bg2e::app::KeyEvent::KeyEscape)
@@ -627,6 +632,11 @@ void AppDelegate::prepareFrame()
         sampleNavigation(true);
     }
     retireBakeFrame();
+    if (_workspaceTransition && !workspaceTransitionIdle())
+    {
+        _workspaceTransition.reset();
+        _status = "Workspace switch requires an idle document";
+    }
     processDocumentIo();
     if (sceneLoading())
     {
@@ -654,6 +664,7 @@ void AppDelegate::prepareFrame()
     {
         return;
     }
+    processWorkspaceTransition();
     processImports();
     processReadActions();
     if (_stage)

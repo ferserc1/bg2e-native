@@ -19,7 +19,11 @@
 #pragma once
 
 #include <bg2e/common.hpp>
+#include <bg2e/ui/Toolbar.hpp>
 #include <bg2e/ui/Window.hpp>
+#include <bg2e/ui/WorkspaceMask.hpp>
+
+#include <unordered_map>
 
 namespace bg2e {
 namespace ui {
@@ -241,6 +245,61 @@ class BG2E_API Workspace {
     void updateWindows();
 
     uint32_t getPanelSize(PanelSize& size, uint32_t vpSize);
+};
+
+class BG2E_API WorkspaceCollection {
+  public:
+    WorkspaceCollection() = default;
+    // Copies have independent activation, shortcut bindings and toolbar setup.
+    WorkspaceCollection(const WorkspaceCollection& other);
+    WorkspaceCollection& operator=(const WorkspaceCollection& other);
+    WorkspaceCollection(WorkspaceCollection&&) noexcept = default;
+    WorkspaceCollection& operator=(WorkspaceCollection&&) noexcept = default;
+
+    // Registered workspaces are borrowed and must outlive the collection.
+    // Registration reserves a slot. Activation is explicit.
+    bool registerWorkspace(WorkspaceMask slot, Workspace& workspace);
+    // Returns true for a registered slot, including the already active slot.
+    bool activate(WorkspaceMask slot);
+
+    // Zero and nullptr indicate that no workspace has been activated.
+    WorkspaceMask activeSlot() const;
+    Workspace* activeWorkspace() const;
+
+    // Register immutable definitions as a batch. Invalid definitions and
+    // duplicate IDs throw before any action is published.
+    void registerActions(std::span<const ActionDefinition> actions,
+        Toolbar::MenuSeparator separator = Toolbar::MenuSeparator::None);
+    void registerActions(std::initializer_list<ActionDefinition> actions,
+        Toolbar::MenuSeparator separator = Toolbar::MenuSeparator::None);
+
+    // Install the current catalog on the event router. Rebind after adding
+    // actions. A router accepts one live workspace collection at a time.
+    void bindShortcuts(app::Shortcuts& shortcuts);
+
+    // Populate a fresh toolbar for a registered slot from the current catalog.
+    // Call after registering actions and before enabling customization.
+    // The toolbar keeps its projected catalog for its lifetime.
+    // Layout IDs refer to registered actions, including those filtered out.
+    void configureToolbar(WorkspaceMask slot, Toolbar& toolbar, ToolbarLayout layout) const;
+
+    // Supply a stable, distinct preferences file for each persistent toolbar.
+    // The catalog and default layout are installed before reading the file.
+    void configureToolbar(WorkspaceMask slot, Toolbar& toolbar, ToolbarLayout layout,
+        std::filesystem::path preferencesPath);
+
+  private:
+    struct ActionBatch {
+        std::vector<std::shared_ptr<const ActionDefinition>> actions;
+        Toolbar::MenuSeparator separator;
+    };
+
+    std::unordered_map<WorkspaceMask, Workspace*> _workspaces;
+    std::unordered_map<std::string, std::shared_ptr<const ActionDefinition>> _actions;
+    std::vector<ActionBatch> _actionBatches;
+    std::unordered_map<WorkspaceMask, std::filesystem::path> _toolbarPreferences;
+    WorkspaceMask _activeSlot = 0;
+    std::shared_ptr<WorkspaceMask> _shortcutSlot;
 };
 
 }

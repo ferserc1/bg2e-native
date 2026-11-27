@@ -4,6 +4,45 @@
 
 set(THIRD_PARTY_PATH "${CMAKE_CURRENT_LIST_DIR}/../third_party")
 
+# Manifold 3.5.5 C++ core. There are no optional or downloaded dependencies.
+set(BG2E_MANIFOLD_DIR "${THIRD_PARTY_PATH}/manifold")
+add_library(bg2e_manifold STATIC
+    "${BG2E_MANIFOLD_DIR}/src/boolean3.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/boolean_result.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/constructors.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/csg_tree.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/edge_op.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/execution_impl.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/face_op.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/impl.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/manifold.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/minkowski.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/polygon.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/properties.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/quickhull.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/sdf.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/smoothing.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/sort.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/subdivision.cpp"
+    "${BG2E_MANIFOLD_DIR}/src/tree2d.cpp"
+)
+set_target_properties(bg2e_manifold PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    CXX_STANDARD 17
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+    CXX_VISIBILITY_PRESET hidden
+    VISIBILITY_INLINES_HIDDEN ON
+)
+target_include_directories(bg2e_manifold SYSTEM PUBLIC "${BG2E_MANIFOLD_DIR}/include")
+target_compile_definitions(bg2e_manifold PUBLIC MANIFOLD_PAR=-1)
+if(MSVC)
+    target_compile_definitions(bg2e_manifold PRIVATE NOMINMAX)
+    target_compile_options(bg2e_manifold PRIVATE /bigobj /fp:precise)
+elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(bg2e_manifold PRIVATE -ffp-contract=off)
+endif()
+
 # bg2io
 file(GLOB BG2IO_SRC "${THIRD_PARTY_PATH}/bg2-io/*.c")
 set(BG2IO_INCLUDE "${THIRD_PARTY_PATH}/bg2-io")

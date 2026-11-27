@@ -398,4 +398,35 @@ void Menu::addAction(const std::vector<std::string>& path,
     }
 }
 
+void Menu::trimSeparators(std::vector<MenuItem>& items)
+{
+    auto output = items.begin();
+    for (auto item = items.begin(); item != items.end(); ++item)
+    {
+        if (item->_type == MenuItemType::Submenu)
+        {
+            trimSeparators(item->_children);
+            if (item->_children.empty())
+            {
+                continue;
+            }
+        }
+        if (item->_type == MenuItemType::Separator &&
+            (output == items.begin() || (output - 1)->_type == MenuItemType::Separator))
+        {
+            continue;
+        }
+        if (output != item)
+        {
+            *output = std::move(*item);
+        }
+        ++output;
+    }
+    if (output != items.begin() && (output - 1)->_type == MenuItemType::Separator)
+    {
+        --output;
+    }
+    items.erase(output, items.end());
+}
+
 }

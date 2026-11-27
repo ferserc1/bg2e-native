@@ -71,6 +71,7 @@ class Dispatcher {
     void pump();
     size_t pending() const;
     bg2e::app::CommandResult settle(bool commit);
+    bg2e::app::CommandResult discardWorkspaceHistory();
     bg2e::app::CommandResult shutdown();
     // Call only after render extraction/submissions no longer use retired data.
     bool retiredResourcesPending() const;

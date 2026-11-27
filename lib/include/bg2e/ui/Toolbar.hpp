@@ -151,11 +151,13 @@ class BG2E_API Toolbar : public Window {
     int32_t genId();
 
   private:
+    friend class WorkspaceCollection;
     using Window::setMenuFunction;
 
     void registerActionBatch(std::span<const ActionDefinition> actions, MenuSeparator separator);
     void registerActionBatch(std::span<const std::shared_ptr<const ActionDefinition>> actions,
-        MenuSeparator separator);
+        MenuSeparator separator, bool workspaceProjection = false);
+    static std::vector<std::string> validateAction(const ActionDefinition& action);
     void registerPendingShortcuts();
     const ToolbarLayout& activeLayout() const;
     void drawContextMenu();
@@ -165,6 +167,7 @@ class BG2E_API Toolbar : public Window {
 
     std::unordered_map<std::string, std::shared_ptr<const ActionDefinition>> _actions;
     Menu _menu;
+    WorkspaceMask _workspaceSlot = 0;
     std::vector<std::shared_ptr<const ActionDefinition>> _pendingShortcuts;
     ToolbarLayout _defaultLayout;
     std::optional<ToolbarLayout> _customLayout;

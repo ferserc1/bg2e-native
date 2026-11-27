@@ -384,6 +384,7 @@ bool SelectionManager::mouseButtonDown(scene::Scene* scene, int button, int x, i
                             modern->submeshName(result.submesh),
                             modern->submeshGroupName(result.submesh));
                         gizmo->setTransformEditObserver(_transformEditObserver);
+                        gizmo->setLinearSnapSettings(_linearSnapSettings);
                         gizmo->beginTransform(handle, x, y);
                         _capturing = gizmo->isTransforming();
                         if (_capturing)
@@ -473,6 +474,22 @@ void SelectionManager::setTransformEditObserver(TransformEditObserver observer)
 {
     cancelTransform();
     _transformEditObserver = std::move(observer);
+}
+
+
+void SelectionManager::setLinearSnapSettings(math::LinearSnapSettings settings)
+{
+    if (settings.valid())
+    {
+        _linearSnapSettings = settings;
+        if (auto* node = GizmoComponent::currentTransformNode())
+        {
+            if (auto* gizmo = node->getComponent<GizmoComponent>())
+            {
+                gizmo->setLinearSnapSettings(settings);
+            }
+        }
+    }
 }
 
 
@@ -735,6 +752,13 @@ void SelectionManager::callOnChange()
     // listeners, so onSelect callbacks already observe the current transform.
     scene::Node* primary = _selectedNodes.empty() ? nullptr : _selectedNodes.front().lock().get();
     GizmoComponent::setCurrentTransform(primary);
+    if (primary)
+    {
+        if (auto* gizmo = primary->getComponent<GizmoComponent>())
+        {
+            gizmo->setLinearSnapSettings(_linearSnapSettings);
+        }
+    }
 
     for (auto& cb : _onSelectCallbacks)
     {

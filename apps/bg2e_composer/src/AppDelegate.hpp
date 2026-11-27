@@ -28,6 +28,7 @@
 #include "SceneImporter.hpp"
 #include "ImportServer.hpp"
 #include "ImportSettings.hpp"
+#include "workspaces/common/SnappingPreferences.hpp"
 #include <unordered_map>
 
 #include <bg2e/app/InputDelegate.hpp>
@@ -95,6 +96,11 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     void importDocument(const std::filesystem::path& path, float unitsScale = 1.0f,
         bool sourceIsZUp = false);
     void exportSelectedModels();
+
+    workspaces::common::SnappingPreferences& snappingPreferences()
+    {
+        return _snappingPreferences;
+    }
 
     void cancelImports(bool remoteOnly = false);
     void setImportService(bool enabled, const std::string& port);
@@ -219,6 +225,15 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::optional<bg2e::bake::LightmapResult> lightmapResult(
         const std::shared_ptr<bg2e::scene::Node>& target = {}) const;
     bool lightmapBakeActive() const;
+    // Preparation returns an infallible activation for a ready destination.
+    using PrepareWorkspace = std::function<std::function<void()>()>;
+    bool queueWorkspaceTransition(PrepareWorkspace prepare);
+
+    void onSceneShortcutScope(std::function<bool()> isActive)
+    {
+        _sceneShortcutScope = std::move(isActive);
+    }
+
     void onSelectionChanged(std::function<void()> callback)
     {
         _selectionChanged = std::move(callback);
@@ -276,6 +291,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     std::shared_ptr<bg2e::manipulation::SelectionManager> _selection;
     glm::uvec2 _logicalExtent{0};
     std::function<void()> _toolsCleanup;
+    std::function<bool()> _sceneShortcutScope;
     std::function<void()> _selectionChanged;
     std::shared_ptr<bg2e::draw::MaterialBase> _clipboard;
     void requestOpen(const std::filesystem::path& path);
@@ -351,6 +367,7 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     SceneImporter _imports;
     ImportServer _importServer;
     ImportSettings _importSettings;
+    workspaces::common::SnappingPreferences _snappingPreferences;
     std::unordered_map<std::string, std::shared_ptr<command::scene::ImportRecord>> _imported;
     std::unordered_map<std::string, uint64_t> _latestImportTokens;
     bool _importPublicationPending = false;
@@ -358,6 +375,14 @@ class AppDelegate final : public bg2e::draw::DefaultRenderLoopDelegate,
     uint64_t _nextImportToken = 1;
     bool _importPaused = false;
     std::string _importStatus;
+
+    bool workspaceTransitionIdle() const;
+    void processWorkspaceTransition();
+    struct WorkspaceTransition {
+        uint64_t generation;
+        PrepareWorkspace prepare;
+    };
+    std::optional<WorkspaceTransition> _workspaceTransition;
 
     void processDocumentIo();
     void refreshDrawableBrowser() noexcept;

@@ -24,8 +24,10 @@
 #include <bg2e/base/Light.hpp>
 #include <bg2e/base/Color.hpp>
 #include <bg2e/math/base.hpp>
+#include <bg2e/math/linear_snapping.hpp>
 
 #include <memory>
+#include <optional>
 #include <functional>
 #include <string>
 #include <unordered_map>
@@ -189,6 +191,12 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
     void endTransform();
     void cancelTransform();
     void setTransformEditObserver(TransformEditObserver observer);
+    // Use the same translation frame for drawing and picking each handle.
+    glm::mat4 transformHandleMatrix(const glm::mat4& localFrame, TransformHandle handle,
+        const glm::mat4& worldFrame) const;
+    bool worldAlignedTranslation() const;
+
+    void setLinearSnapSettings(math::LinearSnapSettings settings);
     [[nodiscard]] TransformHandle activeHandle() const
     {
         return _activeHandle;
@@ -237,6 +245,11 @@ class BG2E_API GizmoComponent : public scene::DrawableComponent {
     TransformEditObserver _transformEditObserver;
     std::weak_ptr<scene::TransformComponent> _transformReference;
     void finishTransform(bool cancel);
+
+    math::LinearSnapSettings _linearSnapSettings;
+    std::optional<math::LinearSnapGesture> _linearSnapGesture;
+    glm::vec3 _localUnitsPerWorldUnit{0.0f};
+    int _worldGridAxis = -1;
 
     // Drag-start state captured at beginTransform
     glm::mat4 _initialLocalMatrix{1.0f};
